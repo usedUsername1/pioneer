@@ -1,0 +1,2 @@
+class SecurityZone:
+    pass

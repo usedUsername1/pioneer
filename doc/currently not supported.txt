@@ -1,0 +1,2 @@
+- anything related to IPv6 is currently not supported
+- migration of L7 parameters (applications and vendor url categories)
