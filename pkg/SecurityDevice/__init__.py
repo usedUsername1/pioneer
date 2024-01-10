@@ -361,11 +361,35 @@ class SecurityDevice():
         pass
 
     @abstractmethod
+    def import_sec_policies(self):
+        pass
+
+    @abstractmethod
     def import_nat_policy_containers(self):
         pass
 
     @abstractmethod
     def import_object_containers(self):
+        pass
+
+    @abstractmethod
+    def import_network_address_objects(self):
+        pass
+
+    @abstractmethod
+    def import_network_group_objects(self):
+        pass
+
+    @abstractmethod
+    def import_port_objects(self):
+        pass
+
+    @abstractmethod
+    def import_port_group_objects(self):
+        pass
+
+    @abstractmethod
+    def import_url_objects(self):
         pass
 
     @abstractmethod
@@ -375,3 +399,4 @@ class SecurityDevice():
     @abstractmethod
     def connect_to_security_device(self):
         pass
+

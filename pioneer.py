@@ -119,7 +119,7 @@ def main():
 
     # at this point, the backbone of the device is created, importing of data can start
     # the user used the --device option
-    if(pioneer_args["device_name [device_name]"]):
+    if pioneer_args["device_name [device_name]"]:
         security_device_name = pioneer_args["device_name [device_name]"]
 
         security_device_db_name = security_device_name + "_db"
@@ -154,6 +154,8 @@ def main():
             # create the API security object based on the device type
             SpecificSecurityDeviceObject = APISecurityDeviceFactory.build_api_security_device(security_device_name, security_device_type, SecurityDeviceDB, security_device_hostname, security_device_username, security_device_secret, security_device_port, security_device_domain)
 
+        
+
         elif '-config' in security_device_type:
             pass
 
@@ -162,6 +164,47 @@ def main():
             sys.exit(1)
 
         # sub-if statements for importing and getting parameters
+        # if the user wants to import config, the following will be imported:
+            # the security policy containers. this is a generic name for the places different vendors store the firewall policies. for example, Cisco uses Access Control Policies (ACPs), PA uses device groups, etc
+            # the nat policy containers. same as security policy containers
+            # the object policy containers.
+            # not all vendors implement containers. for example, cisco doesn't store objects in containers, as opposed to PA. to overcome this, everything that can't be containerized will be tied to a dummy container.
+            # for example, security policies will be tied to a "dummy_container", and so on.
+            # the security policies
+            # the nat policies
+            # all the objects (URLs, address objects, groups, etc)
+            # user sources along with users databases
+            # and pretty much the rest of the config (routing, VPNs, etc...)
+        if pioneer_args["import_config"]:
+            # import the policy containers of the device
+            SpecificSecurityDeviceObject.import_sec_policy_containers()
+
+            # import the security policies
+            SpecificSecurityDeviceObject.import_sec_policies()
+
+            # import the object policy containers
+            SpecificSecurityDeviceObject.import_object_containers()
+
+            # import the address objects
+            SpecificSecurityDeviceObject.import_network_address_objects()
+
+            # import the address groups
+            SpecificSecurityDeviceObject.import_network_group_objects()
+
+            # import the port objects
+            SpecificSecurityDeviceObject.import_port_objects()
+
+            # import the port group objects
+            SpecificSecurityDeviceObject.import_port_group_objects()
+
+            # import the URL objects
+            SpecificSecurityDeviceObject.import_url_objects()
+
+            
+
+
+
+
 
 if __name__ == "__main__":
     main()
@@ -186,6 +229,7 @@ if __name__ == "__main__":
 # will be related to the device type
 # for example, we might need a table for palo alto rules, which stores all the proprietary palo alto attributes of a firewall policy
 
+# tell the user that the config of a device has already been imported and error out if they want to import it again
 # should the security policies table be split into multiple tables based on the UML?
 # find how to process the hitcount values for firewall managers, eventually get the last hit as well.
 # add write functionality + input validation for the project
