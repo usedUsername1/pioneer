@@ -90,6 +90,9 @@ def main():
         security_device_db_conn = DBConnection(db_user, security_device_db_name, db_password, db_host, db_port)
         security_device_cursor = security_device_db_conn.create_cursor()
 
+        # note: the reason a device connection can't be created here is because the connection is relying on the device type
+        # a connection object cannot be created before the security device type is established
+
         # create the security device database object
         SecurityDeviceDB = SecurityDeviceDatabase(security_device_cursor)
 
@@ -154,8 +157,6 @@ def main():
             # create the API security object based on the device type
             SpecificSecurityDeviceObject = APISecurityDeviceFactory.build_api_security_device(security_device_name, security_device_type, SecurityDeviceDB, security_device_hostname, security_device_username, security_device_secret, security_device_port, security_device_domain)
 
-        
-
         elif '-config' in security_device_type:
             pass
 
@@ -200,7 +201,7 @@ def main():
             # import the URL objects
             SpecificSecurityDeviceObject.import_url_objects()
 
-            
+
 
 
 
