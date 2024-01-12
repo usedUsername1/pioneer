@@ -29,7 +29,8 @@ def create_parser():
     parser.add_argument("--domain [fmc_domain]", default='Global', help="Only for FMC devices. Specify the administration domain")
 
     parser.add_argument("--device-name [device_name]", help="Specify the security device where you make the changes.")
-    parser.add_argument("--import-config", help="Imports the configuration from the target device.")
+    parser.add_argument("--import-config", nargs='?', const=True, default=False, help="Flag to import configuration. Imports the configuration from the target device.")
+    parser.add_argument("--security-policy-container [container_name]", help="Imports a security policy container.")
     # parser.add_argument("--import-nat-policy-package", help="Import a NAT policy package from the target device. If nothing is specifed, all NAT policy packages are imported.")
 
     # arguments related both to devices and projects

@@ -110,7 +110,7 @@ def main():
             print("Invalid security device type.")
             sys.exit(1)
         # get version of the security device
-        security_device_version = SecurityDeviceObject.import_device_version()
+        security_device_version = SecurityDeviceObject.get_device_version()
         
         # insert the device name, username, secret, hostname, type and version into the general_data table
         SecurityDeviceObject.insert_into_general_table(security_device_username, security_device_secret, security_device_hostname, security_device_type, security_device_port, security_device_version, domain)
@@ -132,7 +132,7 @@ def main():
         # instantiate and extract all the data from a generic security device
         # the data will be used further for creating the specific security device object
         SecurityDeviceDB = SecurityDeviceDatabase(security_device_cursor)
-        print(security_device_name)
+
         GenericSecurityDevice = SecurityDevice(security_device_name, SecurityDeviceDB)
 
         # get the security device type
@@ -153,7 +153,7 @@ def main():
 
             # get the security device domain
             security_device_domain = GenericSecurityDevice.get_security_device_domain()
-            print(security_device_domain)
+
             # create the API security object based on the device type
             SpecificSecurityDeviceObject = APISecurityDeviceFactory.build_api_security_device(security_device_name, security_device_type, SecurityDeviceDB, security_device_hostname, security_device_username, security_device_secret, security_device_port, security_device_domain)
 
@@ -165,10 +165,12 @@ def main():
             sys.exit(1)
 
         # sub-if statements for importing and getting parameters
+        # the import of the objects will be done for a specific policy container
+        # after the policies are imported, all the policies are scanned for objects and the objects will be imported in the device's database
+            # TODO: should the import of objects be separately supported?
         # if the user wants to import config, the following will be imported:
             # the security policy containers. this is a generic name for the places different vendors store the firewall policies. for example, Cisco uses Access Control Policies (ACPs), PA uses device groups, etc
             # the nat policy containers. same as security policy containers
-            # the object policy containers.
             # not all vendors implement containers. for example, cisco doesn't store objects in containers, as opposed to PA. to overcome this, everything that can't be containerized will be tied to a dummy container.
             # for example, security policies will be tied to a "dummy_container", and so on.
             # the security policies
@@ -177,29 +179,53 @@ def main():
             # user sources along with users databases
             # and pretty much the rest of the config (routing, VPNs, etc...)
         if pioneer_args["import_config"]:
-            # import the policy containers of the device
-            SpecificSecurityDeviceObject.import_sec_policy_containers()
 
-            # import the security policies
-            SpecificSecurityDeviceObject.import_sec_policies()
+            # define the variables used to store the names of the imported policies  
+            security_policies = []
+            policy_list = []
+            
+            # import the policy containers of the device.
+            if(pioneer_args["security_policy_container [container_name]"]):
+                passed_container_names = pioneer_args["security_policy_container [container_name]"]
+                passed_container_names_list = []
+                passed_container_names_list.append(passed_container_names)
+                # be aware, if a security policy package is imported, its parents will also be imported
+                security_policy_container_info = SpecificSecurityDeviceObject.get_sec_policy_container_info(passed_container_names_list)
 
-            # import the object policy containers
-            SpecificSecurityDeviceObject.import_object_containers()
+                # now loop through the containers' information
+                for current_info_index in range(len(security_policy_container_info)):
+                    # retrieve the parent and the child
+                    child_index = 0
+                    parent_index = 1
+                    child_container = security_policy_container_info[current_info_index][child_index]
+                    parent_container = security_policy_container_info[current_info_index][parent_index]
 
-            # import the address objects
-            SpecificSecurityDeviceObject.import_network_address_objects()
+                    # now that the information is retrieved, insert it into the table
+                    SpecificSecurityDeviceObject.insert_into_security_policy_containers_table(child_container, parent_container)
 
-            # import the address groups
-            SpecificSecurityDeviceObject.import_network_group_objects()
+                
+                # import the security policies (data) that are part of the imported security policy containers
+            #     security_policies = SpecificSecurityDeviceObject.import_sec_policies(security_policy_containers)
 
-            # import the port objects
-            SpecificSecurityDeviceObject.import_port_objects()
+            # # append the security policies names to the list with all the policies
+            # policy_list.append(security_policies)
+            # # should there be a function that imports only the objects? if so, that function will be used to parse the policy list and import the objects
+            # # import the address objects
 
-            # import the port group objects
-            SpecificSecurityDeviceObject.import_port_group_objects()
+            # SpecificSecurityDeviceObject.import_objects(policy_list)
+            # SpecificSecurityDeviceObject.import_network_address_objects(policy_list)
 
-            # import the URL objects
-            SpecificSecurityDeviceObject.import_url_objects()
+            # # import the address groups
+            # SpecificSecurityDeviceObject.import_network_group_objects(policy_list)
+
+            # # import the port objects
+            # SpecificSecurityDeviceObject.import_port_objects(policy_list)
+
+            # # import the port group objects
+            # SpecificSecurityDeviceObject.import_port_group_objects(policy_list)
+
+            # # import the URL objects
+            # SpecificSecurityDeviceObject.import_url_objects(policy_list)
 
 
 
@@ -223,7 +249,11 @@ if __name__ == "__main__":
 # create a verbose list functionality, in which the user can see all the info related to a security device, for example. extend this to more than just the security device
 # tell the user what parameter he is missing when using the --craete-security-device
 # make a list with valid device types and make sure only valid types are used
+# adding a policy/object count per container/per device would be nice. adding the description of the security policy container would also be nice
+# ensure that the user can't import the same container.
 
+
+# should there be classes for the security policies and security containers? if so, the objects should be instantiated using data from the databases.
 
 # TODO ?? 
 # there might be a need to create very specific tables for the firewall rules. these tables

@@ -78,16 +78,6 @@ class SecurityDeviceDatabase(PioneerDatabase):
                         REFERENCES general_data_table(security_device_name)
                 );"""
 
-            case 'object_containers_table':
-                command = """CREATE TABLE IF NOT EXISTS object_containers_table (
-                security_device_name TEXT NOT NULL,
-                object_container_name TEXT PRIMARY KEY,
-                object_container_parent TEXT,
-                CONSTRAINT fk_sec_dev_name
-                    FOREIGN KEY(security_device_name)
-                        REFERENCES general_data_table(security_device_name)
-                );"""
-
             case 'security_policies_table':
                 command = """CREATE TABLE IF NOT EXISTS security_policies_table (
                 security_policy_name TEXT PRIMARY KEY,
@@ -352,12 +342,18 @@ class SecurityDevice():
 
         self._database.insert_table_value('general_data_table', insert_command)
 
+    def insert_into_security_policy_containers_table(self, container_name, container_parent):
+        insert_command = """INSERT INTO security_policy_containers_table (security_device_name, security_policy_container_name, security_policy_container_parent)
+                            VALUES('{}', '{}', '{}')""".format(self._name, container_name, container_parent)
+        
+        self._database.insert_table_value('security_policy_containers_table', insert_command)
+
     def delete_security_device(self):
         pass
 
     # the following methods must be overriden by the device's specific methods 
     @abstractmethod
-    def import_sec_policy_containers(self):
+    def get_sec_policy_container_info(self):
         pass
 
     @abstractmethod
@@ -370,6 +366,10 @@ class SecurityDevice():
 
     @abstractmethod
     def import_object_containers(self):
+        pass
+
+    @abstractmethod
+    def import_objects(self):
         pass
 
     @abstractmethod
@@ -393,7 +393,7 @@ class SecurityDevice():
         pass
 
     @abstractmethod
-    def import_device_version(self):
+    def get_device_version(self):
         pass
     
     @abstractmethod

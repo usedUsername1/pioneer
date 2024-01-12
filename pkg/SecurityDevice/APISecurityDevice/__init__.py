@@ -37,25 +37,64 @@ class FMCSecurityDevice(SecurityDevice):
         super().__init__(name, sec_device_database)
         self._api_connection = FMCDeviceConnection(security_device_username, security_device_secret, security_device_hostname, security_device_port, domain).connect_to_security_device()
 
-
-#     def import_sec_policy_containers(self):
-#         pass
-
 #     def import_nat_policy_containers(self):
 #         pass
 
 #     def import_object_containers(self):
 #         pass
+    def import_objects(self, policy_list):
+        pass
 
-    
-    def import_device_version(self):
+    # this function takes the list with policy container names and loops through each of them.
+    # for every container, it tries to find the container parent. if the parent container is a child of another container, it will find that parent too
+    # ACP = access control policy = the security policy container used by FMC
+    def get_sec_policy_container_info(self, policy_container_names_list):
+        
+        # loop through the policy containers provided by the user
+        for policy_container_name in policy_container_names_list:
+            try:
+                # create the list that will store the dictionary that will store the child_acp -> parent_acp mapping
+                child_parent_list = []
+
+                # retrieve the info for the current acp
+                acp_info = self._api_connection.policy.accesspolicy.get(name=policy_container_name)
+
+                # try to retrieve the parent of the policy. there is a "inherit" boolean attribute in the acp_info response. if it is equal to 'true', then the policy has a parent
+                while acp_info['metadata']['inherit'] == True:
+                    # get the name of the current ACP name
+                    current_acp_name = acp_info['name']
+
+                    # get the parent of the current ACP
+                    acp_parent = acp_info['metadata']['parentPolicy']['name']
+
+                    print(f"Container: {current_acp_name} is the child of a container. Its parent is: {acp_parent}.")
+                    # update the list containing info about the parents/children ACPs
+                    child_parent_list.append([current_acp_name, acp_parent])
+
+                    # go back to while and check if the parent of the policy has a parent
+                    acp_info = self._api_connection.policy.accesspolicy.get(name=acp_parent)
+                
+                # if the parent policy does not have a parent, then map the ACP to None
+                else:
+                    child_parent_list.append([acp_parent, None])
+
+                return child_parent_list
+            
+            except Exception as err:
+                print(f'Could not retrieve info regarding the container {policy_container_name}. Reason: {err}.')
+                sys.exit(1)
+
+
+    def get_device_version(self):
         try:
             device_system_info = self._api_connection.system.info.serverversion.get()
             device_version = device_system_info[0]['serverVersion']
+            return device_version
         except Exception as err:
             print(f'Could not retrieve platform version. Reason: {err}')
-        return device_version
+            sys.exit(1)
 
+    
 
 class APISecurityDeviceFactory:
     @staticmethod
