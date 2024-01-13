@@ -189,6 +189,7 @@ def main():
                 passed_container_names = pioneer_args["security_policy_container [container_name]"]
                 passed_container_names_list = []
                 passed_container_names_list.append(passed_container_names)
+                print(f"I am now importing the policy container info for the following containers: {passed_container_names_list}.")
                 # be aware, if a security policy package is imported, its parents will also be imported
                 # check if the provided containers are not already imported
                 security_policy_container_info = SpecificSecurityDeviceObject.get_sec_policy_container_info(passed_container_names_list)
@@ -276,7 +277,9 @@ if __name__ == "__main__":
 # check if arguments that should be used together with another argument are being used appropriately. for example "--type" must be used with "--create-security-device". if this is not the case, throw an error and inform the user # https://copyprogramming.com/howto/python-argparse-conditionally-required-arguments-based-on-the-value-of-another-argument
 # see if you can do something about the --port parameter. fmc requires it to be https. can fmc run on another port?
 # make sure the import of duplicaes is prevented in both the project database and the device database
-# deletion of policy containers. 
+#POLICY CONTAINERS
+    # list, delete of policy containers. 
+    # support importing a list of containers
 
 
 # FIRST MILESTONE: perform a full migration of L4 firewall rules (without the migration of users) from FMC to PANMC
