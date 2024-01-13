@@ -52,6 +52,12 @@ class FMCSecurityDevice(SecurityDevice):
         
         # loop through the policy containers provided by the user
         for policy_container_name in policy_container_names_list:
+            # check if the current container name was already imported
+            is_duplicate_acp = self.verify_duplicate('security_policy_containers_table', 'security_policy_container_name', policy_container_name)
+            if(is_duplicate_acp):
+                print(f"Container: {policy_container_name} is already imported. Skipping it...")
+                continue
+
             try:
                 # create the list that will store the dictionary that will store the child_acp -> parent_acp mapping
                 child_parent_list = []
@@ -64,15 +70,24 @@ class FMCSecurityDevice(SecurityDevice):
                     # get the name of the current ACP name
                     current_acp_name = acp_info['name']
 
-                    # get the parent of the current ACP
+                    # get the name of the acp parent 
                     acp_parent = acp_info['metadata']['parentPolicy']['name']
 
-                    print(f"Container: {current_acp_name} is the child of a container. Its parent is: {acp_parent}.")
+                    print(f"Container: {current_acp_name} is the child of a container. Its parent is: {acp_parent}.")    
+
+                    # check if the parent ACP is already imported in the database. if a parent is already present, then it means the rest of the parents are present
+                    # create the mapping of the current child and its parent, and return it to the caller
+                    is_duplicate_acp = self.verify_duplicate('security_policy_containers_table', 'security_policy_container_name', acp_parent)
+                    if(is_duplicate_acp):
+                        print(f"Parent container: {acp_parent} is already imported. I have only imported its child. I will skip further processing.")
+                        child_parent_list.append([current_acp_name, acp_parent])
+                        return child_parent_list   
+
+                    # retrieve the parent info to be processed in the next iteration of the loop
+                    acp_info = self._api_connection.policy.accesspolicy.get(name=acp_parent)
+
                     # update the list containing info about the parents/children ACPs
                     child_parent_list.append([current_acp_name, acp_parent])
-
-                    # go back to while and check if the parent of the policy has a parent
-                    acp_info = self._api_connection.policy.accesspolicy.get(name=acp_parent)
                 
                 # if the parent policy does not have a parent, then map the ACP to None
                 else:
@@ -95,7 +110,6 @@ class FMCSecurityDevice(SecurityDevice):
             sys.exit(1)
 
     
-
 class APISecurityDeviceFactory:
     @staticmethod
     def build_api_security_device(security_device_name, security_device_type, SecurityDeviceDB, security_device_hostname, security_device_username, security_device_secret, security_device_port, domain):

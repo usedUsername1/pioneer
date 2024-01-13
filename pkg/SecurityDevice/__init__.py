@@ -348,6 +348,12 @@ class SecurityDevice():
         
         self._database.insert_table_value('security_policy_containers_table', insert_command)
 
+    def verify_duplicate(self, table, column, value):
+        select_command = """SELECT EXISTS(SELECT 1 FROM {} WHERE {} = '{}');""".format(table, column, value)
+        is_duplicate = self._database.get_table_value(table, select_command)
+
+        return is_duplicate
+
     def delete_security_device(self):
         pass
 

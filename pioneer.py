@@ -190,19 +190,22 @@ def main():
                 passed_container_names_list = []
                 passed_container_names_list.append(passed_container_names)
                 # be aware, if a security policy package is imported, its parents will also be imported
+                # check if the provided containers are not already imported
                 security_policy_container_info = SpecificSecurityDeviceObject.get_sec_policy_container_info(passed_container_names_list)
 
                 # now loop through the containers' information
-                for current_info_index in range(len(security_policy_container_info)):
-                    # retrieve the parent and the child
-                    child_index = 0
-                    parent_index = 1
-                    child_container = security_policy_container_info[current_info_index][child_index]
-                    parent_container = security_policy_container_info[current_info_index][parent_index]
+                try:
+                    for current_info_index in range(len(security_policy_container_info)):
+                        # retrieve the parent and the child
+                        child_index = 0
+                        parent_index = 1
+                        child_container = security_policy_container_info[current_info_index][child_index]
+                        parent_container = security_policy_container_info[current_info_index][parent_index]
 
-                    # now that the information is retrieved, insert it into the table
-                    SpecificSecurityDeviceObject.insert_into_security_policy_containers_table(child_container, parent_container)
-
+                        # now that the information is retrieved, insert it into the table
+                        SpecificSecurityDeviceObject.insert_into_security_policy_containers_table(child_container, parent_container)
+                except TypeError:
+                    print("The container you are trying to import is already in the database.")
                 
                 # import the security policies (data) that are part of the imported security policy containers
             #     security_policies = SpecificSecurityDeviceObject.import_sec_policies(security_policy_containers)
@@ -273,6 +276,8 @@ if __name__ == "__main__":
 # check if arguments that should be used together with another argument are being used appropriately. for example "--type" must be used with "--create-security-device". if this is not the case, throw an error and inform the user # https://copyprogramming.com/howto/python-argparse-conditionally-required-arguments-based-on-the-value-of-another-argument
 # see if you can do something about the --port parameter. fmc requires it to be https. can fmc run on another port?
 # make sure the import of duplicaes is prevented in both the project database and the device database
+# deletion of policy containers. 
+
 
 # FIRST MILESTONE: perform a full migration of L4 firewall rules (without the migration of users) from FMC to PANMC
 # SECOND MILESTONE: add support for migrating users as well
