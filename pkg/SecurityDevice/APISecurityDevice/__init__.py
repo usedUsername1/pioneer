@@ -64,41 +64,56 @@ class FMCSecurityDevice(SecurityDevice):
 
                 # retrieve the info for the current acp
                 acp_info = self._api_connection.policy.accesspolicy.get(name=policy_container_name)
-
-                # try to retrieve the parent of the policy. there is a "inherit" boolean attribute in the acp_info response. if it is equal to 'true', then the policy has a parent
-                while acp_info['metadata']['inherit'] == True:
-                    # get the name of the current ACP name
-                    current_acp_name = acp_info['name']
-
-                    # get the name of the acp parent 
-                    acp_parent = acp_info['metadata']['parentPolicy']['name']
-
-                    print(f"Container: {current_acp_name} is the child of a container. Its parent is: {acp_parent}.")    
-
-                    # check if the parent ACP is already imported in the database. if a parent is already present, then it means the rest of the parents are present
-                    # create the mapping of the current child and its parent, and return it to the caller
-                    is_duplicate_acp = self.verify_duplicate('security_policy_containers_table', 'security_policy_container_name', acp_parent)
-                    if(is_duplicate_acp):
-                        print(f"Parent container: {acp_parent} is already imported. I have only imported its child. I will skip further processing.")
-                        child_parent_list.append([current_acp_name, acp_parent])
-                        return child_parent_list   
-
-                    # retrieve the parent info to be processed in the next iteration of the loop
-                    acp_info = self._api_connection.policy.accesspolicy.get(name=acp_parent)
-
-                    # update the list containing info about the parents/children ACPs
-                    child_parent_list.append([current_acp_name, acp_parent])
                 
-                # if the parent policy does not have a parent, then map the ACP to None
-                else:
-                    child_parent_list.append([acp_parent, None])
+                # if the policy does not have a parent policy at all, then return a mapping with the current policy name and None to the caller
+                if acp_info['metadata']['inherit'] == False:
+                    child_parent_list.append([policy_container_name, None])
+                    return child_parent_list
 
-                return child_parent_list
-            
+                else: 
+                    # try to retrieve the parent of the policy. there is a "inherit" boolean attribute in the acp_info response. if it is equal to 'true', then the policy has a parent
+                    while acp_info['metadata']['inherit'] == True:
+                        # get the name of the current ACP name
+                        current_acp_name = acp_info['name']
+
+                        # get the name of the acp parent 
+                        acp_parent = acp_info['metadata']['parentPolicy']['name']
+
+                        print(f"Container: {current_acp_name} is the child of a container. Its parent is: {acp_parent}.")    
+
+                        # check if the parent ACP is already imported in the database. if a parent is already present, then it means the rest of the parents are present
+                        # create the mapping of the current child and its parent, and return it to the caller
+                        is_duplicate_acp = self.verify_duplicate('security_policy_containers_table', 'security_policy_container_name', acp_parent)
+                        if(is_duplicate_acp):
+                            print(f"Parent container: {acp_parent} is already imported. I have only imported its child. I will skip further processing.")
+                            child_parent_list.append([current_acp_name, acp_parent])
+                            return child_parent_list   
+
+                        # retrieve the parent info to be processed in the next iteration of the loop
+                        acp_info = self._api_connection.policy.accesspolicy.get(name=acp_parent)
+
+                        # update the list containing info about the parents/children ACPs
+                        child_parent_list.append([current_acp_name, acp_parent])
+                    
+                    # if the parent policy does not have a parent, then map the ACP to None
+                    else:
+                        child_parent_list.append([acp_parent, None])
+
+                    return child_parent_list
+                
             except Exception as err:
                 print(f'Could not retrieve info regarding the container {policy_container_name}. Reason: {err}.')
                 sys.exit(1)
+        
+    
+    def get_sec_policies_data(self, policy_container):
+        # execute the request to get all the security policies from the policy container
+        policies = self._api_connection.policy.accesspolicy.accessrule.get(container_name=policy_container)
 
+        # now loop through the policies
+        for policy in policies:
+            print(policy['name'])
+            
 
     def get_device_version(self):
         try:

@@ -25,7 +25,7 @@ class SecurityDeviceDatabase(PioneerDatabase):
         self.table_factory("general_data_table")
         self.table_factory("security_policy_containers_table")
         self.table_factory("nat_policy_containers_table")
-        self.table_factory("object_containers_table")
+        # self.table_factory("object_containers_table")
         self.table_factory("security_policies_table")
         self.table_factory("policies_hitcount_table")
         # self.table_factory("nat_policies_table")
@@ -78,6 +78,7 @@ class SecurityDeviceDatabase(PioneerDatabase):
                         REFERENCES general_data_table(security_device_name)
                 );"""
 
+            #TODO: should there be a BOOL col for policies that use PING?
             case 'security_policies_table':
                 command = """CREATE TABLE IF NOT EXISTS security_policies_table (
                 security_policy_name TEXT PRIMARY KEY,
@@ -102,6 +103,7 @@ class SecurityDeviceDatabase(PioneerDatabase):
                 security_policy_log_start BOOLEAN NOT NULL,
                 security_policy_log_end BOOLEAN NOT NULL,
                 security_policy_pre_or_post TEXT,
+                is_ping_policy BOOLEAN NOT NULL,
                 CONSTRAINT fk_sec_dev_name
                     FOREIGN KEY(security_device_name)
                         REFERENCES general_data_table(security_device_name),
@@ -163,10 +165,7 @@ class SecurityDeviceDatabase(PioneerDatabase):
                 security_zone_description TEXT,
                 CONSTRAINT fk_sec_dev_name
                     FOREIGN KEY(security_device_name)
-                        REFERENCES general_data_table(security_device_name),
-                CONSTRAINT fk_object_container
-                    FOREIGN KEY(object_container_name)
-                        REFERENCES object_containers_table(object_container_name)
+                        REFERENCES general_data_table(security_device_name)
                 );"""
 
             case 'urls_table':
@@ -178,10 +177,7 @@ class SecurityDeviceDatabase(PioneerDatabase):
                 url_object_description TEXT,
                 CONSTRAINT fk_sec_dev_name
                     FOREIGN KEY(security_device_name)
-                        REFERENCES general_data_table(security_device_name),
-                CONSTRAINT fk_object_container
-                    FOREIGN KEY(object_container_name)
-                        REFERENCES object_containers_table(object_container_name)
+                        REFERENCES general_data_table(security_device_name)
                 );"""
 
             #TODO: add proper support for url categories
@@ -222,10 +218,7 @@ class SecurityDeviceDatabase(PioneerDatabase):
                 overriden_object BOOLEAN NOT NULL,
                 CONSTRAINT fk_sec_dev_name
                     FOREIGN KEY(security_device_name)
-                        REFERENCES general_data_table(security_device_name),
-                CONSTRAINT fk_object_container
-                    FOREIGN KEY(object_container_name)
-                        REFERENCES object_containers_table(object_container_name)
+                        REFERENCES general_data_table(security_device_name)
                 );"""
 
             case 'network_address_object_groups_table':
@@ -238,10 +231,7 @@ class SecurityDeviceDatabase(PioneerDatabase):
                 overriden_object BOOLEAN NOT NULL,
                 CONSTRAINT fk_sec_dev_name
                     FOREIGN KEY(security_device_name)
-                        REFERENCES general_data_table(security_device_name),
-                CONSTRAINT fk_object_container
-                    FOREIGN KEY(object_container_name)
-                        REFERENCES object_containers_table(object_container_name)
+                        REFERENCES general_data_table(security_device_name)
                 );"""
 
             case 'port_objects_table':
@@ -254,10 +244,7 @@ class SecurityDeviceDatabase(PioneerDatabase):
                 overriden_object BOOLEAN NOT NULL,
                 CONSTRAINT fk_sec_dev_name
                     FOREIGN KEY(security_device_name)
-                        REFERENCES general_data_table(security_device_name),
-                CONSTRAINT fk_object_container
-                    FOREIGN KEY(object_container_name)
-                        REFERENCES object_containers_table(object_container_name)
+                        REFERENCES general_data_table(security_device_name)
                 );"""
 
             case 'port_object_groups_table':
@@ -270,10 +257,7 @@ class SecurityDeviceDatabase(PioneerDatabase):
                 overriden_object BOOLEAN NOT NULL,
                 CONSTRAINT fk_sec_dev_name
                     FOREIGN KEY(security_device_name)
-                        REFERENCES general_data_table(security_device_name),
-                CONSTRAINT fk_object_container
-                    FOREIGN KEY(object_container_name)
-                        REFERENCES object_containers_table(object_container_name)
+                        REFERENCES general_data_table(security_device_name)
                 );"""
             
             # this table stores info about the objects who are overriden. the stored info is the object name, its value, the device where the override is set
@@ -363,7 +347,7 @@ class SecurityDevice():
         pass
 
     @abstractmethod
-    def import_sec_policies(self):
+    def get_sec_policies_data(self):
         pass
 
     @abstractmethod

@@ -167,7 +167,7 @@ def main():
         # sub-if statements for importing and getting parameters
         # the import of the objects will be done for a specific policy container
         # after the policies are imported, all the policies are scanned for objects and the objects will be imported in the device's database
-            # TODO: should the import of objects be separately supported?
+            # TODO: should the import of objects be separately supported? maybe, why not?
         # if the user wants to import config, the following will be imported:
             # the security policy containers. this is a generic name for the places different vendors store the firewall policies. for example, Cisco uses Access Control Policies (ACPs), PA uses device groups, etc
             # the nat policy containers. same as security policy containers
@@ -178,11 +178,8 @@ def main():
             # all the objects (URLs, address objects, groups, etc)
             # user sources along with users databases
             # and pretty much the rest of the config (routing, VPNs, etc...)
+            # TODO: make sure that some configuration gets imported regardless of the imported policy package. for example, the configuration of the zones
         if pioneer_args["import_config"]:
-
-            # define the variables used to store the names of the imported policies  
-            security_policies = []
-            policy_list = []
             
             # import the policy containers of the device.
             if(pioneer_args["security_policy_container [container_name]"]):
@@ -196,20 +193,24 @@ def main():
 
                 # now loop through the containers' information
                 try:
-                    for current_info_index in range(len(security_policy_container_info)):
-                        # retrieve the parent and the child
-                        child_index = 0
-                        parent_index = 1
-                        child_container = security_policy_container_info[current_info_index][child_index]
-                        parent_container = security_policy_container_info[current_info_index][parent_index]
+                    for current_container_entry in security_policy_container_info:
+                        # retrieve the parent and the child from the security_policy_container_info list
+                        child_container = current_container_entry[0]
+                        parent_container = current_container_entry[1]
 
                         # now that the information is retrieved, insert it into the table
                         SpecificSecurityDeviceObject.insert_into_security_policy_containers_table(child_container, parent_container)
+
+                        # import the security policies (data) that are part of the imported security policy containers
+                        # the import of the policy objects will also be performed here
+                        # the policy container info extracted earlier can be used here. we can use the child container entry
+                        #TODO: finish extracting the data from the policies 
+                        SpecificSecurityDeviceObject.get_sec_policies_data(child_container)
+                
+                # if there is not container info returned by the function, value of security_policy_container_info is None.
+                # the reason a None is returned: the container is already in the database
                 except TypeError:
                     print("The container you are trying to import is already in the database.")
-                
-                # import the security policies (data) that are part of the imported security policy containers
-            #     security_policies = SpecificSecurityDeviceObject.import_sec_policies(security_policy_containers)
 
             # # append the security policies names to the list with all the policies
             # policy_list.append(security_policies)
@@ -254,7 +255,6 @@ if __name__ == "__main__":
 # tell the user what parameter he is missing when using the --craete-security-device
 # make a list with valid device types and make sure only valid types are used
 # adding a policy/object count per container/per device would be nice. adding the description of the security policy container would also be nice
-# ensure that the user can't import the same container.
 
 
 # should there be classes for the security policies and security containers? if so, the objects should be instantiated using data from the databases.
@@ -277,6 +277,8 @@ if __name__ == "__main__":
 # check if arguments that should be used together with another argument are being used appropriately. for example "--type" must be used with "--create-security-device". if this is not the case, throw an error and inform the user # https://copyprogramming.com/howto/python-argparse-conditionally-required-arguments-based-on-the-value-of-another-argument
 # see if you can do something about the --port parameter. fmc requires it to be https. can fmc run on another port?
 # make sure the import of duplicaes is prevented in both the project database and the device database
+# error messages when user tries to perfrom action on non-existing device/project
+# ensure single quotes are always used when passing arguments
 #POLICY CONTAINERS
     # list, delete of policy containers. 
     # support importing a list of containers
