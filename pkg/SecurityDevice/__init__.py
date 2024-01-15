@@ -43,6 +43,8 @@ class SecurityDeviceDatabase(PioneerDatabase):
 
     
     #TODO: there are fields that should be null, go all over the fields again and decide what is null and what isn ot null
+    #TODO: tables for l7 and ping apps
+    #TODO: table for time range objects
     def table_factory(self, table_name):
         match table_name:
             case 'general_data_table':
@@ -81,10 +83,10 @@ class SecurityDeviceDatabase(PioneerDatabase):
             #TODO: should there be a BOOL col for policies that use PING?
             case 'security_policies_table':
                 command = """CREATE TABLE IF NOT EXISTS security_policies_table (
-                security_policy_name TEXT PRIMARY KEY,
-                security_policy_category TEXT,
                 security_device_name TEXT NOT NULL,
+                security_policy_name TEXT PRIMARY KEY,
                 security_policy_container_name TEXT NOT NULL,
+                security_policy_category TEXT,
                 security_policy_status TEXT NOT NULL,
                 security_policy_source_zones TEXT[] NOT NULL,
                 security_policy_destination_zones TEXT[] NOT NULL,
@@ -95,15 +97,13 @@ class SecurityDeviceDatabase(PioneerDatabase):
                 security_policy_time_range TEXT[] NOT NULL,
                 security_policy_users TEXT[] NOT NULL,
                 security_policy_urls TEXT[] NOT NULL,
-                security_policy_url_categories TEXT[] NOT NULL,
                 security_policy_l7_apps TEXT[] NOT NULL,
-                security_policy_l7_app_filters TEXT[] NOT NULL,
                 security_policy_description TEXT,
+                security_policy_comments TEXT[],
                 security_policy_log_setting TEXT,
                 security_policy_log_start BOOLEAN NOT NULL,
                 security_policy_log_end BOOLEAN NOT NULL,
-                security_policy_pre_or_post TEXT,
-                is_ping_policy BOOLEAN NOT NULL,
+                security_policy_section TEXT,
                 CONSTRAINT fk_sec_dev_name
                     FOREIGN KEY(security_device_name)
                         REFERENCES general_data_table(security_device_name),
@@ -113,6 +113,8 @@ class SecurityDeviceDatabase(PioneerDatabase):
                 );"""
             
             # this table stores info about the hitcounts of the security policies and of the nat policies
+            # TODO: how to get the hitcount info per policy and per device?
+
             case 'policies_hitcount_table':
                 command = """CREATE TABLE IF NOT EXISTS policies_hitcount_table (
                 security_device_name TEXT NOT NULL,

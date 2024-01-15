@@ -108,12 +108,53 @@ class FMCSecurityDevice(SecurityDevice):
     
     def get_sec_policies_data(self, policy_container):
         # execute the request to get all the security policies from the policy container
-        policies = self._api_connection.policy.accesspolicy.accessrule.get(container_name=policy_container)
+        sec_policies = self._api_connection.policy.accesspolicy.accessrule.get(container_name=policy_container)
 
+        # array that will be used for storing the information for each policy
+        sec_policy_info = []
         # now loop through the policies
-        for policy in policies:
-            print(policy['name'])
-            
+        # TODO: try except blocks for everything here
+        for sec_policy in sec_policies:
+            sec_policy_name = sec_policy['name']
+            sec_policy_container_name = sec_policy['metadata']['accessPolicy']['name']
+            sec_policy_category = sec_policy['metadata']['category']
+            sec_policy_status = sec_policy['enabled']
+
+            # loop through the object source zones
+            sec_policy_source_zones_objects = sec_policy['sourceZones']['objects']
+            sec_policy_source_networks_objects = sec_policy['sourceNetworks']['objects']
+            sec_policy_source_networks_literals = sec_policy['sourceNetworks']['literals']
+
+            sec_policy_destination_zones_objects = sec_policy['destinationZones']['objects']
+            sec_policy_destination_networks_objects = sec_policy['destinationNetworks']['objects']
+            sec_policy_destination_networks_literals = sec_policy['destinationNetworks']['literals']
+
+            sec_policy_source_port_objects = sec_policy['sourcePorts']['objects']
+            sec_policy_source_port_literals = sec_policy['sourcePorts']['literals']
+
+            sec_policy_destination_port_objects = sec_policy['destinationPorts']['objects']
+            sec_policy_destination_port_literals = sec_policy['destinationPorts']['literals']
+
+            sec_policy_time_range = sec_policy['timeRangeObjects']
+
+            sec_policy_users = sec_policy['users']
+            sec_policy_urls = sec_policy['urls']
+            sec_policy_apps = sec_policy['applications']
+            sec_policy_description = sec_policy['description']
+
+            sec_policy_comments = sec_policy['commentHistoryList']
+
+            # see if a syslog server or sending logs to FMC is used
+            try:
+                sec_policy_log_setting = sec_policy['sendEventsToFMC']
+                sec_policy_log_setting = 'FMC'
+            except: #TODO: what would be the error here? if sendevents is not present
+                sec_policy_log_setting = None
+
+            sec_policy_log_start = sec_policy['logBegin']
+            sec_policy_log_end = sec_policy['logEnd']
+            sec_policy_section = sec_policy['metadata']['section']
+            sec_policy_action = sec_policy['action']
 
     def get_device_version(self):
         try:

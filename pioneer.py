@@ -202,9 +202,11 @@ def main():
                         SpecificSecurityDeviceObject.insert_into_security_policy_containers_table(child_container, parent_container)
 
                         # import the security policies (data) that are part of the imported security policy containers
-                        # the import of the policy objects will also be performed here
                         # the policy container info extracted earlier can be used here. we can use the child container entry
-                        #TODO: finish extracting the data from the policies 
+                        # TODO: finish extracting the data from the policies.
+                        # TODO: how/where/when should the objects be imported?
+                        # TODO: do it like above. get all the data, pass it here, insert it here
+                        # TODO: what to do regarding PING policies?
                         SpecificSecurityDeviceObject.get_sec_policies_data(child_container)
                 
                 # if there is not container info returned by the function, value of security_policy_container_info is None.
