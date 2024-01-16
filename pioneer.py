@@ -1,3 +1,4 @@
+# git ls-files | xargs wc -l
 import utils.helper as helper
 import pkg.MigrationProject as MigrationProject
 from pkg import DBConnection, PioneerDatabase
@@ -204,10 +205,10 @@ def main():
                         # import the security policies (data) that are part of the imported security policy containers
                         # the policy container info extracted earlier can be used here. we can use the child container entry
                         # TODO: finish extracting the data from the policies.
-                        # TODO: how/where/when should the objects be imported?
+                        # TODO: how/where/when should the objects be imported? should they be processed
                         # TODO: do it like above. get all the data, pass it here, insert it here
                         # TODO: what to do regarding PING policies?
-                        SpecificSecurityDeviceObject.get_sec_policies_data(child_container)
+                        sec_policy_data, sec_policy_objects_data = SpecificSecurityDeviceObject.get_sec_policies_data(child_container)
                 
                 # if there is not container info returned by the function, value of security_policy_container_info is None.
                 # the reason a None is returned: the container is already in the database

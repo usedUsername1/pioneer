@@ -41,3 +41,24 @@ def create_parser():
 
     return parser
 
+
+def load_protocol_mapping():
+    return {
+        0: 'HOPOPT',
+        1: 'ICMP',
+        6: 'TCP',
+        17: 'UDP',
+        47: 'GRE',
+        50: 'ESP',
+        51: 'AH',
+        58: 'ICMPv6',
+        88: 'EIGRP',
+        89: 'OSPF',
+        115: 'L2TP',
+        # Add more protocols as needed
+    }
+
+def protocol_number_to_keyword(protocol_number):
+    protocol_mapping = load_protocol_mapping()
+    return protocol_mapping.get(protocol_number, "Unknown Protocol")
+

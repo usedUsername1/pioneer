@@ -147,13 +147,8 @@ class FMCSecurityDevice(SecurityDevice):
             sec_policy_destination_networks = self.process_network_objects(sec_policy, 'destinationNetworks')
 
             #TODO: continue processing the ports
-            sec_policy_source_ports = []
-            sec_policy_source_port_objects = sec_policy['sourcePorts']['objects']
-            sec_policy_source_port_literals = sec_policy['sourcePorts']['literals']
-            
-            sec_policy_destination_ports = []
-            sec_policy_destination_port_objects = sec_policy['destinationPorts']['objects']
-            sec_policy_destination_port_literals = sec_policy['destinationPorts']['literals']
+            sec_policy_source_ports = self.process_ports_objects(sec_policy, 'sourcePorts')
+            sec_policy_destination_ports = self.process_ports_objects(sec_policy, 'destinationPorts')
 
             sec_policy_time_ranges = []
             sec_policy_time_range_objects = sec_policy['timeRangeObjects']
@@ -300,6 +295,51 @@ class FMCSecurityDevice(SecurityDevice):
             print(f"It looks like there are no {network_object_type} literals on this policy.")
         
         return network_objects_list
+    
+    def process_ports_objects(self, sec_policy, port_object_type):
+        # configured networks will be any, unless stated otherwise
+        port_objects_list = ['any']
+
+        try:
+            print(f"I am looking for {port_object_type} objects...")
+            port_objects = sec_policy[port_object_type]['objects']
+            print(f"I have found {port_object_type} objects. These are: {port_objects}. I will now start to process them...")
+            for port_object in port_objects:
+                port_object_name = port_object['name']
+                port_objects_list.append(port_object_name)
+        
+        except KeyError:
+            print(f"It looks like there are no {port_object_type} objects on this policy.")
+
+        # now check for literal values
+        try:
+            print(f"I am looking for {port_object_type} literals...")
+            port_literals = sec_policy[port_object_type]['literals']
+            print(f"I have found {port_object_type} literals. These are: {port_literals}. I will now start to process them...")
+            
+            # loop through the network literals
+            for port_literal in port_literals:
+
+                # extract the value of the network literal
+                literal_protocol = port_literal['protocol']
+
+                # the protocol value is an integer representing a protocol code according to IANA
+                # it needs to be mapped to a string value in order to create a proper protocol name
+                # for the literal
+                # TODO: treat the case where the protocol is unknown
+                literal_protocol = helper.protocol_number_to_keyword(literal_protocol)
+
+                # extract the type of the network literal. can be either "Host" or "Network"
+                # the name of the converted object will depend on based on the network literal type
+                literal_protocol_nr = port_literal['port']
+
+                # create the name of the object (NL_networkaddress_netmask)
+                port_object_name = "PL_" + str(literal_protocol) + "_" + str(literal_protocol_nr)
+
+        except KeyError:
+            print(f"It looks like there are no {port_object_type} literals on this policy.")
+        
+        return port_objects_list
 
 
 class APISecurityDeviceFactory:

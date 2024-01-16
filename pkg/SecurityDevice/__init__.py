@@ -262,6 +262,10 @@ class SecurityDeviceDatabase(PioneerDatabase):
                         REFERENCES general_data_table(security_device_name)
                 );"""
             
+            #TODO: proper support for time ranges
+            case 'time_range_objects_table':
+                pass
+            
             # this table stores info about the objects who are overriden. the stored info is the object name, its value, the device where the override is set
             # TODO: add support for overridden objects
             case 'override_objects_table':
