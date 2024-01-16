@@ -285,6 +285,16 @@ if __name__ == "__main__":
     # list, delete of policy containers. 
     # support importing a list of containers
 
+#MIGRATION
+    # support for migrating managed devices. for example, migrate fw-01 managed by FMC to fw-01 managed by PANMC
+
+#IMPORTING
+    # create a caching mechanism. for example, for the objects. execute a GET request to get all the information regarding all the security objects
+    # and use the cached request response in order to use the data from there, instead of executing a GET request each time you need info from an object
+    # same with the policies and same for everything basically
+
+# CISCO FMC Security zones
+    # add support for interface groups
 
 # FIRST MILESTONE: perform a full migration of L4 firewall rules (without the migration of users) from FMC to PANMC
 # SECOND MILESTONE: add support for migrating users as well
