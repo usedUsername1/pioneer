@@ -87,6 +87,7 @@ class SecurityDeviceDatabase(PioneerDatabase):
                         REFERENCES general_data_table(security_device_name)
                 );"""
 
+            # TODO: do i need two tables here? one for pre-processing and one for post-processing?
             case 'security_policies_table':
                 command = """CREATE TABLE IF NOT EXISTS security_policies_table (
                 security_device_name TEXT NOT NULL,
@@ -286,7 +287,6 @@ class SecurityDeviceDatabase(PioneerDatabase):
                         REFERENCES general_data_table(object_container_name)
                 );"""
             
-            #TODO: proper support for time ranges
             case 'time_range_objects_table':
                 command = """CREATE TABLE IF NOT EXISTS time_based_objects_table(
                 time_object_name TEXT PRIMARY KEY,
@@ -392,7 +392,8 @@ class SecurityDevice():
     def delete_security_device(self):
         pass
 
-    # the following methods must be overriden by the device's specific methods 
+    # the following methods must be overriden by the device's specific methods
+    # TODO: add all the methods necessary here (e.g process methods)
     @abstractmethod
     def get_sec_policy_container_info(self):
         pass

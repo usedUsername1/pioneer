@@ -302,6 +302,9 @@ if __name__ == "__main__":
 # CISCO FMC Security zones
     # add support for interface groups
 
+# code in general:
+    # is there anyway in which every security device classes can have their own code file?
+
 # FIRST MILESTONE: perform a full migration of L4 firewall rules (without the migration of users) from FMC to PANMC
 # SECOND MILESTONE: add support for migrating users as well
 # THIRD MILESTONE: add IPv6 support for the firewall rules

@@ -150,12 +150,11 @@ class FMCSecurityDevice(SecurityDevice):
             sec_policy_source_ports = self.process_ports_objects(sec_policy, 'sourcePorts')
             sec_policy_destination_ports = self.process_ports_objects(sec_policy, 'destinationPorts')
 
-            sec_policy_time_objects = self.process_time_objects(sec_policy)
+            sec_policy_time_objects = self.process_schedule_objects(sec_policy)
 
-            sec_policy_users = sec_policy['users']
+            sec_policy_users = self.process_policy_users(sec_policy)
 
-            #TODO next: process the URLs
-            sec_policy_urls = sec_policy['urls']
+            sec_policy_urls = self.process_policy_urls(sec_policy)
             
             sec_policy_apps = sec_policy['applications']
             sec_policy_description = sec_policy['description']
@@ -259,13 +258,13 @@ class FMCSecurityDevice(SecurityDevice):
         except KeyError:
             print(f"It looks like there are no {network_object_type} objects on this policy.")
 
-        # now check for literal values
+        # now check for literal values.
         try:
             print(f"I am looking for {network_object_type} literals...")
             network_literals = sec_policy[network_object_type]['literals']
             print(f"I have found {network_object_type} literals. These are: {network_literals}. I will now start to process them...")
             
-            # loop through the network literals
+            # loop through the network literals.
             for network_literal in network_literals:
 
                 # extract the value of the network literal
@@ -335,7 +334,8 @@ class FMCSecurityDevice(SecurityDevice):
             for port_literal in port_literals:
 
                 literal_protocol = port_literal['protocol']
-
+                literal_port_nr = ''
+                # there are actually two types of literals: PortLiterals and ICMP literals (which can pe ICMPv4 or ICMPv6)
                 # the protocol value is an integer representing a protocol code according to IANA
                 # it needs to be mapped to a string value in order to create a proper protocol name
                 # for the literal
@@ -344,17 +344,26 @@ class FMCSecurityDevice(SecurityDevice):
                 # of the current port object will be skipped, the policy that contains this object
                 # will be marked with an warning
                 try:
-                    literal_protocol = helper.protocol_number_to_keyword(literal_protocol)
+                    literal_protocol_keyword = helper.protocol_number_to_keyword(literal_protocol)
+                    # if the protocol number is 1 or 58, then pioneer has encountered an ICMP-type protocol. there is no "port" key for such objects
+                    # however, there is an "icmpType" key. the following code treats this situation, and uses the icmptype as the port value
+                    # which will be further used by the program.
+                    if literal_protocol == "1" or literal_protocol == "58":
+                        print(f"I have encountered an ICMP literal: {port_literal['type']}.")
+                        literal_port_nr = port_literal['icmpType']
                 except PioneerExceptions.UnknownProtocolNumber:
-                    print(f"Protocol number: {literal_protocol_nr}, mapped to protocol {literal_protocol} is unkown.")
+                    print(f"Protocol number: {literal_port_nr} cannot be converted to a known IANA keyword.")
                     continue
 
                 # extract the type of the network literal. can be either "Host" or "Network"
                 # the name of the converted object will depend on based on the network literal type
-                literal_protocol_nr = port_literal['port']
+                literal_port_nr = port_literal['port']
 
                 # create the name of the object (NL_networkaddress_netmask)
-                port_object_name = "PL_" + str(literal_protocol) + "_" + str(literal_protocol_nr)
+                port_object_name = "PL_" + str(literal_protocol_keyword) + "_" + str(literal_port_nr)
+
+                # and append it to the port object list
+                port_objects_list.append(port_object_name)
             
             found_objects_or_literals = True 
 
@@ -367,8 +376,110 @@ class FMCSecurityDevice(SecurityDevice):
 
         return port_objects_list
 
-    #TODO: process the time objects
-    def process_time_objects(sec_policy):
+
+    def process_schedule_objects(sec_policy):
+        schedule_object_list = ['']
+        
+        try:
+            print(f"I am looking for schedule objects...")
+            schedule_objects = sec_policy['timeRangeObjects']
+            print(f"I have found schedule objects: {schedule_objects}. I will now start to process them...")
+            
+            # loop through the schedule_object objects
+            for schedule_object_object in schedule_objects:
+
+                # retrieve the schedule_object name
+                schedule_object_name = schedule_object_object['name']
+
+                # append it to the list
+                schedule_object_list.append(schedule_object_name)
+                print(f"I am done processing {schedule_object_object}. I have extracted the following data: name: {schedule_object_name}")
+        
+        except KeyError:
+            print(f"It looks like there are no schedule objects defined on this policy.")
+            # if there are no schedules defined on the policy, then return 'any'
+            schedule_object_list = ['any']
+        
+        return schedule_object_list
+
+    # TODO: maybe i need to process more stuff than names here
+    def process_policy_users(sec_policy):
+        policy_user_list = ['']
+        
+        try:
+            print(f"I am looking for policy users...")
+            policy_users = sec_policy['timeRangeObjects']
+            print(f"I have found policy users: {policy_users}. I will now start to process them...")
+            
+            # loop through the policy_user objects
+            for policy_user_object in policy_users:
+
+                # retrieve the policy_user name
+                policy_user_name = policy_user_object['name']
+
+                # append it to the list
+                policy_user_list.append(policy_user_name)
+                print(f"I am done processing {policy_user_object}. I have extracted the following data: name: {policy_user_name}")
+        
+        except KeyError:
+            print(f"It looks like there are no policy users defined on this policy.")
+            # if there are no users defined on the policy, then return 'any'
+            policy_user_list = ['any']
+        
+        return policy_user_list
+
+    # there are three cases which need to be processed here. the url can be an object, a literal, or a category with reputation
+    def process_policy_urls(sec_policy):
+        policy_url_list = ['']
+        found_objects_or_literals = False
+
+        try:
+            found_objects_or_literals = True
+            print(f"I am looking for policy URL objects...")
+            policy_url_objects = sec_policy['urls']['objects']
+            print(f"I have found URL objects: {policy_url_objects}. I will now start to process them...")
+            found_objects_or_literals = True
+
+            for policy_url_object in policy_url_objects:
+                pass
+        
+        except KeyError:
+            print(f"It looks like there are no URL objects on this policy.")
+        
+        try:
+            print(f"I am looking for policy URL literals...")
+            policy_url_literals = sec_policy['urls']['literals']
+            print(f"I have found policy URL literals: {policy_urls}. I will now start to process them...")
+            found_objects_or_literals = True
+
+            for policy_url_literal in policy_url_literals:
+                pass
+        
+        except KeyError:
+            print(f"It looks like there are no URL literals on this policy.")
+        
+        try:
+            print(f"I am looking for policy URL categories...")
+            policy_urls = sec_policy['urls']['urlCategoriesWithReputation']
+            print(f"I have found policy URL categories: {policy_urls}. I will now start to process them...")
+            found_objects_or_literals = True
+
+            for policy_url_object in policy_urls:
+                pass
+        
+        except KeyError:
+            print(f"It looks like there are no URL categories on this policy.")
+
+        # Append 'any' only if neither objects nor literals are found
+        if not found_objects_or_literals:
+            policy_url_list.append('any')
+
+        return policy_url_list
+
+    def process_policy_apps(sec_policy):
+        pass
+
+    def process_policy_comments(sec_policy):
         pass
 
 class APISecurityDeviceFactory:
@@ -387,4 +498,4 @@ class ConfigSecurityDeviceFactory:
     @staticmethod
     def build_config_security_device():
         pass
-            
+    
