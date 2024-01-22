@@ -288,11 +288,16 @@ if __name__ == "__main__":
 
 #MIGRATION
     # support for migrating managed devices. for example, migrate fw-01 managed by FMC to fw-01 managed by PANMC
+    # progress bar 
 
 #IMPORTING
     # create a caching mechanism. for example, for the objects. execute a GET request to get all the information regarding all the security objects
     # and use the cached request response in order to use the data from there, instead of executing a GET request each time you need info from an object
     # same with the policies and same for everything basically
+    
+    # what to do with the URLs names and with other unsupported parameters? for example,
+    # PA does not support "/" in the names of URL objects, like Cisco does. maybe we can use a function that will apply naming constraints when migrating.
+    # by doing this, this becomes a migrating issue, not an importing issue. everything should be imported exactly as it is defined on the source device. naming constraints and existance of the name constrained objects should be done accoriding to the target's device constraints
 
 # CISCO FMC Security zones
     # add support for interface groups

@@ -17,15 +17,12 @@ import utils.gvars as gvars
 class SecurityDeviceDatabase(PioneerDatabase):
     def __init__(self, cursor):
         super().__init__(cursor)
-        # do I actually need the table_factory in init?        
-        # self.table_factory("general_data_table")
-        # self.table_factory("security_device_table")
     
     def create_security_device_tables(self):
         self.table_factory("general_data_table")
         self.table_factory("security_policy_containers_table")
         self.table_factory("nat_policy_containers_table")
-        # self.table_factory("object_containers_table")
+        self.table_factory("object_containers_table")
         self.table_factory("security_policies_table")
         self.table_factory("policies_hitcount_table")
         # self.table_factory("nat_policies_table")
@@ -39,10 +36,10 @@ class SecurityDeviceDatabase(PioneerDatabase):
         self.table_factory("network_address_object_groups_table")
         self.table_factory("port_objects_table")
         self.table_factory("port_object_groups_table")
+        self.table_factory("time_range_objects_table")
         # self.table_factory("override_objects_table")
 
     
-    #TODO: there are fields that should be null, go all over the fields again and decide what is null and what isn ot null
     #TODO: tables for l7 and ping apps
     #TODO: table for time range objects
     def table_factory(self, table_name):
@@ -79,8 +76,17 @@ class SecurityDeviceDatabase(PioneerDatabase):
                     FOREIGN KEY(security_device_name)
                         REFERENCES general_data_table(security_device_name)
                 );"""
+            
+            case 'object_containers_table':
+                command = """CREATE TABLE IF NOT EXISTS object_containers_table (
+                security_device_name TEXT NOT NULL,
+                object_container_name TEXT PRIMARY KEY,
+                object_container_parent TEXT,
+                CONSTRAINT fk_sec_dev_name
+                    FOREIGN KEY(security_device_name)
+                        REFERENCES general_data_table(security_device_name)
+                );"""
 
-            #TODO: should there be a BOOL col for policies that use PING?
             case 'security_policies_table':
                 command = """CREATE TABLE IF NOT EXISTS security_policies_table (
                 security_device_name TEXT NOT NULL,
@@ -167,7 +173,10 @@ class SecurityDeviceDatabase(PioneerDatabase):
                 security_zone_description TEXT,
                 CONSTRAINT fk_sec_dev_name
                     FOREIGN KEY(security_device_name)
-                        REFERENCES general_data_table(security_device_name)
+                        REFERENCES general_data_table(security_device_name),
+                CONSTRAINT fk_obj_container
+                    FOREIGN KEY(object_container_name)
+                        REFERENCES general_data_table(object_container_name)
                 );"""
 
             case 'urls_table':
@@ -179,7 +188,10 @@ class SecurityDeviceDatabase(PioneerDatabase):
                 url_object_description TEXT,
                 CONSTRAINT fk_sec_dev_name
                     FOREIGN KEY(security_device_name)
-                        REFERENCES general_data_table(security_device_name)
+                        REFERENCES general_data_table(security_device_name),
+                CONSTRAINT fk_obj_container
+                    FOREIGN KEY(object_container_name)
+                        REFERENCES general_data_table(object_container_name)
                 );"""
 
             #TODO: add proper support for url categories
@@ -220,7 +232,10 @@ class SecurityDeviceDatabase(PioneerDatabase):
                 overriden_object BOOLEAN NOT NULL,
                 CONSTRAINT fk_sec_dev_name
                     FOREIGN KEY(security_device_name)
-                        REFERENCES general_data_table(security_device_name)
+                        REFERENCES general_data_table(security_device_name),
+                CONSTRAINT fk_obj_container
+                    FOREIGN KEY(object_container_name)
+                        REFERENCES general_data_table(object_container_name)
                 );"""
 
             case 'network_address_object_groups_table':
@@ -233,7 +248,10 @@ class SecurityDeviceDatabase(PioneerDatabase):
                 overriden_object BOOLEAN NOT NULL,
                 CONSTRAINT fk_sec_dev_name
                     FOREIGN KEY(security_device_name)
-                        REFERENCES general_data_table(security_device_name)
+                        REFERENCES general_data_table(security_device_name),
+                CONSTRAINT fk_obj_container
+                    FOREIGN KEY(object_container_name)
+                        REFERENCES general_data_table(object_container_name)
                 );"""
 
             case 'port_objects_table':
@@ -246,7 +264,10 @@ class SecurityDeviceDatabase(PioneerDatabase):
                 overriden_object BOOLEAN NOT NULL,
                 CONSTRAINT fk_sec_dev_name
                     FOREIGN KEY(security_device_name)
-                        REFERENCES general_data_table(security_device_name)
+                        REFERENCES general_data_table(security_device_name),
+                CONSTRAINT fk_obj_container
+                    FOREIGN KEY(object_container_name)
+                        REFERENCES general_data_table(object_container_name)
                 );"""
 
             case 'port_object_groups_table':
@@ -259,12 +280,36 @@ class SecurityDeviceDatabase(PioneerDatabase):
                 overriden_object BOOLEAN NOT NULL,
                 CONSTRAINT fk_sec_dev_name
                     FOREIGN KEY(security_device_name)
-                        REFERENCES general_data_table(security_device_name)
+                        REFERENCES general_data_table(security_device_name),
+                CONSTRAINT fk_obj_container
+                    FOREIGN KEY(object_container_name)
+                        REFERENCES general_data_table(object_container_name)
                 );"""
             
             #TODO: proper support for time ranges
             case 'time_range_objects_table':
-                pass
+                command = """CREATE TABLE IF NOT EXISTS time_based_objects_table(
+                time_object_name TEXT PRIMARY KEY,
+                security_device_name TEXT NOT NULL,
+                object_container_name TEXT NOT NULL,
+                recurring BOOLEAN NOT NULL,
+                start_date TEXT,
+                start_time TEXT,
+                end_date TEXT,
+                end_time TEXT,
+                reccurence_type TEXT,
+                daily_start TEXT,
+                daily_end TEXT,
+                week_day TEXT,
+                week_day_start TEXT,
+                week_day_end TEXT,
+                CONSTRAINT fk_sec_dev_name
+                    FOREIGN KEY(security_device_name)
+                        REFERENCES general_data_table(security_device_name),
+                CONSTRAINT fk_obj_container
+                    FOREIGN KEY(object_container_name)
+                        REFERENCES general_data_table(object_container_name)
+                )"""
             
             # this table stores info about the objects who are overriden. the stored info is the object name, its value, the device where the override is set
             # TODO: add support for overridden objects
