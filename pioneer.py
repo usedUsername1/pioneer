@@ -307,6 +307,8 @@ if __name__ == "__main__":
     # where should the policy containing users, ICMP, url categories and applications be tracked?
 
     # get a count with the policies retrieved and the policies imported
+
+    # continue testing the importing of l7 inline apps
     
     # maybe process the Failed to insert values into: security_policies_table. Reason: duplicate key value violates unique constraint in a better way
 

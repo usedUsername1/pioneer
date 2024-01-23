@@ -436,7 +436,7 @@ class FMCSecurityDevice(SecurityDevice):
         
         try:
             print(f"I am looking for policy users...")
-            policy_users = sec_policy['timeRangeObjects']
+            policy_users = sec_policy['users']['objects']
             print(f"I have found policy users: {policy_users}. I will now start to process them...")
             
             # loop through the policy_user objects
@@ -561,18 +561,22 @@ class FMCSecurityDevice(SecurityDevice):
 
             print(f"I have found Inline L7 application filters...: {policy_inline_l7_app_filters}. I will now start to process them...")
 
-            # Extract the keys from the first item in the Inline L7 application filters and create a list of these keys
+            # Extract the keys from the first dictionary in the 'policy_inline_l7_app_filters' list. 
+            # These keys represent the different categories or types in the Inline L7 application filters.
             policy_inline_l7_app_filter_keys_list = list(policy_inline_l7_app_filters[0].keys())
 
-            # Iterate over each key in the Inline L7 application filter keys list
+            # Iterate over each key/category in the Inline L7 application filter keys list.
             for policy_inline_l7_app_filter_key in policy_inline_l7_app_filter_keys_list:
-                # Access the elements of the current application filter using the key
-                policy_inline_l7_app_filter_elements = policy_inline_l7_app_filters[0][policy_inline_l7_app_filter_key]
-                
-                # Iterate over each element in the current Inline L7 application filter
-                for policy_inline_l7_app_filter_element in policy_inline_l7_app_filter_elements:
-                    # Append the name of the application filter element to the 'policy_l7_apps_list'
-                    policy_l7_apps_list.append(policy_inline_l7_app_filter_element['name'])
+                # Loop through each dictionary in 'policy_inline_l7_app_filters' list.
+                for index in range(len(policy_inline_l7_app_filters)):
+                    # Access the list of filter elements (like apps, URLs, etc.) under the current category specified by 'policy_inline_l7_app_filter_key'.
+                    policy_inline_l7_app_filter_elements = policy_inline_l7_app_filters[index][policy_inline_l7_app_filter_key]            
+                    
+                    # Iterate over each filter element in the current category of Inline L7 application filter.
+                    for policy_inline_l7_app_filter_element in policy_inline_l7_app_filter_elements:
+                        # Append the name of each filter element (e.g., specific app name) to the 'policy_l7_apps_list'.
+                        # This list accumulates all the app names from different categories in the Inline L7 application filters.
+                        policy_l7_apps_list.append(policy_inline_l7_app_filter_element['name'])
 
             found_objects_or_literals = True
         
