@@ -85,7 +85,7 @@ class PioneerDatabase():
         
         except psycopg2.Error as err:
             print(f"Failed to create table: {table_name}. Reason: {err}")
-            sys.exit(1)
+            # sys.exit(1)
     
 
     def get_table_value(self, table_name, select_command):
@@ -94,7 +94,7 @@ class PioneerDatabase():
         
         except psycopg2.Error as err:
             print(f"Failed to select values from table {table_name}. Reason: {err}")
-            sys.exit(1)
+            # sys.exit(1)
         
         # fetch the returned query values
         postgres_cursor_data = self._cursor.fetchall()
@@ -112,7 +112,7 @@ class PioneerDatabase():
         
         except psycopg2.Error as err:
             print(f"Failed to insert values into: {table_name}. Reason: {err}")
-            sys.exit(1)
+            # sys.exit(1)
 
 
     # this function updates values into a table

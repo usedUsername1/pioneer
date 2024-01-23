@@ -12,6 +12,7 @@ from pkg.DeviceObject.URL import URL
 from pkg.DeviceObject.L7Application import L7Application
 import utils.helper as helper
 import utils.gvars as gvars
+import json
 
 # TODO: create all the tables for all the objects
 class SecurityDeviceDatabase(PioneerDatabase):
@@ -415,6 +416,7 @@ class SecurityDevice():
     def insert_into_security_policies_table(self, sec_policy_data):
         # loop through the security policy data, extract it and then insert it to the table
         for current_policy_data in sec_policy_data:
+            print(current_policy_data)
             # the list values need to be formatted to a postgresql array format before they will be inserted in the DB
             formatted_security_policy_source_zones = "{" + ",".join( current_policy_data["sec_policy_source_zones"]) + "}"
             formatted_security_policy_destination_zones = "{" + ",".join( current_policy_data["sec_policy_destination_zones"]) + "}"
@@ -426,7 +428,18 @@ class SecurityDevice():
             formatted_security_policy_users = "{" + ",".join( current_policy_data["sec_policy_users"]) + "}"
             formatted_security_policy_urls = "{" + ",".join( current_policy_data["sec_policy_urls"]) + "}"
             formatted_security_policy_l7_apps = "{" + ",".join( current_policy_data["sec_policy_apps"]) + "}"
-            formatted_security_policy_comments = "{" + ",".join( current_policy_data["sec_policy_comments"]) + "}"
+            comments = current_policy_data["sec_policy_comments"]
+            if comments is not None:
+                # Convert each dictionary to a JSON string and escape double quotes for SQL
+                comments_as_json_strings = ['"' + json.dumps(comment).replace('"', '\\"') + '"' for comment in comments]
+                # Join the strings into a PostgreSQL array format
+                formatted_security_policy_comments = "{" + ",".join(comments_as_json_strings) + "}"
+            else:
+                # This block executes if 'sec_policy_comments' is None.
+                # Here, 'formatted_security_policy_comments' is set to an empty dictionary.
+                # This represents a valid empty JSON object.
+                # It's a safe placeholder for scenarios where there are no comments.
+                formatted_security_policy_comments = {}
             formatted_security_policy_log_setting = "{" + ",".join( current_policy_data["sec_policy_log_settings"]) + "}"
 
             insert_command = """
@@ -479,7 +492,7 @@ class SecurityDevice():
                     current_policy_data["sec_policy_section"],
                     current_policy_data["sec_policy_action"]
                 )
-
+            
             self._database.insert_table_value('security_policies_table', insert_command)
 
     def verify_duplicate(self, table, column, value):

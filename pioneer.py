@@ -212,8 +212,8 @@ def main():
                 # contains the information (thus the policies) it inherits from all the parents
                 # TODO: how/where/when should the objects be imported? should they be processed
                 # TODO: what to do regarding PING policies?
-                sec_policy_data = SpecificSecurityDeviceObject.get_sec_policies_data(child_container)
 
+                sec_policy_data = SpecificSecurityDeviceObject.get_sec_policies_data(passed_container_names_list)
                 # at this point, the data from all the security policies is extracted, it is time to insert it into the database
                 SpecificSecurityDeviceObject.insert_into_security_policies_table(sec_policy_data)
 
@@ -299,10 +299,16 @@ if __name__ == "__main__":
     # and use the cached request response in order to use the data from there, instead of executing a GET request each time you need info from an object
     # same with the policies and same for everything basically
     
+    # see what can eb done about duplicate policy names
+    
     # what to do with the URLs names and with other unsupported parameters? for example,
     # PA does not support "/" in the names of URL objects, like Cisco does. maybe we can use a function that will apply naming constraints when migrating.
     # by doing this, this becomes a migrating issue, not an importing issue. everything should be imported exactly as it is defined on the source device. naming constraints and existance of the name constrained objects should be done accoriding to the target's device constraints
     # where should the policy containing users, ICMP, url categories and applications be tracked?
+
+    # get a count with the policies retrieved and the policies imported
+    
+    # maybe process the Failed to insert values into: security_policies_table. Reason: duplicate key value violates unique constraint in a better way
 
 # CISCO FMC Security zones
     # add support for interface groups

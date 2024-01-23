@@ -111,113 +111,115 @@ class FMCSecurityDevice(SecurityDevice):
     # this function extracts all the data from the security policies of a policy container.
     # the data is returned in a list containing JSON
     # TODO: should process functions be followed by importing the processed objects?
-    def get_sec_policies_data(self, sec_policy_container):
+    def get_sec_policies_data(self, sec_policy_container_list):
         # execute the request to get all the security policies from the policy container
-        sec_policies = self._api_connection.policy.accesspolicy.accessrule.get(container_name=sec_policy_container)
+        for sec_policy_container in sec_policy_container_list:
+            sec_policies = self._api_connection.policy.accesspolicy.accessrule.get(container_name=sec_policy_container)
+            print(f"##########################{sec_policy_container}##########################")
 
-        # array that will be used for storing the information for each policy
-        sec_policy_info = []
-        # now loop through the policies
-        for sec_policy in sec_policies:
+            # array that will be used for storing the information for each policy
+            sec_policy_info = []
+            # now loop through the policies
+            for sec_policy in sec_policies:
 
-            # retrieve the name of the policy
-            sec_policy_name = sec_policy['name']
-            
-            # get the name of the container where the policy belongs
-            sec_policy_container_name = sec_policy['metadata']['accessPolicy']['name']
-            print(f"I am now processing the policy: {sec_policy_name} from the policy_container: {sec_policy_container_name}.")
-            
-            # get the category in which the security policy is placed
-            sec_policy_category = sec_policy['metadata']['category']
-            
-            # retrieve the status of the security policy (enabled/disabled)
-            sec_policy_status = ''
-            if sec_policy['enabled'] == True:
-                sec_policy_status = 'enabled'
-            else:
-                sec_policy_status = 'disabled'
-            
+                # retrieve the name of the policy
+                sec_policy_name = sec_policy['name']
+                
+                # get the name of the container where the policy belongs
+                sec_policy_container_name = sec_policy['metadata']['accessPolicy']['name']
+                print(f"I am now processing the policy: {sec_policy_name} from the policy_container: {sec_policy_container_name}.")
+                
+                # get the category in which the security policy is placed
+                sec_policy_category = sec_policy['metadata']['category']
+                
+                # retrieve the status of the security policy (enabled/disabled)
+                sec_policy_status = ''
+                if sec_policy['enabled'] == True:
+                    sec_policy_status = 'enabled'
+                else:
+                    sec_policy_status = 'disabled'
+                
 
-            # get the names of the source and destination zones
-            sec_policy_source_zones = self.process_security_zones(sec_policy, 'sourceZones')
-            sec_policy_destination_zones = self.process_security_zones(sec_policy, 'destinationZones')
+                # get the names of the source and destination zones
+                sec_policy_source_zones = self.process_security_zones(sec_policy, 'sourceZones')
+                sec_policy_destination_zones = self.process_security_zones(sec_policy, 'destinationZones')
 
-            # get the names of the network objects of the policy.
-            # there is a special case regarding literals. literals are values hard-coded on the policy itself. they are not objects
-            # however, not all security platforms support this implementation. literal values should be treated as objects
-            # every literal will be processed like this: the value of the literal, along with the literal type (host, network, etc...)
-            # will be retrieved and stored in the database using a convention for literal values.
-            # for example, literal value is 1.1.1.1. network objects will look something like this:
-            # NO_LV_1.1.1.1_32 (NetworkObject_LiteralValue_IP_CIDRMASK). 
-            # moreover, all of them will have a description of "Originally a literal value in FMC. Converted to object"
-            sec_policy_source_networks = self.process_network_objects(sec_policy, 'sourceNetworks') 
-            sec_policy_destination_networks = self.process_network_objects(sec_policy, 'destinationNetworks')
+                # get the names of the network objects of the policy.
+                # there is a special case regarding literals. literals are values hard-coded on the policy itself. they are not objects
+                # however, not all security platforms support this implementation. literal values should be treated as objects
+                # every literal will be processed like this: the value of the literal, along with the literal type (host, network, etc...)
+                # will be retrieved and stored in the database using a convention for literal values.
+                # for example, literal value is 1.1.1.1. network objects will look something like this:
+                # NO_LV_1.1.1.1_32 (NetworkObject_LiteralValue_IP_CIDRMASK). 
+                # moreover, all of them will have a description of "Originally a literal value in FMC. Converted to object"
+                sec_policy_source_networks = self.process_network_objects(sec_policy, 'sourceNetworks') 
+                sec_policy_destination_networks = self.process_network_objects(sec_policy, 'destinationNetworks')
 
-            # retrieve the source/destination ports of the policy
-            sec_policy_source_ports = self.process_ports_objects(sec_policy, 'sourcePorts')
-            sec_policy_destination_ports = self.process_ports_objects(sec_policy, 'destinationPorts')
+                # retrieve the source/destination ports of the policy
+                sec_policy_source_ports = self.process_ports_objects(sec_policy, 'sourcePorts')
+                sec_policy_destination_ports = self.process_ports_objects(sec_policy, 'destinationPorts')
 
-            # retrieve the time range objects of the policy
-            sec_policy_schedule_objects = self.process_schedule_objects(sec_policy)
+                # retrieve the time range objects of the policy
+                sec_policy_schedule_objects = self.process_schedule_objects(sec_policy)
 
-            # retrieve the users defined on the policy
-            sec_policy_users = self.process_policy_users(sec_policy)
+                # retrieve the users defined on the policy
+                sec_policy_users = self.process_policy_users(sec_policy)
 
-            # retrieve the URLs of the policy
-            sec_policy_urls = self.process_policy_urls(sec_policy)
-            
-            sec_policy_apps = self.process_policy_apps(sec_policy)
-            
-            sec_policy_description = ''
-            try:
-                print(f"I am looking for a policy description.")
-                sec_policy_description = sec_policy['description']
-                print(f"I have found the following description: {sec_policy_description}.")
-            except KeyError:
-                print(f"It looks like this policy has no description.")
+                # retrieve the URLs of the policy
+                sec_policy_urls = self.process_policy_urls(sec_policy)
+                
+                sec_policy_apps = self.process_policy_apps(sec_policy)
+                
+                sec_policy_description = ''
+                try:
+                    print(f"I am looking for a policy description.")
+                    sec_policy_description = sec_policy['description']
+                    print(f"I have found the following description: {sec_policy_description}.")
+                except KeyError:
+                    print(f"It looks like this policy has no description.")
 
-            sec_policy_comments = self.process_policy_comments(sec_policy)
+                sec_policy_comments = self.process_policy_comments(sec_policy)
 
-            # look for the policy logging settings
-            sec_policy_log_settings = []
-            if sec_policy['sendEventsToFMC'] == True:
-                sec_policy_log_settings.append('FMC')
-            
-            #TODO: see how to process the logging to syslog setting
-            if sec_policy['enableSyslog'] == True:
-                sec_policy_log_settings.append('Syslog')
+                # look for the policy logging settings
+                sec_policy_log_settings = []
+                if sec_policy['sendEventsToFMC'] == True:
+                    sec_policy_log_settings.append('FMC')
+                
+                #TODO: see how to process the logging to syslog setting
+                if sec_policy['enableSyslog'] == True:
+                    sec_policy_log_settings.append('Syslog')
 
-            sec_policy_log_start = sec_policy['logBegin']
-            sec_policy_log_end = sec_policy['logEnd']
-            sec_policy_section = sec_policy['metadata']['section']
-            sec_policy_action = sec_policy['action']
+                sec_policy_log_start = sec_policy['logBegin']
+                sec_policy_log_end = sec_policy['logEnd']
+                sec_policy_section = sec_policy['metadata']['section']
+                sec_policy_action = sec_policy['action']
 
-            sec_policy_entry = {"sec_policy_name": sec_policy_name,
-                                    "sec_policy_container_name": sec_policy_container_name,
-                                    "sec_policy_category": sec_policy_category,
-                                    "sec_policy_status": sec_policy_status,
-                                    "sec_policy_source_zones": sec_policy_source_zones,
-                                    "sec_policy_destination_zones": sec_policy_destination_zones,
-                                    "sec_policy_source_networks": sec_policy_source_networks,
-                                    "sec_policy_destination_networks": sec_policy_destination_networks,
-                                    "sec_policy_source_ports": sec_policy_source_ports,
-                                    "sec_policy_destination_ports": sec_policy_destination_ports,
-                                    "sec_policy_schedules": sec_policy_schedule_objects,
-                                    "sec_policy_users": sec_policy_users,
-                                    "sec_policy_urls": sec_policy_urls,
-                                    "sec_policy_apps": sec_policy_apps,
-                                    "sec_policy_description": sec_policy_description,
-                                    "sec_policy_comments": sec_policy_comments,
-                                    "sec_policy_log_settings": sec_policy_log_settings,
-                                    "sec_policy_log_start": sec_policy_log_start,
-                                    "sec_policy_log_end": sec_policy_log_end,
-                                    "sec_policy_section": sec_policy_section,
-                                    "sec_policy_action": sec_policy_action,
-                                    }
-    
-            # after all the info is retrieved from the security policy, append it to the list that will be returned to main
-            sec_policy_info.append(sec_policy_entry)
+                sec_policy_entry = {"sec_policy_name": sec_policy_name,
+                                        "sec_policy_container_name": sec_policy_container_name,
+                                        "sec_policy_category": sec_policy_category,
+                                        "sec_policy_status": sec_policy_status,
+                                        "sec_policy_source_zones": sec_policy_source_zones,
+                                        "sec_policy_destination_zones": sec_policy_destination_zones,
+                                        "sec_policy_source_networks": sec_policy_source_networks,
+                                        "sec_policy_destination_networks": sec_policy_destination_networks,
+                                        "sec_policy_source_ports": sec_policy_source_ports,
+                                        "sec_policy_destination_ports": sec_policy_destination_ports,
+                                        "sec_policy_schedules": sec_policy_schedule_objects,
+                                        "sec_policy_users": sec_policy_users,
+                                        "sec_policy_urls": sec_policy_urls,
+                                        "sec_policy_apps": sec_policy_apps,
+                                        "sec_policy_description": sec_policy_description,
+                                        "sec_policy_comments": sec_policy_comments,
+                                        "sec_policy_log_settings": sec_policy_log_settings,
+                                        "sec_policy_log_start": sec_policy_log_start,
+                                        "sec_policy_log_end": sec_policy_log_end,
+                                        "sec_policy_section": sec_policy_section,
+                                        "sec_policy_action": sec_policy_action,
+                                        }
         
+                # after all the info is retrieved from the security policy, append it to the list that will be returned to main
+                sec_policy_info.append(sec_policy_entry)
+            
         return sec_policy_info
 
     def get_device_version(self):
@@ -321,6 +323,7 @@ class FMCSecurityDevice(SecurityDevice):
 
                 # create the name of the object (NL_networkaddress_netmask)
                 network_object_name = "NL_" + str(network_address) + "_" + str(netmask)
+                network_objects_list.append(network_object_name)
             
             found_objects_or_literals = True
 
@@ -377,13 +380,10 @@ class FMCSecurityDevice(SecurityDevice):
                     if literal_protocol == "1" or literal_protocol == "58":
                         print(f"I have encountered an ICMP literal: {port_literal['type']}.")
                         literal_port_nr = port_literal['icmpType']
+                
                 except PioneerExceptions.UnknownProtocolNumber:
-                    print(f"Protocol number: {literal_port_nr} cannot be converted to a known IANA keyword.")
+                    print(f"Protocol number: {literal_protocol} cannot be converted to a known IANA keyword.")
                     continue
-
-                # extract the type of the network literal. can be either "Host" or "Network"
-                # the name of the converted object will depend on based on the network literal type
-                literal_port_nr = port_literal['port']
 
                 # create the name of the object (NL_networkaddress_netmask)
                 port_object_name = "PL_" + str(literal_protocol_keyword) + "_" + str(literal_port_nr)
@@ -552,19 +552,28 @@ class FMCSecurityDevice(SecurityDevice):
         # there are multiple inline app filters keys (risks, tags, types, categories, etc...)
         # this part of the code will loop through the inline app filter keys and retrieve the name
         # of the inline filter
-        # TODO: test this really well
+            # TODO: test this really well
         try:
             print(f"I am looking for Inline L7 application filters...")
+
+            # Access the Inline L7 application filters from the 'sec_policy' dictionary
             policy_inline_l7_app_filters = sec_policy['applications']['inlineApplicationFilters']
+
             print(f"I have found Inline L7 application filters...: {policy_inline_l7_app_filters}. I will now start to process them...")
 
-            for policy_inline_l7_app_filter_key in policy_inline_l7_app_filters.keys():
-                # now loop through the elements mapped to this key. for example, loop through the inline l7 application filters that are grouped by tags
-                for policy_inline_l7_app_filter in policy_inline_l7_app_filters[policy_inline_l7_app_filter_key]:
-                    policy_inline_l7_app_filter_name = policy_inline_l7_app_filter['name']
-                    # append the name to the list
-                    policy_l7_apps_list.append(policy_inline_l7_app_filter_name)
-        
+            # Extract the keys from the first item in the Inline L7 application filters and create a list of these keys
+            policy_inline_l7_app_filter_keys_list = list(policy_inline_l7_app_filters[0].keys())
+
+            # Iterate over each key in the Inline L7 application filter keys list
+            for policy_inline_l7_app_filter_key in policy_inline_l7_app_filter_keys_list:
+                # Access the elements of the current application filter using the key
+                policy_inline_l7_app_filter_elements = policy_inline_l7_app_filters[0][policy_inline_l7_app_filter_key]
+                
+                # Iterate over each element in the current Inline L7 application filter
+                for policy_inline_l7_app_filter_element in policy_inline_l7_app_filter_elements:
+                    # Append the name of the application filter element to the 'policy_l7_apps_list'
+                    policy_l7_apps_list.append(policy_inline_l7_app_filter_element['name'])
+
             found_objects_or_literals = True
         
         except KeyError:
@@ -576,7 +585,7 @@ class FMCSecurityDevice(SecurityDevice):
 
         return policy_l7_apps_list
     
-
+    # TODO: process comments, don't return them as dict, maybe as multi-dimensional arrays?
     def process_policy_comments(self, sec_policy):
         print(f"####### COMMENTS PROCESSING ####### ")
         comments_list = []
@@ -596,7 +605,7 @@ class FMCSecurityDevice(SecurityDevice):
                 comments_list.append({comment_user: comment_content})
         except KeyError:
             print(f"It looks like there are no comments on this policy")
-            comments_list = []
+            comments_list = None
 
         return comments_list
 
