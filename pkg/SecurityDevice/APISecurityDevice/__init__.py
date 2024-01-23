@@ -110,6 +110,7 @@ class FMCSecurityDevice(SecurityDevice):
     
     # this function extracts all the data from the security policies of a policy container.
     # the data is returned in a list containing JSON
+    # TODO: should process functions be followed by importing the processed objects?
     def get_sec_policies_data(self, sec_policy_container):
         # execute the request to get all the security policies from the policy container
         sec_policies = self._api_connection.policy.accesspolicy.accessrule.get(container_name=sec_policy_container)
@@ -147,27 +148,39 @@ class FMCSecurityDevice(SecurityDevice):
             sec_policy_source_networks = self.process_network_objects(sec_policy, 'sourceNetworks') 
             sec_policy_destination_networks = self.process_network_objects(sec_policy, 'destinationNetworks')
 
+            # retrieve the source/destination ports of the policy
             sec_policy_source_ports = self.process_ports_objects(sec_policy, 'sourcePorts')
             sec_policy_destination_ports = self.process_ports_objects(sec_policy, 'destinationPorts')
 
-            sec_policy_time_objects = self.process_schedule_objects(sec_policy)
+            # retrieve the time range objects of the policy
+            sec_policy_schedule_objects = self.process_schedule_objects(sec_policy)
 
+            # retrieve the users defined on the policy
             sec_policy_users = self.process_policy_users(sec_policy)
 
+            # retrieve the URLs of the policy
             sec_policy_urls = self.process_policy_urls(sec_policy)
             
-            sec_policy_apps = sec_policy['applications']
-            sec_policy_description = sec_policy['description']
-
-            sec_policy_comments = []
-            sec_policy_comment_history = sec_policy['commentHistoryList']
-
-            #TODO: see if a syslog server or sending logs to FMC is used
+            sec_policy_apps = self.process_policy_apps(sec_policy)
+            
+            sec_policy_description = ''
             try:
-                sec_policy_log_setting = sec_policy['sendEventsToFMC']
-                sec_policy_log_setting = 'FMC'
-            except: #TODO: what would be the error here? if sendevents is not present
-                sec_policy_log_setting = None
+                print(f"I am looking for a policy description.")
+                sec_policy_description = sec_policy['description']
+                print(f"I have found the following description: {sec_policy_description}.")
+            except KeyError:
+                print(f"It looks like this policy has no description.")
+
+            sec_policy_comments = self.process_policy_comments(sec_policy)
+
+            # look for the policy logging settings
+            sec_policy_log_setting = []
+            if sec_policy['sendEventsToFMC'] == True:
+                sec_policy_log_setting.append('FMC')
+            
+            #TODO: see how to process the logging to syslog setting
+            if sec_policy['enableSyslog'] == True:
+                sec_policy_log_setting.append('Syslog')
 
             sec_policy_log_start = sec_policy['logBegin']
             sec_policy_log_end = sec_policy['logEnd']
@@ -184,7 +197,7 @@ class FMCSecurityDevice(SecurityDevice):
                                     "sec_policy_destination_networks": sec_policy_destination_networks,
                                     "sec_policy_source_ports": sec_policy_source_ports,
                                     "sec_policy_destination_ports": sec_policy_destination_ports,
-                                    "sec_policy_time_range": sec_policy_time_objects,
+                                    "sec_policy_schedule": sec_policy_schedule_objects,
                                     "sec_policy_users": sec_policy_users,
                                     "sec_policy_urls": sec_policy_urls,
                                     "sec_policy_apps": sec_policy_apps,
@@ -196,6 +209,11 @@ class FMCSecurityDevice(SecurityDevice):
                                     "sec_policy_section": sec_policy_section,
                                     "sec_policy_action": sec_policy_action,
                                     }
+    
+            # after all the info is retrieved from the security policy, append it to the list that will be returned to main
+            sec_policy_info.append(sec_policy_info_json)
+        
+        return sec_policy_info
 
     def get_device_version(self):
         try:
@@ -213,7 +231,7 @@ class FMCSecurityDevice(SecurityDevice):
     # this is true for most of the configuration options which have the 'Any' parameter, therefore the retrieval of all
     # configuration options will be processed in try except KeyError blocks
     def process_security_zones(self, sec_policy, zone_type):
-        zone_list = ['']
+        zone_list = []
         
         try:
             print(f"I am looking for {zone_type} objects...")
@@ -240,7 +258,7 @@ class FMCSecurityDevice(SecurityDevice):
     # this function does pretty much the same thing like the function above.
     # there is a small problem here, we might enocunter literal values in the source/destination networks config of the policy
     def process_network_objects(self, sec_policy, network_object_type):
-        network_objects_list = ['']
+        network_objects_list = []
 
         # Flag to check if any objects or literals are found
         found_objects_or_literals = False
@@ -309,7 +327,7 @@ class FMCSecurityDevice(SecurityDevice):
         return network_objects_list
     
     def process_ports_objects(self, sec_policy, port_object_type):
-        port_objects_list = ['']
+        port_objects_list = []
         found_objects_or_literals = False
 
         try:
@@ -334,7 +352,7 @@ class FMCSecurityDevice(SecurityDevice):
             for port_literal in port_literals:
 
                 literal_protocol = port_literal['protocol']
-                literal_port_nr = ''
+                literal_port_nr = port_literal['port']
                 # there are actually two types of literals: PortLiterals and ICMP literals (which can pe ICMPv4 or ICMPv6)
                 # the protocol value is an integer representing a protocol code according to IANA
                 # it needs to be mapped to a string value in order to create a proper protocol name
@@ -378,7 +396,7 @@ class FMCSecurityDevice(SecurityDevice):
 
 
     def process_schedule_objects(sec_policy):
-        schedule_object_list = ['']
+        schedule_object_list = []
         
         try:
             print(f"I am looking for schedule objects...")
@@ -404,7 +422,7 @@ class FMCSecurityDevice(SecurityDevice):
 
     # TODO: maybe i need to process more stuff than names here
     def process_policy_users(sec_policy):
-        policy_user_list = ['']
+        policy_user_list = []
         
         try:
             print(f"I am looking for policy users...")
@@ -430,18 +448,19 @@ class FMCSecurityDevice(SecurityDevice):
 
     # there are three cases which need to be processed here. the url can be an object, a literal, or a category with reputation
     def process_policy_urls(sec_policy):
-        policy_url_list = ['']
+        policy_url_list = []
         found_objects_or_literals = False
 
         try:
-            found_objects_or_literals = True
             print(f"I am looking for policy URL objects...")
             policy_url_objects = sec_policy['urls']['objects']
             print(f"I have found URL objects: {policy_url_objects}. I will now start to process them...")
-            found_objects_or_literals = True
 
             for policy_url_object in policy_url_objects:
-                pass
+                policy_url_object_name = policy_url_object['name']
+                policy_url_list.append(policy_url_object_name)
+            
+            found_objects_or_literals = True
         
         except KeyError:
             print(f"It looks like there are no URL objects on this policy.")
@@ -449,23 +468,32 @@ class FMCSecurityDevice(SecurityDevice):
         try:
             print(f"I am looking for policy URL literals...")
             policy_url_literals = sec_policy['urls']['literals']
-            print(f"I have found policy URL literals: {policy_urls}. I will now start to process them...")
-            found_objects_or_literals = True
+            print(f"I have found policy URL literals: {policy_url_literals}. I will now start to process them...")
 
             for policy_url_literal in policy_url_literals:
-                pass
+                policy_url_literal_value = policy_url_literal['literals']
+                policy_url_list.append(policy_url_literal_value)
+            
+            found_objects_or_literals = True
         
         except KeyError:
             print(f"It looks like there are no URL literals on this policy.")
         
         try:
             print(f"I am looking for policy URL categories...")
-            policy_urls = sec_policy['urls']['urlCategoriesWithReputation']
-            print(f"I have found policy URL categories: {policy_urls}. I will now start to process them...")
+            policy_url_categories = sec_policy['urls']['urlCategoriesWithReputation']
+            print(f"I have found policy URL categories: {policy_url_categories}. I will now start to process them...")
             found_objects_or_literals = True
 
-            for policy_url_object in policy_urls:
-                pass
+            for policy_url_category in policy_url_categories:
+                category_name = policy_url_category['category']['name']
+                
+                # TODO: decide if the reputation is actually needed
+                category_reputation = policy_url_category['reputation']
+
+                policy_url_list.append(category_name)
+        
+            found_objects_or_literals = True
         
         except KeyError:
             print(f"It looks like there are no URL categories on this policy.")
@@ -476,11 +504,89 @@ class FMCSecurityDevice(SecurityDevice):
 
         return policy_url_list
 
+
     def process_policy_apps(sec_policy):
-        pass
+        policy_l7_apps_list = []
+        found_objects_or_literals = False
+
+        try:
+            print(f"I am looking for policy L7 apps...")
+            policy_l7_apps = sec_policy['applications']['applications']
+            print(f"I have found L7 apps: {policy_l7_apps}. I will now start to process them...")
+
+            for policy_l7_app in policy_l7_apps:
+                policy_l7_name = policy_l7_app['name']
+                policy_l7_apps_list.append(policy_l7_name)
+            
+            found_objects_or_literals = True
+        
+        except KeyError:
+            print(f"It looks like there are no L7 apps on this policy.")
+
+        try:
+            print(f"I am looking for L7 application filters ...")
+            policy_l7_app_filters = sec_policy['applications']['applicationFilters']
+            print(f"I have found L7 application filters: {policy_l7_app_filters}. I will now start to process them...")
+
+            for policy_l7_app_filter in policy_l7_app_filters:
+                policy_l7_app_filter_name = policy_l7_app_filter['name']
+                policy_l7_apps_list.append(policy_l7_app_filter_name)
+            
+            found_objects_or_literals = True
+        
+        except KeyError:
+            print(f"It looks like there are no URL literals on this policy.")
+
+        # there are multiple inline app filters keys (risks, tags, types, categories, etc...)
+        # this part of the code will loop through the inline app filter keys and retrieve the name
+        # of the inline filter
+        # TODO: test this really well
+        try:
+            print(f"I am looking for Inline L7 application filters...")
+            policy_inline_l7_app_filters = sec_policy['applications']['inlineApplicationFilters']
+            print(f"I have found Inline L7 application filters...: {policy_inline_l7_app_filters}. I will now start to process them...")
+
+            for policy_inline_l7_app_filter_key in policy_inline_l7_app_filters.keys():
+                # now loop through the elements mapped to this key. for example, loop through the inline l7 application filters that are grouped by tags
+                for policy_inline_l7_app_filter in policy_inline_l7_app_filters[policy_inline_l7_app_filter_key]:
+                    policy_inline_l7_app_filter_name = policy_inline_l7_app_filter['name']
+                    # append the name to the list
+                    policy_l7_apps_list.append(policy_inline_l7_app_filter_name)
+        
+            found_objects_or_literals = True
+        
+        except KeyError:
+            print(f"It looks like there are no L7 inline application filters on this policy.")
+
+        # Append 'any' only if nothing is found
+        if not found_objects_or_literals:
+            policy_l7_apps_list.append('any')
+
+        return policy_l7_apps_list
+    
 
     def process_policy_comments(sec_policy):
-        pass
+        comments_list = []
+        
+        try:
+            print(f"I am looking for policy comments comments...")
+            comments = sec_policy['commentHistoryList']
+            print(f"I have found policy comments... {comments}. I will now start to process them")
+            for comment in comments:
+                # retrieve the user that made the comment
+                comment_user = comment['user']['name']
+
+                # retrieve the content of the comment
+                comment_content = comment['comment']
+
+                # append a dictionary with the user who mande the comment and the content of the comment
+                comments_list.append({comment_user: comment_content})
+        except KeyError:
+            print("It looks like there are no comments on this poliy")
+            comments_list = None
+
+        return comments_list
+
 
 class APISecurityDeviceFactory:
     @staticmethod
@@ -498,4 +604,3 @@ class ConfigSecurityDeviceFactory:
     @staticmethod
     def build_config_security_device():
         pass
-    

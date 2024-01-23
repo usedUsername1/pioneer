@@ -36,7 +36,7 @@ class SecurityDeviceDatabase(PioneerDatabase):
         self.table_factory("network_address_object_groups_table")
         self.table_factory("port_objects_table")
         self.table_factory("port_object_groups_table")
-        self.table_factory("time_range_objects_table")
+        self.table_factory("schedule_objects_table")
         # self.table_factory("override_objects_table")
 
     
@@ -101,7 +101,7 @@ class SecurityDeviceDatabase(PioneerDatabase):
                 security_policy_destination_networks TEXT[] NOT NULL,
                 security_policy_source_ports TEXT[] NOT NULL,
                 security_policy_destination_ports TEXT[] NOT NULL,
-                security_policy_time_range TEXT[] NOT NULL,
+                security_policy_schedule TEXT[] NOT NULL,
                 security_policy_users TEXT[] NOT NULL,
                 security_policy_urls TEXT[] NOT NULL,
                 security_policy_l7_apps TEXT[] NOT NULL,
@@ -111,6 +111,7 @@ class SecurityDeviceDatabase(PioneerDatabase):
                 security_policy_log_start BOOLEAN NOT NULL,
                 security_policy_log_end BOOLEAN NOT NULL,
                 security_policy_section TEXT,
+                security_policy_action TEXT,
                 CONSTRAINT fk_sec_dev_name
                     FOREIGN KEY(security_device_name)
                         REFERENCES general_data_table(security_device_name),
@@ -287,9 +288,9 @@ class SecurityDeviceDatabase(PioneerDatabase):
                         REFERENCES general_data_table(object_container_name)
                 );"""
             
-            case 'time_range_objects_table':
-                command = """CREATE TABLE IF NOT EXISTS time_based_objects_table(
-                time_object_name TEXT PRIMARY KEY,
+            case 'schedule_objects_table':
+                command = """CREATE TABLE IF NOT EXISTS schedule_objects_table(
+                schedule_object_name TEXT PRIMARY KEY,
                 security_device_name TEXT NOT NULL,
                 object_container_name TEXT NOT NULL,
                 recurring BOOLEAN NOT NULL,
@@ -382,6 +383,62 @@ class SecurityDevice():
                             VALUES('{}', '{}', '{}')""".format(self._name, container_name, container_parent)
         
         self._database.insert_table_value('security_policy_containers_table', insert_command)
+    
+    def insert_into_security_policies_table(self, sec_policy_data):
+        # loop through the security policy data, extract it and then insert it to the table
+        for current_policy_data in sec_policy_data:
+            insert_command = """
+                INSERT INTO security_policies_table (
+                    security_device_name, 
+                    security_policy_name, 
+                    security_policy_container_name, 
+                    security_policy_category, 
+                    security_policy_status, 
+                    security_policy_source_zones, 
+                    security_policy_destination_zones, 
+                    security_policy_source_networks, 
+                    security_policy_destination_networks, 
+                    security_policy_source_ports, 
+                    security_policy_destination_ports, 
+                    security_policy_schedule, 
+                    security_policy_users, 
+                    security_policy_urls, 
+                    security_policy_l7_apps, 
+                    security_policy_description, 
+                    security_policy_comments, 
+                    security_policy_log_setting, 
+                    security_policy_log_start, 
+                    security_policy_log_end, 
+                    security_policy_section, 
+                    security_policy_action
+                ) VALUES (
+                    '{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}'
+                )""".format(
+                    current_policy_data["security_device_name"],
+                    current_policy_data["sec_policy_name"],
+                    current_policy_data["sec_policy_container_name"],
+                    current_policy_data["sec_policy_category"],
+                    current_policy_data["sec_policy_status"],
+                    current_policy_data["sec_policy_source_zones"],
+                    current_policy_data["sec_policy_destination_zones"],
+                    current_policy_data["sec_policy_source_networks"],
+                    current_policy_data["sec_policy_destination_networks"],
+                    current_policy_data["sec_policy_source_ports"],
+                    current_policy_data["sec_policy_destination_ports"],
+                    current_policy_data["sec_policy_schedule"],
+                    current_policy_data["sec_policy_users"],
+                    current_policy_data["sec_policy_urls"],
+                    current_policy_data["sec_policy_l7_apps"],
+                    current_policy_data["sec_policy_description"],
+                    current_policy_data["sec_policy_comments"],
+                    current_policy_data["sec_policy_log_setting"],
+                    current_policy_data["sec_policy_log_start"],
+                    current_policy_data["sec_policy_log_end"],
+                    current_policy_data["sec_policy_section"],
+                    current_policy_data["sec_policy_action"]
+                )
+
+        self._database.insert_table_value('security_policies_table', insert_command)
 
     def verify_duplicate(self, table, column, value):
         select_command = """SELECT EXISTS(SELECT 1 FROM {} WHERE {} = '{}');""".format(table, column, value)

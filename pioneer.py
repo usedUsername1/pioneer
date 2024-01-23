@@ -203,12 +203,13 @@ def main():
                         SpecificSecurityDeviceObject.insert_into_security_policy_containers_table(child_container, parent_container)
 
                         # import the security policies (data) that are part of the imported security policy containers
-                        # the policy container info extracted earlier can be used here. we can use the child container entry
-                        # TODO: finish extracting the data from the policies.
+                        # the policy container info extracted earlier can be used here. we can use the child container entry since the child container
+                        # contains the information (thus the policies) it inherits from all the parents
                         # TODO: how/where/when should the objects be imported? should they be processed
-                        # TODO: do it like above. get all the data, pass it here, insert it here
                         # TODO: what to do regarding PING policies?
-                        sec_policy_data, sec_policy_objects_data = SpecificSecurityDeviceObject.get_sec_policies_data(child_container)
+                        sec_policy_data = SpecificSecurityDeviceObject.get_sec_policies_data(child_container)
+
+                        # at this point, the data from all the 
                 
                 # if there is not container info returned by the function, value of security_policy_container_info is None.
                 # the reason a None is returned: the container is already in the database
@@ -298,6 +299,7 @@ if __name__ == "__main__":
     # what to do with the URLs names and with other unsupported parameters? for example,
     # PA does not support "/" in the names of URL objects, like Cisco does. maybe we can use a function that will apply naming constraints when migrating.
     # by doing this, this becomes a migrating issue, not an importing issue. everything should be imported exactly as it is defined on the source device. naming constraints and existance of the name constrained objects should be done accoriding to the target's device constraints
+    # where should the policy containing users, ICMP, url categories and applications be tracked?
 
 # CISCO FMC Security zones
     # add support for interface groups
