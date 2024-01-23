@@ -200,24 +200,24 @@ def main():
                         parent_container = current_container_entry[1]
 
                         # now that the information is retrieved, insert it into the table
-                        SpecificSecurityDeviceObject.insert_into_security_policy_containers_table(child_container, parent_container)
-
-                        # import the security policies (data) that are part of the imported security policy containers
-                        # the policy container info extracted earlier can be used here. we can use the child container entry since the child container
-                        # contains the information (thus the policies) it inherits from all the parents
-                        # TODO: how/where/when should the objects be imported? should they be processed
-                        # TODO: what to do regarding PING policies?
-                        sec_policy_data = SpecificSecurityDeviceObject.get_sec_policies_data(child_container)
-
-                        # at this point, the data from all the security policies is extracted, it is time to insert it into the database
-                        SpecificSecurityDeviceObject.insert_into_security_policies_table(sec_policy_data)
-
-
-                
+                        SpecificSecurityDeviceObject.insert_into_security_policy_containers_table(child_container, parent_container)                
                 # if there is not container info returned by the function, value of security_policy_container_info is None.
                 # the reason a None is returned: the container is already in the database
                 except TypeError:
                     print("The container you are trying to import is already in the database.")
+                    sys.exit(1)
+
+                # import the security policies (data) that are part of the imported security policy containers
+                # the policy container info extracted earlier can be used here. we can use the child container entry since the child container
+                # contains the information (thus the policies) it inherits from all the parents
+                # TODO: how/where/when should the objects be imported? should they be processed
+                # TODO: what to do regarding PING policies?
+                sec_policy_data = SpecificSecurityDeviceObject.get_sec_policies_data(child_container)
+
+                # at this point, the data from all the security policies is extracted, it is time to insert it into the database
+                SpecificSecurityDeviceObject.insert_into_security_policies_table(sec_policy_data)
+
+
 
             # # append the security policies names to the list with all the policies
             # policy_list.append(security_policies)
@@ -309,6 +309,9 @@ if __name__ == "__main__":
 
 # code in general:
     # is there anyway in which every security device classes can have their own code file?
+
+# DATABASE:
+    # ensure the cursor and db conn are properly closed after executing database oprations
 
 # FIRST MILESTONE: perform a full migration of L4 firewall rules (without the migration of users) from FMC to PANMC
 # SECOND MILESTONE: add support for migrating users as well

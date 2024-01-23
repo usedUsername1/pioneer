@@ -101,13 +101,13 @@ class SecurityDeviceDatabase(PioneerDatabase):
                 security_policy_destination_networks TEXT[] NOT NULL,
                 security_policy_source_ports TEXT[] NOT NULL,
                 security_policy_destination_ports TEXT[] NOT NULL,
-                security_policy_schedule TEXT[] NOT NULL,
+                security_policy_schedules TEXT[] NOT NULL,
                 security_policy_users TEXT[] NOT NULL,
                 security_policy_urls TEXT[] NOT NULL,
                 security_policy_l7_apps TEXT[] NOT NULL,
                 security_policy_description TEXT,
                 security_policy_comments TEXT[],
-                security_policy_log_setting TEXT,
+                security_policy_log_setting TEXT[],
                 security_policy_log_start BOOLEAN NOT NULL,
                 security_policy_log_end BOOLEAN NOT NULL,
                 security_policy_section TEXT,
@@ -178,7 +178,7 @@ class SecurityDeviceDatabase(PioneerDatabase):
                         REFERENCES general_data_table(security_device_name),
                 CONSTRAINT fk_obj_container
                     FOREIGN KEY(object_container_name)
-                        REFERENCES general_data_table(object_container_name)
+                        REFERENCES object_containers_table(object_container_name)
                 );"""
 
             case 'urls_table':
@@ -193,7 +193,7 @@ class SecurityDeviceDatabase(PioneerDatabase):
                         REFERENCES general_data_table(security_device_name),
                 CONSTRAINT fk_obj_container
                     FOREIGN KEY(object_container_name)
-                        REFERENCES general_data_table(object_container_name)
+                        REFERENCES object_containers_table(object_container_name)
                 );"""
 
             #TODO: add proper support for url categories
@@ -237,7 +237,7 @@ class SecurityDeviceDatabase(PioneerDatabase):
                         REFERENCES general_data_table(security_device_name),
                 CONSTRAINT fk_obj_container
                     FOREIGN KEY(object_container_name)
-                        REFERENCES general_data_table(object_container_name)
+                        REFERENCES object_containers_table(object_container_name)
                 );"""
 
             case 'network_address_object_groups_table':
@@ -253,7 +253,7 @@ class SecurityDeviceDatabase(PioneerDatabase):
                         REFERENCES general_data_table(security_device_name),
                 CONSTRAINT fk_obj_container
                     FOREIGN KEY(object_container_name)
-                        REFERENCES general_data_table(object_container_name)
+                        REFERENCES object_containers_table(object_container_name)
                 );"""
 
             case 'port_objects_table':
@@ -269,7 +269,7 @@ class SecurityDeviceDatabase(PioneerDatabase):
                         REFERENCES general_data_table(security_device_name),
                 CONSTRAINT fk_obj_container
                     FOREIGN KEY(object_container_name)
-                        REFERENCES general_data_table(object_container_name)
+                        REFERENCES object_containers_table(object_container_name)
                 );"""
 
             case 'port_object_groups_table':
@@ -285,7 +285,7 @@ class SecurityDeviceDatabase(PioneerDatabase):
                         REFERENCES general_data_table(security_device_name),
                 CONSTRAINT fk_obj_container
                     FOREIGN KEY(object_container_name)
-                        REFERENCES general_data_table(object_container_name)
+                        REFERENCES object_containers_table(object_container_name)
                 );"""
             
             case 'schedule_objects_table':
@@ -309,7 +309,7 @@ class SecurityDeviceDatabase(PioneerDatabase):
                         REFERENCES general_data_table(security_device_name),
                 CONSTRAINT fk_obj_container
                     FOREIGN KEY(object_container_name)
-                        REFERENCES general_data_table(object_container_name)
+                        REFERENCES object_containers_table(object_container_name)
                 )"""
             
             # this table stores info about the objects who are overriden. the stored info is the object name, its value, the device where the override is set
@@ -411,11 +411,24 @@ class SecurityDevice():
         """.format(self._name, container_name, container_parent)
         
         self._database.insert_table_value('security_policy_containers_table', insert_command)
-    
-    
+        
     def insert_into_security_policies_table(self, sec_policy_data):
         # loop through the security policy data, extract it and then insert it to the table
         for current_policy_data in sec_policy_data:
+            # the list values need to be formatted to a postgresql array format before they will be inserted in the DB
+            formatted_security_policy_source_zones = "{" + ",".join( current_policy_data["sec_policy_source_zones"]) + "}"
+            formatted_security_policy_destination_zones = "{" + ",".join( current_policy_data["sec_policy_destination_zones"]) + "}"
+            formatted_security_policy_source_networks = "{" + ",".join( current_policy_data["sec_policy_source_networks"]) + "}"
+            formatted_security_policy_destination_networks = "{" + ",".join( current_policy_data["sec_policy_destination_networks"]) + "}"
+            formatted_security_policy_source_ports = "{" + ",".join( current_policy_data["sec_policy_source_ports"]) + "}"
+            formatted_security_policy_destination_ports = "{" + ",".join( current_policy_data["sec_policy_destination_ports"]) + "}"
+            formatted_security_policy_schedules = "{" + ",".join( current_policy_data["sec_policy_schedules"]) + "}"
+            formatted_security_policy_users = "{" + ",".join( current_policy_data["sec_policy_users"]) + "}"
+            formatted_security_policy_urls = "{" + ",".join( current_policy_data["sec_policy_urls"]) + "}"
+            formatted_security_policy_l7_apps = "{" + ",".join( current_policy_data["sec_policy_apps"]) + "}"
+            formatted_security_policy_comments = "{" + ",".join( current_policy_data["sec_policy_comments"]) + "}"
+            formatted_security_policy_log_setting = "{" + ",".join( current_policy_data["sec_policy_log_settings"]) + "}"
+
             insert_command = """
                 INSERT INTO security_policies_table (
                     security_device_name, 
@@ -429,7 +442,7 @@ class SecurityDevice():
                     security_policy_destination_networks, 
                     security_policy_source_ports, 
                     security_policy_destination_ports, 
-                    security_policy_schedule, 
+                    security_policy_schedules, 
                     security_policy_users, 
                     security_policy_urls, 
                     security_policy_l7_apps, 
@@ -443,31 +456,31 @@ class SecurityDevice():
                 ) VALUES (
                     '{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}'
                 )""".format(
-                    current_policy_data["security_device_name"],
+                    self._name,
                     current_policy_data["sec_policy_name"],
                     current_policy_data["sec_policy_container_name"],
                     current_policy_data["sec_policy_category"],
                     current_policy_data["sec_policy_status"],
-                    current_policy_data["sec_policy_source_zones"],
-                    current_policy_data["sec_policy_destination_zones"],
-                    current_policy_data["sec_policy_source_networks"],
-                    current_policy_data["sec_policy_destination_networks"],
-                    current_policy_data["sec_policy_source_ports"],
-                    current_policy_data["sec_policy_destination_ports"],
-                    current_policy_data["sec_policy_schedule"],
-                    current_policy_data["sec_policy_users"],
-                    current_policy_data["sec_policy_urls"],
-                    current_policy_data["sec_policy_l7_apps"],
+                    formatted_security_policy_source_zones,
+                    formatted_security_policy_destination_zones,
+                    formatted_security_policy_source_networks,
+                    formatted_security_policy_destination_networks,
+                    formatted_security_policy_source_ports,
+                    formatted_security_policy_destination_ports,
+                    formatted_security_policy_schedules,
+                    formatted_security_policy_users,
+                    formatted_security_policy_urls,
+                    formatted_security_policy_l7_apps,
                     current_policy_data["sec_policy_description"],
-                    current_policy_data["sec_policy_comments"],
-                    current_policy_data["sec_policy_log_setting"],
+                    formatted_security_policy_comments,
+                    formatted_security_policy_log_setting,
                     current_policy_data["sec_policy_log_start"],
                     current_policy_data["sec_policy_log_end"],
                     current_policy_data["sec_policy_section"],
                     current_policy_data["sec_policy_action"]
                 )
 
-        self._database.insert_table_value('security_policies_table', insert_command)
+            self._database.insert_table_value('security_policies_table', insert_command)
 
     def verify_duplicate(self, table, column, value):
         select_command = """SELECT EXISTS(SELECT 1 FROM {} WHERE {} = '{}');""".format(table, column, value)

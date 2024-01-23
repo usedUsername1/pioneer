@@ -131,7 +131,12 @@ class FMCSecurityDevice(SecurityDevice):
             sec_policy_category = sec_policy['metadata']['category']
             
             # retrieve the status of the security policy (enabled/disabled)
-            sec_policy_status = sec_policy['enabled']
+            sec_policy_status = ''
+            if sec_policy['enabled'] == True:
+                sec_policy_status = 'enabled'
+            else:
+                sec_policy_status = 'disabled'
+            
 
             # get the names of the source and destination zones
             sec_policy_source_zones = self.process_security_zones(sec_policy, 'sourceZones')
@@ -174,20 +179,20 @@ class FMCSecurityDevice(SecurityDevice):
             sec_policy_comments = self.process_policy_comments(sec_policy)
 
             # look for the policy logging settings
-            sec_policy_log_setting = []
+            sec_policy_log_settings = []
             if sec_policy['sendEventsToFMC'] == True:
-                sec_policy_log_setting.append('FMC')
+                sec_policy_log_settings.append('FMC')
             
             #TODO: see how to process the logging to syslog setting
             if sec_policy['enableSyslog'] == True:
-                sec_policy_log_setting.append('Syslog')
+                sec_policy_log_settings.append('Syslog')
 
             sec_policy_log_start = sec_policy['logBegin']
             sec_policy_log_end = sec_policy['logEnd']
             sec_policy_section = sec_policy['metadata']['section']
             sec_policy_action = sec_policy['action']
 
-            sec_policy_info_json = {"sec_policy_name": sec_policy_name,
+            sec_policy_entry = {"sec_policy_name": sec_policy_name,
                                     "sec_policy_container_name": sec_policy_container_name,
                                     "sec_policy_category": sec_policy_category,
                                     "sec_policy_status": sec_policy_status,
@@ -197,13 +202,13 @@ class FMCSecurityDevice(SecurityDevice):
                                     "sec_policy_destination_networks": sec_policy_destination_networks,
                                     "sec_policy_source_ports": sec_policy_source_ports,
                                     "sec_policy_destination_ports": sec_policy_destination_ports,
-                                    "sec_policy_schedule": sec_policy_schedule_objects,
+                                    "sec_policy_schedules": sec_policy_schedule_objects,
                                     "sec_policy_users": sec_policy_users,
                                     "sec_policy_urls": sec_policy_urls,
                                     "sec_policy_apps": sec_policy_apps,
                                     "sec_policy_description": sec_policy_description,
                                     "sec_policy_comments": sec_policy_comments,
-                                    "sec_policy_log_setting": sec_policy_log_setting,
+                                    "sec_policy_log_settings": sec_policy_log_settings,
                                     "sec_policy_log_start": sec_policy_log_start,
                                     "sec_policy_log_end": sec_policy_log_end,
                                     "sec_policy_section": sec_policy_section,
@@ -211,7 +216,7 @@ class FMCSecurityDevice(SecurityDevice):
                                     }
     
             # after all the info is retrieved from the security policy, append it to the list that will be returned to main
-            sec_policy_info.append(sec_policy_info_json)
+            sec_policy_info.append(sec_policy_entry)
         
         return sec_policy_info
 
@@ -231,6 +236,7 @@ class FMCSecurityDevice(SecurityDevice):
     # this is true for most of the configuration options which have the 'Any' parameter, therefore the retrieval of all
     # configuration options will be processed in try except KeyError blocks
     def process_security_zones(self, sec_policy, zone_type):
+        print(f"####### ZONE PROCESSING ####### ")
         zone_list = []
         
         try:
@@ -258,6 +264,7 @@ class FMCSecurityDevice(SecurityDevice):
     # this function does pretty much the same thing like the function above.
     # there is a small problem here, we might enocunter literal values in the source/destination networks config of the policy
     def process_network_objects(self, sec_policy, network_object_type):
+        print(f"####### NETWORK OBJECTS PROCESSING ####### ")
         network_objects_list = []
 
         # Flag to check if any objects or literals are found
@@ -327,6 +334,7 @@ class FMCSecurityDevice(SecurityDevice):
         return network_objects_list
     
     def process_ports_objects(self, sec_policy, port_object_type):
+        print(f"####### PORT OBJECTS PROCESSING ####### ")
         port_objects_list = []
         found_objects_or_literals = False
 
@@ -395,7 +403,8 @@ class FMCSecurityDevice(SecurityDevice):
         return port_objects_list
 
 
-    def process_schedule_objects(sec_policy):
+    def process_schedule_objects(self, sec_policy):
+        print(f"####### SCHEDULE OBJECTS PROCESSING ####### ")
         schedule_object_list = []
         
         try:
@@ -421,7 +430,8 @@ class FMCSecurityDevice(SecurityDevice):
         return schedule_object_list
 
     # TODO: maybe i need to process more stuff than names here
-    def process_policy_users(sec_policy):
+    def process_policy_users(self, sec_policy):
+        print(f"####### USERS PROCESSING ####### ")
         policy_user_list = []
         
         try:
@@ -447,7 +457,8 @@ class FMCSecurityDevice(SecurityDevice):
         return policy_user_list
 
     # there are three cases which need to be processed here. the url can be an object, a literal, or a category with reputation
-    def process_policy_urls(sec_policy):
+    def process_policy_urls(self, sec_policy):
+        print(f"####### URL PROCESSING ####### ")
         policy_url_list = []
         found_objects_or_literals = False
 
@@ -505,7 +516,8 @@ class FMCSecurityDevice(SecurityDevice):
         return policy_url_list
 
 
-    def process_policy_apps(sec_policy):
+    def process_policy_apps(self, sec_policy):
+        print(f"####### APPS PROCESSING ####### ")
         policy_l7_apps_list = []
         found_objects_or_literals = False
 
@@ -565,7 +577,8 @@ class FMCSecurityDevice(SecurityDevice):
         return policy_l7_apps_list
     
 
-    def process_policy_comments(sec_policy):
+    def process_policy_comments(self, sec_policy):
+        print(f"####### COMMENTS PROCESSING ####### ")
         comments_list = []
         
         try:
@@ -582,8 +595,8 @@ class FMCSecurityDevice(SecurityDevice):
                 # append a dictionary with the user who mande the comment and the content of the comment
                 comments_list.append({comment_user: comment_content})
         except KeyError:
-            print("It looks like there are no comments on this poliy")
-            comments_list = None
+            print(f"It looks like there are no comments on this policy")
+            comments_list = []
 
         return comments_list
 
