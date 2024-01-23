@@ -372,17 +372,46 @@ class SecurityDevice():
         return security_device_type
     
     def insert_into_general_table(self, security_device_username, security_device_secret, security_device_hostname, security_device_type, security_device_port, security_device_version, domain):
-        insert_command = """INSERT INTO general_data_table (security_device_name, security_device_username, security_device_secret,
-                                            security_device_hostname, security_device_type, security_device_port, security_device_version, security_device_domain)
-                                    VALUES ('{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}');""".format(self._name, security_device_username, security_device_secret, security_device_hostname, security_device_type, security_device_port, security_device_version, domain)
+        insert_command = """
+            INSERT INTO general_data_table (
+                security_device_name, 
+                security_device_username, 
+                security_device_secret,
+                security_device_hostname, 
+                security_device_type, 
+                security_device_port, 
+                security_device_version, 
+                security_device_domain
+            ) VALUES (
+                '{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}'
+            );
+        """.format(
+            self._name, 
+            security_device_username, 
+            security_device_secret, 
+            security_device_hostname, 
+            security_device_type, 
+            security_device_port, 
+            security_device_version, 
+            domain
+        )
 
         self._database.insert_table_value('general_data_table', insert_command)
 
+
     def insert_into_security_policy_containers_table(self, container_name, container_parent):
-        insert_command = """INSERT INTO security_policy_containers_table (security_device_name, security_policy_container_name, security_policy_container_parent)
-                            VALUES('{}', '{}', '{}')""".format(self._name, container_name, container_parent)
+        insert_command = """
+            INSERT INTO security_policy_containers_table (
+                security_device_name, 
+                security_policy_container_name, 
+                security_policy_container_parent
+            ) VALUES (
+                '{}', '{}', '{}'
+            )
+        """.format(self._name, container_name, container_parent)
         
         self._database.insert_table_value('security_policy_containers_table', insert_command)
+    
     
     def insert_into_security_policies_table(self, sec_policy_data):
         # loop through the security policy data, extract it and then insert it to the table

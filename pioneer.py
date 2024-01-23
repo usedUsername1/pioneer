@@ -209,7 +209,10 @@ def main():
                         # TODO: what to do regarding PING policies?
                         sec_policy_data = SpecificSecurityDeviceObject.get_sec_policies_data(child_container)
 
-                        # at this point, the data from all the 
+                        # at this point, the data from all the security policies is extracted, it is time to insert it into the database
+                        SpecificSecurityDeviceObject.insert_into_security_policies_table(sec_policy_data)
+
+
                 
                 # if there is not container info returned by the function, value of security_policy_container_info is None.
                 # the reason a None is returned: the container is already in the database
