@@ -336,66 +336,59 @@ class FMCSecurityDevice(SecurityDevice):
 
         return network_objects_list
     
+
     def process_ports_objects(self, sec_policy, port_object_type):
         print(f"####### PORT OBJECTS PROCESSING ####### ")
         port_objects_list = []
         found_objects_or_literals = False
 
+        # Check for objects in the security policy
         try:
             print(f"I am looking for {port_object_type} objects...")
             port_objects = sec_policy[port_object_type]['objects']
             print(f"I have found {port_object_type} objects. These are: {port_objects}. I will now start to process them...")
+
+            # Process each port object
             for port_object in port_objects:
                 port_object_name = port_object['name']
                 port_objects_list.append(port_object_name)
-            
             found_objects_or_literals = True
         
         except KeyError:
             print(f"It looks like there are no {port_object_type} objects on this policy.")
 
-        # now check for literal values
+        # Check for literal values in the security policy
         try:
             print(f"I am looking for {port_object_type} literals...")
             port_literals = sec_policy[port_object_type]['literals']
             print(f"I have found {port_object_type} literals. These are: {port_literals}. I will now start to process them...")
-            
-            for port_literal in port_literals:
+            found_objects_or_literals = True 
 
+            # Process each port literal
+            for port_literal in port_literals:
                 literal_protocol = port_literal['protocol']
-                literal_port_nr = port_literal['port']
-                # there are actually two types of literals: PortLiterals and ICMP literals (which can pe ICMPv4 or ICMPv6)
-                # the protocol value is an integer representing a protocol code according to IANA
-                # it needs to be mapped to a string value in order to create a proper protocol name
-                # for the literal
-                
-                # if the passed protocol number is unkown, an exception will be raised, the processing
-                # of the current port object will be skipped, the policy that contains this object
-                # will be marked with an warning
+
+                # Handle ICMP literals separately
+                if literal_protocol in ["1", "58"]:
+                    print(f"I have encountered an ICMP literal: {port_literal['type']}.")
+                    literal_port_nr = port_literal['icmpType']
+                else:
+                    literal_port_nr = port_literal['port']
+
+                # Convert protocol number to a known IANA keyword
                 try:
                     literal_protocol_keyword = helper.protocol_number_to_keyword(literal_protocol)
-                    # if the protocol number is 1 or 58, then pioneer has encountered an ICMP-type protocol. there is no "port" key for such objects
-                    # however, there is an "icmpType" key. the following code treats this situation, and uses the icmptype as the port value
-                    # which will be further used by the program.
-                    if literal_protocol == "1" or literal_protocol == "58":
-                        print(f"I have encountered an ICMP literal: {port_literal['type']}.")
-                        literal_port_nr = port_literal['icmpType']
-                
                 except PioneerExceptions.UnknownProtocolNumber:
                     print(f"Protocol number: {literal_protocol} cannot be converted to a known IANA keyword.")
                     continue
 
-                # create the name of the object (NL_networkaddress_netmask)
-                port_object_name = "PL_" + str(literal_protocol_keyword) + "_" + str(literal_port_nr)
-
-                # and append it to the port object list
+                # Create the name of the port object
+                port_object_name = f"PL_{literal_protocol_keyword}_{literal_port_nr}"
                 port_objects_list.append(port_object_name)
-            
-            found_objects_or_literals = True 
 
         except KeyError:
             print(f"It looks like there are no {port_object_type} literals on this policy.")
-        
+
         # Append 'any' only if neither objects nor literals are found
         if not found_objects_or_literals:
             port_objects_list.append('any')

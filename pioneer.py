@@ -217,6 +217,8 @@ def main():
                 # at this point, the data from all the security policies is extracted, it is time to insert it into the database
                 SpecificSecurityDeviceObject.insert_into_security_policies_table(sec_policy_data)
 
+                # TODO: at this point all the security policy data is imported. it is time to import the object data. before this, test ICMP literals
+
 
 
             # # append the security policies names to the list with all the policies
