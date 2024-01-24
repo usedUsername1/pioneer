@@ -168,7 +168,6 @@ def main():
         # sub-if statements for importing and getting parameters
         # the import of the objects will be done for a specific policy container
         # after the policies are imported, all the policies are scanned for objects and the objects will be imported in the device's database
-            # TODO: should the import of objects be separately supported? maybe, why not?
         # if the user wants to import config, the following will be imported:
             # the security policy containers. this is a generic name for the places different vendors store the firewall policies. for example, Cisco uses Access Control Policies (ACPs), PA uses device groups, etc
             # the nat policy containers. same as security policy containers
@@ -217,7 +216,10 @@ def main():
                 # at this point, the data from all the security policies is extracted, it is time to insert it into the database
                 SpecificSecurityDeviceObject.insert_into_security_policies_table(sec_policy_data)
 
-                # TODO: at this point all the security policy data is imported. it is time to import the object data. before this, test ICMP literals
+                # TODO: at this point all the security policy data is imported. it is time to import the object data.
+                SpecificSecurityDeviceObject.get_objects_data()
+
+                # after all the object data is retrieved, it is time to insert it into the database
 
 
 
@@ -314,16 +316,22 @@ if __name__ == "__main__":
     
     # maybe process the Failed to insert values into: security_policies_table. Reason: duplicate key value violates unique constraint in a better way
 
-    # import the managed devices
-    
+    # import the managed devices 
+
+    # Test the  code by creating a security policy with no users, no apps, etc to see how it behaves with empty data sets!
+
+    # enable the import of every single container/config if "import-config --all"
+
 # CISCO FMC Security zones
     # add support for interface groups
 
 # code in general:
     # is there anyway in which every security device classes can have their own code file?
+    # add doc strings for the parameters to all functions
 
 # DATABASE:
     # ensure the cursor and db conn are properly closed after executing database oprations
+    # parameterize all the queries
 
 # FIRST MILESTONE: perform a full migration of L4 firewall rules (without the migration of users) from FMC to PANMC
 # SECOND MILESTONE: add support for migrating users as well

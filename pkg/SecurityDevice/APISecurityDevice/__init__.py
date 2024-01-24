@@ -44,9 +44,7 @@ class FMCSecurityDevice(SecurityDevice):
 
 #     def import_object_containers(self):
 #         pass
-    def import_objects(self, policy_list):
-        pass
-
+        
     # this function takes the list with policy container names and loops through each of them.
     # for every container, it tries to find the container parent. if the parent container is a child of another container, it will find that parent too
     # ACP = access control policy = the security policy container used by FMC
@@ -582,7 +580,7 @@ class FMCSecurityDevice(SecurityDevice):
 
         return policy_l7_apps_list
     
-    # TODO: process comments, don't return them as dict, maybe as multi-dimensional arrays?
+    # TODO: process comments, don't return them as dict, maybe as list with user_comment
     def process_policy_comments(self, sec_policy):
         print(f"####### COMMENTS PROCESSING ####### ")
         comments_list = []
@@ -605,6 +603,27 @@ class FMCSecurityDevice(SecurityDevice):
             comments_list = None
 
         return comments_list
+    
+    # this function aggregates multiple functions, each responsible for getting data from different objects
+    # TODO: decide where 'any' should be removed from the list
+    # store all the info as a json, and return the json back to main, which will be responsible for adding it
+    # to the database
+    def get_objects_data(self):
+        # get the zone objects data
+        
+        # get the network address objects data
+
+        # get the port objects data
+
+        # get the schedule objects data
+
+        # get the policy users data
+
+        # get the url objects data
+
+        # get the applications
+        
+        pass
 
 
 class APISecurityDeviceFactory:

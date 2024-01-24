@@ -375,43 +375,43 @@ class SecurityDevice():
     
     # the following functions process the data from the database. all the objects are processed, the unique values
     # are gathered and returned in a list that will be further processed by the program
-    def get_db_security_zone_objects(self):
-        select_command = "SELECT security_policy_source_zones, security_policy_destination_zones from security_policies_table;"
-        
-        # execute the SQL query and fetch the results
-        security_zones_query_result = self._database.get_table_value('general_data_table', select_command)
+    def get_db_objects(self, object_type):
+        """
+        Retrieve and return unique database objects based on the specified type.
 
-        #TODO: make the flattening a separate function in helper
-        # Flattening the query result list and remove duplicates
-        flattened_list = [item for sublist in security_zones_query_result for item in sublist]
-        
-        # Flatten the list further to remove single-item lists
-        flattened_list = [item[0] for item in flattened_list if len(item) > 0]
-        
-        security_zones_set = set(flattened_list)
+        :param object_type: The type of objects to retrieve. It should correspond to a column in the database.
+        :return: A list of unique objects of the specified type.
+        """
+        # Map object types to their respective columns in the database
+        object_column_mapping = {
+            'security_zone_objects': ['security_policy_source_zones', 'security_policy_destination_zones'],
+            'network_objects': ['security_policy_source_networks', 'security_policy_destination_networks'],
+            'port_objects': ['security_policy_source_ports', 'security_policy_destination_ports'],
+            'schedule_objects': ['security_policy_schedules'],
+            'policy_users': ['security_policy_users'],
+            'url_objects': ['security_policy_urls'],
+            'app_objects': ['security_policy_l7_apps'],
+        }
 
-        unique_security_zones_list = list(security_zones_set)
+        if object_type not in object_column_mapping:
+            raise ValueError(f"Invalid object type: {object_type}")
 
-        # return the list with the unique values to the caller
-        return unique_security_zones_list
+        # Construct the SQL query
+        columns = ", ".join(object_column_mapping[object_type])
+        select_command = f"SELECT {columns} FROM security_policies_table;"
 
-    def get_db_network_objects(self):
-        pass
+        # Execute the SQL query and fetch the results
+        query_result = self._database.get_table_value('security_policies_table', select_command)
 
-    def get_db_port_objects(self):
-        pass
+        # Flatten the results so that the unique values can be returned
+        unique_objects_list = self._database.flatten_query_result(query_result)
 
-    def get_db_schedule_objects(self):
-        pass
+        # remove the 'any' element of the list, if it exists. it is not an object that can be imported
+        element_to_remove = 'any'
+        if element_to_remove in unique_objects_list:
+            unique_objects_list.remove(element_to_remove)
 
-    def get_db_users(self):
-        pass
-
-    def get_db_url_objects(self):
-        pass
-
-    def get_db_app_objects(self):
-        pass
+        return unique_objects_list
 
 
     def insert_into_general_table(self, security_device_username, security_device_secret, security_device_hostname, security_device_type, security_device_port, security_device_version, domain):

@@ -126,6 +126,26 @@ class PioneerDatabase():
             print(f"Failed to insert values into: {table_name}. Reason: {err}")
             sys.exit(1)
 
+    def flatten_query_result(self, query_result):
+        # First, flatten the list to remove nested lists
+        flattened_list = [item for sublist in query_result for item in sublist]
+
+        # Check if the elements in the flattened list are lists themselves
+        # and extract their first element if they are non-empty
+        flattened_list = [item[0] for item in flattened_list if isinstance(item, list) and len(item) > 0]
+
+        # Convert the list to a set to remove duplicate values and then back to a list
+        unique_values_list = list(set(flattened_list))
+
+        # Return the list with unique values
+        return unique_values_list
+
+# Example usage
+# query_result = [[['value1']], [['value2']], [['value3']], ...]
+# result = flatten_query_result(query_result)
+# print(result) # Output: ['value1', 'value2', 'value3', ...]
+
+
     
     # # this function inserts the metadata regarding the pioneer projects. will be overridden with "pass" by sub-classes in order to "stop" it from being inherited
     # def insert_into_projects_metadata(self, project_name, project_devices, project_description, creation_timestamp):
