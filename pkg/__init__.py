@@ -101,7 +101,8 @@ class PioneerDatabase():
 
         # extract the output returned from the select query. the returned value is a list of tuples
         # since there is only one tuple in the list, it makes sense to extract it like this
-        return postgres_cursor_data[0][0]
+        # return postgres_cursor_data[0][0]
+        return postgres_cursor_data
     
 
     # this function inserts values into a table of a database

@@ -337,41 +337,83 @@ class SecurityDevice():
     # maybe we should have import functions here? the import functions will be used for importing the configuration
     # from the device. the get functions will be used to retrieve info from the object's database
     # the following methods can be universal?
+    # TODO: all the below functions should process the output returned.
     def get_security_device_type(self):        
         select_command = "SELECT security_device_type FROM general_data_table WHERE security_device_name = '{}'".format(self._name)
         security_device_type = self._database.get_table_value('general_data_table', select_command)
-        return security_device_type
+        return security_device_type[0][0]
 
     def get_security_device_hostname(self):
         select_command = "SELECT security_device_hostname FROM general_data_table WHERE security_device_name = '{}'".format(self._name)
         security_device_hostname = self._database.get_table_value('general_data_table', select_command)
-        return security_device_hostname
+        return security_device_hostname[0][0]
 
     def get_security_device_username(self):
         select_command = "SELECT security_device_username FROM general_data_table WHERE security_device_name = '{}'".format(self._name)
         security_device_hostname = self._database.get_table_value('general_data_table', select_command)
-        return security_device_hostname
+        return security_device_hostname[0][0]
 
     def get_security_device_secret(self):
         select_command = "SELECT security_device_secret FROM general_data_table WHERE security_device_name = '{}'".format(self._name)
         security_device_secret = self._database.get_table_value('general_data_table', select_command)
-        return security_device_secret
+        return security_device_secret[0][0]
 
     def get_security_device_domain(self):
         select_command = "SELECT security_device_domain FROM general_data_table WHERE security_device_name = '{}'".format(self._name)
         security_device_domain = self._database.get_table_value('general_data_table', select_command)
-        return security_device_domain
+        return security_device_domain[0][0]
 
     def get_security_device_port(self):
         select_command = "SELECT security_device_port FROM general_data_table WHERE security_device_name = '{}'".format(self._name)
-        security_device_type = self._database.get_table_value('general_data_table', select_command)
-        return security_device_type
+        security_device_port = self._database.get_table_value('general_data_table', select_command)
+        return security_device_port[0][0]
     
     def get_security_device_version(self):
         select_command = "SELECT security_device_version FROM general_data_table WHERE security_device_name = '{}'".format(self._name)
-        security_device_type = self._database.get_table_value('general_data_table', select_command)
-        return security_device_type
+        security_device_version = self._database.get_table_value('general_data_table', select_command)
+        return security_device_version[0][0]
     
+    # the following functions process the data from the database. all the objects are processed, the unique values
+    # are gathered and returned in a list that will be further processed by the program
+    def get_db_security_zone_objects(self):
+        select_command = "SELECT security_policy_source_zones, security_policy_destination_zones from security_policies_table;"
+        
+        # execute the SQL query and fetch the results
+        security_zones_query_result = self._database.get_table_value('general_data_table', select_command)
+
+        #TODO: make the flattening a separate function in helper
+        # Flattening the query result list and remove duplicates
+        flattened_list = [item for sublist in security_zones_query_result for item in sublist]
+        
+        # Flatten the list further to remove single-item lists
+        flattened_list = [item[0] for item in flattened_list if len(item) > 0]
+        
+        security_zones_set = set(flattened_list)
+
+        unique_security_zones_list = list(security_zones_set)
+
+        # return the list with the unique values to the caller
+        return unique_security_zones_list
+
+    def get_db_network_objects(self):
+        pass
+
+    def get_db_port_objects(self):
+        pass
+
+    def get_db_schedule_objects(self):
+        pass
+
+    def get_db_users(self):
+        pass
+
+    def get_db_url_objects(self):
+        pass
+
+    def get_db_app_objects(self):
+        pass
+
+
     def insert_into_general_table(self, security_device_username, security_device_secret, security_device_hostname, security_device_type, security_device_port, security_device_version, domain):
         insert_command = """
             INSERT INTO general_data_table (
@@ -429,6 +471,8 @@ class SecurityDevice():
             formatted_security_policy_urls = "{" + ",".join( current_policy_data["sec_policy_urls"]) + "}"
             formatted_security_policy_l7_apps = "{" + ",".join( current_policy_data["sec_policy_apps"]) + "}"
             comments = current_policy_data["sec_policy_comments"]
+            
+            # TODO: not sure this is the most optimal solution, maybe retrieve all the comments in a list, without dictionaries
             if comments is not None:
                 # Convert each dictionary to a JSON string and escape double quotes for SQL
                 comments_as_json_strings = ['"' + json.dumps(comment).replace('"', '\\"') + '"' for comment in comments]
@@ -509,41 +553,73 @@ class SecurityDevice():
     @abstractmethod
     def get_sec_policy_container_info(self):
         pass
-
+    
     @abstractmethod
     def get_sec_policies_data(self):
         pass
 
     @abstractmethod
-    def import_nat_policy_containers(self):
+    def process_security_zones(self):
         pass
 
     @abstractmethod
-    def import_object_containers(self):
+    def process_network_objects(self):
         pass
 
     @abstractmethod
-    def import_objects(self):
+    def process_ports_objects(self):
         pass
 
     @abstractmethod
-    def import_network_address_objects(self):
+    def process_schedule_objects(self):
         pass
 
     @abstractmethod
-    def import_network_group_objects(self):
+    def process_policy_users(self):
         pass
 
     @abstractmethod
-    def import_port_objects(self):
+    def process_policy_urls(self):
         pass
 
     @abstractmethod
-    def import_port_group_objects(self):
+    def process_policy_apps(self):
         pass
 
     @abstractmethod
-    def import_url_objects(self):
+    def process_policy_comments(self):
+        pass
+
+    @abstractmethod
+    def get_nat_policy_containers(self):
+        pass
+
+    @abstractmethod
+    def get_object_containers(self):
+        pass
+
+    @abstractmethod
+    def get_objects(self):
+        pass
+
+    @abstractmethod
+    def get_network_address_objects(self):
+        pass
+
+    @abstractmethod
+    def get_network_group_objects(self):
+        pass
+
+    @abstractmethod
+    def get_port_objects(self):
+        pass
+
+    @abstractmethod
+    def get_port_group_objects(self):
+        pass
+
+    @abstractmethod
+    def get_url_objects(self):
         pass
 
     @abstractmethod
@@ -553,4 +629,3 @@ class SecurityDevice():
     @abstractmethod
     def connect_to_security_device(self):
         pass
-

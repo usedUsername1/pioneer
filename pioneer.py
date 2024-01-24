@@ -314,6 +314,8 @@ if __name__ == "__main__":
     
     # maybe process the Failed to insert values into: security_policies_table. Reason: duplicate key value violates unique constraint in a better way
 
+    # import the managed devices
+    
 # CISCO FMC Security zones
     # add support for interface groups
 

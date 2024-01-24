@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from pkg.SecurityDevice import SecurityDevice, SecurityDeviceDatabase, SecurityDeviceConnection
+from pkg.SecurityDevice import SecurityDevice, SecurityDeviceConnection
 import utils.helper as helper
 import fireREST
 import sys
