@@ -190,7 +190,6 @@ def main():
                 # be aware, if a security policy package is imported, its parents will also be imported
                 # check if the provided containers are not already imported
                 security_policy_container_info = SpecificSecurityDeviceObject.get_sec_policy_container_info(passed_container_names_list)
-
                 # now loop through the containers' information
                 try:
                     for current_container_entry in security_policy_container_info:
@@ -202,7 +201,8 @@ def main():
                         SpecificSecurityDeviceObject.insert_into_security_policy_containers_table(child_container, parent_container)                
                 # if there is not container info returned by the function, value of security_policy_container_info is None.
                 # the reason a None is returned: the container is already in the database
-                except TypeError:
+                except TypeError as err:
+                    print(err)
                     print("The container you are trying to import is already in the database.")
                     sys.exit(1)
 
@@ -321,6 +321,8 @@ if __name__ == "__main__":
     # Test the  code by creating a security policy with no users, no apps, etc to see how it behaves with empty data sets!
 
     # enable the import of every single container/config if "import-config --all"
+
+    # track all protocols that are not TCP or UDP
 
 # CISCO FMC Security zones
     # add support for interface groups

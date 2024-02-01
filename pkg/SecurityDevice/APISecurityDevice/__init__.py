@@ -49,11 +49,11 @@ class FMCSecurityDevice(SecurityDevice):
     # for every container, it tries to find the container parent. if the parent container is a child of another container, it will find that parent too
     # ACP = access control policy = the security policy container used by FMC
     def get_sec_policy_container_info(self, policy_container_names_list):
-        
         # loop through the policy containers provided by the user
         for policy_container_name in policy_container_names_list:
             # check if the current container name was already imported
             is_duplicate_acp = self.verify_duplicate('security_policy_containers_table', 'security_policy_container_name', policy_container_name)
+            print(is_duplicate_acp)
             if(is_duplicate_acp):
                 print(f"Container: {policy_container_name} is already imported. Skipping it...")
                 continue
