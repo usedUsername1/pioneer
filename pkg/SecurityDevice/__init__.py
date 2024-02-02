@@ -38,6 +38,7 @@ class SecurityDeviceDatabase(PioneerDatabase):
         self.table_factory("port_objects_table")
         self.table_factory("port_object_groups_table")
         self.table_factory("schedule_objects_table")
+        self.table_factory("managed_devices_table")
         # self.table_factory("override_objects_table")
 
     
@@ -232,6 +233,7 @@ class SecurityDeviceDatabase(PioneerDatabase):
                 object_container_name TEXT NOT NULL,
                 network_address_value TEXT,
                 network_address_description TEXT,
+                network_address_type TEXT,
                 overriden_object BOOLEAN NOT NULL,
                 CONSTRAINT fk_sec_dev_name
                     FOREIGN KEY(security_device_name)
@@ -312,6 +314,18 @@ class SecurityDeviceDatabase(PioneerDatabase):
                     FOREIGN KEY(object_container_name)
                         REFERENCES object_containers_table(object_container_name)
                 )"""
+
+            case 'managed_devices_table':
+                command = """CREATE TABLE IF NOT EXISTS managed_devices_table (
+                security_device_name TEXT NOT NULL,
+                managed_device_name TEXT PRIMARY KEY,
+                assigned_security_policy_container TEXT,
+                hostname TEXT,
+                cluster TEXT,
+                CONSTRAINT fk_sec_dev_name
+                    FOREIGN KEY(security_device_name)
+                        REFERENCES general_data_table(security_device_name)
+                );"""
             
             # this table stores info about the objects who are overriden. the stored info is the object name, its value, the device where the override is set
             # TODO: add support for overridden objects
@@ -412,6 +426,27 @@ class SecurityDevice():
             unique_objects_list.remove(element_to_remove)
 
         return unique_objects_list
+
+    def insert_into_managed_devices_table(self, managed_device_info):
+        # loop through the managed devices info, extract the data and insert it into the table
+        for managed_device_entry in managed_device_info:
+            managed_device_name = managed_device_entry["managed_device_name"]
+            assigned_security_policy_container = managed_device_entry["assigned_security_policy_container"]
+            hostname = managed_device_entry["hostname"]
+            cluster = managed_device_entry['cluster']
+
+            insert_command = """
+            INSERT INTO managed_devices_table (
+            security_device_name,
+            managed_device_name,
+            assigned_security_policy_container,
+            hostname,
+            cluster
+            ) VALUES (
+            '{}', '{}', '{}', '{}', '{}'
+            );""".format(self._name, managed_device_name, assigned_security_policy_container, hostname, cluster)
+
+            self._database.insert_table_value('managed_devices_table', insert_command)
 
 
     def insert_into_general_table(self, security_device_username, security_device_secret, security_device_hostname, security_device_type, security_device_port, security_device_version, domain):
@@ -542,7 +577,6 @@ class SecurityDevice():
     def verify_duplicate(self, table, column, value):
         select_command = """SELECT EXISTS(SELECT 1 FROM {} WHERE {} = '{}');""".format(table, column, value)
         is_duplicate = self._database.get_table_value(table, select_command)
-
 
         return is_duplicate[0][0]
 

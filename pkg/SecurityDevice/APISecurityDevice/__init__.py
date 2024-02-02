@@ -41,10 +41,36 @@ class FMCSecurityDevice(SecurityDevice):
 
 #     def import_nat_policy_containers(self):
 #         pass
-
-#     def import_object_containers(self):
-#         pass
         
+    def get_managed_devices_info(self):
+        # execute the request to retrieve the info about the devices
+        print(f"########################## GETTING MANAGED DEVICES INFO ##########################")
+        managed_devices = self._api_connection.device.devicerecord.get()
+        managed_devices_info = []
+        # loop through the info
+        for managed_device in managed_devices:
+            device_name = managed_device['name']
+            assigned_security_policy_container = managed_device['accessPolicy']['name']
+            device_hostname = managed_device['hostName']
+            device_cluster = None
+            # if the device is part of a cluster, then the 'containerDetails' key is present in the 'metadata' JSON response
+            try:
+                device_cluster = managed_device['metadata']['containerDetails']['name']
+            except KeyError:
+                print(f"Device {device_name} is not part of a device cluster.")
+
+            # this will be returned back to the caller, the info here will be inserted in the database
+            managed_device_entry = {"managed_device_name":device_name,
+                                    "assigned_security_policy_container":assigned_security_policy_container,
+                                    "hostname":device_hostname,
+                                    "cluster":device_cluster}
+            
+            # append the managed devices info to the list that will be returned to the caller
+            managed_devices_info.append(managed_device_entry)
+        
+        # return the list to the caller
+        return managed_devices_info
+
     # this function takes the list with policy container names and loops through each of them.
     # for every container, it tries to find the container parent. if the parent container is a child of another container, it will find that parent too
     # ACP = access control policy = the security policy container used by FMC
@@ -604,25 +630,73 @@ class FMCSecurityDevice(SecurityDevice):
 
         return comments_list
     
+
+    # def get_zone_objects_info(self):
+    #     pass
+
+    def process_network_address_object(self, network_address_objects_info):
+        pass
+
+    def process_network_address_group_object(self, network_address_group_objects_info):
+        pass
+
+    def process_network_literals(self, network_address_literals):
+        pass
+
+    def get_network_objects_info(self):
+        # retrieve all the network object info from the database
+        network_objects_db = self.get_db_objects('network_objects')
+
+        # there are three types of network objects in this case: network address objects, network address group objects and literals
+        # literals are not objects that have been explicitly defined, therefore they won't be present in the FMC's database
+
+        # get the information of all network address objects from FMC
+        network_address_objects_info = self._api_connection.object.networkaddress.get()
+        
+        # get the information of all network group objects from FMC
+        network_address_group_objects_info = self._api_connection.object.networkgroup.get()
+
+        # in order to process the network addres objects and the network group address objects, we need to know what is what, based on the object names (might use the IDs at some point).
+        # we will retrieve all the names of the objects and the group objects
+        # we will remove the network literals from the network objects in the db
+        # we will look for all the common elements in the names from network_address_objects_info and from network_objects_db. after they are found, they will be removed from the list
+        # at this point, we have three additional lists: a list with the literals, a list with the network address objects and al ist with the network group objects
+        # the list with address objects and the list with group objects will be proccesed by the process functions. they will return all the information necessary
+        # the list with the literals will be merged with the list of network_address_objects since they are kind of the same thing
+        network_address_objects = ''
+
+        # this function will return two dictionaries, one containing the info about the network objects and one containing info about the network group objects
+        # they will be further processed by pioneer and inserted into the database and in the right tables
+
+            
+
     # this function aggregates multiple functions, each responsible for getting data from different objects
-    # TODO: decide where 'any' should be removed from the list
     # store all the info as a json, and return the json back to main, which will be responsible for adding it
     # to the database
-    def get_objects_data(self):
-        # get the zone objects data
+    def get_objects_data_info(self):
+        print(f"I will now start to retrieve information about all the objects.")
         
+        # get the zone objects data
+        # print(f"######### ZONE INFO RETRIEVAL #########")
+        # self.get_zone_objects_info()
+    
         # get the network address objects data
-
+        print(f"######### NETWORK OBJECTS INFO RETRIEVAL #########")
+        network_objects, network_group_objects = self.get_network_objects_info()
         # get the port objects data
+        print(f"######### PORT OBJECTS INFO RETRIEVAL")
 
         # get the schedule objects data
+        print(f"######### SCHEDULE OBJECTS INFO RETRIEVAL")
 
         # get the policy users data
+        print(f"######### POLICY USERS INFO RETRIEVAL")
 
         # get the url objects data
+        print(f"######### URL OBJECTS INFO RETRIEVAL")
 
         # get the applications
-        
+        print(f"######### L7 APPS INFO RETRIEVAL")
         pass
 
 

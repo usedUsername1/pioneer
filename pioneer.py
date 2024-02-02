@@ -115,11 +115,15 @@ def main():
         
         # insert the device name, username, secret, hostname, type and version into the general_data table
         SecurityDeviceObject.insert_into_general_table(security_device_username, security_device_secret, security_device_hostname, security_device_type, security_device_port, security_device_version, domain)
+        # import other essential configuration here, so that the user is not required to enter it.
+        # import managed devices
 
+        # retrive the information about the managed devices. if the device is a standalone device, the managed device will be the standalone device
+        managed_devices_info = SecurityDeviceObject.get_managed_devices_info()
 
-        # depending on the SecurityDevice type insert some data by default in the security_policy_package, nat_policy_package and objects_package.
-        # this needs to be done for devices where there is no concept regarding policy packages or device groups, etc...
-        # FMC also needs it for objects, as they are not stored in any package, as opposed to palo alto, where they are stored in a device group
+        # insert it into the table
+        SecurityDeviceObject.insert_into_managed_devices_table(managed_devices_info)
+
 
     # at this point, the backbone of the device is created, importing of data can start
     # the user used the --device option
@@ -178,9 +182,8 @@ def main():
             # all the objects (URLs, address objects, groups, etc)
             # user sources along with users databases
             # and pretty much the rest of the config (routing, VPNs, etc...)
-            # TODO: make sure that some configuration gets imported regardless of the imported policy package. for example, the configuration of the zones
-        if pioneer_args["import_config"]:
             
+        if pioneer_args["import_config"]:
             # import the policy containers of the device.
             if(pioneer_args["security_policy_container [container_name]"]):
                 passed_container_names = pioneer_args["security_policy_container [container_name]"]
@@ -209,9 +212,6 @@ def main():
                 # import the security policies (data) that are part of the imported security policy containers
                 # the policy container info extracted earlier can be used here. we can use the child container entry since the child container
                 # contains the information (thus the policies) it inherits from all the parents
-                # TODO: how/where/when should the objects be imported? should they be processed
-                # TODO: what to do regarding PING policies?
-
                 sec_policy_data = SpecificSecurityDeviceObject.get_sec_policies_data(passed_container_names_list)
                 # at this point, the data from all the security policies is extracted, it is time to insert it into the database
                 SpecificSecurityDeviceObject.insert_into_security_policies_table(sec_policy_data)
@@ -324,6 +324,8 @@ if __name__ == "__main__":
 
     # track all protocols that are not TCP or UDP
 
+    # MAYBE: support for creating interfaces and security zones
+
 # CISCO FMC Security zones
     # add support for interface groups
 
@@ -345,4 +347,3 @@ if __name__ == "__main__":
 # EIGHT MILESTONE: implement migration of VPN tunnels between FMC and PANMC
 # NINETH MILESTONE: implement migration between all of the following platforms: FMC, PANMC, FTD, PAN, ASA, Meraki, iOS, FortiManager, FortiGate, JunOS, Checkpoint
 # TENTH MILESTONE: finish everythin in the long-term TODO list. actually, finish all the TODO lists.
-
