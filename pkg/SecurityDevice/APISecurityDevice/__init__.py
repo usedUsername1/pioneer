@@ -633,14 +633,69 @@ class FMCSecurityDevice(SecurityDevice):
 
     # def get_zone_objects_info(self):
     #     pass
-
-    def process_network_address_object(self, network_address_objects_info):
-        pass
-
-    def process_network_address_group_object(self, network_address_group_objects_info):
-        pass
-
     def process_network_literals(self, network_address_literals):
+        processed_network_literals_info = []
+        object_container_name = "virtual_object_container"
+        literal_object_description = "Originally a literal value. Converted to object by Pioneer."
+        
+        # literals cannot be overriden
+        is_overriden_object = False
+        # loop through the network literals
+        for current_network_literal in network_address_literals:
+            # for the current network literal, split the string by the "_" in order to extract the subnet and the netmask. example output ['NL', '10.10.10.10', '32']
+            split_network_literal = current_network_literal.split('_')
+            network_literal_subnet = split_network_literal[1]
+            network_address_type = 'Host'
+            # convert the netmask to CIDR format. for some idiotic reason, if a literal is a host literal, the netmask value is in CIDR. however, if it is a network literal, the netmask is not in CIDR
+            # if the netmask is not CIDR, then convert it to CIDR
+            network_literal_netmask = split_network_literal[2]
+            if network_literal_netmask != '32':
+                network_literal_netmask = helper.netmask_to_cidr_bits(network_literal_netmask)
+                network_address_type = 'Network'
+            
+            processed_network_literal_entry = {"network_address_name":current_network_literal,
+                                               "object_container_name":object_container_name,
+                                               "network_address_subnet":network_literal_subnet,
+                                               "network_address_cidr_netmask":network_literal_netmask,
+                                               "network_address_description":literal_object_description,
+                                               "network_address_type":network_address_type,
+                                               "overriden_object":is_overriden_object}
+
+            processed_network_literals_info.append(processed_network_literal_entry)
+        
+        return processed_network_literals_info
+            
+
+    def process_network_address_objects(self, network_address_objects_list, network_address_objects_info_dict):
+        # loop through the network address objects
+        processed_network_object_info = []
+        object_container_name = "virtual_object_container"
+
+        for network_address_object_name in network_address_objects_list:
+            # look it up in the dictionary containing the network address object information
+            matching_address_object_entry = network_address_objects_info_dict.get(network_address_object_name)
+
+            # now, extract all the required data from the entry
+            network_address_object_subnet = ''
+            network_address_object_netmask = ''
+            network_address_object_description = ''
+            network_address_object_type = ''
+            is_overriden_object = ''
+
+            processed_network_object_entry = {"network_address_name":network_address_object_name,
+                                               "object_container_name":object_container_name,
+                                               "network_address_subnet":network_address_object_subnet,
+                                               "network_address_cidr_netmask":network_address_object_netmask,
+                                               "network_address_description":network_address_object_description,
+                                               "network_address_type":network_address_object_type,
+                                               "overriden_object":is_overriden_object}
+            
+            processed_network_object_info.append(processed_network_object_entry)
+        
+        return processed_network_object_info
+
+
+    def process_network_address_group_objects(self, network_address_group_objects_list, network_address_group_objects_info_dict):
         pass
 
     def get_network_objects_info(self):
@@ -652,9 +707,12 @@ class FMCSecurityDevice(SecurityDevice):
 
         # get the information of all network address objects from FMC
         network_address_objects_info = self._api_connection.object.networkaddress.get()
+        # convert this to a dictionary for more efficient lookups
+        network_address_objects_info = {entry['name']: entry for entry in network_address_objects_info}
         
         # get the information of all network group objects from FMC
         network_address_group_objects_info = self._api_connection.object.networkgroup.get()
+        network_address_group_objects_info = {entry['name']: entry for entry in network_address_group_objects_info}
 
         # in order to process the network addres objects and the network group address objects, we need to know what is what, based on the object names (might use the IDs at some point).
         # we will retrieve all the names of the objects and the group objects
@@ -663,10 +721,42 @@ class FMCSecurityDevice(SecurityDevice):
         # at this point, we have three additional lists: a list with the literals, a list with the network address objects and al ist with the network group objects
         # the list with address objects and the list with group objects will be proccesed by the process functions. they will return all the information necessary
         # the list with the literals will be merged with the list of network_address_objects since they are kind of the same thing
-        network_address_objects = ''
+        
+        # retrieve the names of all the network address objects
+        fmc_network_objects_list = []
+        for fmc_network_object in network_address_objects_info:
+            fmc_network_objects_list.append(fmc_network_object['name'])
+        
+        # retrieve the names of all the network address group objects
+        fmc_network_group_objects_list = []
+        for fmc_network_group_object in network_address_group_objects_info:
+            fmc_network_group_objects_list.append(fmc_network_group_object['name'])
+        
+        # Retrieve all network literals from the database
+        network_object_literals_list = [network_literal for network_literal in network_objects_db if "NL-" not in network_literal]
 
-        # this function will return two dictionaries, one containing the info about the network objects and one containing info about the network group objects
-        # they will be further processed by pioneer and inserted into the database and in the right tables
+        # remove all the network literals from the original list
+        network_objects_db = [obj for obj in network_objects_db if not obj.startswith("NL-")]
+
+        # find all the network address objects
+        network_address_objects_list = [network_object for network_object in network_objects_db if network_object in fmc_network_objects_list]
+
+        # now remove all the network objects
+        network_objects_db = [network_object for network_object in network_objects_db if network_object not in network_address_objects_list]
+
+        # this leaves us only with the network group objects in the network_objects_db variable
+        # now it is time to process all the objects in order to get the info that will be stored in the database
+        processed_network_literals_info = self.process_network_literals(network_object_literals_list)
+
+        processed_network_objects_info = self.process_network_address_objects(network_address_objects_list, network_address_objects_info)
+
+        processed_network_group_objects_info = self.process_network_address_group_objects(network_objects_db, network_address_group_objects_info)
+
+        # extend the original processed_network_objects_info with the processed_network_literals_info. network objects and literals will be treated in the same way when added to the database
+        processed_network_objects_info.extend(processed_network_literals_info)
+        
+        # return the info back to the caller
+        return processed_network_objects_info, processed_network_group_objects_info
 
             
 

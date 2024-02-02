@@ -2,6 +2,7 @@ import argparse
 import sys
 import psycopg2
 import utils.exceptions as PioneerExceptions
+import ipaddress
 
 # this function returns a parser objects for the pioneer tool
 def create_parser():
@@ -208,4 +209,16 @@ def protocol_number_to_keyword(protocol_number):
     # If the protocol_number is found in the dictionary, return the corresponding protocol name
     # For example, if the protocol_number is 6, this will return 'TCP'
     return protocol_mapping[protocol_number]
+
+def netmask_to_cidr_bits(netmask):
+    try:
+        # Convert netmask to binary representation
+        binary_netmask = ''.join(format(int(octet), '08b') for octet in netmask.split('.'))
+
+        # Count the number of set bits
+        cidr_bits = binary_netmask.count('1')
+
+        return cidr_bits
+    except ValueError:
+        return None  # Invalid netmask format
 
