@@ -231,11 +231,10 @@ class SecurityDeviceDatabase(PioneerDatabase):
                 network_address_name TEXT PRIMARY KEY,
                 security_device_name TEXT NOT NULL,
                 object_container_name TEXT NOT NULL,
-                network_address_subnet TEXT,
-                network_address_cidr_netmask TEXT,
+                network_address_value TEXT,
                 network_address_description TEXT,
                 network_address_type TEXT,
-                overriden_object BOOLEAN NOT NULL,
+                overridable_object BOOLEAN NOT NULL,
                 CONSTRAINT fk_sec_dev_name
                     FOREIGN KEY(security_device_name)
                         REFERENCES general_data_table(security_device_name),
@@ -251,7 +250,7 @@ class SecurityDeviceDatabase(PioneerDatabase):
                 object_container_name TEXT NOT NULL,
                 network_address_group_members TEXT[],
                 network_address_group_description TEXT,
-                overriden_object BOOLEAN NOT NULL,
+                overridable_object BOOLEAN NOT NULL,
                 CONSTRAINT fk_sec_dev_name
                     FOREIGN KEY(security_device_name)
                         REFERENCES general_data_table(security_device_name),
@@ -267,7 +266,7 @@ class SecurityDeviceDatabase(PioneerDatabase):
                 object_container_name TEXT NOT NULL,
                 port_value TEXT,
                 port_description TEXT,
-                overriden_object BOOLEAN NOT NULL,
+                overridable_object BOOLEAN NOT NULL,
                 CONSTRAINT fk_sec_dev_name
                     FOREIGN KEY(security_device_name)
                         REFERENCES general_data_table(security_device_name),
@@ -283,7 +282,7 @@ class SecurityDeviceDatabase(PioneerDatabase):
                 object_container_name TEXT NOT NULL,
                 port_group_members TEXT[] NOT NULL,
                 port_group_description TEXT NOT NULL,
-                overriden_object BOOLEAN NOT NULL,
+                overridable_object BOOLEAN NOT NULL,
                 CONSTRAINT fk_sec_dev_name
                     FOREIGN KEY(security_device_name)
                         REFERENCES general_data_table(security_device_name),

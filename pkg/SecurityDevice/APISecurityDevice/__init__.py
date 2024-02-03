@@ -335,12 +335,12 @@ class FMCSecurityDevice(SecurityDevice):
 
                     # Extract the network address and netmask
                     network_address = network.network_address
-                    netmask = network.netmask
+                    netmask = str(network.prefixlen)  # Extract the prefix length instead of full netmask
 
                 elif literal_type == 'Host':
                     netmask = '32'
                     network_address = literal_value  # Assuming literal_value is the host address
-                
+
                 else:
                     print("Invalid literal type. Literal is not either 'Host' or 'Network.")
                     continue
@@ -639,27 +639,26 @@ class FMCSecurityDevice(SecurityDevice):
         literal_object_description = "Originally a literal value. Converted to object by Pioneer."
         
         # literals cannot be overriden
-        is_overriden_object = False
+        is_overridable_object = False
         # loop through the network literals
         for current_network_literal in network_address_literals:
             # for the current network literal, split the string by the "_" in order to extract the subnet and the netmask. example output ['NL', '10.10.10.10', '32']
             split_network_literal = current_network_literal.split('_')
             network_literal_subnet = split_network_literal[1]
-            network_address_type = 'Host'
-            # convert the netmask to CIDR format. for some idiotic reason, if a literal is a host literal, the netmask value is in CIDR. however, if it is a network literal, the netmask is not in CIDR
-            # if the netmask is not CIDR, then convert it to CIDR
             network_literal_netmask = split_network_literal[2]
+            network_address_type = 'Host'
             if network_literal_netmask != '32':
-                network_literal_netmask = helper.netmask_to_cidr_bits(network_literal_netmask)
                 network_address_type = 'Network'
+            
+            # create the object value string
+            network_object_value = str(network_literal_subnet) + '/' + str(network_literal_netmask)
             
             processed_network_literal_entry = {"network_address_name":current_network_literal,
                                                "object_container_name":object_container_name,
-                                               "network_address_subnet":network_literal_subnet,
-                                               "network_address_cidr_netmask":network_literal_netmask,
+                                               "network_address_value":network_object_value,
                                                "network_address_description":literal_object_description,
                                                "network_address_type":network_address_type,
-                                               "overriden_object":is_overriden_object}
+                                               "overridable_object":is_overridable_object}
 
             processed_network_literals_info.append(processed_network_literal_entry)
         
@@ -676,19 +675,23 @@ class FMCSecurityDevice(SecurityDevice):
             matching_address_object_entry = network_address_objects_info_dict.get(network_address_object_name)
 
             # now, extract all the required data from the entry
-            network_address_object_subnet = ''
-            network_address_object_netmask = ''
-            network_address_object_description = ''
-            network_address_object_type = ''
-            is_overriden_object = ''
+            network_address_value = matching_address_object_entry['value']
+
+            network_address_object_description = None
+            try:
+                network_address_object_description = matching_address_object_entry['description']
+            except KeyError:
+                print(f"No description for this object {network_address_object_name}.")
+
+            network_address_object_type = matching_address_object_entry['type']
+            is_overridable_object = matching_address_object_entry['overridable']
 
             processed_network_object_entry = {"network_address_name":network_address_object_name,
                                                "object_container_name":object_container_name,
-                                               "network_address_subnet":network_address_object_subnet,
-                                               "network_address_cidr_netmask":network_address_object_netmask,
+                                               "network_address_value":network_address_value,
                                                "network_address_description":network_address_object_description,
                                                "network_address_type":network_address_object_type,
-                                               "overriden_object":is_overriden_object}
+                                               "overriden_object":is_overridable_object}
             
             processed_network_object_info.append(processed_network_object_entry)
         
@@ -696,7 +699,17 @@ class FMCSecurityDevice(SecurityDevice):
 
 
     def process_network_address_group_objects(self, network_address_group_objects_list, network_address_group_objects_info_dict):
-        pass
+        processed_network_address_group_objects = []
+        object_container_name = "virtual_object_container"
+        for network_address_group_object_name in network_address_group_objects_list:
+            matching_address_group_object = network_address_group_objects_info_dict.get(network_address_group_object_name)
+            
+            network_address_group_description = matching_address_group_object['description']
+            overriden_object = matching_address_group_object['overridable']
+
+            network_address_group_members = []
+
+            # now we need to process the members
 
     def get_network_objects_info(self):
         # retrieve all the network object info from the database
@@ -772,6 +785,7 @@ class FMCSecurityDevice(SecurityDevice):
     
         # get the network address objects data
         print(f"######### NETWORK OBJECTS INFO RETRIEVAL #########")
+        # TODO: make sure you process the geo-location objects!
         network_objects, network_group_objects = self.get_network_objects_info()
         # get the port objects data
         print(f"######### PORT OBJECTS INFO RETRIEVAL")
