@@ -217,8 +217,9 @@ def main():
                 SpecificSecurityDeviceObject.insert_into_security_policies_table(sec_policy_data)
 
                 # TODO: at this point all the security policy data is imported. it is time to import the object data.
-                # SpecificSecurityDeviceObject.get_objects_data_info()
-
+                processed_network_objects_info, processed_network_group_objects_info = SpecificSecurityDeviceObject.get_objects_data_info()
+                print(processed_network_objects_info)
+                print(processed_network_group_objects_info)
                 # after all the object data is retrieved, it is time to insert it into the database
 
 

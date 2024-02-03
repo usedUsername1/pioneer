@@ -280,8 +280,8 @@ class SecurityDeviceDatabase(PioneerDatabase):
                 port_group_name TEXT PRIMARY KEY,
                 security_device_name TEXT NOT NULL,
                 object_container_name TEXT NOT NULL,
-                port_group_members TEXT[] NOT NULL,
-                port_group_description TEXT NOT NULL,
+                port_group_members TEXT[],
+                port_group_description TEXT,
                 overridable_object BOOLEAN NOT NULL,
                 CONSTRAINT fk_sec_dev_name
                     FOREIGN KEY(security_device_name)
