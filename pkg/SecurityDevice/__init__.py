@@ -426,6 +426,7 @@ class SecurityDevice():
             unique_objects_list.remove(element_to_remove)
 
         return unique_objects_list
+    
 
     def insert_into_managed_devices_table(self, managed_device_info):
         # loop through the managed devices info, extract the data and insert it into the table

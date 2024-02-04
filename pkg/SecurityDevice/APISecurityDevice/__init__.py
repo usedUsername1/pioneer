@@ -645,7 +645,6 @@ class FMCSecurityDevice(SecurityDevice):
         is_overridable_object = False
         # loop through the network literals
         for current_network_literal in network_address_literals:
-            print(current_network_literal)
             # for the current network literal, split the string by the "_" in order to extract the subnet and the netmask. example output ['NL', '10.10.10.10', '32']
             split_network_literal = current_network_literal.split('_')
             network_literal_subnet = split_network_literal[1]
@@ -712,7 +711,7 @@ class FMCSecurityDevice(SecurityDevice):
             return
         
         print("I am now processing group objects...")
-
+        print(network_address_group_objects_list)
         processed_network_address_group_object_info = []
         object_container_name = "virtual_object_container"
 
@@ -802,7 +801,7 @@ class FMCSecurityDevice(SecurityDevice):
             # should exist. now, these two lists need to be processed just like the non-group memebrs were processed
             processed_network_address_group_object_entry = {"network_address_name": network_address_group_object_name,
                                                "object_container_name": object_container_name,
-                                               "network_address_value": network_address_group_members,
+                                               "network_address_members": network_address_group_members,
                                                "network_address_description": network_address_group_description,
                                                "network_address_type": network_address_group_members,
                                                "overriden_object": overriden_object
@@ -818,6 +817,10 @@ class FMCSecurityDevice(SecurityDevice):
         processed_member_literals.append(self.process_network_literals(literal_group_member_list))
         processed_member_network_objects.append(self.process_network_address_objects(object_member_list, network_address_objects_info_dict))
         
+        print("#################GROUP OBJECTS###################",processed_member_group_objects)
+        print("#################MEMBER LITERALS###################", processed_member_literals)
+        print("#################NETWORK MEMBER OBJECTS ###################",processed_member_network_objects)
+        print("#################### MEMBERS OF THE GROUP#################",network_address_group_members)
         return processed_member_group_objects, processed_member_network_objects, processed_member_literals
 
 
@@ -856,12 +859,11 @@ class FMCSecurityDevice(SecurityDevice):
         network_address_group_objects_info = {entry['name']: entry for entry in network_address_group_objects_info}
         network_address_objects_info = {entry['name']: entry for entry in network_address_objects_info}
 
-        
         # Retrieve all network literals from the database
-        network_object_literals_list = [network_literal for network_literal in network_objects_db if "NL-" in network_literal]
+        network_object_literals_list = [network_literal for network_literal in network_objects_db if "NL_" in network_literal]
 
         # remove all the network literals from the original list
-        network_objects_db = [obj for obj in network_objects_db if not obj.startswith("NL-")]
+        network_objects_db = [obj for obj in network_objects_db if not obj.startswith("NL_")]
 
         # find all the network address objects
         network_address_objects_list = [network_object for network_object in network_objects_db if network_object in fmc_network_objects_list]
@@ -874,13 +876,12 @@ class FMCSecurityDevice(SecurityDevice):
         
         # process_network_address_group_objects returns all the member objects of all groups in lists. these lists can be
         # added to the existent lists and be procecssed by the network literals and network addres objects processor functions
+        # make sure you have unique values in the lists!
+        processed_network_group_objects_info, processed_network_members_info, processed_literal_member_info = self.process_network_address_group_objects(network_objects_db, network_address_group_objects_info, network_address_objects_info) or []
 
-        processed_network_group_objects_info, processed_network_members_info, processed_literal_member_info = self.process_network_address_group_objects(network_objects_db, network_address_group_objects_info, network_address_objects_info)
+        processed_network_literals_info = self.process_network_literals(network_object_literals_list) or []
         
-        print(network_object_literals_list)
-        processed_network_literals_info = self.process_network_literals(network_object_literals_list)
-
-        processed_network_objects_info = self.process_network_address_objects(network_address_objects_list, network_address_objects_info)
+        processed_network_objects_info = self.process_network_address_objects(network_address_objects_list, network_address_objects_info) or []
 
         # extend the original processed_network_objects_info with the processed_network_literals_info. network objects and literals will be treated in the same way when added to the database
         # extend it with the network members and network literal members of all the group objects
@@ -905,6 +906,7 @@ class FMCSecurityDevice(SecurityDevice):
         print(f"######### NETWORK OBJECTS INFO RETRIEVAL #########")
         # TODO: make sure you process the geo-location objects!
         network_objects, network_group_objects = self.get_network_objects_info()
+        return network_objects, network_group_objects
         # get the port objects data
         print(f"######### PORT OBJECTS INFO RETRIEVAL")
 
