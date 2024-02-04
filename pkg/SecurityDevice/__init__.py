@@ -1,15 +1,5 @@
 from abc import ABC, abstractmethod
 from pkg import PioneerDatabase, DBConnection
-from pkg.PolicyPackage import SecurityPolicyPackage
-from pkg.PolicyPackage import NATPolicyPackage
-from pkg.DeviceObject.NetworkObject import NetworkObject
-from pkg.DeviceObject.SecurityZone import SecurityZone
-from pkg.DeviceObject.GroupObject.NetworkGroupObject import NetworkGroupObject
-from pkg.DeviceObject.PortObject import PortObject
-from pkg.DeviceObject.GroupObject.PortGroupObject import PortGroupObject
-from pkg.DeviceObject.UserSource import UserSource
-from pkg.DeviceObject.URL import URL
-from pkg.DeviceObject.L7Application import L7Application
 import utils.helper as helper
 import utils.gvars as gvars
 import json
