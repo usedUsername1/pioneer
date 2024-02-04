@@ -1,2 +1,0 @@
-class PortObject:
-    pass

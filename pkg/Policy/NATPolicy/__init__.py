@@ -1,3 +1,0 @@
-
-class NATPolicy:
-    pass

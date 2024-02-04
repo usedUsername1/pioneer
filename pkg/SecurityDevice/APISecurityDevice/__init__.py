@@ -753,7 +753,6 @@ class FMCSecurityDevice(SecurityDevice):
 
     # TODO: Should the elements of the list be unique when returned?
     # TODO: Process the geo-location objects separately
-    # TODO: Remove the duplicate code wherever possible
     def get_network_objects_info(self):
         # Retrieve all network object info from the database
         network_objects_db = self.get_db_objects('network_objects')
