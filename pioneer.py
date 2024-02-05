@@ -215,8 +215,14 @@ def main():
                 # at this point, the data from all the security policies is extracted, it is time to insert it into the database
                 SpecificSecurityDeviceObject.insert_into_security_policies_table(sec_policy_data)
 
-                # TODO: at this point all the security policy data is imported. it is time to import the object data.
-                processed_network_objects_info, processed_network_group_objects_info = SpecificSecurityDeviceObject.get_objects_data_info()
+                # at this point all the security policy data is imported. it is time to import the object data.
+                network_objects_data, network_group_objects_data = SpecificSecurityDeviceObject.get_objects_data_info()
+                
+                # all the network objects and network group objects data has been extracted, now insert it into the database
+                SpecificSecurityDeviceObject.insert_into_network_address_objects_table(network_objects_data)
+                SpecificSecurityDeviceObject.insert_into_network_address_object_groups_table(network_group_objects_data)
+
+                # all the object data has been extracted, now it is time to insert it into the database
 
                 # print(processed_network_objects_info)
                 # print(processed_network_group_objects_info)
@@ -308,6 +314,8 @@ if __name__ == "__main__":
 #MIGRATION
     # support for migrating managed devices. for example, migrate fw-01 managed by FMC to fw-01 managed by PANMC
     # progress bar 
+    # mechanism for checking failed migration objects on policies. for example, for every policy you could make a diff between
+    # how the policy looked like on the source device and how it looks on the target device
 
 #IMPORTING
     # create a caching mechanism. for example, for the objects. execute a GET request to get all the information regarding all the security objects
@@ -336,6 +344,8 @@ if __name__ == "__main__":
     # track all protocols that are not TCP or UDP
 
     # MAYBE: support for creating interfaces and security zones
+
+    # support for geo-location objects
 
 # CISCO FMC Security zones
     # add support for interface groups

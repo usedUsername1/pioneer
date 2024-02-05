@@ -132,10 +132,7 @@ class PioneerDatabase():
             if values is not None:
                 self._cursor.execute(insert_command, values)
             else:
-                print(insert_command)
                 self._cursor.execute(insert_command)
-            
-            print(f"Inserted values {values} into: {table_name}")
 
         except psycopg2.Error as err:
             print(f"Failed to insert values {values} into: {table_name}. Reason: {err}")

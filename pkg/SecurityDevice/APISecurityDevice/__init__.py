@@ -198,19 +198,19 @@ class FMCSecurityDevice(SecurityDevice):
         sec_policy_category = sec_policy['metadata']['category']
         sec_policy_status = 'enabled' if sec_policy['enabled'] else 'disabled'
 
-        sec_policy_source_zones = self.process_security_zones(sec_policy, 'sourceZones')
-        sec_policy_destination_zones = self.process_security_zones(sec_policy, 'destinationZones')
-        sec_policy_source_networks = self.process_network_objects(sec_policy, 'sourceNetworks')
-        sec_policy_destination_networks = self.process_network_objects(sec_policy, 'destinationNetworks')
-        sec_policy_source_ports = self.process_ports_objects(sec_policy, 'sourcePorts')
-        sec_policy_destination_ports = self.process_ports_objects(sec_policy, 'destinationPorts')
-        sec_policy_schedule_objects = self.process_schedule_objects(sec_policy)
-        sec_policy_users = self.process_policy_users(sec_policy)
-        sec_policy_urls = self.process_policy_urls(sec_policy)
-        sec_policy_apps = self.process_policy_apps(sec_policy)
+        sec_policy_source_zones = self.extract_security_zones(sec_policy, 'sourceZones')
+        sec_policy_destination_zones = self.extract_security_zones(sec_policy, 'destinationZones')
+        sec_policy_source_networks = self.extract_network_objects(sec_policy, 'sourceNetworks')
+        sec_policy_destination_networks = self.extract_network_objects(sec_policy, 'destinationNetworks')
+        sec_policy_source_ports = self.extract_port_objects(sec_policy, 'sourcePorts')
+        sec_policy_destination_ports = self.extract_port_objects(sec_policy, 'destinationPorts')
+        sec_policy_schedule_objects = self.extract_schedule_objects(sec_policy)
+        sec_policy_users = self.extract_policy_users(sec_policy)
+        sec_policy_urls = self.extract_policy_urls(sec_policy)
+        sec_policy_apps = self.extract_policy_apps(sec_policy)
 
         sec_policy_description = sec_policy.get('description', '')
-        sec_policy_comments = self.process_policy_comments(sec_policy)
+        sec_policy_comments = self.extract_policy_comments(sec_policy)
         sec_policy_log_settings = ['FMC'] if sec_policy['sendEventsToFMC'] else []
         sec_policy_log_settings += ['Syslog'] if sec_policy['enableSyslog'] else []
         sec_policy_log_start = sec_policy['logBegin']
@@ -268,7 +268,7 @@ class FMCSecurityDevice(SecurityDevice):
     # 'sourceZones'/'destinationZones' attribute in the response and a KeyError will be generated.
     # this is true for most of the configuration options which have the 'Any' parameter, therefore the retrieval of all
     # configuration options will be processed in try except KeyError blocks
-    def process_security_zones(self, sec_policy, zone_type):
+    def extract_security_zones(self, sec_policy, zone_type):
         """
         Process security zones defined in the security policy.
 
@@ -352,8 +352,8 @@ class FMCSecurityDevice(SecurityDevice):
 
         return network_objects_list
 
-
-    def process_network_objects(self, sec_policy, network_object_type):
+    # TODO: log geolocation objects
+    def extract_network_objects(self, sec_policy, network_object_type):
         """
         Process network objects and literals defined in the security policy.
 
@@ -371,6 +371,7 @@ class FMCSecurityDevice(SecurityDevice):
         try:
             print(f"I am looking for {network_object_type} objects...")
             network_objects = sec_policy[network_object_type]['objects']
+            print(f"I have found {network_object_type} literals. These are: {network_objects}. ")
             network_objects_list.extend(obj['name'] for obj in network_objects)
         except KeyError:
             print(f"It looks like there are no {network_object_type} objects on this policy.")
@@ -392,7 +393,7 @@ class FMCSecurityDevice(SecurityDevice):
         return network_objects_list
 
 
-    def process_ports_objects(self, sec_policy, port_object_type):
+    def extract_port_objects(self, sec_policy, port_object_type):
         """
         Process port objects and literals defined in the security policy.
 
@@ -461,7 +462,7 @@ class FMCSecurityDevice(SecurityDevice):
         return port_objects_list
 
 
-    def process_schedule_objects(self, sec_policy):
+    def extract_schedule_objects(self, sec_policy):
         """
         Process schedule objects defined in the security policy.
 
@@ -496,7 +497,7 @@ class FMCSecurityDevice(SecurityDevice):
         return schedule_object_list
 
     # TODO: maybe i need to process more stuff than names here
-    def process_policy_users(self, sec_policy):
+    def extract_policy_users(self, sec_policy):
         """
         Process policy users defined in the security policy.
 
@@ -531,7 +532,7 @@ class FMCSecurityDevice(SecurityDevice):
         return policy_user_list
 
     # there are three cases which need to be processed here. the url can be an object, a literal, or a category with reputation
-    def process_policy_urls(self, sec_policy):
+    def extract_policy_urls(self, sec_policy):
         """
         Process policy URLs defined in the security policy.
 
@@ -599,7 +600,7 @@ class FMCSecurityDevice(SecurityDevice):
         return policy_url_list
 
 
-    def process_policy_apps(self, sec_policy):
+    def extract_policy_apps(self, sec_policy):
         """
         Process Layer 7 (L7) applications defined in the security policy.
 
@@ -649,23 +650,20 @@ class FMCSecurityDevice(SecurityDevice):
 
             print(f"I have found Inline L7 application filters...: {policy_inline_l7_app_filters}. I will now start to process them...")
 
-            # Extract the keys from the first dictionary in the 'policy_inline_l7_app_filters' list.
-            policy_inline_l7_app_filter_keys_list = list(policy_inline_l7_app_filters[0].keys())
+            # Iterate over each dictionary in 'policy_inline_l7_app_filters' list.
+            for index in range(len(policy_inline_l7_app_filters)):
+                # Iterate over each key/category in the current Inline L7 application filter dictionary.
+                for policy_inline_l7_app_filter_key, policy_inline_l7_app_filter_elements in policy_inline_l7_app_filters[index].items():
+                    # Skip any non-list elements
+                    if not isinstance(policy_inline_l7_app_filter_elements, list):
+                        continue
 
-            # Iterate over each key/category in the Inline L7 application filter keys list.
-            for policy_inline_l7_app_filter_key in policy_inline_l7_app_filter_keys_list:
-                # Loop through each dictionary in 'policy_inline_l7_app_filters' list.
-                for index in range(len(policy_inline_l7_app_filters)):
-                    # Access the list of filter elements (like apps, URLs, etc.) under the current category specified by 'policy_inline_l7_app_filter_key'.
-                    policy_inline_l7_app_filter_elements = policy_inline_l7_app_filters[index][policy_inline_l7_app_filter_key]
+                    # Create a list to store the names of filter elements in the current category
+                    filter_element_names = [f"inlineApplicationFilters_{policy_inline_l7_app_filter_key}_{policy_inline_l7_app_filter_element['name']}" for policy_inline_l7_app_filter_element in policy_inline_l7_app_filter_elements]
 
-                    # Iterate over each filter element in the current category of Inline L7 application filter.
-                    for policy_inline_l7_app_filter_element in policy_inline_l7_app_filter_elements:
-                        # Append the name of each filter element (e.g., specific app name) to the 'policy_l7_apps_list'.
-                        # This list accumulates all the app names from different categories in the Inline L7 application filters.
-                        policy_l7_apps_list.append(policy_inline_l7_app_filter_element['name'])
+                    # Append the list of filter element names to the 'policy_l7_apps_list'
+                    policy_l7_apps_list.extend(filter_element_names)
 
-            found_objects_or_literals = True
 
         except KeyError:
             print(f"It looks like there are no L7 inline application filters on this policy.")
@@ -674,10 +672,12 @@ class FMCSecurityDevice(SecurityDevice):
         if not found_objects_or_literals:
             policy_l7_apps_list.append('any')
 
+        print("\n", policy_l7_apps_list, '\n')
         return policy_l7_apps_list
+
     
     # TODO: process comments, don't return them as dict, maybe as list with user_comment
-    def process_policy_comments(self, sec_policy):
+    def extract_policy_comments(self, sec_policy):
         """
         Process comments from the security policy.
 
@@ -792,7 +792,7 @@ class FMCSecurityDevice(SecurityDevice):
                 "network_address_value": network_address_value,
                 "network_address_description": network_address_object_description,
                 "network_address_type": network_address_object_type,
-                "overriden_object": is_overridable_object
+                "overridable_object": is_overridable_object
             }
 
             processed_network_object_info.append(processed_network_object_entry)
@@ -802,6 +802,7 @@ class FMCSecurityDevice(SecurityDevice):
     # be aware, you need to process:
         # objects that are part of a group. those objects could not be on the policy, therefore they are not in the DB yet
         # groups that are part of object groups. some recursive shit needs to be done here
+    # geo-location objects are treated as object groups
     def process_network_address_group_objects(self, network_address_group_objects_list, network_address_group_objects_info_dict):
         """
         Process network address group objects.
@@ -818,7 +819,6 @@ class FMCSecurityDevice(SecurityDevice):
             return [], [], []
 
         print("I am now processing group objects...")
-        print(network_address_group_objects_list)
         processed_network_address_group_object_info = []
         object_container_name = "virtual_object_container"
 
@@ -831,11 +831,11 @@ class FMCSecurityDevice(SecurityDevice):
 
             network_address_group_members = matching_address_group_object.get('objects', [])
             network_address_group_description = matching_address_group_object.get('description', None)
-            overriden_object = matching_address_group_object.get('overridable', False)
+            is_overridable_object = matching_address_group_object.get('overridable', False)
 
             for object_member in network_address_group_members:
                 print(network_address_group_members)
-                network_address_group_members.append(object_member['name'])
+
                 if object_member['type'] == 'NetworkGroup':
                     group_object_member_list.append(object_member['name'])
                 else:
@@ -851,7 +851,7 @@ class FMCSecurityDevice(SecurityDevice):
                 "object_container_name": object_container_name,
                 "network_address_group_members": network_address_group_members,
                 "network_address_group_description": network_address_group_description,
-                "overriden_object": overriden_object
+                "overridable_object": is_overridable_object
             }
 
             processed_network_address_group_object_info.append(processed_network_address_group_object_entry)
@@ -862,12 +862,12 @@ class FMCSecurityDevice(SecurityDevice):
         literal_group_member_list.extend(nested_literals)
         processed_network_address_group_object_info.extend(nested_group_objects)
 
-        print(processed_network_address_group_object_info, object_member_list, literal_group_member_list)
-
         return processed_network_address_group_object_info, object_member_list, literal_group_member_list
 
-    # TODO: Should the elements of the list be unique when returned?
-    # TODO: Process the geo-location objects separately
+    # TODO: add support for geo-location
+    def process_geolocation_objects(self, geolocation_objects_list, fmc_geolocation_objects_dict):
+        pass
+
     def get_network_objects_info(self):
         # Retrieve all network object info from the database
         network_objects_db = self.get_db_objects('network_objects')
@@ -878,8 +878,14 @@ class FMCSecurityDevice(SecurityDevice):
         # Get the information of all network group objects from FMC
         network_address_group_objects_info = self._api_connection.object.networkgroup.get()
 
+        # Get the information of all geolocation objects from FMC
+        geolocation_objects = self._api_connection.object.geolocation.get()
+
         # Retrieve the names of all network address objects
         fmc_network_objects_list = [fmc_network_object['name'] for fmc_network_object in network_address_objects_info]
+
+        # Retrieve the names of all network address group objects
+        fmc_network_group_objects_list = [fmc_network_group_object['name'] for fmc_network_group_object in network_address_group_objects_info]
         
         # Convert these to dictionaries for more efficient lookups
         network_address_group_objects_info = {entry['name']: entry for entry in network_address_group_objects_info}
@@ -897,12 +903,16 @@ class FMCSecurityDevice(SecurityDevice):
         # Remove all the network objects, leaving only the network group objects in the network_objects_db variable
         network_objects_db = [network_object for network_object in network_objects_db if network_object not in network_address_objects_list]
 
+        # Find all the network group address objects
+        network_group_objects = [network_group_object for network_group_object in network_objects_db if network_group_object in fmc_network_group_objects_list]
+
+        # Remove all the network group address objects, leaving only the geolocation objects in the network_objects_db variable
+        geolocation_objects = [network_object for network_object in network_objects_db if network_object not in fmc_network_group_objects_list]
+        
         # Process all the network objects to get the info that will be stored in the database
         processed_network_group_objects_info, network_members_list, literal_members_list = [], [], []
-        # try:
-        processed_network_group_objects_info, network_members_list, literal_members_list = self.process_network_address_group_objects(network_objects_db, network_address_group_objects_info)
-        # except Exception as err:
-        #     print(err)
+
+        processed_network_group_objects_info, network_members_list, literal_members_list = self.process_network_address_group_objects(network_group_objects, network_address_group_objects_info)
 
         # Extend the network_object_literals_list and network_address_objects_list with the members that were previously found
         network_object_literals_list.extend(literal_members_list)
@@ -912,6 +922,9 @@ class FMCSecurityDevice(SecurityDevice):
         
         network_address_objects_list.extend(network_members_list)
         processed_network_objects_info = self.process_network_address_objects(network_address_objects_list, network_address_objects_info) or []
+
+        # Process the geolocation objects
+        # processed_geolocation_objects_info = self.process_geolocation_objects(geolocation_objects, geolocation_objects_info)
 
         # Extend the original processed_network_objects_info with the processed_network_literals_info.
         # Network objects and literals will be treated in the same way when added to the database.

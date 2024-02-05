@@ -469,7 +469,6 @@ class SecurityDevice:
 
         return unique_objects_list
     
-    
     def insert_into_managed_devices_table(self, managed_device_info):
         """
         Insert managed devices information into the 'managed_devices_table'.
@@ -501,7 +500,6 @@ class SecurityDevice:
             values = (self._name, managed_device_name, assigned_security_policy_container, hostname, cluster)
             
             self._database.insert_table_value('managed_devices_table', insert_command, values)
-
 
     def insert_into_general_table(self, security_device_username, security_device_secret, security_device_hostname, security_device_type, security_device_port, security_device_version, domain):
         """
@@ -662,6 +660,97 @@ class SecurityDevice:
 
             self._database.insert_table_value('security_policies_table', insert_command, parameters)
 
+    def insert_into_network_address_objects_table(self, network_objects_data):
+        """
+        Insert network address objects data into the 'network_address_objects_table'.
+
+        Parameters:
+        - network_objects_data (list): List of dictionaries containing network address objects information.
+
+        Returns:
+        None
+        """
+        for current_object_entry in network_objects_data:
+            # Extract data from the current network address object entry
+            network_address_name = current_object_entry['network_address_name']
+            object_container_name = current_object_entry['object_container_name']
+            network_address_value = current_object_entry['network_address_value']
+            network_address_description = current_object_entry['network_address_description']
+            network_address_type = current_object_entry['network_address_type']
+            is_overridable_object = current_object_entry['overridable_object']
+
+            # SQL command to insert data into the 'network_address_objects_table'
+            insert_command = """
+                INSERT INTO network_address_objects_table (
+                    network_address_name, 
+                    security_device_name, 
+                    object_container_name,
+                    network_address_value, 
+                    network_address_description, 
+                    network_address_type, 
+                    overridable_object
+                ) VALUES (
+                    %s, %s, %s, %s, %s, %s, %s
+                )
+            """
+
+            # Values to be inserted into the table
+            values = (
+                network_address_name,
+                self._name,
+                object_container_name,
+                network_address_value,
+                network_address_description,
+                network_address_type,
+                is_overridable_object
+            )
+
+            # Execute the insert command with the specified values
+            self._database.insert_table_value('network_address_objects_table', insert_command, values)
+
+    def insert_into_network_address_object_groups_table(self, network_group_objects_data):
+        """
+        Insert network address object groups data into the 'network_address_objects_table'.
+
+        Parameters:
+        - network_group_objects_data (list): List of dictionaries containing network address object groups information.
+
+        Returns:
+        None
+        """
+        for current_group_object_entry in network_group_objects_data:
+            # Extract data from the current network address object group entry
+            network_address_group_name = current_group_object_entry['network_address_group_name']
+            object_container_name = current_group_object_entry['object_container_name']
+            network_address_group_members = current_group_object_entry['network_address_group_members']
+            network_address_description = current_group_object_entry['network_address_description']
+            is_overridable_object = current_group_object_entry['overridable_object']
+
+            # SQL command to insert data into the 'network_address_objects_table'
+            insert_command = """
+                INSERT INTO network_address_objects_table (
+                    network_address_group_name, 
+                    security_device_name, 
+                    network_address_group_members,
+                    network_address_group_description, 
+                    overridable_object
+                ) VALUES (
+                    %s, %s, %s, %s, %s
+                )
+            """
+
+            # Values to be inserted into the table
+            values = (
+                network_address_group_name,
+                self._name,
+                network_address_group_members,
+                network_address_description,
+                is_overridable_object
+            )
+
+            # Execute the insert command with the specified values
+            self._database.insert_table_value('network_address_objects_table', insert_command, values)
+
     def verify_duplicate(self, table, column, value):
         """
         Verify if a duplicate entry exists in the specified table and column.
@@ -697,35 +786,35 @@ class SecurityDevice:
         pass
 
     @abstractmethod
-    def process_security_zones(self):
+    def extract_security_zones(self):
         pass
 
     @abstractmethod
-    def process_network_objects(self):
+    def extract_network_objects(self):
         pass
 
     @abstractmethod
-    def process_ports_objects(self):
+    def extract_port_objects(self):
         pass
 
     @abstractmethod
-    def process_schedule_objects(self):
+    def extract_schedule_objects(self):
         pass
 
     @abstractmethod
-    def process_policy_users(self):
+    def extract_policy_users(self):
         pass
 
     @abstractmethod
-    def process_policy_urls(self):
+    def extract_policy_urls(self):
         pass
 
     @abstractmethod
-    def process_policy_apps(self):
+    def extract_policy_apps(self):
         pass
 
     @abstractmethod
-    def process_policy_comments(self):
+    def extract_policy_comments(self):
         pass
 
     @abstractmethod
