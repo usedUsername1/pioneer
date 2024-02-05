@@ -219,6 +219,9 @@ def main():
                 network_objects_data, network_group_objects_data = SpecificSecurityDeviceObject.get_objects_data_info()
                 
                 # all the network objects and network group objects data has been extracted, now insert it into the database
+                #TODO: import the object container first!
+
+                #TODO: remove all duplicates from the network_objects_data, network_group_objects_data
                 SpecificSecurityDeviceObject.insert_into_network_address_objects_table(network_objects_data)
                 SpecificSecurityDeviceObject.insert_into_network_address_object_groups_table(network_group_objects_data)
 

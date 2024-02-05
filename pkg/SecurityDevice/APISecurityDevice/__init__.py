@@ -828,28 +828,38 @@ class FMCSecurityDevice(SecurityDevice):
         for network_address_group_object_name in network_address_group_objects_list:
             print(f"I am now processing the following group object {network_address_group_object_name}.")
             matching_address_group_object = network_address_group_objects_info_dict.get(network_address_group_object_name, {})
-
+            network_address_group_member_names = []
             network_address_group_members = matching_address_group_object.get('objects', [])
             network_address_group_description = matching_address_group_object.get('description', None)
             is_overridable_object = matching_address_group_object.get('overridable', False)
 
+            print(network_address_group_members)
             for object_member in network_address_group_members:
-                print(network_address_group_members)
 
                 if object_member['type'] == 'NetworkGroup':
                     group_object_member_list.append(object_member['name'])
+                    network_address_group_member_names.append(object_member['name'])
                 else:
                     object_member_list.append(object_member['name'])
+                    network_address_group_member_names.append(object_member['name'])
 
             literals = matching_address_group_object.get('literals', [])
             literal_objects_list = self.convert_network_literals_to_objects(literals)
+            
+            # extract the converted literals from the list and add them to the object
+            for literal in literal_objects_list:
+                if isinstance(literal, str) and literal is not None:
+                    network_address_group_member_names.append(literal)
+                else:
+                    # Handle the case where the literal is not a valid string
+                    print(f"Skipping invalid literal: {literal}")
+
             literal_group_member_list.extend(literal_objects_list)
-            network_address_group_members.extend(literal_objects_list)
 
             processed_network_address_group_object_entry = {
                 "network_address_group_name": network_address_group_object_name,
                 "object_container_name": object_container_name,
-                "network_address_group_members": network_address_group_members,
+                "network_address_group_members": network_address_group_member_names,
                 "network_address_group_description": network_address_group_description,
                 "overridable_object": is_overridable_object
             }

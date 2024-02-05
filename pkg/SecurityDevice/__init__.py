@@ -723,19 +723,21 @@ class SecurityDevice:
             network_address_group_name = current_group_object_entry['network_address_group_name']
             object_container_name = current_group_object_entry['object_container_name']
             network_address_group_members = current_group_object_entry['network_address_group_members']
-            network_address_description = current_group_object_entry['network_address_description']
+            network_address_group_members = "{" + ",".join(network_address_group_members) + "}"
+            network_address_description = current_group_object_entry['network_address_group_description']
             is_overridable_object = current_group_object_entry['overridable_object']
 
             # SQL command to insert data into the 'network_address_objects_table'
             insert_command = """
-                INSERT INTO network_address_objects_table (
+                INSERT INTO network_address_object_groups_table (
                     network_address_group_name, 
-                    security_device_name, 
+                    security_device_name,
+                    object_container_name, 
                     network_address_group_members,
                     network_address_group_description, 
                     overridable_object
                 ) VALUES (
-                    %s, %s, %s, %s, %s
+                    %s, %s, %s, %s, %s, %s
                 )
             """
 
@@ -743,13 +745,15 @@ class SecurityDevice:
             values = (
                 network_address_group_name,
                 self._name,
+                object_container_name,
                 network_address_group_members,
                 network_address_description,
                 is_overridable_object
             )
 
             # Execute the insert command with the specified values
-            self._database.insert_table_value('network_address_objects_table', insert_command, values)
+            self._database.insert_table_value('network_address_object_groups_table', insert_command, values)
+
 
     def verify_duplicate(self, table, column, value):
         """
