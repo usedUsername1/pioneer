@@ -333,49 +333,95 @@ class SecurityDeviceConnection():
 
 # this will be a generic security device only with a database, acessing it will be possible
 # in main, without acessing the protected attributes. better option for "--device"
-class SecurityDevice():
+class SecurityDevice:
     def __init__(self, name, sec_device_database):
+        """
+        Initialize a SecurityDevice instance.
+
+        Parameters:
+        - name (str): The name of the security device.
+        - sec_device_database (Database): An instance of the database for the security device.
+        """
         self._name = name
         self._database = sec_device_database
 
-    # maybe we should have import functions here? the import functions will be used for importing the configuration
-    # from the device. the get functions will be used to retrieve info from the object's database
-    # the following methods can be universal?
-    # TODO: all the below functions should process the output returned.
-    def get_security_device_type(self):        
-        select_command = "SELECT security_device_type FROM general_data_table WHERE security_device_name = '{}'".format(self._name)
-        security_device_type = self._database.get_table_value('general_data_table', select_command)
-        return security_device_type[0][0]
+    def get_security_device_type(self):
+        """
+        Retrieve the security device type.
+
+        Returns:
+        - str: The security device type.
+        """
+        return self._get_security_device_attribute('security_device_type')
 
     def get_security_device_hostname(self):
-        select_command = "SELECT security_device_hostname FROM general_data_table WHERE security_device_name = '{}'".format(self._name)
-        security_device_hostname = self._database.get_table_value('general_data_table', select_command)
-        return security_device_hostname[0][0]
+        """
+        Retrieve the security device hostname.
+
+        Returns:
+        - str: The security device hostname.
+        """
+        return self._get_security_device_attribute('security_device_hostname')
 
     def get_security_device_username(self):
-        select_command = "SELECT security_device_username FROM general_data_table WHERE security_device_name = '{}'".format(self._name)
-        security_device_hostname = self._database.get_table_value('general_data_table', select_command)
-        return security_device_hostname[0][0]
+        """
+        Retrieve the security device username.
+
+        Returns:
+        - str: The security device username.
+        """
+        return self._get_security_device_attribute('security_device_username')
 
     def get_security_device_secret(self):
-        select_command = "SELECT security_device_secret FROM general_data_table WHERE security_device_name = '{}'".format(self._name)
-        security_device_secret = self._database.get_table_value('general_data_table', select_command)
-        return security_device_secret[0][0]
+        """
+        Retrieve the security device secret.
+
+        Returns:
+        - str: The security device secret.
+        """
+        return self._get_security_device_attribute('security_device_secret')
 
     def get_security_device_domain(self):
-        select_command = "SELECT security_device_domain FROM general_data_table WHERE security_device_name = '{}'".format(self._name)
-        security_device_domain = self._database.get_table_value('general_data_table', select_command)
-        return security_device_domain[0][0]
+        """
+        Retrieve the security device domain.
+
+        Returns:
+        - str: The security device domain.
+        """
+        return self._get_security_device_attribute('security_device_domain')
 
     def get_security_device_port(self):
-        select_command = "SELECT security_device_port FROM general_data_table WHERE security_device_name = '{}'".format(self._name)
-        security_device_port = self._database.get_table_value('general_data_table', select_command)
-        return security_device_port[0][0]
-    
+        """
+        Retrieve the security device port.
+
+        Returns:
+        - str: The security device port.
+        """
+        return self._get_security_device_attribute('security_device_port')
+
     def get_security_device_version(self):
-        select_command = "SELECT security_device_version FROM general_data_table WHERE security_device_name = '{}'".format(self._name)
-        security_device_version = self._database.get_table_value('general_data_table', select_command)
-        return security_device_version[0][0]
+        """
+        Retrieve the security device version.
+
+        Returns:
+        - str: The security device version.
+        """
+        return self._get_security_device_attribute('security_device_version')
+
+    def _get_security_device_attribute(self, attribute):
+        """
+        Retrieve a specific attribute of the security device.
+
+        Parameters:
+        - attribute (str): The attribute to retrieve.
+
+        Returns:
+        - str: The value of the specified attribute for the security device.
+        """
+        select_command = f"SELECT {attribute} FROM general_data_table WHERE security_device_name = %s"
+        result = self._database.get_table_value('general_data_table', select_command, (self._name,))
+        return result[0][0] if result else None
+
     
     # the following functions process the data from the database. all the objects are processed, the unique values
     # are gathered and returned in a list that will be further processed by the program
@@ -383,8 +429,13 @@ class SecurityDevice():
         """
         Retrieve and return unique database objects based on the specified type.
 
-        :param object_type: The type of objects to retrieve. It should correspond to a column in the database.
-        :return: A list of unique objects of the specified type.
+        Args:
+            object_type (str): The type of objects to retrieve. It should correspond to a column in the database.
+
+        Returns:
+            list: A list of unique objects of the specified type.
+        Raises:
+            ValueError: If the provided object type is not valid.
         """
         # Map object types to their respective columns in the database
         object_column_mapping = {
@@ -397,6 +448,7 @@ class SecurityDevice():
             'app_objects': ['security_policy_l7_apps'],
         }
 
+        # Validate the provided object type
         if object_type not in object_column_mapping:
             raise ValueError(f"Invalid object type: {object_type}")
 
@@ -410,15 +462,24 @@ class SecurityDevice():
         # Flatten the results so that the unique values can be returned
         unique_objects_list = self._database.flatten_query_result(query_result)
 
-        # remove the 'any' element of the list, if it exists. it is not an object that can be imported
+        # Remove the 'any' element of the list, if it exists. It is not an object that can be imported
         element_to_remove = 'any'
         if element_to_remove in unique_objects_list:
             unique_objects_list.remove(element_to_remove)
 
         return unique_objects_list
     
-
+    
     def insert_into_managed_devices_table(self, managed_device_info):
+        """
+        Insert managed devices information into the 'managed_devices_table'.
+
+        Parameters:
+        - managed_device_info (list): List of dictionaries containing managed device information.
+
+        Returns:
+        None
+        """
         # loop through the managed devices info, extract the data and insert it into the table
         for managed_device_entry in managed_device_info:
             managed_device_name = managed_device_entry["managed_device_name"]
@@ -428,19 +489,36 @@ class SecurityDevice():
 
             insert_command = """
             INSERT INTO managed_devices_table (
-            security_device_name,
-            managed_device_name,
-            assigned_security_policy_container,
-            hostname,
-            cluster
+                security_device_name,
+                managed_device_name,
+                assigned_security_policy_container,
+                hostname,
+                cluster
             ) VALUES (
-            '{}', '{}', '{}', '{}', '{}'
-            );""".format(self._name, managed_device_name, assigned_security_policy_container, hostname, cluster)
+                %s, %s, %s, %s, %s
+            )"""
 
-            self._database.insert_table_value('managed_devices_table', insert_command)
+            values = (self._name, managed_device_name, assigned_security_policy_container, hostname, cluster)
+            
+            self._database.insert_table_value('managed_devices_table', insert_command, values)
 
 
     def insert_into_general_table(self, security_device_username, security_device_secret, security_device_hostname, security_device_type, security_device_port, security_device_version, domain):
+        """
+        Insert general information into the 'general_data_table'.
+
+        Parameters:
+        - security_device_username (str): Security device username.
+        - security_device_secret (str): Security device secret.
+        - security_device_hostname (str): Security device hostname.
+        - security_device_type (str): Security device type.
+        - security_device_port (str): Security device port.
+        - security_device_version (str): Security device version.
+        - domain (str): Security device domain.
+
+        Returns:
+        None
+        """
         insert_command = """
             INSERT INTO general_data_table (
                 security_device_name, 
@@ -452,9 +530,11 @@ class SecurityDevice():
                 security_device_version, 
                 security_device_domain
             ) VALUES (
-                '{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}'
-            );
-        """.format(
+                %s, %s, %s, %s, %s, %s, %s, %s
+            )
+        """
+
+        values = (
             self._name, 
             security_device_username, 
             security_device_secret, 
@@ -465,10 +545,19 @@ class SecurityDevice():
             domain
         )
 
-        self._database.insert_table_value('general_data_table', insert_command)
-
+        self._database.insert_table_value('general_data_table', insert_command, values)
 
     def insert_into_security_policy_containers_table(self, container_name, container_parent):
+        """
+        Insert values into the 'security_policy_containers_table' table.
+
+        Parameters:
+        - container_name (str): Name of the security policy container.
+        - container_parent (str): Parent container of the security policy.
+
+        Returns:
+        None
+        """
         insert_command = """
             INSERT INTO security_policy_containers_table (
                 security_device_name, 
@@ -478,39 +567,44 @@ class SecurityDevice():
                 '{}', '{}', '{}'
             )
         """.format(self._name, container_name, container_parent)
-        
+
         self._database.insert_table_value('security_policy_containers_table', insert_command)
-        
+
     def insert_into_security_policies_table(self, sec_policy_data):
-        # loop through the security policy data, extract it and then insert it to the table
+        """
+        Insert security policy data into the 'security_policies_table'.
+
+        Parameters:
+        - sec_policy_data (list): List of dictionaries containing security policy information.
+
+        Returns:
+        None
+        """
+        # Loop through the security policy data, extract it, and then insert it into the table
         for current_policy_data in sec_policy_data:
-            print(current_policy_data)
-            # the list values need to be formatted to a postgresql array format before they will be inserted in the DB
-            formatted_security_policy_source_zones = "{" + ",".join( current_policy_data["sec_policy_source_zones"]) + "}"
-            formatted_security_policy_destination_zones = "{" + ",".join( current_policy_data["sec_policy_destination_zones"]) + "}"
-            formatted_security_policy_source_networks = "{" + ",".join( current_policy_data["sec_policy_source_networks"]) + "}"
-            formatted_security_policy_destination_networks = "{" + ",".join( current_policy_data["sec_policy_destination_networks"]) + "}"
-            formatted_security_policy_source_ports = "{" + ",".join( current_policy_data["sec_policy_source_ports"]) + "}"
-            formatted_security_policy_destination_ports = "{" + ",".join( current_policy_data["sec_policy_destination_ports"]) + "}"
-            formatted_security_policy_schedules = "{" + ",".join( current_policy_data["sec_policy_schedules"]) + "}"
-            formatted_security_policy_users = "{" + ",".join( current_policy_data["sec_policy_users"]) + "}"
-            formatted_security_policy_urls = "{" + ",".join( current_policy_data["sec_policy_urls"]) + "}"
-            formatted_security_policy_l7_apps = "{" + ",".join( current_policy_data["sec_policy_apps"]) + "}"
+            formatted_security_policy_source_zones = "{" + ",".join(current_policy_data["sec_policy_source_zones"]) + "}"
+            formatted_security_policy_destination_zones = "{" + ",".join(current_policy_data["sec_policy_destination_zones"]) + "}"
+            formatted_security_policy_source_networks = "{" + ",".join(current_policy_data["sec_policy_source_networks"]) + "}"
+            formatted_security_policy_destination_networks = "{" + ",".join(current_policy_data["sec_policy_destination_networks"]) + "}"
+            formatted_security_policy_source_ports = "{" + ",".join(current_policy_data["sec_policy_source_ports"]) + "}"
+            formatted_security_policy_destination_ports = "{" + ",".join(current_policy_data["sec_policy_destination_ports"]) + "}"
+            formatted_security_policy_schedules = "{" + ",".join(current_policy_data["sec_policy_schedules"]) + "}"
+            formatted_security_policy_users = "{" + ",".join(current_policy_data["sec_policy_users"]) + "}"
+            formatted_security_policy_urls = "{" + ",".join(current_policy_data["sec_policy_urls"]) + "}"
+            formatted_security_policy_l7_apps = "{" + ",".join(current_policy_data["sec_policy_apps"]) + "}"
             comments = current_policy_data["sec_policy_comments"]
-            
-            # TODO: not sure this is the most optimal solution, maybe retrieve all the comments in a list, without dictionaries
+
+            # # TODO: not sure this is the most optimal solution, maybe retrieve all the comments in a list, without dictionaries
             if comments is not None:
                 # Convert each dictionary to a JSON string and escape double quotes for SQL
                 comments_as_json_strings = ['"' + json.dumps(comment).replace('"', '\\"') + '"' for comment in comments]
                 # Join the strings into a PostgreSQL array format
                 formatted_security_policy_comments = "{" + ",".join(comments_as_json_strings) + "}"
             else:
-                # This block executes if 'sec_policy_comments' is None.
-                # Here, 'formatted_security_policy_comments' is set to an empty dictionary.
-                # This represents a valid empty JSON object.
-                # It's a safe placeholder for scenarios where there are no comments.
-                formatted_security_policy_comments = {}
-            formatted_security_policy_log_setting = "{" + ",".join( current_policy_data["sec_policy_log_settings"]) + "}"
+                # Set formatted_security_policy_comments to None when comments is None
+                formatted_security_policy_comments = None
+
+            formatted_security_policy_log_setting = "{" + ",".join(current_policy_data["sec_policy_log_settings"]) + "}"
 
             insert_command = """
                 INSERT INTO security_policies_table (
@@ -537,38 +631,56 @@ class SecurityDevice():
                     security_policy_section, 
                     security_policy_action
                 ) VALUES (
-                    '{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}'
-                )""".format(
-                    self._name,
-                    current_policy_data["sec_policy_name"],
-                    current_policy_data["sec_policy_container_name"],
-                    current_policy_data["sec_policy_category"],
-                    current_policy_data["sec_policy_status"],
-                    formatted_security_policy_source_zones,
-                    formatted_security_policy_destination_zones,
-                    formatted_security_policy_source_networks,
-                    formatted_security_policy_destination_networks,
-                    formatted_security_policy_source_ports,
-                    formatted_security_policy_destination_ports,
-                    formatted_security_policy_schedules,
-                    formatted_security_policy_users,
-                    formatted_security_policy_urls,
-                    formatted_security_policy_l7_apps,
-                    current_policy_data["sec_policy_description"],
-                    formatted_security_policy_comments,
-                    formatted_security_policy_log_setting,
-                    current_policy_data["sec_policy_log_start"],
-                    current_policy_data["sec_policy_log_end"],
-                    current_policy_data["sec_policy_section"],
-                    current_policy_data["sec_policy_action"]
+                    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
                 )
-            
-            self._database.insert_table_value('security_policies_table', insert_command)
+            """
+            # Use a tuple to pass parameters to the execute method
+            parameters = (
+                self._name,
+                current_policy_data["sec_policy_name"],
+                current_policy_data["sec_policy_container_name"],
+                current_policy_data["sec_policy_category"],
+                current_policy_data["sec_policy_status"],
+                formatted_security_policy_source_zones,
+                formatted_security_policy_destination_zones,
+                formatted_security_policy_source_networks,
+                formatted_security_policy_destination_networks,
+                formatted_security_policy_source_ports,
+                formatted_security_policy_destination_ports,
+                formatted_security_policy_schedules,
+                formatted_security_policy_users,
+                formatted_security_policy_urls,
+                formatted_security_policy_l7_apps,
+                current_policy_data["sec_policy_description"],
+                formatted_security_policy_comments,
+                formatted_security_policy_log_setting,
+                current_policy_data["sec_policy_log_start"],
+                current_policy_data["sec_policy_log_end"],
+                current_policy_data["sec_policy_section"],
+                current_policy_data["sec_policy_action"]
+            )
+
+            self._database.insert_table_value('security_policies_table', insert_command, parameters)
 
     def verify_duplicate(self, table, column, value):
-        select_command = """SELECT EXISTS(SELECT 1 FROM {} WHERE {} = '{}');""".format(table, column, value)
-        is_duplicate = self._database.get_table_value(table, select_command)
+        """
+        Verify if a duplicate entry exists in the specified table and column.
 
+        Args:
+            table (str): Name of the table to check for duplicates.
+            column (str): Name of the column to check for duplicates.
+            value (str): Value to check for duplicate entries in the specified column.
+
+        Returns:
+            bool: True if a duplicate entry exists, False otherwise.
+        """
+        # Use parameterized query to prevent SQL injection
+        select_command = "SELECT EXISTS(SELECT 1 FROM {} WHERE {} = %s);".format(table, column)
+
+        # Execute the parameterized query and get the result
+        is_duplicate = self._database.get_table_value(table, select_command, (value,))
+
+        # Return the result as a boolean
         return is_duplicate[0][0]
 
     def delete_security_device(self):

@@ -88,32 +88,57 @@ class PioneerDatabase():
             # sys.exit(1)
     
 
-    def get_table_value(self, table_name, select_command):
+    def get_table_value(self, table_name, select_command, parameters=None):
+        """
+        Retrieve values from the specified table using the given SQL select command.
+
+        Args:
+            table_name (str): The name of the table to query.
+            select_command (str): The SQL select command.
+            parameters (tuple): The parameters to be used in the SQL query.
+
+        Returns:
+            list: A list of tuples containing the results of the query.
+        """
         try:
-            self._cursor.execute(select_command)
-        
+            if parameters:
+                self._cursor.execute(select_command, parameters)
+            else:
+                self._cursor.execute(select_command)
         except psycopg2.Error as err:
             print(f"Failed to select values from table {table_name}. Reason: {err}")
             # sys.exit(1)
-        
-        # fetch the returned query values
+
+        # Fetch the returned query values
         postgres_cursor_data = self._cursor.fetchall()
 
-        # extract the output returned from the select query. the returned value is a list of tuples
-        # since there is only one tuple in the list, it makes sense to extract it like this
-        # return postgres_cursor_data[0][0]
         return postgres_cursor_data
     
 
     # this function inserts values into a table of a database
-    def insert_table_value(self, table_name, insert_command):
+    def insert_table_value(self, table_name, insert_command, values=None):
+        """
+        Insert values into a specified table of the database.
+
+        Parameters:
+        - table_name (str): Name of the table.
+        - insert_command (str): SQL command for insertion.
+        - values (tuple): Values to be inserted into the table. Default is None.
+
+        Returns:
+        None
+        """
         try:
-            self._cursor.execute(insert_command)
-            print(f"Inserted values into: {table_name}")
-        
+            if values is not None:
+                self._cursor.execute(insert_command, values)
+            else:
+                print(insert_command)
+                self._cursor.execute(insert_command)
+            
+            print(f"Inserted values {values} into: {table_name}")
+
         except psycopg2.Error as err:
-            print(f"Failed to insert values into: {table_name}. Reason: {err}")
-            # sys.exit(1)
+            print(f"Failed to insert values {values} into: {table_name}. Reason: {err}")
 
 
     # this function updates values into a table

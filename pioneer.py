@@ -205,7 +205,6 @@ def main():
                 # if there is not container info returned by the function, value of security_policy_container_info is None.
                 # the reason a None is returned: the container is already in the database
                 except TypeError as err:
-                    print(err)
                     print("The container you are trying to import is already in the database.")
                     sys.exit(1)
 
@@ -219,8 +218,8 @@ def main():
                 # TODO: at this point all the security policy data is imported. it is time to import the object data.
                 processed_network_objects_info, processed_network_group_objects_info = SpecificSecurityDeviceObject.get_objects_data_info()
 
-                print(processed_network_objects_info)
-                print(processed_network_group_objects_info)
+                # print(processed_network_objects_info)
+                # print(processed_network_group_objects_info)
 
                 # after all the object data is retrieved, it is time to insert it into the database
 
@@ -255,10 +254,19 @@ def main():
 if __name__ == "__main__":
     main()
 
+# logging:
+# for every device and project, create a separate logging folder
+# the logging folders should have the following files:
+    # files containing the configuration being pulled from the security device. called smth like: {device}_objects_config.conf, {device}_security_policies.conf... etc
+    # files keeping track of failed imported policies/rules. failed_imported_objects.log, failed_imported_security_policies.log, etc
+    # files keeping track of the database operations (as well as the commands being issued)
+    # a file that tracks all the policies using L7 apps
+    # a file that tracks all the policies using vendor specific URL categories
+    # a file that tracks all the policies using time objects
+    # a file that tracks all the policies using users
+
 
 # TODO SOON:
-# import firewall policies data
-# really soon: implement logging
 # add description for both the device and the project
 # ask the user if he is sure that he wants to delete the project
 # add a timestamp for creation of the device and the project
