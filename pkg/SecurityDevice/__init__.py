@@ -330,7 +330,6 @@ class SecurityDeviceConnection():
     def __init__(self) -> None:
         pass
 
-
 # this will be a generic security device only with a database, acessing it will be possible
 # in main, without acessing the protected attributes. better option for "--device"
 class SecurityDevice:
@@ -422,7 +421,6 @@ class SecurityDevice:
         result = self._database.get_table_value('general_data_table', select_command, (self._name,))
         return result[0][0] if result else None
 
-    
     # the following functions process the data from the database. all the objects are processed, the unique values
     # are gathered and returned in a list that will be further processed by the program
     def get_db_objects(self, object_type):
@@ -479,13 +477,19 @@ class SecurityDevice:
         Returns:
         None
         """
-        # loop through the managed devices info, extract the data and insert it into the table
         for managed_device_entry in managed_device_info:
+            # Extract data from the current managed device entry
             managed_device_name = managed_device_entry["managed_device_name"]
             assigned_security_policy_container = managed_device_entry["assigned_security_policy_container"]
             hostname = managed_device_entry["hostname"]
             cluster = managed_device_entry['cluster']
 
+            # Check for duplicates before insertion
+            if self.verify_duplicate('managed_devices_table', 'managed_device_name', managed_device_name):
+                print(f"Duplicate entry for managed device: {managed_device_name}. Skipping insertion.")
+                continue
+
+            # SQL command to insert data into the 'managed_devices_table'
             insert_command = """
             INSERT INTO managed_devices_table (
                 security_device_name,
@@ -497,8 +501,10 @@ class SecurityDevice:
                 %s, %s, %s, %s, %s
             )"""
 
+            # Values to be inserted into the table
             values = (self._name, managed_device_name, assigned_security_policy_container, hostname, cluster)
-            
+
+            # Execute the insert command with the specified values
             self._database.insert_table_value('managed_devices_table', insert_command, values)
 
     def insert_into_general_table(self, security_device_username, security_device_secret, security_device_hostname, security_device_type, security_device_port, security_device_version, domain):
@@ -517,6 +523,11 @@ class SecurityDevice:
         Returns:
         None
         """
+        # Check for duplicates before insertion
+        if self.verify_duplicate('general_data_table', 'security_device_hostname', security_device_hostname):
+            print(f"Duplicate entry for hostname: {security_device_hostname}. Skipping insertion.")
+            return
+
         insert_command = """
             INSERT INTO general_data_table (
                 security_device_name, 
@@ -545,28 +556,47 @@ class SecurityDevice:
 
         self._database.insert_table_value('general_data_table', insert_command, values)
 
-    def insert_into_security_policy_containers_table(self, container_name, container_parent):
+    def insert_into_security_policy_containers_table(self, containers_data):
         """
         Insert values into the 'security_policy_containers_table' table.
 
         Parameters:
-        - container_name (str): Name of the security policy container.
-        - container_parent (str): Parent container of the security policy.
+        - containers_data (list): List of dictionaries containing security policy container information.
 
         Returns:
         None
         """
-        insert_command = """
-            INSERT INTO security_policy_containers_table (
-                security_device_name, 
-                security_policy_container_name, 
-                security_policy_container_parent
-            ) VALUES (
-                '{}', '{}', '{}'
-            )
-        """.format(self._name, container_name, container_parent)
+        for container_entry in containers_data:
+            # Extract data from the current security policy container entry
+            container_name = container_entry['security_policy_container_name']
+            container_parent = container_entry['security_policy_parent']
 
-        self._database.insert_table_value('security_policy_containers_table', insert_command)
+            # Check for duplicates before insertion
+            if self.verify_duplicate('security_policy_containers_table', 'security_policy_container_name', container_name):
+                print(f"Duplicate entry for container: {container_name}. Skipping insertion.")
+                continue
+
+            # SQL command to insert data into the 'security_policy_containers_table'
+            insert_command = """
+                INSERT INTO security_policy_containers_table (
+                    security_device_name, 
+                    security_policy_container_name, 
+                    security_policy_container_parent
+                ) VALUES (
+                    %s, %s, %s
+                )
+            """
+
+            # Values to be inserted into the table
+            values = (
+                self._name,
+                container_name,
+                container_parent
+            )
+
+            # Execute the insert command with the specified values
+            self._database.insert_table_value('security_policy_containers_table', insert_command, values)
+
 
     def insert_into_security_policies_table(self, sec_policy_data):
         """
@@ -580,6 +610,13 @@ class SecurityDevice:
         """
         # Loop through the security policy data, extract it, and then insert it into the table
         for current_policy_data in sec_policy_data:
+            current_policy_name = current_policy_data["sec_policy_name"]
+            
+            # Check for duplicates before insertion
+            if self.verify_duplicate('security_policies_table', 'security_policy_name', current_policy_name):
+                print(f"Duplicate entry for security policy: {current_policy_name}. Skipping insertion.")
+                continue
+
             formatted_security_policy_source_zones = "{" + ",".join(current_policy_data["sec_policy_source_zones"]) + "}"
             formatted_security_policy_destination_zones = "{" + ",".join(current_policy_data["sec_policy_destination_zones"]) + "}"
             formatted_security_policy_source_networks = "{" + ",".join(current_policy_data["sec_policy_source_networks"]) + "}"
@@ -635,7 +672,7 @@ class SecurityDevice:
             # Use a tuple to pass parameters to the execute method
             parameters = (
                 self._name,
-                current_policy_data["sec_policy_name"],
+                current_policy_name,
                 current_policy_data["sec_policy_container_name"],
                 current_policy_data["sec_policy_category"],
                 current_policy_data["sec_policy_status"],
@@ -660,6 +697,47 @@ class SecurityDevice:
 
             self._database.insert_table_value('security_policies_table', insert_command, parameters)
 
+    def insert_into_object_containers_table(self, containers_data):
+        """
+        Insert values into the 'object_containers_table' table.
+
+        Parameters:
+        - containers_data (list): List of dictionaries containing object container information.
+
+        Returns:
+        None
+        """
+        for container_entry in containers_data:
+            # Extract data from the current object container entry
+            container_name = container_entry['object_container_name']
+            container_parent = container_entry['object_container_parent']
+
+            # Check for duplicates before insertion
+            if self.verify_duplicate('object_containers_table', 'object_container_name', container_name):
+                print(f"Duplicate entry for object container: {container_name}. Skipping insertion.")
+                continue
+
+            # SQL command to insert data into the 'object_containers_table'
+            insert_command = """
+                INSERT INTO object_containers_table (
+                    security_device_name, 
+                    object_container_name, 
+                    object_container_parent
+                ) VALUES (
+                    %s, %s, %s
+                )
+            """
+
+            # Values to be inserted into the table
+            values = (
+                self._name,
+                container_name,
+                container_parent
+            )
+
+            # Execute the insert command with the specified values
+            self._database.insert_table_value('object_containers_table', insert_command, values)
+
     def insert_into_network_address_objects_table(self, network_objects_data):
         """
         Insert network address objects data into the 'network_address_objects_table'.
@@ -673,6 +751,12 @@ class SecurityDevice:
         for current_object_entry in network_objects_data:
             # Extract data from the current network address object entry
             network_address_name = current_object_entry['network_address_name']
+
+            # Check for duplicates before insertion
+            if self.verify_duplicate('network_address_objects_table', 'network_address_name', network_address_name):
+                print(f"Duplicate entry for network address object: {network_address_name}. Skipping insertion.")
+                continue
+
             object_container_name = current_object_entry['object_container_name']
             network_address_value = current_object_entry['network_address_value']
             network_address_description = current_object_entry['network_address_description']
@@ -721,6 +805,11 @@ class SecurityDevice:
         for current_group_object_entry in network_group_objects_data:
             # Extract data from the current network address object group entry
             network_address_group_name = current_group_object_entry['network_address_group_name']
+            # Check for duplicates before insertion
+            if self.verify_duplicate('network_address_object_groups_table', 'network_address_group_name', network_address_group_name):
+                print(f"Duplicate entry for network address object group: {network_address_group_name}. Skipping insertion.")
+                continue
+            
             object_container_name = current_group_object_entry['object_container_name']
             network_address_group_members = current_group_object_entry['network_address_group_members']
             network_address_group_members = "{" + ",".join(network_address_group_members) + "}"
@@ -754,6 +843,46 @@ class SecurityDevice:
             # Execute the insert command with the specified values
             self._database.insert_table_value('network_address_object_groups_table', insert_command, values)
 
+    def insert_into_security_policy_containers_table(self, containers_data):
+        """
+        Insert values into the 'security_policy_containers_table' table.
+
+        Parameters:
+        - containers_data (list): List of dictionaries containing security policy container information.
+
+        Returns:
+        None
+        """
+        for container_entry in containers_data:
+            # Extract data from the current security policy container entry
+            container_name = container_entry['security_policy_container_name']
+            container_parent = container_entry['security_policy_parent']
+
+            # Check for duplicates before insertion
+            if self.verify_duplicate('security_policy_containers_table', 'security_policy_container_name', container_name):
+                print(f"Duplicate entry for container: {container_name}. Skipping insertion.")
+                continue
+
+            # SQL command to insert data into the 'security_policy_containers_table'
+            insert_command = """
+                INSERT INTO security_policy_containers_table (
+                    security_device_name, 
+                    security_policy_container_name, 
+                    security_policy_container_parent
+                ) VALUES (
+                    %s, %s, %s
+                )
+            """
+
+            # Values to be inserted into the table
+            values = (
+                self._name,
+                container_name,
+                container_parent
+            )
+
+            # Execute the insert command with the specified values
+            self._database.insert_table_value('security_policy_containers_table', insert_command, values)
 
     def verify_duplicate(self, table, column, value):
         """
@@ -782,7 +911,7 @@ class SecurityDevice:
     # the following methods must be overriden by the device's specific methods
     # TODO: add all the methods necessary here (e.g process methods)
     @abstractmethod
-    def get_sec_policy_container_info(self):
+    def get_security_policy_containers_info(self):
         pass
     
     @abstractmethod

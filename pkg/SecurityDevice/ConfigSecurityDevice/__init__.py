@@ -1,4 +1,6 @@
 from pkg.SecurityDevice import SecurityDeviceConnection
 
-class ConfigSecurityDeviceConnection(SecurityDeviceConnection):
-    pass
+class ConfigSecurityDeviceFactory:
+    @staticmethod
+    def build_config_security_device():
+        pass

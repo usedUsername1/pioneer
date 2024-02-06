@@ -3,7 +3,7 @@ import utils.helper as helper
 import pkg.MigrationProject as MigrationProject
 from pkg import DBConnection, PioneerDatabase
 from pkg.SecurityDevice import SecurityDevice, SecurityDeviceDatabase
-from pkg.SecurityDevice.APISecurityDevice import APISecurityDeviceFactory, ConfigSecurityDeviceFactory
+from pkg.SecurityDevice.APISecurityDevice import APISecurityDeviceFactory
 import sys
 from datetime import datetime, timezone
 
@@ -104,8 +104,8 @@ def main():
         if('-api' in security_device_type):
             SecurityDeviceObject = APISecurityDeviceFactory.build_api_security_device(security_device_name, security_device_type, SecurityDeviceDB, security_device_hostname, security_device_username, security_device_secret, security_device_port, domain)
 
-        elif('-config' in security_device_type):
-            SecurityDeviceObject = ConfigSecurityDeviceFactory.build_config_security_device()
+        # elif('-config' in security_device_type):
+        #     SecurityDeviceObject = ConfigSecurityDeviceFactory.build_config_security_device()
 
         else:
             print("Invalid security device type.")
@@ -190,23 +190,11 @@ def main():
                 passed_container_names_list = []
                 passed_container_names_list.append(passed_container_names)
                 print(f"I am now importing the policy container info for the following containers: {passed_container_names_list}.")
-                # be aware, if a security policy package is imported, its parents will also be imported
-                # check if the provided containers are not already imported
-                security_policy_container_info = SpecificSecurityDeviceObject.get_sec_policy_container_info(passed_container_names_list)
-                # now loop through the containers' information
-                try:
-                    for current_container_entry in security_policy_container_info:
-                        # retrieve the parent and the child from the security_policy_container_info list
-                        child_container = current_container_entry[0]
-                        parent_container = current_container_entry[1]
-
-                        # now that the information is retrieved, insert it into the table
-                        SpecificSecurityDeviceObject.insert_into_security_policy_containers_table(child_container, parent_container)                
-                # if there is not container info returned by the function, value of security_policy_container_info is None.
-                # the reason a None is returned: the container is already in the database
-                except TypeError as err:
-                    print("The container you are trying to import is already in the database.")
-                    sys.exit(1)
+                
+                # retrieve the security policy containers along with the parents
+                # insert them in the database
+                security_policy_containers_info = SpecificSecurityDeviceObject.get_security_policy_containers_info(passed_container_names_list)
+                SpecificSecurityDeviceObject.insert_into_security_policy_containers_table(security_policy_containers_info)
 
                 # import the security policies (data) that are part of the imported security policy containers
                 # the policy container info extracted earlier can be used here. we can use the child container entry since the child container
@@ -215,22 +203,19 @@ def main():
                 # at this point, the data from all the security policies is extracted, it is time to insert it into the database
                 SpecificSecurityDeviceObject.insert_into_security_policies_table(sec_policy_data)
 
+                # import and insert the object container first!
+                object_containers_info = SpecificSecurityDeviceObject.get_object_containers_info(security_policy_containers_info)
+                SpecificSecurityDeviceObject.insert_into_object_containers_table(object_containers_info)
+
                 # at this point all the security policy data is imported. it is time to import the object data.
                 network_objects_data, network_group_objects_data = SpecificSecurityDeviceObject.get_objects_data_info()
                 
                 # all the network objects and network group objects data has been extracted, now insert it into the database
-                #TODO: import the object container first!
-
-                #TODO: remove all duplicates from the network_objects_data, network_group_objects_data
                 SpecificSecurityDeviceObject.insert_into_network_address_objects_table(network_objects_data)
                 SpecificSecurityDeviceObject.insert_into_network_address_object_groups_table(network_group_objects_data)
 
-                # all the object data has been extracted, now it is time to insert it into the database
+                #TODO: implement logging now!
 
-                # print(processed_network_objects_info)
-                # print(processed_network_group_objects_info)
-
-                # after all the object data is retrieved, it is time to insert it into the database
 
 
 

@@ -1,6 +1,5 @@
 from pkg.SecurityDevice.APISecurityDevice.APISecurityDeviceConnection import APISecurityDeviceConnection
 from pkg.SecurityDevice import SecurityDevice
-
 import utils.helper as helper
 import fireREST
 import sys
@@ -74,36 +73,33 @@ class FMCSecurityDevice(SecurityDevice):
     # this function takes the list with policy container names and loops through each of them.
     # for every container, it tries to find the container parent. if the parent container is a child of another container, it will find that parent too
     # ACP = access control policy = the security policy container used by FMC
-    def get_sec_policy_container_info(self, policy_container_names_list):
+    def get_security_policy_containers_info(self, policy_container_names_list):
         """
-        Retrieve information about security policy containers and their parent-child relationships.
+        Retrieves information about security policy containers.
 
         Args:
-            policy_container_names_list (list): List of security policy container names.
+            policy_container_names_list (list): A list of names of security policy containers.
 
         Returns:
-            list: List of lists containing child-parent mappings for the security policy containers.
+            list: A list of dictionaries containing information about each security policy container.
+                Each dictionary has the following keys:
+                - 'security_policy_container_name': Name of the security policy container.
+                - 'security_policy_parent': Name of the parent security policy container, or None if it has no parent.
         """
-        # Loop through the policy containers provided by the user
+
+        security_policy_containers_info = []
+
         for policy_container_name in policy_container_names_list:
-            # Check if the current container name was already imported
-            is_duplicate_acp = self.verify_duplicate('security_policy_containers_table', 'security_policy_container_name', policy_container_name)
-            print(is_duplicate_acp)
-            if is_duplicate_acp:
-                print(f"Container: {policy_container_name} is already imported. Skipping it...")
-                continue
-
             try:
-                # Create the list that will store the dictionary that will store the child_acp -> parent_acp mapping
-                child_parent_list = []
-
                 # Retrieve the info for the current acp
                 acp_info = self._api_connection.policy.accesspolicy.get(name=policy_container_name)
 
                 # If the policy does not have a parent policy at all, then return a mapping with the current policy name and None to the caller
                 if not acp_info['metadata']['inherit']:
-                    child_parent_list.append([policy_container_name, None])
-                    return child_parent_list
+                    security_policy_containers_info.append({
+                        'security_policy_container_name': policy_container_name,
+                        'security_policy_parent': None
+                    })
                 else:
                     # Try to retrieve the parent of the policy. There is an "inherit" boolean attribute in the acp_info response. If it is equal to 'true', then the policy has a parent
                     while acp_info['metadata']['inherit']:
@@ -113,36 +109,35 @@ class FMCSecurityDevice(SecurityDevice):
                         # Get the name of the acp parent
                         acp_parent = acp_info['metadata']['parentPolicy']['name']
 
-                        print(f"Container: {current_acp_name} is the child of a container. Its parent is: {acp_parent}.")
-
-                        # Check if the parent ACP is already imported in the database. If a parent is already present, then it means the rest of the parents are present
-                        # Create the mapping of the current child and its parent, and return it to the caller
-                        is_duplicate_acp = self.verify_duplicate('security_policy_containers_table', 'security_policy_container_name', acp_parent)
-                        if is_duplicate_acp:
-                            print(f"Parent container: {acp_parent} is already imported. I have only imported its child. I will skip further processing.")
-                            child_parent_list.append([current_acp_name, acp_parent])
-                            return child_parent_list
+                        security_policy_containers_info.append({
+                            'security_policy_container_name': current_acp_name,
+                            'security_policy_parent': acp_parent
+                        })
 
                         # Retrieve the parent info to be processed in the next iteration of the loop
                         acp_info = self._api_connection.policy.accesspolicy.get(name=acp_parent)
 
-                        # Update the list containing info about the parents/children ACPs
-                        child_parent_list.append([current_acp_name, acp_parent])
-
                     # If the parent policy does not have a parent, then map the ACP to None
                     else:
-                        child_parent_list.append([acp_parent, None])
-
-                    return child_parent_list
+                        acp_parent = acp_info['name']
+                        security_policy_containers_info.append({
+                            'security_policy_container_name': acp_parent,
+                            'security_policy_parent': None
+                        })
 
             except Exception as err:
                 print(f'Could not retrieve info regarding the container {policy_container_name}. Reason: {err}.')
                 sys.exit(1)
-        
-    
-    # this function extracts all the data from the security policies of a policy container.
-    # the data is returned in a list containing JSON
-    # TODO: should process functions be followed by importing the processed objects?
+
+        return security_policy_containers_info
+
+    # there are no object containers per se in FMC, therefore, only dummy info will be returned
+    def get_object_containers_info(self, policy_container_name):
+        return [{
+            "object_container_name":"virtual_object_container",
+            "object_container_parent":"object_container_parent"
+        }]
+
     def get_sec_policies_data(self, sec_policy_container_list):
         """
         Retrieve information about security policies from the specified policy containers.
@@ -167,6 +162,7 @@ class FMCSecurityDevice(SecurityDevice):
                 sec_policy_info.append(sec_policy_entry)
 
         return sec_policy_info
+
 
     def process_sec_policy_entry(self, sec_policy, sec_policy_container_name):
         """

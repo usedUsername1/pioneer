@@ -113,7 +113,7 @@ class PioneerDatabase():
         postgres_cursor_data = self._cursor.fetchall()
 
         return postgres_cursor_data
-    
+
 
     # this function inserts values into a table of a database
     def insert_table_value(self, table_name, insert_command, values=None):
@@ -131,6 +131,7 @@ class PioneerDatabase():
         try:
             if values is not None:
                 self._cursor.execute(insert_command, values)
+                print(f"Inserted values {values} into table {table_name}.")
             else:
                 self._cursor.execute(insert_command)
 

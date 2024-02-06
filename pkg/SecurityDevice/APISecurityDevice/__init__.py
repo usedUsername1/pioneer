@@ -21,8 +21,3 @@ class APISecurityDeviceFactory:
                 print("Invalid API security device.")
                 sys.exit(1)
 
-            
-class ConfigSecurityDeviceFactory:
-    @staticmethod
-    def build_config_security_device():
-        pass
