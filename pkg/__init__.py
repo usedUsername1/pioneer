@@ -23,14 +23,13 @@ class DBConnection():
                 database = self._database[0],
                 password = self._password[0],
                 host = self._host[0],
-                port = self._port
+                port = self._port[0]
             )
             # set autocommit to True
             postgres_conn.autocommit = True
 
         # if the connection fails, catch the error and exit the program
         except psycopg2.Error as err:
-            print(self._user, self._database, self._password, self._host, self._port)
             helper.logging.critical(f"Error connecting to PostgreSQL Platform: {err}.")
             sys.exit(1)
         
