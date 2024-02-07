@@ -10,25 +10,32 @@ class FMCDeviceConnection(APISecurityDeviceConnection):
     def __init__(self, api_username, api_secret, api_hostname, api_port, domain):
         super().__init__(api_username, api_secret, api_hostname, api_port)
         self._domain = domain
+        helper.logging.debug(f"Called FMCDeviceConnection __init__ with parameters: username {api_username}, hostname {api_hostname}, port {api_port}, domain {domain}.")
     
     def connect_to_security_device(self):
+        helper.logging.debug(f"Called connect_to_security_device with parameters: username {self._api_username}, hostname {self._api_hostname}, port {self._api_port}, domain {self._domain}.")
         try:
+            helper.logging.info(f"I am trying to connect to the FMC device using username {self._api_username}, hostname {self._api_hostname}, port {self._api_port}, domain {self._domain}.")
             fmc_conn = fireREST.FMC(hostname=self._api_hostname, username=self._api_username, password=self._api_secret, domain=self._domain, protocol=self._api_port, timeout=30)
+            helper.logging.info(f"I have succsefully connected to the device. {fmc_conn}")
             return fmc_conn
+        
         except Exception as err:
-            print(f'Could not connect to FMC device: {self._api_username}. Reason: {err}')
+            helper.logging.critical(f"Could not connect to FMC device. Reason: {err}")
             sys.exit(1)
         
 
 class FMCSecurityDevice(SecurityDevice):
     def __init__(self, name, sec_device_database, security_device_username, security_device_secret, security_device_hostname, security_device_port, domain):
         super().__init__(name, sec_device_database)
+        helper.logging.debug(f"Called FMCSecurityDevice __init__ with parameters: name {name}, username {security_device_username}, hostname {security_device_hostname}, port {security_device_port}, domain {domain}.")
         self._api_connection = FMCDeviceConnection(security_device_username, security_device_secret, security_device_hostname, security_device_port, domain).connect_to_security_device()
 
 #     def import_nat_policy_containers(self):
 #         pass
         
     def get_managed_devices_info(self):
+        helper.logging.debug("Called function get_managed_devices_info().")
         """
         Retrieve information about managed devices.
 
@@ -39,13 +46,14 @@ class FMCSecurityDevice(SecurityDevice):
 
         # Execute the request to retrieve information about the devices
         managed_devices = self._api_connection.device.devicerecord.get()
-
+        helper.logging.debug(f"Executed API call to the FMC device, got the following info {managed_devices}.")
         # Initialize an empty list to store managed devices info
         managed_devices_info = []
 
         # Loop through the information about managed devices
         for managed_device in managed_devices:
             device_name = managed_device['name']
+            helper.logging.info(f"Got the following managed device {device_name}.")
             assigned_security_policy_container = managed_device['accessPolicy']['name']
             device_hostname = managed_device['hostName']
             device_cluster = None
@@ -53,8 +61,9 @@ class FMCSecurityDevice(SecurityDevice):
             # Check if the device is part of a cluster
             try:
                 device_cluster = managed_device['metadata']['containerDetails']['name']
+                helper.logging.debug(f"Managed device {managed_device} is part of a cluster {device_cluster}.")
             except KeyError:
-                print(f"Device {device_name} is not part of a device cluster.")
+                helper.logging.debug(f"Managed device {managed_device} is NOT part of a cluster {device_cluster}.")
 
             # Create a dictionary for the managed device entry
             managed_device_entry = {
@@ -68,6 +77,7 @@ class FMCSecurityDevice(SecurityDevice):
             managed_devices_info.append(managed_device_entry)
 
         # Return the list to the caller
+        helper.logging.debug(f"I finished getting all the managed devices info. This is it: {managed_devices_info}.")
         return managed_devices_info
 
     # this function takes the list with policy container names and loops through each of them.
@@ -229,6 +239,7 @@ class FMCSecurityDevice(SecurityDevice):
     
 
     def get_device_version(self):
+        helper.logging.debug("Called function det_device_version()")
         """
         Retrieve the version of the device's server.
 
@@ -238,10 +249,12 @@ class FMCSecurityDevice(SecurityDevice):
         try:
             # Retrieve device system information to get the server version
             device_system_info = self._api_connection.system.info.serverversion.get()
+            helper.logging.debug(f"Executed API call to the FMC device, got the following info {device_system_info}.")
             device_version = device_system_info[0]['serverVersion']
+            helper.logging.info(f"Got device version {device_version}")
             return device_version
         except Exception as err:
-            print(f'Could not retrieve platform version. Reason: {err}')
+            helper.logging.critical(f'Could not retrieve platform version. Reason: {err}')
             sys.exit(1)
 
     # this function is responsible for processing the zone information. it takes the current security policy that the program is processing

@@ -8,13 +8,13 @@ import sys
 from datetime import datetime, timezone
 
 def main():
+
     db_user = "pioneer_admin"
     db_password = "2wsx#EDC"
     landing_database = "pioneer_projects"
     db_host = '127.0.0.1'
     db_port = 5432
 
-    
     # create the parser for the pioneer utilty
     pioneer_parser = helper.create_parser()
 
@@ -30,7 +30,10 @@ def main():
         
         # extract the name from argv
         project_name = pioneer_args['create_project [name]']
-
+        
+        # create folder where logs for the project will be stored
+        log_folder = helper.os.path.join('swisknife', 'pkg', 'log', f'project_{project_name}')
+        
         # extract the description from argv
         project_description = pioneer_args['description [description]']
 
@@ -71,6 +74,12 @@ def main():
     if pioneer_args["create_security_device [name]"] and pioneer_args["device_type [type]"] and pioneer_args["hostname [hostname]"] and pioneer_args["username [username]"] and pioneer_args["secret [secret]"]:
         # extract the device name and the device type from the argv namespace
         security_device_name = pioneer_args["create_security_device [name]"]
+        
+        # create folder where logs for the security device will be stored
+        log_folder = helper.os.path.join('swisknife', 'pkg', 'log', f'device_{security_device_name}')
+        log_file = 'general.logs'
+        helper.setup_logging(log_folder, log_file)
+
         security_device_type = pioneer_args["device_type [type]"]
         security_device_hostname = pioneer_args["hostname [hostname]"]
         security_device_username = pioneer_args["username [username]"]
@@ -83,12 +92,16 @@ def main():
         database_conn = DBConnection(db_user, landing_database , db_password, db_host, db_port)
         db_cursor = database_conn.create_cursor()
         PioneerProjectsDB = PioneerDatabase(db_cursor)
+
+        helper.logging.info(f"Creating device database: {security_device_db_name}.")
         PioneerProjectsDB.create_database(security_device_db_name)
         
         # in order to succesfully create a security device, it needs to have valid data
         # security device data can be validated if the user can succsefully connect to the device and retrieve the version
         # connect to the device database and get a cursor for the database connection
         security_device_db_conn = DBConnection(db_user, security_device_db_name, db_password, db_host, db_port)
+        
+        helper.logging.info(f"Connecting to device database: {security_device_db_name}.")
         security_device_cursor = security_device_db_conn.create_cursor()
 
         # note: the reason a device connection can't be created here is because the connection is relying on the device type
@@ -96,32 +109,40 @@ def main():
 
         # create the security device database object
         SecurityDeviceDB = SecurityDeviceDatabase(security_device_cursor)
+        
 
         # and create the specific tables of the security device
+        helper.logging.info(f"Creating the tables in device database: {security_device_db_name}.")
         SecurityDeviceDB.create_security_device_tables()
 
         # based on the device type, generate a security device object
         if('-api' in security_device_type):
+            helper.logging.info(f"The device {security_device_name} is an API device. Its API will be used for interacting with it.")
             SecurityDeviceObject = APISecurityDeviceFactory.build_api_security_device(security_device_name, security_device_type, SecurityDeviceDB, security_device_hostname, security_device_username, security_device_secret, security_device_port, domain)
 
         # elif('-config' in security_device_type):
         #     SecurityDeviceObject = ConfigSecurityDeviceFactory.build_config_security_device()
 
         else:
-            print("Invalid security device type.")
+            helper.logging.critical(f"Provided device type {security_device_type} is invalid.")
             sys.exit(1)
+        
         # get version of the security device
+        helper.logging.info(f"Getting the device version for device: {security_device_name}.")
         security_device_version = SecurityDeviceObject.get_device_version()
         
         # insert the device name, username, secret, hostname, type and version into the general_data table
+        helper.logging.info(f"Inserting general device info in the database.")
         SecurityDeviceObject.insert_into_general_table(security_device_username, security_device_secret, security_device_hostname, security_device_type, security_device_port, security_device_version, domain)
         # import other essential configuration here, so that the user is not required to enter it.
         # import managed devices
 
         # retrive the information about the managed devices. if the device is a standalone device, the managed device will be the standalone device
+        helper.logging.info(f"Getting the device version for device: {security_device_name}.")
         managed_devices_info = SecurityDeviceObject.get_managed_devices_info()
 
         # insert it into the table
+        helper.logging.info(f"Inserting managed device info in the database.")
         SecurityDeviceObject.insert_into_managed_devices_table(managed_devices_info)
 
 

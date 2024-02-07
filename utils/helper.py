@@ -3,6 +3,8 @@ import sys
 import psycopg2
 import utils.exceptions as PioneerExceptions
 import ipaddress
+import logging
+import os
 
 # this function returns a parser objects for the pioneer tool
 def create_parser():
@@ -45,6 +47,34 @@ def create_parser():
 
     return parser
 
+
+def setup_logging(log_folder, log_file=None):
+    """
+    Set up logging configuration.
+
+    This function creates a log folder if it doesn't exist and configures logging to write both to the console
+    and to a file in the specified log folder.
+
+    Parameters:
+        log_folder (str): Path to the log folder where log files will be stored.
+        log_file (str, optional): Name of the log file. If not provided, a default filename ('logfile.log') will be used.
+
+    Returns:
+        None
+    """
+    # Create log folder if it doesn't exist
+    os.makedirs(log_folder, exist_ok=True)
+
+    # Determine log file name
+    log_file_name = log_file if log_file else 'logfile.log'
+
+    # Configure logging to write to both console and file
+    logging.basicConfig(level=logging.DEBUG,
+                        format='%(asctime)s - %(levelname)s - %(message)s',
+                        handlers=[
+                            logging.StreamHandler(),  # Log to console
+                            logging.FileHandler(os.path.join(log_folder, log_file_name))  # Log to file
+                        ])
 
 def load_protocol_mapping():
     return {

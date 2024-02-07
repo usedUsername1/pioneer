@@ -11,9 +11,11 @@ class DBConnection():
         self._database = database,
         self._password = password,
         self._host = host,
-        self._port = port
+        self._port = port,
+        helper.logging.debug(f"Called DBConnection __init__, with the following parameters: user: {self._user}, database: {self._database}, host: {host}, port: {port}.")
     
     def create_cursor(self):
+        helper.logging.debug(f"Called create_cursor().")
         # self parameters are returned as a tuple, they need to be extracted
         try:
             postgres_conn = psycopg2.connect(
@@ -29,19 +31,21 @@ class DBConnection():
         # if the connection fails, catch the error and exit the program
         except psycopg2.Error as err:
             print(self._user, self._database, self._password, self._host, self._port)
-            print(f"Error connecting to PostgreSQL Platform: {err}")
+            helper.logging.critical(f"Error connecting to PostgreSQL Platform: {err}.")
             sys.exit(1)
         
         # initialize the db cursor
         database_cursor = postgres_conn.cursor()
+        helper.logging.debug(f"Succesfully created cursor {database_cursor}.")
 
         # return the cursor to the caller
         return database_cursor
 
-
+#TODO: refactor these functions as well!
 class PioneerDatabase():
     def __init__(self, cursor):
         self._cursor = cursor
+        helper.logging.debug(f"Called PioneerDatabase __init__ with the following cursor {self._cursor}.")
     
     @abstractmethod
     def create_specific_tables(self):
@@ -54,41 +58,51 @@ class PioneerDatabase():
     def create_database(self, name):
         # execute the request to create the database for the project. no need to specify the owner
         # as the owner will be the creator of the database.
+        helper.logging.debug(f"Called create_database() with parameters: {name}.")
         try:
             # execute the query to create the database
-            self._cursor.execute(("""CREATE DATABASE {};""").format(name))
+            query = """CREATE DATABASE {};""".format(name)
+            helper.logging.debug(f"Executing the following query: {query}.")
+            self._cursor.execute(query)
 
             # inform the user that the execution succeeded
             print(f"Created database {name}.")
+            helper.logging.info(f"Succesfully created database: {name}")
 
         # catch the error and exit the program if database creation fails
         except psycopg2.Error as err:
-            print(f"Error creating database: {name}. Reason: {err}")
+            helper.logging.critical(f"Error creating database: {name}. Reason: {err}")
             sys.exit(1)
 
     
     def delete_database(self, name):
+        helper.logging.debug(f"Called delete_database() with parameters: {name}.")
         try:
-            self._cursor.execute(("""DROP DATABASE {};""").format(name))
+            query = """DROP DATABASE {};""".format(name)
+            helper.logging.debug(f"Executing the following query: {query}.")
+            self._cursor.execute(query)
 
-            print(f"Deleted database {name}.")
+            helper.logging.info(f"Succesfully deleted database: {name}")
         
         except psycopg2.Error as err:
-            print(f"Error deleting database: {name}. Reason: {err}")
+            helper.logging.critical(f"Error deleting database: {name}. Reason: {err}")
             sys.exit(1)  
     
 
     def create_table(self, table_name, table_command):
+        helper.logging.debug(f"Called create_table() with parameters: table name: {table_name}, query {table_command}.")
         try:
             self._cursor.execute(table_command)
-            print(f"Created table: {table_name}")
+            helper.logging.info(f"Succesfully created table {table_name}")
         
         except psycopg2.Error as err:
+            helper.logging.critical(f"Error creating table: {table_name}. Reason: {err}")
             print(f"Failed to create table: {table_name}. Reason: {err}")
-            # sys.exit(1)
+            sys.exit(1)
     
 
     def get_table_value(self, table_name, select_command, parameters=None):
+        helper.logging.debug(f"Called get_table_value() with parameters: table name: {table_name}, query {select_command}, parameters {parameters}.")
         """
         Retrieve values from the specified table using the given SQL select command.
 
@@ -106,12 +120,12 @@ class PioneerDatabase():
             else:
                 self._cursor.execute(select_command)
         except psycopg2.Error as err:
-            print(f"Failed to select values from table {table_name}. Reason: {err}")
+            helper.logging.error(f"Failed to select values from table {table_name}. Reason: {err}")
             # sys.exit(1)
 
         # Fetch the returned query values
         postgres_cursor_data = self._cursor.fetchall()
-
+        helper.logging.info(f"Succesfully retrieved values from table {table_name}. These are: {postgres_cursor_data}.")
         return postgres_cursor_data
 
 
@@ -128,15 +142,18 @@ class PioneerDatabase():
         Returns:
         None
         """
+        helper.logging.debug(f"Called get_table_value() with parameters: table name {table_name}, insert command {insert_command}, values {values}.")
         try:
             if values is not None:
                 self._cursor.execute(insert_command, values)
-                print(f"Inserted values {values} into table {table_name}.")
+                helper.logging.info(f"Succesfully inserted values {values} into table {table_name}.")
             else:
                 self._cursor.execute(insert_command)
+                helper.logging.info(f"Succesfully executed command {insert_command}.")
 
         except psycopg2.Error as err:
-            print(f"Failed to insert values {values} into: {table_name}. Reason: {err}")
+            helper.logging.error(f"Failed to insert values {values} into: {table_name}. Reason: {err}")
+            # sys.exit(1)
 
 
     # this function updates values into a table
@@ -151,6 +168,7 @@ class PioneerDatabase():
 
 
     def flatten_query_result(self, query_result):
+        helper.logging.debug(f"Called flatten_query_result() with parameters.")
         # Flatten both lists within each tuple and handle any number of sublists
         flattened_list = [item for tuple_item in query_result for sublist_part in tuple_item for item in sublist_part]
 
@@ -158,6 +176,7 @@ class PioneerDatabase():
         unique_values_list = list(set(flattened_list))
 
         # Return the list with unique values
+        helper.logging.info(f"Flattened the query result.")
         return unique_values_list
 
 

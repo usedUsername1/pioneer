@@ -8,8 +8,10 @@ import json
 class SecurityDeviceDatabase(PioneerDatabase):
     def __init__(self, cursor):
         super().__init__(cursor)
+        helper.logging.debug(f"Called SecurityDeviceDatabase __init__ with the following cursor {self._cursor}.")
     
     def create_security_device_tables(self):
+        helper.logging.debug(f"Called create_security_device_tables().")
         self.table_factory("general_data_table")
         self.table_factory("security_policy_containers_table")
         self.table_factory("nat_policy_containers_table")
@@ -35,6 +37,7 @@ class SecurityDeviceDatabase(PioneerDatabase):
     #TODO: tables for l7 and ping apps
     #TODO: table for time range objects
     def table_factory(self, table_name):
+        helper.logging.debug(f"Called table_factory() with the following parameters: table name: {table_name}.")
         match table_name:
             case 'general_data_table':
                 # define the command for creating the table
@@ -319,8 +322,8 @@ class SecurityDeviceDatabase(PioneerDatabase):
             
             # this table stores info about the objects who are overriden. the stored info is the object name, its value, the device where the override is set
             # TODO: add support for overridden objects
-            case 'override_objects_table':
-                pass
+            # case 'override_objects_table':
+            #     pass
 
         # create the table in the database
         self.create_table(table_name, command)
@@ -508,6 +511,7 @@ class SecurityDevice:
             self._database.insert_table_value('managed_devices_table', insert_command, values)
 
     def insert_into_general_table(self, security_device_username, security_device_secret, security_device_hostname, security_device_type, security_device_port, security_device_version, domain):
+        helper.logging.debug("Called insert_into_general_table().")
         """
         Insert general information into the 'general_data_table'.
 
@@ -885,6 +889,8 @@ class SecurityDevice:
             self._database.insert_table_value('security_policy_containers_table', insert_command, values)
 
     def verify_duplicate(self, table, column, value):
+        helper.logging.debug("Called verify_duplicate().")
+        helper.logging.info(f"Verifying duplicate in table {table}, column {column}, for value {value}.")
         """
         Verify if a duplicate entry exists in the specified table and column.
 
@@ -901,6 +907,7 @@ class SecurityDevice:
 
         # Execute the parameterized query and get the result
         is_duplicate = self._database.get_table_value(table, select_command, (value,))
+        helper.logging.info(f"Verified duplicate in table {table}, column {column}, for value {value}. Result is {is_duplicate}")
 
         # Return the result as a boolean
         return is_duplicate[0][0]
