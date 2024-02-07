@@ -489,7 +489,7 @@ class SecurityDevice:
 
             # Check for duplicates before insertion
             if self.verify_duplicate('managed_devices_table', 'managed_device_name', managed_device_name):
-                print(f"Duplicate entry for managed device: {managed_device_name}. Skipping insertion.")
+                helper.logging.warn(f"Duplicate entry for managed device: {managed_device_name}. Skipping insertion.")
                 continue
 
             # SQL command to insert data into the 'managed_devices_table'
@@ -528,8 +528,8 @@ class SecurityDevice:
         None
         """
         # Check for duplicates before insertion
-        if self.verify_duplicate('general_data_table', 'security_device_hostname', security_device_hostname):
-            print(f"Duplicate entry for hostname: {security_device_hostname}. Skipping insertion.")
+        if self.verify_duplicate('general_data_table', 'security_device_name', self._name):
+            print(f"Duplicate entry for device name: {self._name}. Skipping insertion.")
             return
 
         insert_command = """

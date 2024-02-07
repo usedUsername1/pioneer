@@ -76,9 +76,10 @@ def main():
         security_device_name = pioneer_args["create_security_device [name]"]
         
         # create folder where logs for the security device will be stored
-        log_folder = helper.os.path.join('swisknife', 'pkg', 'log', f'device_{security_device_name}')
+        log_folder = helper.os.path.join('log', f'device_{security_device_name}')
         log_file = 'general.logs'
-        helper.setup_logging(log_folder, log_file)
+        print(helper.setup_logging(log_folder, log_file))
+        helper.logging.info("################## CREATING A NEW DEVICE ##################")
 
         security_device_type = pioneer_args["device_type [type]"]
         security_device_hostname = pioneer_args["hostname [hostname]"]
@@ -128,7 +129,7 @@ def main():
             sys.exit(1)
         
         # get version of the security device
-        helper.logging.info(f"Getting the device version for device: {security_device_name}.")
+        helper.logging.info(f"################## Getting the device version for device: {security_device_name}. ##################")
         security_device_version = SecurityDeviceObject.get_device_version()
         
         # insert the device name, username, secret, hostname, type and version into the general_data table
@@ -138,7 +139,7 @@ def main():
         # import managed devices
 
         # retrive the information about the managed devices. if the device is a standalone device, the managed device will be the standalone device
-        helper.logging.info(f"Getting the device version for device: {security_device_name}.")
+        helper.logging.info(f"################## Getting the managed devices of device: {security_device_name}. ##################")
         managed_devices_info = SecurityDeviceObject.get_managed_devices_info()
 
         # insert it into the table
@@ -148,6 +149,7 @@ def main():
 
     # at this point, the backbone of the device is created, importing of data can start
     # the user used the --device option
+    #TODO: continue logging from here!
     if pioneer_args["device_name [device_name]"]:
         security_device_name = pioneer_args["device_name [device_name]"]
 
@@ -366,6 +368,9 @@ if __name__ == "__main__":
 # DATABASE:
     # ensure the cursor and db conn are properly closed after executing database oprations
     # parameterize all the queries
+
+# LOGGING:
+    # make sure you don't log passwords!
 
 # FIRST MILESTONE: perform a full migration of L4 firewall rules (without the migration of users) from FMC to PANMC
 # SECOND MILESTONE: add support for migrating users as well

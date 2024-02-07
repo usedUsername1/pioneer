@@ -64,6 +64,7 @@ def setup_logging(log_folder, log_file=None):
     """
     # Create log folder if it doesn't exist
     os.makedirs(log_folder, exist_ok=True)
+    print(os.makedirs(log_folder, exist_ok=True))
 
     # Determine log file name
     log_file_name = log_file if log_file else 'logfile.log'
