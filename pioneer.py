@@ -26,6 +26,7 @@ def main():
 
     # if the create_project argument is used, then create a project database with the name supplied by the user
     # when a project is created, a database for it gets created. the projects_metadata table also gets updated with the new info
+
     if pioneer_args['create_project [name]']:
         
         # extract the name from argv
@@ -50,7 +51,7 @@ def main():
         PioneerProjectsDB = PioneerDatabase(database_cursor)
         PioneerProjectsDB.create_database(project_database_name)
         creation_timestamp = datetime.now()
-        print(f"Created project {project_name}.")
+        # print(f"Created project {project_name}.")
 
         # in the project_metadata table of the pioneer_projects database, insert the name of the project, the current devices names, the creation timestamp and the description
         # PioneerProjectsDB.insert_into_projects_metadata(project_name, project_devices, project_description, creation_timestamp)
@@ -67,18 +68,21 @@ def main():
         project_database_name = project_name + "_db"
         PioneerProjectsDB = PioneerDatabase(database_cursor)
         PioneerProjectsDB.delete_database(project_database_name)
-        print(f"Deleted project {project_name}.")
+        # print(f"Deleted project {project_name}.")
 
     # the "--create-security-device" argument must be used with the "--type" argument
     # create a security device with the name and the type specified by the user
+    # create folder where logs for the security device will be stored
+
     if pioneer_args["create_security_device [name]"] and pioneer_args["device_type [type]"] and pioneer_args["hostname [hostname]"] and pioneer_args["username [username]"] and pioneer_args["secret [secret]"]:
         # extract the device name and the device type from the argv namespace
         security_device_name = pioneer_args["create_security_device [name]"]
         
-        # create folder where logs for the security device will be stored
+        # define the logging settings
         log_folder = helper.os.path.join('log', f'device_{security_device_name}')
         log_file = 'general.logs'
-        print(helper.setup_logging(log_folder, log_file))
+        helper.setup_logging(log_folder, log_file)
+
         helper.logging.info("################## CREATING A NEW DEVICE ##################")
 
         security_device_type = pioneer_args["device_type [type]"]
@@ -150,10 +154,15 @@ def main():
     # at this point, the backbone of the device is created, importing of data can start
     # the user used the --device option
     if pioneer_args["device_name [device_name]"]:
-        helper.logging.info("################## Security device processing ##################")
         security_device_name = pioneer_args["device_name [device_name]"]
+        
+        # define the logging settings
+        log_folder = helper.os.path.join('log', f'device_{security_device_name}')
+        log_file = 'general.logs'
+        helper.setup_logging(log_folder, log_file)
 
-        helper.logging.info(f"################## I am now processing security device {security_device_name} ##################")
+        helper.logging.info("################## Security device data processing ##################")
+        helper.logging.info(f"I am now processing security device {security_device_name}.")
         security_device_db_name = security_device_name + "_db"
         security_device_db_conn = DBConnection(db_user, security_device_db_name, db_password, db_host, db_port)
         security_device_cursor = security_device_db_conn.create_cursor()
@@ -190,10 +199,10 @@ def main():
             SpecificSecurityDeviceObject = APISecurityDeviceFactory.build_api_security_device(security_device_name, security_device_type, SecurityDeviceDB, security_device_hostname, security_device_username, security_device_secret, security_device_port, security_device_domain)
 
         elif '-config' in security_device_type:
-            helper.logging.critical(f"{security_device_name} is an invalid API device! Type: {security_device_type}")
+            helper.logging.info(f"{security_device_name} is an device that does not use API. Only its config file will be processed.")
 
         else:
-            print('Invalid device type')
+            helper.logging.critical(f"{security_device_name} is an invalid API device! Type: {security_device_type}")
             sys.exit(1)
 
         # sub-if statements for importing and getting parameters
@@ -218,7 +227,8 @@ def main():
                 passed_container_names = pioneer_args["security_policy_container [container_name]"]
                 passed_container_names_list = []
                 passed_container_names_list.append(passed_container_names)
-                print(f"I am now importing the policy container info for the following containers: {passed_container_names_list}.")
+                print("Importing the security policy containers info.")
+                # print(f"I am now importing the policy container info for the following containers: {passed_container_names_list}.")
                 
                 # retrieve the security policy containers along with the parents
                 # insert them in the database
@@ -228,10 +238,12 @@ def main():
                 # import the security policies (data) that are part of the imported security policy containers
                 # the policy container info extracted earlier can be used here. we can use the child container entry since the child container
                 # contains the information (thus the policies) it inherits from all the parents
+                print("Importing the security policy data.")
                 sec_policy_data = SpecificSecurityDeviceObject.get_sec_policies_data(passed_container_names_list)
                 # at this point, the data from all the security policies is extracted, it is time to insert it into the database
                 SpecificSecurityDeviceObject.insert_into_security_policies_table(sec_policy_data)
 
+                print("Importing the object data.")
                 # import and insert the object container first!
                 object_containers_info = SpecificSecurityDeviceObject.get_object_containers_info(security_policy_containers_info)
                 SpecificSecurityDeviceObject.insert_into_object_containers_table(object_containers_info)
@@ -242,8 +254,6 @@ def main():
                 # all the network objects and network group objects data has been extracted, now insert it into the database
                 SpecificSecurityDeviceObject.insert_into_network_address_objects_table(network_objects_data)
                 SpecificSecurityDeviceObject.insert_into_network_address_object_groups_table(network_group_objects_data)
-
-                #TODO: implement logging now!
 
 
 

@@ -64,18 +64,28 @@ def setup_logging(log_folder, log_file=None):
     """
     # Create log folder if it doesn't exist
     os.makedirs(log_folder, exist_ok=True)
-    print(os.makedirs(log_folder, exist_ok=True))
 
     # Determine log file name
     log_file_name = log_file if log_file else 'logfile.log'
 
+    # Get the root logger
+    logger = logging.getLogger()
+
+    # Set the logger level to DEBUG to capture all levels of logs
+    logger.setLevel(logging.DEBUG)
+
+    # Create a formatter with desired format
+    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+
     # Configure logging to write to both console and file
-    logging.basicConfig(level=logging.DEBUG,
-                        format='%(asctime)s - %(levelname)s - %(message)s',
-                        handlers=[
-                            logging.StreamHandler(),  # Log to console
-                            logging.FileHandler(os.path.join(log_folder, log_file_name), mode='a')  # Log to file
-                        ])
+    # console_handler = logging.StreamHandler()  # Log to console
+    # console_handler.setFormatter(formatter)
+    # logger.addHandler(console_handler)
+
+    file_handler = logging.FileHandler(os.path.join(log_folder, log_file_name), mode='a')  # Log to file
+    file_handler.setFormatter(formatter)
+    logger.addHandler(file_handler)
+
 
 def load_protocol_mapping():
     return {

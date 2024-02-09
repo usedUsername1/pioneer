@@ -65,7 +65,7 @@ class PioneerDatabase():
             self._cursor.execute(query)
 
             # inform the user that the execution succeeded
-            print(f"Created database {name}.")
+            # print(f"Created database {name}.")
             helper.logging.info(f"Succesfully created database: {name}")
 
         # catch the error and exit the program if database creation fails

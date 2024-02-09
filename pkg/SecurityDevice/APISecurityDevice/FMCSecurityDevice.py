@@ -42,7 +42,7 @@ class FMCSecurityDevice(SecurityDevice):
         Returns:
             list: List of dictionaries containing information about managed devices.
         """
-        print("########################## GETTING MANAGED DEVICES INFO ##########################")
+        helper.logging.debug("I am now getting the managed devices info.")
 
         # Execute the request to retrieve information about the devices
         managed_devices = self._api_connection.device.devicerecord.get()
@@ -151,7 +151,7 @@ class FMCSecurityDevice(SecurityDevice):
 
     # there are no object containers per se in FMC, therefore, only dummy info will be returned
     def get_object_containers_info(self, policy_container_name):
-        helper.logging.warn("Called get_object_containers_info().")
+        helper.logging.info("Called get_object_containers_info().")
         helper.logging.info(f"################## Importing configuration of the object policy containers. This is a FMC device, nothing to import, will return: virtual_object_container ##################")
         return [{
             "object_container_name":"virtual_object_container",
@@ -176,7 +176,6 @@ class FMCSecurityDevice(SecurityDevice):
         for sec_policy_container in sec_policy_container_list:
             helper.logging.info(f"I am processing the security policies of the following container: {sec_policy_container}.")
             sec_policies = self._api_connection.policy.accesspolicy.accessrule.get(container_name=sec_policy_container)
-            helper.logging.debug(f"Container {sec_policy_container}, has the following security policies info: {sec_policies}.")
 
             # Now loop through the policies
             for sec_policy in sec_policies:
@@ -198,10 +197,12 @@ class FMCSecurityDevice(SecurityDevice):
         Returns:
             dict: Dictionary containing information about the security policy.
         """
-        helper.logging.debug(f"Called process_sec_policy_entry().")
+        helper.logging.debug(f"Called process_sec_policy_entry()")
         # Retrieve information for each policy
         sec_policy_name = sec_policy['name']
+        helper.logging.info(f"\n")
         helper.logging.info(f"I am now processing the security policy: {sec_policy_name}. This policy is part of container: {sec_policy_container_name}.")
+        helper.logging.debug(f"Security policy data is: {sec_policy}")
         sec_policy_category = sec_policy['metadata']['category']
         sec_policy_status = 'enabled' if sec_policy['enabled'] else 'disabled'
 
@@ -371,7 +372,7 @@ class FMCSecurityDevice(SecurityDevice):
         helper.logging.debug(f"Finished converting all literals to objects. This is the list with converted literals {network_objects_list}.")
         return network_objects_list
 
-    # TODO: log geolocation objects
+    # TODO: log and process geolocation objects
     def extract_network_objects(self, sec_policy, network_object_type):
         helper.logging.debug("Called extract_network_objects()")
         """
@@ -569,6 +570,7 @@ class FMCSecurityDevice(SecurityDevice):
 
     # there are three cases which need to be processed here. the url can be an object, a literal, or a category with reputation
 
+    #TODO: store the URLs in a table like the rest of the objects
     def extract_policy_urls(self, sec_policy):
         """
         Process policy URLs defined in the security policy.
@@ -608,7 +610,7 @@ class FMCSecurityDevice(SecurityDevice):
 
             for policy_url_literal in policy_url_literals:
                 helper.logging.debug(f"Processing policy URL literal: {policy_url_literal}.")
-                policy_url_literal_value = policy_url_literal['literals']
+                policy_url_literal_value = policy_url_literal['url']
                 helper.logging.info(f"Processed policy URL literal: {policy_url_literal_value}.")
                 policy_url_list.append(policy_url_literal_value)
 
@@ -880,7 +882,7 @@ class FMCSecurityDevice(SecurityDevice):
             tuple: A tuple containing processed network group objects information, object members list,
                    and literal group members list.
         """
-        helper.logging.debug(f"Called process_network_address_group_objects(). Input data - objects list: {network_address_group_objects_list}; object info: {network_address_group_objects_info_dict}.")
+        helper.logging.debug(f"Called process_network_address_group_objects(). Input data - objects list: {network_address_group_objects_list}.")
         helper.logging.info("I am now processing the imported network group objects. I am processing and formatting all the data retrieved from the policies.")
         if not network_address_group_objects_list:
             helper.logging.info("There are no network address group objects to process.")
@@ -1038,8 +1040,7 @@ class FMCSecurityDevice(SecurityDevice):
         # self.get_zone_objects_info()
     
         # get the network address objects data
-        print(f"######### NETWORK OBJECTS INFO RETRIEVAL #########")
-        # TODO: make sure you process the geo-location objects!
+        # print(f"######### NETWORK OBJECTS INFO RETRIEVAL #########")
         network_objects, network_group_objects = self.get_network_objects_info()
         return network_objects, network_group_objects
         # get the port objects data
