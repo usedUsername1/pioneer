@@ -74,7 +74,7 @@ def setup_logging(log_folder, log_file=None):
                         format='%(asctime)s - %(levelname)s - %(message)s',
                         handlers=[
                             logging.StreamHandler(),  # Log to console
-                            logging.FileHandler(os.path.join(log_folder, log_file_name))  # Log to file
+                            logging.FileHandler(os.path.join(log_folder, log_file_name), mode='a')  # Log to file
                         ])
 
 def load_protocol_mapping():

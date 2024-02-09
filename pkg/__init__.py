@@ -141,7 +141,7 @@ class PioneerDatabase():
         Returns:
         None
         """
-        helper.logging.debug(f"Called get_table_value() with parameters: table name {table_name}, insert command {insert_command}, values {values}.")
+        helper.logging.debug(f"Called insert_table_value() with parameters: table name {table_name}, insert command {insert_command}, values {values}.")
         try:
             if values is not None:
                 self._cursor.execute(insert_command, values)

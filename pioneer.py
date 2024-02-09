@@ -149,10 +149,11 @@ def main():
 
     # at this point, the backbone of the device is created, importing of data can start
     # the user used the --device option
-    #TODO: continue logging from here!
     if pioneer_args["device_name [device_name]"]:
+        helper.logging.info("################## Security device processing ##################")
         security_device_name = pioneer_args["device_name [device_name]"]
 
+        helper.logging.info(f"################## I am now processing security device {security_device_name} ##################")
         security_device_db_name = security_device_name + "_db"
         security_device_db_conn = DBConnection(db_user, security_device_db_name, db_password, db_host, db_port)
         security_device_cursor = security_device_db_conn.create_cursor()
@@ -165,9 +166,12 @@ def main():
 
         # get the security device type
         security_device_type = GenericSecurityDevice.get_security_device_type()
+        helper.logging.info(f"Got device type {security_device_type}.")
 
         if '-api' in security_device_type:
+            helper.logging.info(f"{security_device_name} is an API device. Type: {security_device_type}")
             # get the security device hostname
+
             security_device_hostname = GenericSecurityDevice.get_security_device_hostname()
 
             # get the security device username
@@ -186,7 +190,7 @@ def main():
             SpecificSecurityDeviceObject = APISecurityDeviceFactory.build_api_security_device(security_device_name, security_device_type, SecurityDeviceDB, security_device_hostname, security_device_username, security_device_secret, security_device_port, security_device_domain)
 
         elif '-config' in security_device_type:
-            pass
+            helper.logging.critical(f"{security_device_name} is an invalid API device! Type: {security_device_type}")
 
         else:
             print('Invalid device type')
@@ -206,8 +210,10 @@ def main():
             # user sources along with users databases
             # and pretty much the rest of the config (routing, VPNs, etc...)
             
+            #TODO: continue logging from here!
         if pioneer_args["import_config"]:
             # import the policy containers of the device.
+            helper.logging.info(f"################## Importing configuration of {security_device_name}.##################")
             if(pioneer_args["security_policy_container [container_name]"]):
                 passed_container_names = pioneer_args["security_policy_container [container_name]"]
                 passed_container_names_list = []
@@ -358,6 +364,8 @@ if __name__ == "__main__":
 
     # support for geo-location objects
 
+    # if there are problems with importing a policy/object of a policy and so on, track that policy, log it along with the reason why it failed
+
 # CISCO FMC Security zones
     # add support for interface groups
 
@@ -371,6 +379,7 @@ if __name__ == "__main__":
 
 # LOGGING:
     # make sure you don't log passwords!
+    # decide whether to get all the parameter data for all functions in the debug message. yes, but they should be logged only in the process() functions.
 
 # FIRST MILESTONE: perform a full migration of L4 firewall rules (without the migration of users) from FMC to PANMC
 # SECOND MILESTONE: add support for migrating users as well

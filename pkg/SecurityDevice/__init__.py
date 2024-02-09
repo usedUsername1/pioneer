@@ -346,71 +346,94 @@ class SecurityDevice:
         """
         self._name = name
         self._database = sec_device_database
+        helper.logging.debug("Called SecurityDevice __init__.")
 
     def get_security_device_type(self):
+        helper.logging.debug(f"Called get_security_device_type().")
+        helper.logging.info(f"Fetching the device type of {self._name}.")
         """
         Retrieve the security device type.
 
         Returns:
         - str: The security device type.
         """
+        helper.logging.info(f"Got device type: {self._get_security_device_attribute('security_device_type')}.")
         return self._get_security_device_attribute('security_device_type')
 
     def get_security_device_hostname(self):
+        helper.logging.debug(f"Called get_security_device_hostname().")
+        helper.logging.info(f"Fetching the hostname of {self._name}.")
         """
         Retrieve the security device hostname.
 
         Returns:
         - str: The security device hostname.
         """
+        helper.logging.info(f"Got device hostname: {self._get_security_device_attribute('security_device_hostname')}.")
         return self._get_security_device_attribute('security_device_hostname')
 
     def get_security_device_username(self):
+        helper.logging.debug(f"Called get_security_device_username().")
+        helper.logging.info(f"Fetching the username of {self._name}.")
         """
         Retrieve the security device username.
 
         Returns:
         - str: The security device username.
         """
+        helper.logging.info(f"Got device username: {self._get_security_device_attribute('security_device_username')}.")
         return self._get_security_device_attribute('security_device_username')
 
     def get_security_device_secret(self):
+        helper.logging.debug(f"Called get_security_device_secret().")
+        helper.logging.info(f"Fetching the secret of {self._name}.")
         """
         Retrieve the security device secret.
 
         Returns:
         - str: The security device secret.
         """
+        helper.logging.info(f"Got device secret: SECRET.")
         return self._get_security_device_attribute('security_device_secret')
 
     def get_security_device_domain(self):
+        helper.logging.debug(f"Called get_security_device_domain().")
+        helper.logging.info(f"Fetching the domain of {self._name}.")
         """
         Retrieve the security device domain.
 
         Returns:
         - str: The security device domain.
         """
+        helper.logging.info(f"Got device domain: {self._get_security_device_attribute('security_device_domain')}.")
         return self._get_security_device_attribute('security_device_domain')
 
     def get_security_device_port(self):
+        helper.logging.debug(f"Called get_security_device_port().")
+        helper.logging.info(f"Fetching the port of {self._name}.")
         """
         Retrieve the security device port.
 
         Returns:
         - str: The security device port.
         """
+        helper.logging.info(f"Got device port: {self._get_security_device_attribute('security_device_port')}.")
         return self._get_security_device_attribute('security_device_port')
 
     def get_security_device_version(self):
+        helper.logging.debug(f"Called get_security_device_version().")
+        helper.logging.info(f"Fetching the version of {self._name}.")
         """
         Retrieve the security device version.
 
         Returns:
         - str: The security device version.
         """
+        helper.logging.info(f"Got device version: {self._get_security_device_attribute('security_device_version')}.")
         return self._get_security_device_attribute('security_device_version')
 
     def _get_security_device_attribute(self, attribute):
+        helper.logging.debug(f"Called _get_security_device_attribute().")
         """
         Retrieve a specific attribute of the security device.
 
@@ -427,6 +450,7 @@ class SecurityDevice:
     # the following functions process the data from the database. all the objects are processed, the unique values
     # are gathered and returned in a list that will be further processed by the program
     def get_db_objects(self, object_type):
+        helper.logging.debug(f"Called get_db_objects().")
         """
         Retrieve and return unique database objects based on the specified type.
 
@@ -471,6 +495,7 @@ class SecurityDevice:
         return unique_objects_list
     
     def insert_into_managed_devices_table(self, managed_device_info):
+        helper.logging.debug(f"Called insert_into_managed_devices_table().")
         """
         Insert managed devices information into the 'managed_devices_table'.
 
@@ -529,7 +554,7 @@ class SecurityDevice:
         """
         # Check for duplicates before insertion
         if self.verify_duplicate('general_data_table', 'security_device_name', self._name):
-            print(f"Duplicate entry for device name: {self._name}. Skipping insertion.")
+            helper.logging.warn(f"Duplicate entry for device name: {self._name}. Skipping insertion.")
             return
 
         insert_command = """
@@ -561,6 +586,7 @@ class SecurityDevice:
         self._database.insert_table_value('general_data_table', insert_command, values)
 
     def insert_into_security_policy_containers_table(self, containers_data):
+        helper.logging.debug("Called insert_into_security_policy_containers_table().")
         """
         Insert values into the 'security_policy_containers_table' table.
 
@@ -577,7 +603,7 @@ class SecurityDevice:
 
             # Check for duplicates before insertion
             if self.verify_duplicate('security_policy_containers_table', 'security_policy_container_name', container_name):
-                print(f"Duplicate entry for container: {container_name}. Skipping insertion.")
+                helper.logging.warn(f"Duplicate entry for container: {container_name}. Skipping insertion.")
                 continue
 
             # SQL command to insert data into the 'security_policy_containers_table'
@@ -601,8 +627,8 @@ class SecurityDevice:
             # Execute the insert command with the specified values
             self._database.insert_table_value('security_policy_containers_table', insert_command, values)
 
-
     def insert_into_security_policies_table(self, sec_policy_data):
+        helper.logging.debug("Called insert_into_security_policies_table().")
         """
         Insert security policy data into the 'security_policies_table'.
 
@@ -618,7 +644,7 @@ class SecurityDevice:
             
             # Check for duplicates before insertion
             if self.verify_duplicate('security_policies_table', 'security_policy_name', current_policy_name):
-                print(f"Duplicate entry for security policy: {current_policy_name}. Skipping insertion.")
+                helper.logging.warn(f"Duplicate entry for security policy: {current_policy_name}. Skipping insertion.")
                 continue
 
             formatted_security_policy_source_zones = "{" + ",".join(current_policy_data["sec_policy_source_zones"]) + "}"
@@ -702,6 +728,7 @@ class SecurityDevice:
             self._database.insert_table_value('security_policies_table', insert_command, parameters)
 
     def insert_into_object_containers_table(self, containers_data):
+        helper.logging.debug("Called insert_into_object_containers_table().")
         """
         Insert values into the 'object_containers_table' table.
 
@@ -718,7 +745,7 @@ class SecurityDevice:
 
             # Check for duplicates before insertion
             if self.verify_duplicate('object_containers_table', 'object_container_name', container_name):
-                print(f"Duplicate entry for object container: {container_name}. Skipping insertion.")
+                helper.logging.warn(f"Duplicate entry for object container: {container_name}. Skipping insertion.")
                 continue
 
             # SQL command to insert data into the 'object_containers_table'
@@ -743,6 +770,7 @@ class SecurityDevice:
             self._database.insert_table_value('object_containers_table', insert_command, values)
 
     def insert_into_network_address_objects_table(self, network_objects_data):
+        helper.logging.debug("Called insert_into_network_address_objects_table().")
         """
         Insert network address objects data into the 'network_address_objects_table'.
 
@@ -758,7 +786,7 @@ class SecurityDevice:
 
             # Check for duplicates before insertion
             if self.verify_duplicate('network_address_objects_table', 'network_address_name', network_address_name):
-                print(f"Duplicate entry for network address object: {network_address_name}. Skipping insertion.")
+                helper.logging.warn(f"Duplicate entry for network address object: {network_address_name}. Skipping insertion.")
                 continue
 
             object_container_name = current_object_entry['object_container_name']
@@ -797,6 +825,7 @@ class SecurityDevice:
             self._database.insert_table_value('network_address_objects_table', insert_command, values)
 
     def insert_into_network_address_object_groups_table(self, network_group_objects_data):
+        helper.logging.debug("Called insert_into_network_address_object_groups_table().")
         """
         Insert network address object groups data into the 'network_address_objects_table'.
 
@@ -811,7 +840,7 @@ class SecurityDevice:
             network_address_group_name = current_group_object_entry['network_address_group_name']
             # Check for duplicates before insertion
             if self.verify_duplicate('network_address_object_groups_table', 'network_address_group_name', network_address_group_name):
-                print(f"Duplicate entry for network address object group: {network_address_group_name}. Skipping insertion.")
+                helper.logging.warn(f"Duplicate entry for network address object group: {network_address_group_name}. Skipping insertion.")
                 continue
             
             object_container_name = current_group_object_entry['object_container_name']
@@ -848,6 +877,7 @@ class SecurityDevice:
             self._database.insert_table_value('network_address_object_groups_table', insert_command, values)
 
     def insert_into_security_policy_containers_table(self, containers_data):
+        helper.logging.debug("Called insert_into_security_policy_containers_table().")
         """
         Insert values into the 'security_policy_containers_table' table.
 
@@ -864,7 +894,7 @@ class SecurityDevice:
 
             # Check for duplicates before insertion
             if self.verify_duplicate('security_policy_containers_table', 'security_policy_container_name', container_name):
-                print(f"Duplicate entry for container: {container_name}. Skipping insertion.")
+                helper.logging.warn(f"Duplicate entry for container: {container_name}. Skipping insertion.")
                 continue
 
             # SQL command to insert data into the 'security_policy_containers_table'
