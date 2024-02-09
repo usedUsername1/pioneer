@@ -251,6 +251,7 @@ class FMCSecurityDevice(SecurityDevice):
             "sec_policy_action": sec_policy_action,
         }
 
+        helper.logging.info(f"I have processed the policy {sec_policy_name}. This is the processed entry: {sec_policy_entry}.")
         return sec_policy_entry
     
     def get_device_version(self):
@@ -827,7 +828,7 @@ class FMCSecurityDevice(SecurityDevice):
         Returns:
             list: List of dictionaries containing processed network objects information.
         """
-        helper.logging.debug(f"Called process_network_address_objects(). Input data - objects list: {network_address_objects_list}; object info: {network_address_objects_info_dict}.")
+        helper.logging.debug(f"Called process_network_address_objects().")
         helper.logging.info("I am now processing the imported network objects. I am processing and formatting all the data retrieved from the policies.")
         
         if not network_address_objects_list:
@@ -882,7 +883,7 @@ class FMCSecurityDevice(SecurityDevice):
             tuple: A tuple containing processed network group objects information, object members list,
                    and literal group members list.
         """
-        helper.logging.debug(f"Called process_network_address_group_objects(). Input data - objects list: {network_address_group_objects_list}.")
+        helper.logging.debug(f"Called process_network_address_group_objects().")
         helper.logging.info("I am now processing the imported network group objects. I am processing and formatting all the data retrieved from the policies.")
         if not network_address_group_objects_list:
             helper.logging.info("There are no network address group objects to process.")

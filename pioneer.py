@@ -7,8 +7,10 @@ from pkg.SecurityDevice.APISecurityDevice import APISecurityDeviceFactory
 import sys
 from datetime import datetime, timezone
 
-def main():
+# Disable logging for the 'fireREST' logger
+helper.logging.getLogger('fireREST').setLevel(helper.logging.CRITICAL)
 
+def main():
     db_user = "pioneer_admin"
     db_password = "2wsx#EDC"
     landing_database = "pioneer_projects"
@@ -31,12 +33,6 @@ def main():
         
         # extract the name from argv
         project_name = pioneer_args['create_project [name]']
-        
-        # create folder where logs for the project will be stored
-        log_folder = helper.os.path.join('swisknife', 'pkg', 'log', f'project_{project_name}')
-        
-        # extract the description from argv
-        project_description = pioneer_args['description [description]']
 
         # open a connection to the database
         database_conn = DBConnection(db_user, landing_database, db_password, db_host, db_port)
@@ -219,7 +215,6 @@ def main():
             # user sources along with users databases
             # and pretty much the rest of the config (routing, VPNs, etc...)
             
-            #TODO: continue logging from here!
         if pioneer_args["import_config"]:
             # import the policy containers of the device.
             helper.logging.info(f"################## Importing configuration of {security_device_name}.##################")
@@ -297,6 +292,7 @@ if __name__ == "__main__":
     # a file that tracks all the policies using vendor specific URL categories
     # a file that tracks all the policies using time objects
     # a file that tracks all the policies using users
+    # TODO: better and prettier logging. right now it is pretty difficult to follow stuff when debugging
 
 
 # TODO SOON:
@@ -376,6 +372,8 @@ if __name__ == "__main__":
 
     # if there are problems with importing a policy/object of a policy and so on, track that policy, log it along with the reason why it failed
 
+    #TODO: ennsure that policies with the same name, but in different containers get imported!
+
 # CISCO FMC Security zones
     # add support for interface groups
 
@@ -389,7 +387,9 @@ if __name__ == "__main__":
 
 # LOGGING:
     # make sure you don't log passwords!
-    # decide whether to get all the parameter data for all functions in the debug message. yes, but they should be logged only in the process() functions.
+
+# DEVICE CREATION:
+    # catch the error when the device database is already created and prevent it from overwriting the log file!
 
 # FIRST MILESTONE: perform a full migration of L4 firewall rules (without the migration of users) from FMC to PANMC
 # SECOND MILESTONE: add support for migrating users as well
