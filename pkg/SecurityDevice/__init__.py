@@ -86,8 +86,9 @@ class SecurityDeviceDatabase(PioneerDatabase):
             case 'security_policies_table':
                 command = """CREATE TABLE IF NOT EXISTS security_policies_table (
                 security_device_name TEXT NOT NULL,
-                security_policy_name TEXT PRIMARY KEY,
+                security_policy_name TEXT NOT NULL,
                 security_policy_container_name TEXT NOT NULL,
+                security_policy_index INT,
                 security_policy_category TEXT,
                 security_policy_status TEXT NOT NULL,
                 security_policy_source_zones TEXT[] NOT NULL,
@@ -675,7 +676,8 @@ class SecurityDevice:
                 INSERT INTO security_policies_table (
                     security_device_name, 
                     security_policy_name, 
-                    security_policy_container_name, 
+                    security_policy_container_name,
+                    security_policy_index, 
                     security_policy_category, 
                     security_policy_status, 
                     security_policy_source_zones, 
@@ -696,7 +698,7 @@ class SecurityDevice:
                     security_policy_section, 
                     security_policy_action
                 ) VALUES (
-                    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
                 )
             """
             # Use a tuple to pass parameters to the execute method
@@ -704,6 +706,7 @@ class SecurityDevice:
                 self._name,
                 current_policy_name,
                 current_policy_data["sec_policy_container_name"],
+                current_policy_data["security_policy_index"],
                 current_policy_data["sec_policy_category"],
                 current_policy_data["sec_policy_status"],
                 formatted_security_policy_source_zones,

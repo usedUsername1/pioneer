@@ -5,7 +5,7 @@ import fireREST
 import sys
 import ipaddress
 import utils.exceptions as PioneerExceptions
-
+# ##################
 class FMCDeviceConnection(APISecurityDeviceConnection):
     def __init__(self, api_username, api_secret, api_hostname, api_port, domain):
         super().__init__(api_username, api_secret, api_hostname, api_port)
@@ -42,7 +42,7 @@ class FMCSecurityDevice(SecurityDevice):
         Returns:
             list: List of dictionaries containing information about managed devices.
         """
-        helper.logging.debug("I am now getting the managed devices info.")
+        helper.logging.info("################## GETTING MANAGED DEVICES INFO ##################")
 
         # Execute the request to retrieve information about the devices
         managed_devices = self._api_connection.device.devicerecord.get()
@@ -85,7 +85,7 @@ class FMCSecurityDevice(SecurityDevice):
     # ACP = access control policy = the security policy container used by FMC
     def get_security_policy_containers_info(self, policy_container_names_list):
         helper.logging.debug(f"Called get_security_policy_containers_info with the following container list: {policy_container_names_list}")
-        helper.logging.info(f"################## Importing configuration of the following security policy containers. ##################")
+        helper.logging.info(f"################## Importing configuration of the security policy containers. ##################")
         """
         Retrieves information about security policy containers.
 
@@ -185,7 +185,6 @@ class FMCSecurityDevice(SecurityDevice):
 
         return sec_policy_info
 
-    #TODO: get the index of the security policy
     def process_sec_policy_entry(self, sec_policy, sec_policy_container_name):
         """
         Process and extract information for a single security policy.
@@ -200,8 +199,8 @@ class FMCSecurityDevice(SecurityDevice):
         helper.logging.debug(f"Called process_sec_policy_entry()")
         # Retrieve information for each policy
         sec_policy_name = sec_policy['name']
-        helper.logging.info(f"\n")
-        helper.logging.info(f"I am now processing the security policy: {sec_policy_name}. This policy is part of container: {sec_policy_container_name}.")
+        sec_policy_index = sec_policy['metadata']['ruleIndex']
+        helper.logging.info(f"\n\n################## PROCESSING SECURITY POLICY: {sec_policy_name}. CONTAINER: {sec_policy_container_name}. Rule Index: {sec_policy_index}.##################")
         helper.logging.debug(f"Security policy data is: {sec_policy}")
         sec_policy_category = sec_policy['metadata']['category']
         sec_policy_status = 'enabled' if sec_policy['enabled'] else 'disabled'
@@ -230,6 +229,7 @@ class FMCSecurityDevice(SecurityDevice):
         sec_policy_entry = {
             "sec_policy_name": sec_policy_name,
             "sec_policy_container_name": sec_policy_container_name,
+            "security_policy_index":sec_policy_index,
             "sec_policy_category": sec_policy_category,
             "sec_policy_status": sec_policy_status,
             "sec_policy_source_zones": sec_policy_source_zones,
@@ -291,7 +291,7 @@ class FMCSecurityDevice(SecurityDevice):
         Returns:
             list: List of security zone names.
         """
-        helper.logging.info("I am now processing zones of the policy.")
+        helper.logging.info("################## SECURITY ZONE PROCESSING ##################.")
         zone_list = []
 
         try:
@@ -386,7 +386,7 @@ class FMCSecurityDevice(SecurityDevice):
         Returns:
             list: List of network object names.
         """
-        helper.logging.info("I am now processing the network address objects/group objects of the policy.")
+        helper.logging.info("################## NETWORK ADDRESS PROCESSING.##################")
         network_objects_list = []
 
         # Check for objects
@@ -429,7 +429,7 @@ class FMCSecurityDevice(SecurityDevice):
         Returns:
             list: List of port object names.
         """
-        helper.logging.info("I am now processing the port objects/group objects of the policy.")
+        helper.logging.info("################## PORT OBJECTS PROCESSING ##################")
         port_objects_list = []
         found_objects_or_literals = False
 
@@ -490,8 +490,9 @@ class FMCSecurityDevice(SecurityDevice):
         helper.logging.debug(f"Finished processing all the port objects. This is the list with the processed objects {port_objects_list}.")
         return port_objects_list
 
-    #TODO: policies with schedule, users, urls and apps must be logged in different files and tracked!
+    #TODO: track them in reports, not in logging!
     def extract_schedule_objects(self, sec_policy):
+        schedule_logger = helper.logging.getLogger('policies_with_schedule')
         helper.logging.debug("Called extract_schedule_objects()")
         """
         Process schedule objects defined in the security policy.
@@ -502,7 +503,7 @@ class FMCSecurityDevice(SecurityDevice):
         Returns:
             list: List of schedule object names.
         """
-        helper.logging.info("I am now processing schedule objects.")
+        helper.logging.info("################## SCHEDULE OBJECTS PROCESSING ##################")
         schedule_object_list = []
 
         try:
@@ -520,6 +521,8 @@ class FMCSecurityDevice(SecurityDevice):
                 # Append it to the list
                 schedule_object_list.append(schedule_object_name)
                 helper.logging.debug(f"I am done processing {schedule_object}. I have extracted the following data: name: {schedule_object_name}")
+
+            schedule_logger.info(f"Security policy: {sec_policy['name']} in container: {sec_policy['metadata']['accessPolicy']['name']}, has the following schedule objects: {schedule_object_list}.")
 
         except KeyError:
             helper.logging.info(f"It looks like there are no schedule objects defined on this policy.")
@@ -541,7 +544,7 @@ class FMCSecurityDevice(SecurityDevice):
             list: List of policy user names.
         """
         helper.logging.debug("Called extract_policy_users()")
-        helper.logging.info("I am now processing policy users.")
+        helper.logging.info("################## USERS POLICY PROCESSING ##################")
         policy_user_list = []
 
         try:
@@ -583,7 +586,7 @@ class FMCSecurityDevice(SecurityDevice):
             list: List of policy URL names, literals, or categories.
         """
         helper.logging.debug("Called extract_policy_urls().")
-        helper.logging.info("I am now processing the URLs on the policy.")
+        helper.logging.info("################## URL PROCESSING ##################S")
 
         policy_url_list = []
         found_objects_or_literals = False
@@ -658,7 +661,7 @@ class FMCSecurityDevice(SecurityDevice):
         Returns:
             list: List of Layer 7 application names.
         """
-        helper.logging.info("I am looking for L7 applications on this policy.")
+        helper.logging.info("################## L7 APPLICATION PROCESSING ##################")
         policy_l7_apps_list = []
         found_objects_or_literals = False
 
@@ -740,7 +743,7 @@ class FMCSecurityDevice(SecurityDevice):
                   Returns None if no comments are found.
         """
         helper.logging.debug("Called extract_policy_comments()")
-        helper.logging.info("I am looking for comments on this policy.")
+        helper.logging.info("################## POLICY COMMENTS PROCESSING ##################")
         comments_list = []
 
         try:
@@ -1034,14 +1037,14 @@ class FMCSecurityDevice(SecurityDevice):
     # store all the info as a json, and return the json back to main, which will be responsible for adding it
     # to the database
     def get_objects_data_info(self):
-        print(f"I will now start to retrieve information about all the objects.")
+        helper.logging.info(f"##################  FETCHING INFO ABOUT THE OBJECTS ##################")
         
         # get the zone objects data
         # print(f"######### ZONE INFO RETRIEVAL #########")
         # self.get_zone_objects_info()
     
         # get the network address objects data
-        # print(f"######### NETWORK OBJECTS INFO RETRIEVAL #########")
+        helper.logging.info(f"\n################## FETCHING NETWORK ADDRESS/OBJECTS INFO ##################")
         network_objects, network_group_objects = self.get_network_objects_info()
         return network_objects, network_group_objects
         # get the port objects data

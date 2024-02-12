@@ -154,11 +154,12 @@ def main():
         
         # define the logging settings
         log_folder = helper.os.path.join('log', f'device_{security_device_name}')
-        log_file = 'general.logs'
+        log_file = 'general.log'
         helper.setup_logging(log_folder, log_file)
+        general_logger = helper.logging.getLogger('general') 
 
-        helper.logging.info("################## Security device data processing ##################")
-        helper.logging.info(f"I am now processing security device {security_device_name}.")
+        general_logger.info("################## Security device data processing ##################")
+        general_logger.info(f"I am now processing security device {security_device_name}.")
         security_device_db_name = security_device_name + "_db"
         security_device_db_conn = DBConnection(db_user, security_device_db_name, db_password, db_host, db_port)
         security_device_cursor = security_device_db_conn.create_cursor()
@@ -217,7 +218,7 @@ def main():
             
         if pioneer_args["import_config"]:
             # import the policy containers of the device.
-            helper.logging.info(f"################## Importing configuration of {security_device_name}.##################")
+            helper.logging.info(f"################## IMPORTING CONFIGURATION OF {security_device_name}.##################")
             if(pioneer_args["security_policy_container [container_name]"]):
                 passed_container_names = pioneer_args["security_policy_container [container_name]"]
                 passed_container_names_list = []
@@ -235,18 +236,23 @@ def main():
                 # contains the information (thus the policies) it inherits from all the parents
                 print("Importing the security policy data.")
                 sec_policy_data = SpecificSecurityDeviceObject.get_sec_policies_data(passed_container_names_list)
+                helper.logging.info("\n################## EXTRACTED INFO FROM THE SECURITY POLICIES, INSERTING IN THE DATABASE. ##################")
                 # at this point, the data from all the security policies is extracted, it is time to insert it into the database
                 SpecificSecurityDeviceObject.insert_into_security_policies_table(sec_policy_data)
 
-                print("Importing the object data.")
+                print("Importing the object container data.")
+                helper.logging.info("\n################## IMPORTING OBJECT CONTAINER DATA. ##################")
                 # import and insert the object container first!
                 object_containers_info = SpecificSecurityDeviceObject.get_object_containers_info(security_policy_containers_info)
                 SpecificSecurityDeviceObject.insert_into_object_containers_table(object_containers_info)
 
+                print("Importing object data.")
+                helper.logging.info("\n################## IMPORTING OBJECTS DATA. ##################")
                 # at this point all the security policy data is imported. it is time to import the object data.
                 network_objects_data, network_group_objects_data = SpecificSecurityDeviceObject.get_objects_data_info()
                 
                 # all the network objects and network group objects data has been extracted, now insert it into the database
+                helper.logging.info("\n################## EXTRACTED OBJECTS DATA, INSERTING IN THE DATABASE. ##################")
                 SpecificSecurityDeviceObject.insert_into_network_address_objects_table(network_objects_data)
                 SpecificSecurityDeviceObject.insert_into_network_address_object_groups_table(network_group_objects_data)
 
@@ -292,7 +298,7 @@ if __name__ == "__main__":
     # a file that tracks all the policies using vendor specific URL categories
     # a file that tracks all the policies using time objects
     # a file that tracks all the policies using users
-    # TODO: better and prettier logging. right now it is pretty difficult to follow stuff when debugging
+    # TODO: better and prettier logging. right now it is pretty difficult to follow stuff when debugging -> looks better, wip
 
 
 # TODO SOON:
