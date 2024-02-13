@@ -31,6 +31,7 @@ class SecurityDeviceDatabase(PioneerDatabase):
         self.table_factory("port_object_groups_table")
         self.table_factory("schedule_objects_table")
         self.table_factory("managed_devices_table")
+        self.table_factory("geolocation_objects_table")
         # self.table_factory("override_objects_table")
 
     
@@ -57,9 +58,7 @@ class SecurityDeviceDatabase(PioneerDatabase):
                 security_device_name TEXT NOT NULL,
                 security_policy_container_name TEXT PRIMARY KEY,
                 security_policy_container_parent TEXT,
-                CONSTRAINT fk_sec_dev_name
-                    FOREIGN KEY(security_device_name)
-                        REFERENCES general_data_table(security_device_name)
+                FOREIGN KEY(security_device_name) REFERENCES general_data_table(security_device_name)
                 );"""
             
             case 'nat_policy_containers_table':
@@ -67,9 +66,7 @@ class SecurityDeviceDatabase(PioneerDatabase):
                 security_device_name TEXT NOT NULL,
                 nat_policy_container_name TEXT PRIMARY KEY,
                 nat_policy_container_parent TEXT,
-                CONSTRAINT fk_sec_dev_name
-                    FOREIGN KEY(security_device_name)
-                        REFERENCES general_data_table(security_device_name)
+                FOREIGN KEY(security_device_name) REFERENCES general_data_table(security_device_name)
                 );"""
             
             case 'object_containers_table':
@@ -77,9 +74,7 @@ class SecurityDeviceDatabase(PioneerDatabase):
                 security_device_name TEXT NOT NULL,
                 object_container_name TEXT PRIMARY KEY,
                 object_container_parent TEXT,
-                CONSTRAINT fk_sec_dev_name
-                    FOREIGN KEY(security_device_name)
-                        REFERENCES general_data_table(security_device_name)
+                FOREIGN KEY(security_device_name) REFERENCES general_data_table(security_device_name)
                 );"""
 
             # TODO: do i need two tables here? one for pre-processing and one for post-processing?
@@ -108,12 +103,7 @@ class SecurityDeviceDatabase(PioneerDatabase):
                 security_policy_log_end BOOLEAN NOT NULL,
                 security_policy_section TEXT,
                 security_policy_action TEXT,
-                CONSTRAINT fk_sec_dev_name
-                    FOREIGN KEY(security_device_name)
-                        REFERENCES general_data_table(security_device_name),
-                CONSTRAINT fk_sec_policy_container
-                    FOREIGN KEY(security_policy_container_name)
-                        REFERENCES security_policy_containers_table(security_policy_container_name)
+                FOREIGN KEY(security_policy_container_name) REFERENCES security_policy_containers_table(security_policy_container_name)
                 );"""
             
             # this table stores info about the hitcounts of the security policies and of the nat policies
@@ -131,15 +121,8 @@ class SecurityDeviceDatabase(PioneerDatabase):
                 nat_policy_hitcount INTEGER,
                 nat_policy_last_hit TIMESTAMP,
                 assigned_device_name TEXT NOT NULL,
-                CONSTRAINT fk_sec_dev_name
-                    FOREIGN KEY(security_device_name)
-                        REFERENCES general_data_table(security_device_name),
-                CONSTRAINT fk_sec_policy_container
-                    FOREIGN KEY(security_policy_container_name)
-                        REFERENCES security_policy_containers_table(security_policy_container_name),
-                CONSTRAINT fk_nat_policy_container
-                    FOREIGN KEY(nat_policy_container_name)
-                        REFERENCES security_policy_containers_table(security_policy_container_name)
+                FOREIGN KEY(security_policy_container_name) REFERENCES security_policy_containers_table(security_policy_container_name),
+                FOREIGN KEY(nat_policy_container_name) REFERENCES security_policy_containers_table(security_policy_container_name)
                 );"""
 
             #TODO: add support for NAT rules
@@ -155,9 +138,7 @@ class SecurityDeviceDatabase(PioneerDatabase):
                 command = """CREATE TABLE IF NOT EXISTS policy_users_table (
                     policy_users TEXT PRIMARY KEY,
                     security_device_name TEXT NOT NULL,
-                    CONSTRAINT fk_sec_dev_name
-                        FOREIGN KEY(security_device_name)
-                            REFERENCES general_data_table(security_device_name)
+                    FOREIGN KEY(object_container_name) REFERENCES object_containers_table(object_container_name)
                 );"""
 
             # stores information about the security zones names and mapped interfaces on a managed device of the security device
@@ -169,12 +150,7 @@ class SecurityDeviceDatabase(PioneerDatabase):
                 security_zone_assigned_device TEXT,
                 security_zone_mapped_interfaces TEXT[],
                 security_zone_description TEXT,
-                CONSTRAINT fk_sec_dev_name
-                    FOREIGN KEY(security_device_name)
-                        REFERENCES general_data_table(security_device_name),
-                CONSTRAINT fk_obj_container
-                    FOREIGN KEY(object_container_name)
-                        REFERENCES object_containers_table(object_container_name)
+                FOREIGN KEY(object_container_name) REFERENCES object_containers_table(object_container_name)
                 );"""
 
             case 'urls_table':
@@ -184,12 +160,7 @@ class SecurityDeviceDatabase(PioneerDatabase):
                 object_container_name TEXT NOT NULL,
                 url_object_members TEXT[],
                 url_object_description TEXT,
-                CONSTRAINT fk_sec_dev_name
-                    FOREIGN KEY(security_device_name)
-                        REFERENCES general_data_table(security_device_name),
-                CONSTRAINT fk_obj_container
-                    FOREIGN KEY(object_container_name)
-                        REFERENCES object_containers_table(object_container_name)
+                FOREIGN KEY(object_container_name) REFERENCES object_containers_table(object_container_name)
                 );"""
 
             #TODO: add proper support for url categories
@@ -198,26 +169,16 @@ class SecurityDeviceDatabase(PioneerDatabase):
                     url_category_name TEXT PRIMARY KEY,
                     security_device_name TEXT NOT NULL,
                     object_container_name TEXT NOT NULL,
-                    CONSTRAINT fk_sec_dev_name
-                        FOREIGN KEY(security_device_name)
-                            REFERENCES general_data_table(security_device_name),
-                    CONSTRAINT fk_object_container
-                        FOREIGN KEY(object_container_name)
-                            REFERENCES object_containers_table(object_container_name)
+                    FOREIGN KEY(object_container_name) REFERENCES object_containers_table(object_container_name)
                 );"""
             
             #TODO: add proper support for l7 apps
             case 'l7_apps_table':
                 command = """CREATE TABLE IF NOT EXISTS l7_apps_table (
-                    l7_app_name TEXT PRIMARY KEY,
-                    security_device_name TEXT NOT NULL,
-                    object_container_name TEXT NOT NULL,
-                    CONSTRAINT fk_sec_dev_name
-                        FOREIGN KEY(security_device_name)
-                            REFERENCES general_data_table(security_device_name),
-                    CONSTRAINT fk_object_container
-                        FOREIGN KEY(object_container_name)
-                            REFERENCES object_containers_table(object_container_name)
+                l7_app_name TEXT PRIMARY KEY,
+                security_device_name TEXT NOT NULL,
+                object_container_name TEXT NOT NULL,
+                FOREIGN KEY(object_container_name) REFERENCES object_containers_table(object_container_name)
                 );"""
 
             case 'network_address_objects_table':
@@ -229,12 +190,7 @@ class SecurityDeviceDatabase(PioneerDatabase):
                 network_address_description TEXT,
                 network_address_type TEXT,
                 overridable_object BOOLEAN NOT NULL,
-                CONSTRAINT fk_sec_dev_name
-                    FOREIGN KEY(security_device_name)
-                        REFERENCES general_data_table(security_device_name),
-                CONSTRAINT fk_obj_container
-                    FOREIGN KEY(object_container_name)
-                        REFERENCES object_containers_table(object_container_name)
+                FOREIGN KEY(object_container_name) REFERENCES object_containers_table(object_container_name)
                 );"""
 
             case 'network_address_object_groups_table':
@@ -245,12 +201,7 @@ class SecurityDeviceDatabase(PioneerDatabase):
                 network_address_group_members TEXT[],
                 network_address_group_description TEXT,
                 overridable_object BOOLEAN NOT NULL,
-                CONSTRAINT fk_sec_dev_name
-                    FOREIGN KEY(security_device_name)
-                        REFERENCES general_data_table(security_device_name),
-                CONSTRAINT fk_obj_container
-                    FOREIGN KEY(object_container_name)
-                        REFERENCES object_containers_table(object_container_name)
+                FOREIGN KEY(object_container_name) REFERENCES object_containers_table(object_container_name)
                 );"""
 
             case 'port_objects_table':
@@ -261,12 +212,7 @@ class SecurityDeviceDatabase(PioneerDatabase):
                 port_value TEXT,
                 port_description TEXT,
                 overridable_object BOOLEAN NOT NULL,
-                CONSTRAINT fk_sec_dev_name
-                    FOREIGN KEY(security_device_name)
-                        REFERENCES general_data_table(security_device_name),
-                CONSTRAINT fk_obj_container
-                    FOREIGN KEY(object_container_name)
-                        REFERENCES object_containers_table(object_container_name)
+                FOREIGN KEY(object_container_name) REFERENCES object_containers_table(object_container_name)
                 );"""
 
             case 'port_object_groups_table':
@@ -277,12 +223,7 @@ class SecurityDeviceDatabase(PioneerDatabase):
                 port_group_members TEXT[],
                 port_group_description TEXT,
                 overridable_object BOOLEAN NOT NULL,
-                CONSTRAINT fk_sec_dev_name
-                    FOREIGN KEY(security_device_name)
-                        REFERENCES general_data_table(security_device_name),
-                CONSTRAINT fk_obj_container
-                    FOREIGN KEY(object_container_name)
-                        REFERENCES object_containers_table(object_container_name)
+                FOREIGN KEY(object_container_name) REFERENCES object_containers_table(object_container_name)
                 );"""
             
             case 'schedule_objects_table':
@@ -301,12 +242,7 @@ class SecurityDeviceDatabase(PioneerDatabase):
                 week_day TEXT,
                 week_day_start TEXT,
                 week_day_end TEXT,
-                CONSTRAINT fk_sec_dev_name
-                    FOREIGN KEY(security_device_name)
-                        REFERENCES general_data_table(security_device_name),
-                CONSTRAINT fk_obj_container
-                    FOREIGN KEY(object_container_name)
-                        REFERENCES object_containers_table(object_container_name)
+                FOREIGN KEY(object_container_name) REFERENCES object_containers_table(object_container_name)
                 )"""
 
             case 'managed_devices_table':
@@ -316,10 +252,24 @@ class SecurityDeviceDatabase(PioneerDatabase):
                 assigned_security_policy_container TEXT,
                 hostname TEXT,
                 cluster TEXT,
-                CONSTRAINT fk_sec_dev_name
-                    FOREIGN KEY(security_device_name)
-                        REFERENCES general_data_table(security_device_name)
+                FOREIGN KEY(security_device_name) REFERENCES general_data_table(security_device_name)
                 );"""
+            
+            case 'geolocation_objects_table':
+                command = """CREATE TABLE IF NOT EXISTS geolocation_objects_table (
+                geolocation_object_name TEXT PRIMARY KEY,
+                security_device_name TEXT NOT NULL,
+                object_container_name TEXT NOT NULL,
+                continent_member_names TEXT[],
+                continent_member_alpha2_codes TEXT[],
+                continent_member_alpha3_codes TEXT[],
+                continent_member_numeric_codes TEXT[],
+                country_member_names TEXT[],
+                country_member_alpha2_codes TEXT[],
+                country_member_alpha3_codes TEXT[],
+                country_member_numeric_codes TEXT[]
+                FOREIGN KEY(object_container_name) REFERENCES object_containers_table(object_container_name)
+                )"""
             
             # this table stores info about the objects who are overriden. the stored info is the object name, its value, the device where the override is set
             # TODO: add support for overridden objects
@@ -921,6 +871,9 @@ class SecurityDevice:
             # Execute the insert command with the specified values
             self._database.insert_table_value('security_policy_containers_table', insert_command, values)
 
+    def insert_into_geolocation_table(self, geolocation_object_data):
+        pass
+
     def verify_duplicate(self, table, column, value):
         helper.logging.debug("Called verify_duplicate().")
         helper.logging.info(f"Verifying duplicate in table {table}, column {column}, for value {value}.")
@@ -947,6 +900,7 @@ class SecurityDevice:
 
     def delete_security_device(self):
         pass
+
 
     # the following methods must be overriden by the device's specific methods
     # TODO: add all the methods necessary here (e.g process methods)

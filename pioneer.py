@@ -215,7 +215,6 @@ def main():
             # all the objects (URLs, address objects, groups, etc)
             # user sources along with users databases
             # and pretty much the rest of the config (routing, VPNs, etc...)
-            
         if pioneer_args["import_config"]:
             # import the policy containers of the device.
             helper.logging.info(f"################## IMPORTING CONFIGURATION OF {security_device_name}.##################")
@@ -312,6 +311,7 @@ if __name__ == "__main__":
 # tell the user what parameter he is missing when using the --craete-security-device
 # make a list with valid device types and make sure only valid types are used
 # adding a policy/object count per container/per device would be nice. adding the description of the security policy container would also be nice
+# maybe the process functions could be defined in the SecurityDevice class, as they might not have any specific device attributes
 
 
 # should there be classes for the security policies and security containers? if so, the objects should be instantiated using data from the databases.
@@ -345,40 +345,29 @@ if __name__ == "__main__":
     # progress bar 
     # mechanism for checking failed migration objects on policies. for example, for every policy you could make a diff between
     # how the policy looked like on the source device and how it looks on the target device
-
-#IMPORTING
-    # create a caching mechanism. for example, for the objects. execute a GET request to get all the information regarding all the security objects
-    # and use the cached request response in order to use the data from there, instead of executing a GET request each time you need info from an object
-    # same with the policies and same for everything basically
-    
-    # see what can eb done about duplicate policy names
-    
-    # what to do with the URLs names and with other unsupported parameters? for example,
+    #TODO: what to do with the URLs names and with other unsupported parameters? for example,
     # PA does not support "/" in the names of URL objects, like Cisco does. maybe we can use a function that will apply naming constraints when migrating.
     # by doing this, this becomes a migrating issue, not an importing issue. everything should be imported exactly as it is defined on the source device. naming constraints and existance of the name constrained objects should be done accoriding to the target's device constraints
-    # where should the policy containing users, ICMP, url categories and applications be tracked?
+    
 
-    # get a count with the policies retrieved and the policies imported
+#IMPORTING
+    # caching is implemented somehow. all info about objects and policies is retrieved once.
+    # duplicate policies name are both imported as long as they are part of different containers
+    #TODO: MAYB geolocation support.
 
-    # continue testing the importing of l7 inline apps
+    #TODO: ICMP, schedules, url and app policies, are not tracked separately. However, csv reports are generated so that the user is aware that they exist.
+    #TODO: get a count with the policies retrieved and the policies imported
     
     # maybe process the Failed to insert values into: security_policies_table. Reason: duplicate key value violates unique constraint in a better way
 
-    # import the managed devices 
-
-    # Test the  code by creating a security policy with no users, no apps, etc to see how it behaves with empty data sets!
-
-    # enable the import of every single container/config if "import-config --all"
+    #TODO:enable the import of every single container/config if "import-config --all"
 
     # track all protocols that are not TCP or UDP
 
     # MAYBE: support for creating interfaces and security zones
 
-    # support for geo-location objects
-
     # if there are problems with importing a policy/object of a policy and so on, track that policy, log it along with the reason why it failed
 
-    #TODO: ennsure that policies with the same name, but in different containers get imported!
 
 # CISCO FMC Security zones
     # add support for interface groups

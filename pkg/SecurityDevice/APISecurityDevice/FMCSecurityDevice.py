@@ -5,7 +5,7 @@ import fireREST
 import sys
 import ipaddress
 import utils.exceptions as PioneerExceptions
-# ##################
+import json
 class FMCDeviceConnection(APISecurityDeviceConnection):
     def __init__(self, api_username, api_secret, api_hostname, api_port, domain):
         super().__init__(api_username, api_secret, api_hostname, api_port)
@@ -279,6 +279,9 @@ class FMCSecurityDevice(SecurityDevice):
     # 'sourceZones'/'destinationZones' attribute in the response and a KeyError will be generated.
     # this is true for most of the configuration options which have the 'Any' parameter, therefore the retrieval of all
     # configuration options will be processed in try except KeyError blocks
+    # the functions that extract users, apps and urls will append more information than the name
+    # since JSON and multi-dimensional arrays are a bitch to insert in postgresql, it's easier to add only a string containing all the info to the database
+    # the string will be a special string made out of the type of the object + ‽ + whatever + ‽...
     def extract_security_zones(self, sec_policy, zone_type):
         helper.logging.debug("Called extract_security_zones()")
         """
@@ -373,7 +376,6 @@ class FMCSecurityDevice(SecurityDevice):
         helper.logging.debug(f"Finished converting all literals to objects. This is the list with converted literals {network_objects_list}.")
         return network_objects_list
 
-    # TODO: log and process geolocation objects
     def extract_network_objects(self, sec_policy, network_object_type):
         helper.logging.debug("Called extract_network_objects()")
         """
@@ -532,7 +534,7 @@ class FMCSecurityDevice(SecurityDevice):
         helper.logging.debug(f"Finished processing all the schedule objects. This is the list with the processed objects {schedule_object_list}.")
         return schedule_object_list
 
-    # TODO: maybe i need to process more stuff than names here
+    # TODO: do i need to extract also the realm of the user here?
     def extract_policy_users(self, sec_policy):
         """
         Process policy users defined in the security policy.
@@ -560,9 +562,10 @@ class FMCSecurityDevice(SecurityDevice):
                 policy_user_name = policy_user_object['name']
                 helper.logging.info(f"Processed policy user object {policy_user_name}.")
 
+                policy_user_entry = policy_user_object['type'] + policy_user_name
                 # Append it to the list
-                policy_user_list.append(policy_user_name)
-                helper.logging.debug(f"I am done processing {policy_user_object}. I have extracted the following data: name: {policy_user_name}")
+                policy_user_list.append(policy_user_entry)
+                helper.logging.debug(f"I am done processing {policy_user_object}. I have extracted the following data: name: {policy_user_name}, type: {policy_user_object['type']}")
 
         except KeyError:
             helper.logging.info("It looks like there are no policy users defined on this policy.")
@@ -574,7 +577,6 @@ class FMCSecurityDevice(SecurityDevice):
 
     # there are three cases which need to be processed here. the url can be an object, a literal, or a category with reputation
 
-    #TODO: store the URLs in a table like the rest of the objects
     def extract_policy_urls(self, sec_policy):
         """
         Process policy URLs defined in the security policy.
@@ -636,6 +638,8 @@ class FMCSecurityDevice(SecurityDevice):
                 category_reputation = policy_url_category['reputation']
                 helper.logging.info(f"Processed policy URL category: {category_name}. It has a reputation of {category_reputation}")
 
+                category_name = f"URL_CATEGORY‽{category_name}‽{category_reputation}"
+
                 policy_url_list.append(category_name)
 
             found_objects_or_literals = True
@@ -672,7 +676,7 @@ class FMCSecurityDevice(SecurityDevice):
 
             for policy_l7_app in policy_l7_apps:
                 helper.logging.debug(f"Processing policy L7 app: {policy_l7_app}.")
-                policy_l7_name = policy_l7_app['name']
+                policy_l7_name = 'APP' + "‽" + policy_l7_app['name']
                 helper.logging.info(f"Processed policy L7 app: {policy_l7_name}.")
                 policy_l7_apps_list.append(policy_l7_name)
 
@@ -688,7 +692,7 @@ class FMCSecurityDevice(SecurityDevice):
 
             for policy_l7_app_filter in policy_l7_app_filters:
                 helper.logging.debug(f"Processing policy L7 app filter: {policy_l7_app_filter}.")
-                policy_l7_app_filter_name = policy_l7_app_filter['name']
+                policy_l7_app_filter_name = 'APP_FILTER' + "‽" + policy_l7_app_filter['name']
                 helper.logging.info(f"Processed policy L7 app filter: {policy_l7_app_filter_name}.")
                 policy_l7_apps_list.append(policy_l7_app_filter_name)
 
@@ -714,7 +718,7 @@ class FMCSecurityDevice(SecurityDevice):
                         continue
 
                     # Create a list to store the names of filter elements in the current category
-                    filter_element_names = [f"inlineApplicationFilters_{policy_inline_l7_app_filter_key}_{policy_inline_l7_app_filter_element['name']}" for policy_inline_l7_app_filter_element in policy_inline_l7_app_filter_elements]
+                    filter_element_names = [f"inlineApplicationFilters‽{policy_inline_l7_app_filter_key}‽{policy_inline_l7_app_filter_element['name']}" for policy_inline_l7_app_filter_element in policy_inline_l7_app_filter_elements]
 
                     # Append the list of filter element names to the 'policy_l7_apps_list'
                     policy_l7_apps_list.extend(filter_element_names)
@@ -962,7 +966,107 @@ class FMCSecurityDevice(SecurityDevice):
 
     # TODO: add support for geo-location
     def process_geolocation_objects(self, geolocation_objects_list, fmc_geolocation_objects_dict):
-        pass
+        helper.logging.debug(f"Called process_geolocation_objects().")
+        helper.logging.info("I am now processing the imported geolocation objects. I am processing and formatting all the data retrieved from the policies.")
+        
+        if not geolocation_objects_list:
+            helper.logging.info("There are no geolocation objects to process.")
+            return []
+        
+        processed_geolocation_object_info = []
+        object_container_name = "virtual_object_container"
+
+        # load the JSON file with all the countries
+        with open('./utils/world_data.json', 'r') as world_data_file:
+            world_data = json.load(world_data_file)
+        
+        # extract from JSON file
+        countries_name_list = []
+        continents_name_list = []
+        
+        # loop through the geo-location objects and check:
+        for geolocation_object_name in geolocation_objects_list:
+            continent_member_names = []
+            continent_member_numeric_codes = []
+            continent_member_alpha2_codes = []
+            continent_member_alpha3_codes = []
+
+            country_member_names = []
+            country_member_numeric_codes = []
+            country_member_alpha2_codes = []
+            country_member_alpha3_codes = []
+
+            # if the object is in the fmc_geolocation_objects_dict.
+            helper.logging.info(f"I am processing geolocation object {geolocation_object_name}.")
+            # Look up the object in the dictionary containing the network address object information
+            matching_geolocation_object = fmc_geolocation_objects_dict.get(geolocation_object_name, {})
+            
+            if matching_geolocation_object:
+                helper.logging.info(f"Location object: {geolocation_object_name} is a FMC object.")
+                helper.logging.debug(f"Found matching entry for object {geolocation_object_name}. Entry data: {matching_geolocation_object}.")
+
+                # check and loop through the continents of the object
+                if 'continents' in matching_geolocation_object:
+                    helper.logging.info(f"Location object: {geolocation_object_name} has continent members. These are {matching_geolocation_object['continents']}.")
+                    for continent in matching_geolocation_object['continents']:
+                        continent_name = continent.get('name', [])
+                        continent_member_names.extend(continent_name)
+                        
+                        for world_entry in world_data:
+                            if world_entry['region'] == continent_name:
+                                country_member_numeric_codes.append(world_entry['country-code'])
+                                country_member_alpha2_codes.append(world_entry['alpha-2'])
+                                country_member_alpha3_codes.append(world_entry['alpha-3'])
+
+                        # some security devices don't support continents. extend the member countries lists with the countries data.
+                        continent_member_numeric_codes.append(world_entry['region-code'] if world_entry['name'] == continent else None)
+                        continent_member_alpha2_codes.append(world_entry['alpha-2'] if world_entry['name'] == continent else None)
+                        continent_member_alpha3_codes.append(world_entry['alpha-3'] if world_entry['name'] == continent else None)
+                
+                # now loop through the member countries
+                if 'countries' in matching_geolocation_object:
+                    helper.logging.info(f"Location object: {geolocation_object_name} has country members. These are {matching_geolocation_object['continents']}.")
+                    for country in matching_geolocation_object['countries']:
+                        country_name = country.get('name', [])
+                        country_member_names.extend(country_name)
+                        if world_entry['name'] == country_name:
+                                country_member_numeric_codes.append(world_entry['country-code'])
+                                country_member_alpha2_codes.append(world_entry['alpha-2'])
+                                country_member_alpha3_codes.append(world_entry['alpha-3'])
+
+                    helper.logging.info(f"Processed location object: {geolocation_object_name}.")
+            
+            # if the object is a country
+            elif geolocation_object_name in countries_name_list:
+                helper.logging.info(f"Location object: {geolocation_object_name} is not a FMC object. It is a country defined directly on the policy")
+                pass
+
+             # if the list is a continent
+            elif geolocation_object_name in continents_name_list:
+                helper.logging.info(f"Location object: {geolocation_object_name} is not a FMC object. It is a continent defined directly on the policy")
+            
+            # if the object is in neither of these lists, it means there is something very wrong with it
+            else:
+                pass
+
+            # Build the processed network object entry
+            processed_geolocation_object_entry = {
+                "geolocation_object_name": geolocation_object_name,
+                "object_container_name": object_container_name,
+                "continent_member_names": '',
+                "continent_member_code": '',
+                "country_member_names": '',
+                "country_member_alpha2_codes": '',
+                "country_member_alpha3_codes": '',
+                "country_member_numeric_codes": '',
+            }
+
+            helper.logging.info(f"Finished processing object {geolocation_object_name}.")
+            helper.logging.debug(f"Processed entry for this object is: {processed_geolocation_object_entry}.")
+            processed_geolocation_object_info.append(processed_geolocation_object_entry)
+        
+        return processed_geolocation_object_info
+    
 
     def get_network_objects_info(self):
         helper.logging.debug("Called get_network_objects_info()")
@@ -977,7 +1081,7 @@ class FMCSecurityDevice(SecurityDevice):
         network_address_group_objects_info = self._api_connection.object.networkgroup.get()
 
         # Get the information of all geolocation objects from FMC
-        geolocation_objects = self._api_connection.object.geolocation.get()
+        fmc_geolocation_objects = self._api_connection.object.geolocation.get()
 
         # Retrieve the names of all network address objects
         fmc_network_objects_list = [fmc_network_object['name'] for fmc_network_object in network_address_objects_info]
@@ -1029,6 +1133,8 @@ class FMCSecurityDevice(SecurityDevice):
         # Extend it with the network members and network literal members of all the group objects
         processed_network_objects_info.extend(processed_network_literals_info)
         
+        processed_geolocation_objects_info = self.process_geolocation_objects(geolocation_objects, fmc_geolocation_objects)
+
         helper.logging.debug(f"I have retrieved all the information for all the objects stored in the database. The network objects info is: {processed_network_objects_info}. The group object info is {processed_network_group_objects_info}.")
         return processed_network_objects_info, processed_network_group_objects_info
 
