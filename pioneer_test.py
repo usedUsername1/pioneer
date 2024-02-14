@@ -239,22 +239,26 @@ def main():
                 # at this point, the data from all the security policies is extracted, it is time to insert it into the database
                 SpecificSecurityDeviceObject.insert_into_security_policies_table(sec_policy_data)
 
-                print("Importing the object container data.")
-                helper.logging.info("\n################## IMPORTING OBJECT CONTAINER DATA. ##################")
-                # import and insert the object container first!
-                object_containers_info = SpecificSecurityDeviceObject.get_object_containers_info(security_policy_containers_info)
-                SpecificSecurityDeviceObject.insert_into_object_containers_table(object_containers_info)
+            print("test_function value:", pioneer_args["test_function"])
+            if pioneer_args["test_function"] == 'a':
+                print('asd')
+                test = SpecificSecurityDeviceObject.get_network_objects_info()
+                print(test)
+                # print("Importing the object container data.")
+                # helper.logging.info("\n################## IMPORTING OBJECT CONTAINER DATA. ##################")
+                # # import and insert the object container first!
+                # object_containers_info = SpecificSecurityDeviceObject.get_object_containers_info(security_policy_containers_info)
+                # SpecificSecurityDeviceObject.insert_into_object_containers_table(object_containers_info)
 
-                print("Importing object data.")
-                helper.logging.info("\n################## IMPORTING OBJECTS DATA. ##################")
-                # at this point all the security policy data is imported. it is time to import the object data.
-                network_objects_data, network_group_objects_data, geolocation_objects_data = SpecificSecurityDeviceObject.get_objects_data_info()
+                # print("Importing object data.")
+                # helper.logging.info("\n################## IMPORTING OBJECTS DATA. ##################")
+                # # at this point all the security policy data is imported. it is time to import the object data.
+                # network_objects_data, network_group_objects_data = SpecificSecurityDeviceObject.get_objects_data_info()
                 
-                # all the network objects and network group objects data has been extracted, now insert it into the database
-                helper.logging.info("\n################## EXTRACTED OBJECTS DATA, INSERTING IN THE DATABASE. ##################")
-                SpecificSecurityDeviceObject.insert_into_network_address_objects_table(network_objects_data)
-                SpecificSecurityDeviceObject.insert_into_network_address_object_groups_table(network_group_objects_data)
-                SpecificSecurityDeviceObject.insert_into_geolocation_table(geolocation_objects_data)
+                # # all the network objects and network group objects data has been extracted, now insert it into the database
+                # helper.logging.info("\n################## EXTRACTED OBJECTS DATA, INSERTING IN THE DATABASE. ##################")
+                # SpecificSecurityDeviceObject.insert_into_network_address_objects_table(network_objects_data)
+                # SpecificSecurityDeviceObject.insert_into_network_address_object_groups_table(network_group_objects_data)
 
 
 
@@ -312,12 +316,9 @@ if __name__ == "__main__":
 # tell the user what parameter he is missing when using the --craete-security-device
 # make a list with valid device types and make sure only valid types are used
 # adding a policy/object count per container/per device would be nice. adding the description of the security policy container would also be nice
-# maybe the process functions could be defined in the SecurityDevice class, as they might not have any specific device attributes
 
-# GEOLOCATION NOTES:
-    # Oceania is not recognized as a continent. Everything under Oceania will be under Australia
-    # Special characters in the names of the countries are not supported
 
+# should there be classes for the security policies and security containers? if so, the objects should be instantiated using data from the databases.
 
 # TODO ?? 
 # there might be a need to create very specific tables for the firewall rules. these tables
@@ -356,6 +357,7 @@ if __name__ == "__main__":
 #IMPORTING
     # caching is implemented somehow. all info about objects and policies is retrieved once.
     # duplicate policies name are both imported as long as they are part of different containers
+    #TODO: MAYB geolocation support.
 
     #TODO: ICMP, schedules, url and app policies, are not tracked separately. However, csv reports are generated so that the user is aware that they exist.
     #TODO: get a count with the policies retrieved and the policies imported

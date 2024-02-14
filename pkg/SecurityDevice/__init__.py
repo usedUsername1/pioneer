@@ -261,9 +261,6 @@ class SecurityDeviceDatabase(PioneerDatabase):
                 security_device_name TEXT NOT NULL,
                 object_container_name TEXT NOT NULL,
                 continent_member_names TEXT[],
-                continent_member_alpha2_codes TEXT[],
-                continent_member_alpha3_codes TEXT[],
-                continent_member_numeric_codes TEXT[],
                 country_member_names TEXT[],
                 country_member_alpha2_codes TEXT[],
                 country_member_alpha3_codes TEXT[],
@@ -871,6 +868,7 @@ class SecurityDevice:
             # Execute the insert command with the specified values
             self._database.insert_table_value('security_policy_containers_table', insert_command, values)
 
+    # TODO: now insert the extracted data
     def insert_into_geolocation_table(self, geolocation_object_data):
         pass
 
