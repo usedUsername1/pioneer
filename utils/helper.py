@@ -81,17 +81,24 @@ def setup_logging(log_folder, log_file=None):
     # Set the logger level to DEBUG to capture all levels of logs
     logger.setLevel(logging.DEBUG)
 
-    # Create a formatter with desired format
-    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+    # Create a custom formatter with desired format and explicit encoding
+    class UnicodeFormatter(logging.Formatter):
+        def format(self, record):
+            # Ensure the message is properly encoded
+            record.msg = str(record.msg).encode('utf-8', errors='replace').decode('utf-8')
+            return super(UnicodeFormatter, self).format(record)
+
+    formatter = UnicodeFormatter('%(asctime)s - %(levelname)s - %(message)s')
 
     # Configure logging to write to both console and file
     # console_handler = logging.StreamHandler()  # Log to console
     # console_handler.setFormatter(formatter)
     # logger.addHandler(console_handler)
 
-    file_handler = logging.FileHandler(os.path.join(log_folder, log_file_name), mode='a')  # Log to file
+    file_handler = logging.FileHandler(os.path.join(log_folder, log_file_name), mode='a', encoding='utf-8')  # Log to file
     file_handler.setFormatter(formatter)
     logger.addHandler(file_handler)
+
 
 
 def load_protocol_mapping():

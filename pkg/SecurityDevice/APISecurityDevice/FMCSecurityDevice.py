@@ -5,7 +5,7 @@ import fireREST
 import sys
 import ipaddress
 import utils.exceptions as PioneerExceptions
-import json
+
 class FMCDeviceConnection(APISecurityDeviceConnection):
     def __init__(self, api_username, api_secret, api_hostname, api_port, domain):
         super().__init__(api_username, api_secret, api_hostname, api_port)
@@ -975,65 +975,83 @@ class FMCSecurityDevice(SecurityDevice):
 
     # TODO: docstring here
     def process_geolocation_objects(self, geolocation_objects_list, geolocation_objects_info, continents_info, countries_info):
-        helper.logging.debug("Called process_geolocation_objects().")
+        helper.logging.debug(f"Called process_geolocation_objects().")
         helper.logging.info("I am now processing the imported geolocation objects. I am processing and formatting all the data retrieved from the policies.")
         
-        processed_geolocation_object_info = []
-
         if not geolocation_objects_list:
             helper.logging.info("There are no geolocation objects to process.")
-            return processed_geolocation_object_info
+            return []
         
+        processed_geolocation_object_info = []
         object_container_name = "virtual_object_container"
         
+        # loop through the geo-location objects and check:
         for geolocation_object_name in geolocation_objects_list:
-            helper.logging.info(f"Processing geolocation object {geolocation_object_name}.")
-            
             continent_member_names = []
+
             country_member_names = []
             country_member_numeric_codes = []
             country_member_alpha2_codes = []
             country_member_alpha3_codes = []
-            
-            matching_geolocation_object = geolocation_objects_info.get(geolocation_object_name, {})
-            if not matching_geolocation_object:
-                helper.logging.error(f"Object: {geolocation_object_name} is of unknown type. Cannot import/process it.")
-                continue
-            
-            if 'continents' in matching_geolocation_object:
-                for continent in matching_geolocation_object['continents']:
-                    continent_member_names.append(continent['name'])
-                    for country in continent['countries']:
-                        country_member_names.append(country['name'])
-                        country_member_numeric_codes.append(country['id'])
-                        country_member_alpha2_codes.append(country['iso2'])
-                        country_member_alpha3_codes.append(country['iso3'])
-            
-            if 'countries' in matching_geolocation_object:
-                for country in matching_geolocation_object['countries']:
-                    country_member_names.append(country['name'])
-                    country_member_numeric_codes.append(country['id'])
-                    country_member_alpha2_codes.append(country['iso2'])
-                    country_member_alpha3_codes.append(country['iso3'])
 
+            helper.logging.info(f"I am processing geolocation object {geolocation_object_name}.")
             matching_geolocation_continent = continents_info.get(geolocation_object_name, {})
-            if matching_geolocation_continent:
+            matching_geolocation_object = geolocation_objects_info.get(geolocation_object_name, {})
+            # look in the name of the object. if it contains the interbang character, then split it. use the ID to lookup in the dictionary with the list
+            if '‽' in geolocation_object_name:
+                helper.logging.info(f"Location object: {geolocation_object_name} is a country defined directly on the policy.")
+                country_id, country_name = geolocation_object_name.split("‽")
+                
+                # get the info of the country by its ID
+                matching_country = countries_info.get(country_id, {})
+                helper.logging.debug(f"Found matching entry for object {geolocation_object_name}. Entry data: {matching_country}")
+
+                # create the lists with the info about the country members
+                country_member_names.append(country_name)
+                country_member_numeric_codes.append(country_id)
+                country_member_alpha2_codes.append(matching_country['iso2'])
+                country_member_alpha3_codes.append(matching_country['iso3'])
+                
+            # look up in the dictionary containing the info about the continet objects and see if there is an entry found for the current geolocation object
+            elif matching_geolocation_continent is not None and matching_geolocation_continent != {}:
+                helper.logging.info(f"Location object: {geolocation_object_name} is a continent defined directly on the policy.")
+                helper.logging.debug(f"Found matching entry for object {geolocation_object_name}. Entry data: {matching_geolocation_continent}.")
+                # now loop through the countries of the continent and add them to the members list
                 continent_member_names.append(geolocation_object_name)
                 for continent_country in matching_geolocation_continent['countries']:
                     country_member_names.append(continent_country['name'])
                     country_member_numeric_codes.append(continent_country['id'])
                     country_member_alpha2_codes.append(continent_country['iso2'])
-                    country_member_alpha3_codes.append(continent_country['iso3']) 
+                    country_member_alpha3_codes.append(continent_country['iso3'])   
+            
+            # look up in the dictionary containing the info about the geolocation objects and see if there is an entry found for the current geolocation object
+            elif matching_geolocation_object is not None and matching_geolocation_object != {}:
+                helper.logging.info(f"Location object: {geolocation_object_name} is an actual object.")
+                helper.logging.debug(f"Found matching entry for object {geolocation_object_name}. Entry data: {matching_geolocation_object}.")
+                # go through the continents of the geolocation object
+                if 'continents' in matching_geolocation_object:
+                    for continent in matching_geolocation_object['continents']:
+                        continent_member_names.append(continent['name'])
+                        # and go through the countries of the continent, extract the data and add it to the lists tracking it
+                        for country in continent['countries']:
+                            country_member_names.append(country['name'])
+                            country_member_numeric_codes.append(country['id'])
+                            country_member_alpha2_codes.append(country['iso2'])
+                            country_member_alpha3_codes.append(country['iso3'])     
+                
+                # check if there are countries on the
+                if 'countries' in matching_geolocation_object:
+                    for country in matching_geolocation_object['countries']:
+                        country_member_names.append(country['name'])
+                        country_member_numeric_codes.append(country['id'])
+                        country_member_alpha2_codes.append(country['iso2'])
+                        country_member_alpha3_codes.append(country['iso3'])
+ 
+            else:
+                helper.logging.error(f"Object: {geolocation_object_name} is of type unknown. I cannot import/process it.")
+            # look up in the dictionary containing the info about the continet objects and see if there is an entry found for the current geolocation object
 
-            if '‽' in geolocation_object_name:
-                country_id, country_name = geolocation_object_name.split("‽")
-                matching_country = countries_info.get(country_id, {})
-                if matching_country:
-                    country_member_names.append(country_name)
-                    country_member_numeric_codes.append(country_id)
-                    country_member_alpha2_codes.append(matching_country['iso2'])
-                    country_member_alpha3_codes.append(matching_country['iso3'])
-
+            # Build the processed network object entry
             processed_geolocation_object_entry = {
                 "geolocation_object_name": geolocation_object_name,
                 "object_container_name": object_container_name,
@@ -1043,11 +1061,10 @@ class FMCSecurityDevice(SecurityDevice):
                 "country_member_alpha3_codes": country_member_alpha3_codes,
                 "country_member_numeric_codes": country_member_numeric_codes,
             }
+            helper.logging.info(f"Finished processing object {geolocation_object_name}.")
+            helper.logging.debug(f"Processed entry for this object is: {processed_geolocation_object_entry}.")
             processed_geolocation_object_info.append(processed_geolocation_object_entry)
-            helper.logging.info(f"Finished processing object {geolocation_object_name}. Entry data: {processed_geolocation_object_entry}.")
         
-        helper.logging.info("Done processing geolocation objects.")
-        helper.logging.debug(f"Processed info: {processed_geolocation_object_info}.")
         return processed_geolocation_object_info
     
     def get_network_objects_info(self):

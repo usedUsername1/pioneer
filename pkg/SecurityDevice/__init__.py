@@ -264,7 +264,7 @@ class SecurityDeviceDatabase(PioneerDatabase):
                 country_member_names TEXT[],
                 country_member_alpha2_codes TEXT[],
                 country_member_alpha3_codes TEXT[],
-                country_member_numeric_codes TEXT[]
+                country_member_numeric_codes TEXT[],
                 FOREIGN KEY(object_container_name) REFERENCES object_containers_table(object_container_name)
                 )"""
             
@@ -870,7 +870,58 @@ class SecurityDevice:
 
     # TODO: now insert the extracted data
     def insert_into_geolocation_table(self, geolocation_object_data):
-        pass
+        helper.logging.debug("Called insert_into_geolocation_table().")
+        """
+        Insert values into the 'geolocation_objects_table' table.
+
+        Parameters:
+        - geolocation_object_data (list): List of dictionaries containing geolocation object information.
+
+        Returns:
+        None
+        """
+        for geo_entry in geolocation_object_data:
+            # Extract data from the current geolocation object entry
+            geo_name = geo_entry['geolocation_object_name']
+            container_name = geo_entry['object_container_name']
+            continent_names = geo_entry['continent_member_names']
+            country_names = geo_entry['country_member_names']
+            country_alpha2 = geo_entry['country_member_alpha2_codes']
+            country_alpha3 = geo_entry['country_member_alpha3_codes']
+            country_numeric = geo_entry['country_member_numeric_codes']
+
+            # SQL command to insert data into the 'geolocation_objects_table'
+            insert_command = """
+                INSERT INTO geolocation_objects_table (
+                    geolocation_object_name,
+                    security_device_name,
+                    object_container_name,
+                    continent_member_names,
+                    country_member_names,
+                    country_member_alpha2_codes,
+                    country_member_alpha3_codes,
+                    country_member_numeric_codes
+                ) VALUES (
+                    %s, %s, %s, %s, %s, %s, %s, %s
+                )
+            """
+
+            # Values to be inserted into the table
+            values = (
+                geo_name,
+                self._name,
+                container_name,
+                continent_names,
+                country_names,
+                country_alpha2,
+                country_alpha3,
+                country_numeric
+            )
+
+            # Execute the insert command with the specified values
+            self._database.insert_table_value('geolocation_objects_table', insert_command, values)
+
+
 
     def verify_duplicate(self, table, column, value):
         helper.logging.debug("Called verify_duplicate().")

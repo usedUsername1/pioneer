@@ -76,7 +76,7 @@ def main():
         
         # define the logging settings
         log_folder = helper.os.path.join('log', f'device_{security_device_name}')
-        log_file = 'general.logs'
+        log_file = 'general.log'
         helper.setup_logging(log_folder, log_file)
 
         helper.logging.info("################## CREATING A NEW DEVICE ##################")
