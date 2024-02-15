@@ -242,8 +242,8 @@ def main():
             print("test_function value:", pioneer_args["test_function"])
             if pioneer_args["test_function"] == 'a':
                 print('asd')
-                test1, test2, geo = SpecificSecurityDeviceObject.get_network_objects_info()
-                print(geo)
+                test = SpecificSecurityDeviceObject.get_port_objects_info()
+                print(test)
                 # print("Importing the object container data.")
                 # helper.logging.info("\n################## IMPORTING OBJECT CONTAINER DATA. ##################")
                 # # import and insert the object container first!

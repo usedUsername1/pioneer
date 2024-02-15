@@ -426,6 +426,44 @@ class FMCSecurityDevice(SecurityDevice):
         helper.logging.debug(f"Finished processing all the network objects. This is the list with the processed objects {network_objects_list}.")
         return network_objects_list
 
+    def convert_port_literals_to_objects(self, port_literals):
+        helper.logging.debug("Called convert_port_literals_to_objects().")
+        """
+        Convert port literals to objects.
+
+        Args:
+            port_literals (list): List of port literals.
+
+        Returns:
+            list: List of port object names.
+        """
+        port_objects_list = []
+
+        # Process each port literal
+        for port_literal in port_literals:
+            literal_protocol = port_literal['protocol']
+
+            # Handle ICMP literals separately
+            if literal_protocol in ["1", "58"]:
+                helper.logging.info(f"I have encountered an ICMP literal: {port_literal['type']}.")
+                literal_port_nr = port_literal['icmpType']
+            else:
+                literal_port_nr = port_literal['port']
+
+            # Convert protocol number to a known IANA keyword
+            try:
+                literal_protocol_keyword = helper.protocol_number_to_keyword(literal_protocol)
+            except PioneerExceptions.UnknownProtocolNumber:
+                helper.logging.error(f"Protocol number: {literal_protocol} cannot be converted to a known IANA keyword.")
+                continue
+
+            # Create the name of the port object
+            port_object_name = f"PL_{literal_protocol_keyword}_{literal_port_nr}"
+            port_objects_list.append(port_object_name)
+
+        helper.logging.debug(f"Finished converting all literals to objects. This is the list with converted literals {port_objects_list}.")
+        return port_objects_list
+
     def extract_port_objects(self, sec_policy, port_object_type):
         helper.logging.debug("Called extract_port_objects()")
         """
@@ -466,27 +504,8 @@ class FMCSecurityDevice(SecurityDevice):
             helper.logging.info(f"Port literals found: {port_literals}.")
             found_objects_or_literals = True
 
-            # Process each port literal
-            for port_literal in port_literals:
-                literal_protocol = port_literal['protocol']
-
-                # Handle ICMP literals separately
-                if literal_protocol in ["1", "58"]:
-                    helper.logging.info(f"I have encountered an ICMP literal: {port_literal['type']}.")
-                    literal_port_nr = port_literal['icmpType']
-                else:
-                    literal_port_nr = port_literal['port']
-
-                # Convert protocol number to a known IANA keyword
-                try:
-                    literal_protocol_keyword = helper.protocol_number_to_keyword(literal_protocol)
-                except PioneerExceptions.UnknownProtocolNumber:
-                    helper.logging.error(f"Protocol number: {literal_protocol} cannot be converted to a known IANA keyword.")
-                    continue
-
-                # Create the name of the port object
-                port_object_name = f"PL_{literal_protocol_keyword}_{literal_port_nr}"
-                port_objects_list.append(port_object_name)
+            # Process each port literal using the convert_port_literals_to_objects function
+            port_objects_list += self.convert_port_literals_to_objects(port_literals)
 
         except KeyError:
             helper.logging.info(f"It looks like there are no {port_object_type} literals on this policy.")
@@ -1019,7 +1038,11 @@ class FMCSecurityDevice(SecurityDevice):
                 # now loop through the countries of the continent and add them to the members list
                 continent_member_names.append(geolocation_object_name)
                 for continent_country in matching_geolocation_continent['countries']:
-                    country_member_names.append(continent_country['name'])
+                    try:
+                        country_member_names.append(continent_country['name'])
+                    except KeyError:
+                        helper.logging.error(f"There is a problem with the following continent country object: {continent_country}")
+                        continue
                     country_member_numeric_codes.append(continent_country['id'])
                     country_member_alpha2_codes.append(continent_country['iso2'])
                     country_member_alpha3_codes.append(continent_country['iso3'])   
@@ -1067,6 +1090,8 @@ class FMCSecurityDevice(SecurityDevice):
         
         return processed_geolocation_object_info
     
+    # TODO: this could probably be reused
+    # TODO: finish the last logging line
     def get_network_objects_info(self):
         helper.logging.debug("Called get_network_objects_info()")
         helper.logging.info("I am now processing the network objects data info. I am retrieving all objects from the database, processing them, and returning all the info about them.")
@@ -1135,36 +1160,68 @@ class FMCSecurityDevice(SecurityDevice):
         processed_network_objects_info = self.process_network_address_objects(network_address_objects_list, network_address_objects_info) or []
 
         # Process the geolocation objects
-        # processed_geolocation_objects_info = self.process_geolocation_objects(geolocation_objects, geolocation_objects_info)
+        processed_geolocation_objects_info = self.process_geolocation_objects(geolocation_objects_list, geolocation_objects_info, continents_info, countries_info)
 
         # Extend the original processed_network_objects_info with the processed_network_literals_info.
         # Network objects and literals will be treated in the same way when added to the database.
         # Extend it with the network members and network literal members of all the group objects
         processed_network_objects_info.extend(processed_network_literals_info)
-        
-        processed_geolocation_objects_info = self.process_geolocation_objects(geolocation_objects_list, geolocation_objects_info, continents_info, countries_info)
 
         helper.logging.debug(f"I have retrieved all the information for all the objects stored in the database. The network objects info is: {processed_network_objects_info}. The group object info is {processed_network_group_objects_info}.")
         return processed_network_objects_info, processed_network_group_objects_info, processed_geolocation_objects_info
+
+    def process_port_literals(self):
+        pass
+    # TODO: should ICMP objects be processed here or somewhere else?
+    def process_port_objects(self):
+        pass
+
+    def process_port_group_objects(self):
+        pass
+
+    def get_port_objects_info(self):
+        helper.logging.debug("Called get_port_objects_info()")
+        helper.logging.info("I am now processing the port objects data info. I am retrieving all objects from the database, processing them, and returning all the info about them.")
+        # Retrieve all port object info from the database
+        port_objects_db = self.get_db_objects('port_objects')
+        return port_objects_db
+        # Get the information of all port objects from FMC
+        port_objects_info = self._api_connection.object.port.get()
+        
+        # Get the information of all port group objects from FMC
+        port_group_objects_info = self._api_connection.object.portobjectgroup.get()
+
+        # Retrieve the names of all port objects
+        fmc_port_objects_list = [fmc_port_object['name'] for fmc_port_object in port_address_objects_info]
+
+        # Retrieve the names of all port group objects
+        fmc_port_group_objects_list = [fmc_port_group_object['name'] for fmc_port_group_object in port_address_group_objects_info]
+
+        # Convert these to dictionaries for more efficient lookups
+        port_address_group_objects_info = {entry['name']: entry for entry in port_address_group_objects_info}
+        port_address_objects_info = {entry['name']: entry for entry in port_address_objects_info}
+
+        return port_objects_db
 
 
     # this function aggregates multiple functions, each responsible for getting data from different objects
     # store all the info as a json, and return the json back to main, which will be responsible for adding it
     # to the database
     def get_objects_data_info(self):
+        helper.logging.debug("Called get_objects_data_info()")
         helper.logging.info(f"##################  FETCHING INFO ABOUT THE OBJECTS ##################")
-        
-        # get the zone objects data
-        # print(f"######### ZONE INFO RETRIEVAL #########")
-        # self.get_zone_objects_info()
     
         # get the network address objects data
-        helper.logging.info(f"\n################## FETCHING NETWORK ADDRESS/OBJECTS INFO ##################")
+        helper.logging.info(f"\n################## FETCHING NETWORK ADDRESS OBJECTS AND NETWORK GROUPS INFO ##################")
+        print("Importing network addresses, network groups and geolocation objects data.")
         network_objects, network_group_objects, geolocation_objects = self.get_network_objects_info()
-        return network_objects, network_group_objects, geolocation_objects
         # get the port objects data
-        print(f"######### PORT OBJECTS INFO RETRIEVAL")
+        helper.logging.info(f"\n################## FETCHING PORT OBJECTS AND PORT GROUPS INFO ##################")
+        print(f"Importing port objects, port group objects data")
+        return self.get_port_objects_info()
+        port_objects, port_group_objects = self.get_port_objects_info()
 
+        return network_objects, network_group_objects, geolocation_objects
         # get the schedule objects data
         print(f"######### SCHEDULE OBJECTS INFO RETRIEVAL")
 
