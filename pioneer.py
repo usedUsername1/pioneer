@@ -247,14 +247,48 @@ def main():
 
                 print("Importing object data.")
                 helper.logging.info("\n################## IMPORTING OBJECTS DATA. ##################")
+                #######################################################################################################################################
+                # High level: basically, everything that is processed to and from the database should be moved to the SecurityDevice class, from the FMCSecurityDevice class
+
+                # TODO: write functions for retrievinng the device info from the device directly. and retrieve it here
+                # TODO: modify the prefixes "NL_" and "PL_"
+                # instead of retrieving it in the get_objects_data_info. in this way, the function behavior can be overwritten
+                # even better, write a function that is called get_security_device_object_data() in which you retrieve everything from the security device
+                # sec_device_network_object_info, sec_device_network_group_object_info, sec_device_port_object_info, sec_device_port_group_object_info... etc = SpecificSecurityDeviceObject.get_security_device_object_data()
+
+                # This actually looks even better. how the fuck do i know what is an object and what is an object group?
+                # maybe i know, get_network_objects_info(self) from FMCSecurityDevice must be moved to SecurityDevice
+
+                # processed_network_objects_data, processed_network_group_objects_data = SpecificSecurityDeviceObject.get_processed_objects_data({object_type},sec_device_network_object_info, sec_device_network_group_object_info)
+
+                # based on the object_type, factorize an object using a factory method. if "network_objects" is passed, instantiate a network_object DeviceObject
+                # do some checks and determine if that object is a group. if it is, then instantiate a group object with the data for it
+                # in order for the above to work, new classes need to be created
+                # this below should be done in a precise way as well. what if we get the info from the database here, loop through it
+                # and for each of them, call a setter from SpecificSecurityDeviceObject, instantiate the device object to the current object
+                # and call the process function?
+                # objects_db = self.get_db_objects() -> get all objects from the database here
+                # ok, so the very big problem is when it comes about groups vs standalone objects.
+                # loop through them
+                    # for entry in objects_db
+                    # instantiate the object with the data from the database, factory pattern?
+                    # DeviceObject = DeviceObject(entry) 
+                    # processed_objects.append(DeviceObject.process_object())
+                # sec_device_network_object_data = SpecificSecurityDeviceObject.get_network_object_data()
+                # sec_device_network_group_object_data = SpecificSecurityDeviceObject.get_network_group_object_data()
+
+                #######################################################################################################################################
+
+                # 
                 # at this point all the security policy data is imported. it is time to import the object data.
-                network_objects_data, network_group_objects_data, geolocation_objects_data = SpecificSecurityDeviceObject.get_objects_data_info()
+                network_objects_processed_data, network_group_objects_processed_data, geolocation_objects_processed_data = SpecificSecurityDeviceObject.get_objects_data_info()
                 
                 # all the network objects and network group objects data has been extracted, now insert it into the database
+
                 helper.logging.info("\n################## EXTRACTED OBJECTS DATA, INSERTING IN THE DATABASE. ##################")
-                SpecificSecurityDeviceObject.insert_into_network_address_objects_table(network_objects_data)
-                SpecificSecurityDeviceObject.insert_into_network_address_object_groups_table(network_group_objects_data)
-                SpecificSecurityDeviceObject.insert_into_geolocation_table(geolocation_objects_data)
+                SpecificSecurityDeviceObject.insert_into_network_address_objects_table(network_objects_processed_data)
+                SpecificSecurityDeviceObject.insert_into_network_address_object_groups_table(network_group_objects_processed_data)
+                SpecificSecurityDeviceObject.insert_into_geolocation_table(geolocation_objects_processed_data)
 
 
 
@@ -299,6 +333,8 @@ if __name__ == "__main__":
     # a file that tracks all the policies using time objects
     # a file that tracks all the policies using users
     # TODO: better and prettier logging. right now it is pretty difficult to follow stuff when debugging -> looks better, wip
+
+    # TODO: BLOCKER: code refactoring. python objects for different security device objects can be created after the information about the sec devices exists in the database
 
 
 # TODO SOON:
