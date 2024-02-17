@@ -28,16 +28,8 @@ class FMCDeviceConnection(APISecurityDeviceConnection):
             sys.exit(1)
         
 class FMCSecurityPolicyContainer(SecurityDevicePolicyContainer):
-    def __init__(self, name, parent, security_device_name = None) -> None:
+    def __init__(self, name, parent, security_device_name) -> None:
         super().__init__(name, parent, security_device_name)
-
-    def is_child_container(self):
-        if self._parent is None:
-            helper.logging.info(f"Security policy container: {self._name}, is a NOT child container.")
-            return False
-        else:
-            helper.logging.info(f"Security policy container: {self._name}, is a child container.")
-            return True
       
 
 class FMCSecurityDevice(SecurityDevice):
@@ -46,14 +38,14 @@ class FMCSecurityDevice(SecurityDevice):
         helper.logging.debug(f"Called FMCSecurityDevice __init__()")
         self._sec_device_connection = FMCDeviceConnection(security_device_username, security_device_secret, security_device_hostname, security_device_port, domain).connect_to_security_device()
 
-    def get_security_policy_container_info(self, name):
+    def get_security_policy_container_info(self, container_name):
         # return a FMCSecurityPolicyContainer object with the data extracted from FMC
         try:
-            acp_info = self._sec_device_connection.policy.accesspolicy.get(name)
-            helper.logging.debug(f"Got the following info for policy container {name}: {acp_info}")
+            acp_info = self._sec_device_connection.policy.accesspolicy.get(name=container_name)
+            helper.logging.debug(f"Got the following info for policy container {container_name}: {acp_info}")
 
         except Exception as err:
-            print(f"Problem with ACP {name}. Reason {err}")
+            print(f"Problem with ACP {container_name}. Reason {err}")
         
         sec_policy_container_name = acp_info['name']
 
@@ -62,7 +54,7 @@ class FMCSecurityDevice(SecurityDevice):
         except:
             sec_policy_parent = None
         
-        return FMCSecurityPolicyContainer(sec_policy_container_name, sec_policy_parent)
+        return FMCSecurityPolicyContainer(sec_policy_container_name, sec_policy_parent, self._name)
 
 #     def import_nat_policy_containers(self):
 #         pass
@@ -124,7 +116,7 @@ class FMCSecurityDevice(SecurityDevice):
 
         for sec_policy_container in sec_policy_container_list:
             helper.logging.info(f"I am processing the security policies of the following container: {sec_policy_container}.")
-            sec_policies = self._api_connection.policy.accesspolicy.accessrule.get(container_name=sec_policy_container)
+            sec_policies = self._sec_device_connection.policy.accesspolicy.accessrule.get(container_name=sec_policy_container)
 
             # Now loop through the policies
             for sec_policy in sec_policies:

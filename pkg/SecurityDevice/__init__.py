@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
-from pkg import PioneerDatabase, DBConnection, Container
+from pkg import PioneerDatabase, DBConnection
+from pkg.Container import Container
 import utils.helper as helper
 import utils.gvars as gvars
 import json
@@ -277,7 +278,6 @@ class SecurityDeviceDatabase(PioneerDatabase):
         # create the table in the database
         self.create_table(table_name, command)
 
-
 class SecurityDeviceConnection():
     def __init__(self) -> None:
         pass
@@ -289,9 +289,8 @@ class SecurityDeviceConnection():
         pass
 
 class SecurityDevicePolicyContainer(Container):
-    def __init__(self, name, parent, security_device_name, security_policy_info) -> None:
-        super().__init__(name, parent, security_device_name)
-        self._security_policy_info = security_policy_info
+    def __init__(self, name, security_device_name, parent) -> None:
+        super().__init__(name, security_device_name, parent)
 
     def is_child_container(self):
         pass
@@ -315,69 +314,31 @@ class SecurityDevice:
         helper.logging.debug("Called SecurityDevice __init__.")
 
     # TODO: finish debugging this
-    def get_security_policy_container_info_from_device_conn(self):
-        helper.logging.debug(f"Called get_security_policy_containers_info with the following container list: {self._security_policy_containers}")
+    def get_security_policies_containers_info_from_device_conn(self, container_list):
+        helper.logging.debug(f"Called get_security_policies_containers_info_from_device_conn() with the following container list: {container_list}")
         helper.logging.info(f"################## Importing configuration of the security policy containers. ##################")
-        """
-        Retrieves information about security policy containers.
+        print("IM IN get_security_policies_containers_info_from_device_conn")
 
-        Args:
-            policy_container_names_list (list): A list of names of security policy containers.
-
-        Returns:
-            list: A list of dictionaries containing information about each security policy container.
-                Each dictionary has the following keys:
-                - 'security_policy_container_name': Name of the security policy container.
-                - 'security_policy_parent': Name of the parent security policy container, or None if it has no parent.
-        """
-
-        security_policy_containers_info = []
-
-        for policy_container_name in self._security_policy_containers:
-            helper.logging.info(f"I am now processing the security policy container: {policy_container_name}")
+        self._security_policy_containers = container_list
+        processed_security_policies_containers = []
+        for security_policy_container_name in self._security_policy_containers:
+            helper.logging.info(f"I am now processing the security policy container: {security_policy_container_name}")
             try:
                 # Retrieve the info for the current acp
-                sec_policy_container = self._sec_device_connection.get_security_policy_container_data_by_name(name=policy_container_name)
-                # If the policy does not have a parent policy at all, then return a mapping with the current policy name and None to the caller
-                if sec_policy_container.is_child_container():
-                    # Try to retrieve the parent of the policy. There is an "inherit" boolean attribute in the acp_info response. If it is equal to 'true', then the policy has a parent
-                    while sec_policy_container.is_child_container():
-                        # Get the name of the current ACP name
-                        child_policy_container_name = sec_policy_container.get_name()
+                sec_policy_container = self.get_security_policy_container_info(security_policy_container_name)
+                processed_security_policies_containers.append(sec_policy_container.get_container_info())
 
-                        # Get the name of the acp parent
-                        parent_policy_container_name = sec_policy_container.get_parent_name()
-
-                        helper.logging.info(f"Security policy container: {child_policy_container_name}, is the child of {parent_policy_container_name}.")
-                        security_policy_containers_info.append({
-                            'security_policy_container_name': child_policy_container_name,
-                            'security_policy_parent': parent_policy_container_name
-                        })
-
-                        # Retrieve the parent info to be processed in the next iteration of the loop
-                        sec_policy_container = self._sec_device_connection.get_security_policy_container_data_by_name(name=parent_policy_container_name)
-
-
-                    # If the parent policy does not have a parent, then map the ACP to None
-                    else:
-                        helper.logging.info(f"Security policy container: {parent_policy_container_name}, is not a child contaier.")
-                        security_policy_containers_info.append({
-                            'security_policy_container_name': parent_policy_container_name,
-                            'security_policy_parent': None
-                        })
-                
-                else:
-                    security_policy_containers_info.append({
-                        'security_policy_container_name': policy_container_name,
-                        'security_policy_parent': None
-                    })
-
+                return processed_security_policies_containers
+            
             except Exception as err:
-                helper.logging.error(f"Could not retrieve info regarding the container {policy_container_name}. Reason: {err}.")
+                helper.logging.error(f"Could not retrieve info regarding the container {security_policy_container_name}. Reason: {err}.")
+                print(err)
                 sys.exit(1)
 
-        helper.logging.debug(f"I am done processing the info of security policy containers. Got the following data: {security_policy_containers_info}.")
-        return security_policy_containers_info
+
+    @abstractmethod
+    def get_security_policy_container_info(self):
+        pass
 
     def get_device_version_from_device_conn(self):
         helper.logging.debug("Called function det_device_version()")

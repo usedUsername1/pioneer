@@ -140,7 +140,6 @@ def main():
         # retrive the information about the managed devices. if the device is a standalone device, the managed device will be the standalone device
         helper.logging.info(f"################## Getting the managed devices of device: {security_device_name}. ##################")
         managed_devices_info = SecurityDeviceObject.get_managed_devices_info_from_device_conn()
-        # print(managed_devices_info)
 
         # insert it into the table
         helper.logging.info(f"Inserting managed device info in the database.")
@@ -227,7 +226,13 @@ def main():
                 
                 # retrieve the security policy containers along with the parents
                 # insert them in the database
-                security_policy_containers_info = SpecificSecurityDeviceObject.get_security_policy_containers_info(passed_container_names_list)
+
+                #TODO: Everything works up to this point. debug everything below
+                print("IM IN MAIN")
+                security_policy_containers_info = SpecificSecurityDeviceObject.get_security_policies_containers_info_from_device_conn(passed_container_names_list)
+            
+                return
+
                 SpecificSecurityDeviceObject.insert_into_security_policy_containers_table(security_policy_containers_info)
 
                 # import the security policies (data) that are part of the imported security policy containers
