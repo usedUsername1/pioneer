@@ -76,7 +76,7 @@ def main():
         
         # define the logging settings
         log_folder = helper.os.path.join('log', f'device_{security_device_name}')
-        log_file = 'general.logs'
+        log_file = 'general.log'
         helper.setup_logging(log_folder, log_file)
 
         helper.logging.info("################## CREATING A NEW DEVICE ##################")
@@ -130,17 +130,17 @@ def main():
         
         # get version of the security device
         helper.logging.info(f"################## Getting the device version for device: {security_device_name}. ##################")
-        security_device_version = SecurityDeviceObject.get_device_version()
-        
+        security_device_version = SecurityDeviceObject.get_device_version_from_device_conn()
         # insert the device name, username, secret, hostname, type and version into the general_data table
         helper.logging.info(f"Inserting general device info in the database.")
         SecurityDeviceObject.insert_into_general_table(security_device_username, security_device_secret, security_device_hostname, security_device_type, security_device_port, security_device_version, domain)
-        # import other essential configuration here, so that the user is not required to enter it.
-        # import managed devices
+
+        # TODO refactor import managed devices
 
         # retrive the information about the managed devices. if the device is a standalone device, the managed device will be the standalone device
         helper.logging.info(f"################## Getting the managed devices of device: {security_device_name}. ##################")
-        managed_devices_info = SecurityDeviceObject.get_managed_devices_info()
+        managed_devices_info = SecurityDeviceObject.get_managed_devices_info_from_device_conn()
+        # print(managed_devices_info)
 
         # insert it into the table
         helper.logging.info(f"Inserting managed device info in the database.")
@@ -171,26 +171,26 @@ def main():
         GenericSecurityDevice = SecurityDevice(security_device_name, SecurityDeviceDB)
 
         # get the security device type
-        security_device_type = GenericSecurityDevice.get_security_device_type()
+        security_device_type = GenericSecurityDevice.get_security_device_type_from_db()
         helper.logging.info(f"Got device type {security_device_type}.")
 
         if '-api' in security_device_type:
             helper.logging.info(f"{security_device_name} is an API device. Type: {security_device_type}")
             # get the security device hostname
 
-            security_device_hostname = GenericSecurityDevice.get_security_device_hostname()
+            security_device_hostname = GenericSecurityDevice.get_security_device_hostname_from_db()
 
             # get the security device username
-            security_device_username = GenericSecurityDevice.get_security_device_username()
+            security_device_username = GenericSecurityDevice.get_security_device_username_from_db()
 
             # get the security device secret
-            security_device_secret = GenericSecurityDevice.get_security_device_secret()
+            security_device_secret = GenericSecurityDevice.get_security_device_secret_from_db()
 
             # get the security device port
-            security_device_port = GenericSecurityDevice.get_security_device_port()
+            security_device_port = GenericSecurityDevice.get_security_device_port_from_db()
 
             # get the security device domain
-            security_device_domain = GenericSecurityDevice.get_security_device_domain()
+            security_device_domain = GenericSecurityDevice.get_security_device_domain_from_db()
 
             # create the API security object based on the device type
             SpecificSecurityDeviceObject = APISecurityDeviceFactory.build_api_security_device(security_device_name, security_device_type, SecurityDeviceDB, security_device_hostname, security_device_username, security_device_secret, security_device_port, security_device_domain)
@@ -241,9 +241,23 @@ def main():
 
             print("test_function value:", pioneer_args["test_function"])
             if pioneer_args["test_function"] == 'a':
-                print('asd')
-                test = SpecificSecurityDeviceObject.get_port_objects_info()
-                print(test)
+                helper.logging.info(f"################## IMPORTING CONFIGURATION OF {security_device_name}.##################")
+                if(pioneer_args["security_policy_container [container_name]"]):
+                    passed_container_names = pioneer_args["security_policy_container [container_name]"]
+                    passed_container_names_list = []
+                    passed_container_names_list.append(passed_container_names)
+                    print("Importing the security policy containers info.")
+                    # print(f"I am now importing the policy container info for the following containers: {passed_container_names_list}.")
+                    
+                    # retrieve the security policy containers along with the parents
+                    # insert them in the database
+                    # assign the policy containers to the objects
+                    SpecificSecurityDeviceObject.set_object_container(passed_container_names_list)
+
+                    security_policy_containers_info = SpecificSecurityDeviceObject.get_security_policy_container_info(passed_container_names_list)
+                    print(security_policy_containers_info)
+
+                    # SpecificSecurityDeviceObject.insert_into_security_policy_containers_table(security_policy_containers_info)
                 # print("Importing the object container data.")
                 # helper.logging.info("\n################## IMPORTING OBJECT CONTAINER DATA. ##################")
                 # # import and insert the object container first!

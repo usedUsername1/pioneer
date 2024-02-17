@@ -178,6 +178,24 @@ class PioneerDatabase():
         helper.logging.info(f"Flattened the query result.")
         return unique_values_list
 
+class Container:
+    def __init__(self, name, parent, security_device_name) -> None:
+        self._name = name
+        self._parent = parent
+        self._security_device_name = security_device_name
+
+    def get_name(self):
+        return self._name
+
+    def get_parent(self):
+        return self._parent
+
+    def get_security_device_name(self):
+        return self._security_device_name
+    
+    def is_child_container(self):
+        pass
+
 
 # Example usage
 # query_result = [[['value1']], [['value2']], [['value3']], ...]

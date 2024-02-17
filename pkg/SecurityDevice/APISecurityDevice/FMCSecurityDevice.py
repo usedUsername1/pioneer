@@ -1,16 +1,19 @@
+from pkg import Container
 from pkg.SecurityDevice.APISecurityDevice.APISecurityDeviceConnection import APISecurityDeviceConnection
-from pkg.SecurityDevice import SecurityDevice
+from pkg.SecurityDevice import SecurityDevice, SecurityDevicePolicyContainer
 import utils.helper as helper
 import fireREST
 import sys
 import ipaddress
 import utils.exceptions as PioneerExceptions
 
+# interbang: ‽
 class FMCDeviceConnection(APISecurityDeviceConnection):
     def __init__(self, api_username, api_secret, api_hostname, api_port, domain):
         super().__init__(api_username, api_secret, api_hostname, api_port)
         self._domain = domain
         helper.logging.debug(f"Called FMCDeviceConnection __init__ with parameters: username {api_username}, hostname {api_hostname}, port {api_port}, domain {domain}.")
+    
     
     def connect_to_security_device(self):
         helper.logging.debug(f"Called connect_to_security_device with parameters: username {self._api_username}, hostname {self._api_hostname}, port {self._api_port}, domain {self._domain}.")
@@ -24,16 +27,62 @@ class FMCDeviceConnection(APISecurityDeviceConnection):
             helper.logging.critical(f"Could not connect to FMC device. Reason: {err}")
             sys.exit(1)
         
-# interbang: ‽
+class FMCSecurityPolicyContainer(SecurityDevicePolicyContainer):
+    def __init__(self, name, parent, security_device_name = None) -> None:
+        super().__init__(name, parent, security_device_name)
+
+    def is_child_container(self):
+        if self._parent is None:
+            helper.logging.info(f"Security policy container: {self._name}, is a NOT child container.")
+            return False
+        else:
+            helper.logging.info(f"Security policy container: {self._name}, is a child container.")
+            return True
+      
+
 class FMCSecurityDevice(SecurityDevice):
-    def __init__(self, name, sec_device_database, security_device_username, security_device_secret, security_device_hostname, security_device_port, domain):
-        super().__init__(name, sec_device_database)
-        helper.logging.debug(f"Called FMCSecurityDevice __init__ with parameters: name {name}, username {security_device_username}, hostname {security_device_hostname}, port {security_device_port}, domain {domain}.")
-        self._api_connection = FMCDeviceConnection(security_device_username, security_device_secret, security_device_hostname, security_device_port, domain).connect_to_security_device()
+    def __init__(self, name, sec_device_database, security_device_username, security_device_secret, security_device_hostname, security_device_port, domain, object_container = None, security_policy_container = None):
+        super().__init__(name, sec_device_database, object_container, security_policy_container)
+        helper.logging.debug(f"Called FMCSecurityDevice __init__()")
+        self._sec_device_connection = FMCDeviceConnection(security_device_username, security_device_secret, security_device_hostname, security_device_port, domain).connect_to_security_device()
+
+    def get_security_policy_container_info(self, name):
+        # return a FMCSecurityPolicyContainer object with the data extracted from FMC
+        try:
+            acp_info = self._sec_device_connection.policy.accesspolicy.get(name)
+            helper.logging.debug(f"Got the following info for policy container {name}: {acp_info}")
+
+        except Exception as err:
+            print(f"Problem with ACP {name}. Reason {err}")
+        
+        sec_policy_container_name = acp_info['name']
+
+        try:
+            sec_policy_parent = acp_info['metadata']['inherit']
+        except:
+            sec_policy_parent = None
+        
+        return FMCSecurityPolicyContainer(sec_policy_container_name, sec_policy_parent)
 
 #     def import_nat_policy_containers(self):
 #         pass
+
+    def process_managed_device(self, managed_device):
+        device_name = managed_device['name']
+        helper.logging.info(f"Got the following managed device {device_name}.")
+        assigned_security_policy_container = managed_device['accessPolicy']['name']
+        device_hostname = managed_device['hostName']
+        device_cluster = None
+
+        # Check if the device is part of a cluster
+        try:
+            device_cluster = managed_device['metadata']['containerDetails']['name']
+            helper.logging.info(f"Managed device {managed_device} is part of a cluster {device_cluster}.")
+        except KeyError:
+            helper.logging.info(f"Managed device {managed_device} is NOT part of a cluster {device_cluster}.")
         
+        return device_name, assigned_security_policy_container, device_hostname, device_cluster
+
     def get_managed_devices_info(self):
         helper.logging.debug("Called function get_managed_devices_info().")
         """
@@ -45,109 +94,9 @@ class FMCSecurityDevice(SecurityDevice):
         helper.logging.info("################## GETTING MANAGED DEVICES INFO ##################")
 
         # Execute the request to retrieve information about the devices
-        managed_devices = self._api_connection.device.devicerecord.get()
+        managed_devices = self._sec_device_connection.device.devicerecord.get()
         helper.logging.debug(f"Executed API call to the FMC device, got the following info {managed_devices}.")
-        # Initialize an empty list to store managed devices info
-        managed_devices_info = []
-
-        # Loop through the information about managed devices
-        for managed_device in managed_devices:
-            device_name = managed_device['name']
-            helper.logging.info(f"Got the following managed device {device_name}.")
-            assigned_security_policy_container = managed_device['accessPolicy']['name']
-            device_hostname = managed_device['hostName']
-            device_cluster = None
-
-            # Check if the device is part of a cluster
-            try:
-                device_cluster = managed_device['metadata']['containerDetails']['name']
-                helper.logging.info(f"Managed device {managed_device} is part of a cluster {device_cluster}.")
-            except KeyError:
-                helper.logging.info(f"Managed device {managed_device} is NOT part of a cluster {device_cluster}.")
-
-            # Create a dictionary for the managed device entry
-            managed_device_entry = {
-                "managed_device_name": device_name,
-                "assigned_security_policy_container": assigned_security_policy_container,
-                "hostname": device_hostname,
-                "cluster": device_cluster
-            }
-
-            # Append the managed devices info to the list
-            managed_devices_info.append(managed_device_entry)
-
-        # Return the list to the caller
-        helper.logging.debug(f"I finished getting all the managed devices info. This is it: {managed_devices_info}.")
-        return managed_devices_info
-
-    # this function takes the list with policy container names and loops through each of them.
-    # for every container, it tries to find the container parent. if the parent container is a child of another container, it will find that parent too
-    # ACP = access control policy = the security policy container used by FMC
-    def get_security_policy_containers_info(self, policy_container_names_list):
-        helper.logging.debug(f"Called get_security_policy_containers_info with the following container list: {policy_container_names_list}")
-        helper.logging.info(f"################## Importing configuration of the security policy containers. ##################")
-        """
-        Retrieves information about security policy containers.
-
-        Args:
-            policy_container_names_list (list): A list of names of security policy containers.
-
-        Returns:
-            list: A list of dictionaries containing information about each security policy container.
-                Each dictionary has the following keys:
-                - 'security_policy_container_name': Name of the security policy container.
-                - 'security_policy_parent': Name of the parent security policy container, or None if it has no parent.
-        """
-
-        security_policy_containers_info = []
-
-        for policy_container_name in policy_container_names_list:
-            helper.logging.info(f"I am now processing the security policy container: {policy_container_name}")
-            try:
-                # Retrieve the info for the current acp
-                acp_info = self._api_connection.policy.accesspolicy.get(name=policy_container_name)
-                helper.logging.debug(f"Got the following info for {policy_container_name}: {acp_info}")
-
-                # If the policy does not have a parent policy at all, then return a mapping with the current policy name and None to the caller
-                if not acp_info['metadata']['inherit']:
-                    helper.logging.info(f"Security policy container: {policy_container_name}, is not a child contaier.")
-                    security_policy_containers_info.append({
-                        'security_policy_container_name': policy_container_name,
-                        'security_policy_parent': None
-                    })
-                else:
-                    # Try to retrieve the parent of the policy. There is an "inherit" boolean attribute in the acp_info response. If it is equal to 'true', then the policy has a parent
-                    while acp_info['metadata']['inherit']:
-                        # Get the name of the current ACP name
-                        current_acp_name = acp_info['name']
-
-                        # Get the name of the acp parent
-                        acp_parent = acp_info['metadata']['parentPolicy']['name']
-                        helper.logging.info(f"Security policy container: {current_acp_name}, is the child of {acp_parent}.")
-                        security_policy_containers_info.append({
-                            'security_policy_container_name': current_acp_name,
-                            'security_policy_parent': acp_parent
-                        })
-
-                        # Retrieve the parent info to be processed in the next iteration of the loop
-                        acp_info = self._api_connection.policy.accesspolicy.get(name=acp_parent)
-                        helper.logging.debug(f"Got the following info for {acp_parent}: {acp_info}")
-
-                    # If the parent policy does not have a parent, then map the ACP to None
-                    else:
-                        helper.logging.info(f"Security policy container: {acp_parent}, is not a child contaier.")
-                        acp_parent = acp_info['name']
-                        security_policy_containers_info.append({
-                            'security_policy_container_name': acp_parent,
-                            'security_policy_parent': None
-                        })
-
-            except Exception as err:
-                helper.logging.error(f"Could not retrieve info regarding the container {policy_container_name}. Reason: {err}.")
-                sys.exit(1)
-
-        helper.logging.debug(f"I am done processing the info of security policy containers. Got the following data: {security_policy_containers_info}.")
-        return security_policy_containers_info
+        return managed_devices
 
     # there are no object containers per se in FMC, therefore, only dummy info will be returned
     def get_object_containers_info(self, policy_container_name):
@@ -262,16 +211,12 @@ class FMCSecurityDevice(SecurityDevice):
         Returns:
             str: Version of the device's server.
         """
-        try:
-            # Retrieve device system information to get the server version
-            device_system_info = self._api_connection.system.info.serverversion.get()
-            helper.logging.debug(f"Executed API call to the FMC device, got the following info {device_system_info}.")
-            device_version = device_system_info[0]['serverVersion']
-            helper.logging.info(f"Got device version {device_version}")
-            return device_version
-        except Exception as err:
-            helper.logging.critical(f'Could not retrieve platform version. Reason: {err}')
-            sys.exit(1)
+        # Retrieve device system information to get the server version
+        device_system_info = self._sec_device_connection.system.info.serverversion.get()
+        helper.logging.debug(f"Executed API call to the FMC device, got the following info {device_system_info}.")
+        device_version = device_system_info[0]['serverVersion']
+        return device_version
+
 
     # this function is responsible for processing the zone information. it takes the current security policy that the program is processing
     # the zone type (sourceZones or destinationZones). the zone_list array contains the info with the zones names
@@ -1108,7 +1053,6 @@ class FMCSecurityDevice(SecurityDevice):
         geolocation_objects_info = self._api_connection.object.geolocation.get()
         countries_info = self._api_connection.object.country.get()
         continents_info = self._api_connection.object.continent.get()
-
 
         # Retrieve the names of all network address objects
         fmc_network_objects_list = [fmc_network_object['name'] for fmc_network_object in network_address_objects_info]

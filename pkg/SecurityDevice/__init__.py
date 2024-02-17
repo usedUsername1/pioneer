@@ -1,8 +1,9 @@
 from abc import ABC, abstractmethod
-from pkg import PioneerDatabase, DBConnection
+from pkg import PioneerDatabase, DBConnection, Container
 import utils.helper as helper
 import utils.gvars as gvars
 import json
+import sys
 
 # TODO: create all the tables for all the objects
 class SecurityDeviceDatabase(PioneerDatabase):
@@ -281,10 +282,24 @@ class SecurityDeviceConnection():
     def __init__(self) -> None:
         pass
 
+    def get_security_policy_container_data_by_name(self):
+        pass
+
+    def get_version(self):
+        pass
+
+class SecurityDevicePolicyContainer(Container):
+    def __init__(self, name, parent, security_device_name, security_policy_info) -> None:
+        super().__init__(name, parent, security_device_name)
+        self._security_policy_info = security_policy_info
+
+    def is_child_container(self):
+        pass
+
 # this will be a generic security device only with a database, acessing it will be possible
 # in main, without acessing the protected attributes. better option for "--device"
 class SecurityDevice:
-    def __init__(self, name, sec_device_database):
+    def __init__(self, name, sec_device_database, sec_device_connection = None, object_container = None, security_policy_containers = None):
         """
         Initialize a SecurityDevice instance.
 
@@ -294,9 +309,134 @@ class SecurityDevice:
         """
         self._name = name
         self._database = sec_device_database
+        self._sec_device_connection = sec_device_connection
+        self._object_container = object_container
+        self._security_policy_containers = security_policy_containers
         helper.logging.debug("Called SecurityDevice __init__.")
 
-    def get_security_device_type(self):
+    # TODO: finish debugging this
+    def get_security_policy_container_info_from_device_conn(self):
+        helper.logging.debug(f"Called get_security_policy_containers_info with the following container list: {self._security_policy_containers}")
+        helper.logging.info(f"################## Importing configuration of the security policy containers. ##################")
+        """
+        Retrieves information about security policy containers.
+
+        Args:
+            policy_container_names_list (list): A list of names of security policy containers.
+
+        Returns:
+            list: A list of dictionaries containing information about each security policy container.
+                Each dictionary has the following keys:
+                - 'security_policy_container_name': Name of the security policy container.
+                - 'security_policy_parent': Name of the parent security policy container, or None if it has no parent.
+        """
+
+        security_policy_containers_info = []
+
+        for policy_container_name in self._security_policy_containers:
+            helper.logging.info(f"I am now processing the security policy container: {policy_container_name}")
+            try:
+                # Retrieve the info for the current acp
+                sec_policy_container = self._sec_device_connection.get_security_policy_container_data_by_name(name=policy_container_name)
+                # If the policy does not have a parent policy at all, then return a mapping with the current policy name and None to the caller
+                if sec_policy_container.is_child_container():
+                    # Try to retrieve the parent of the policy. There is an "inherit" boolean attribute in the acp_info response. If it is equal to 'true', then the policy has a parent
+                    while sec_policy_container.is_child_container():
+                        # Get the name of the current ACP name
+                        child_policy_container_name = sec_policy_container.get_name()
+
+                        # Get the name of the acp parent
+                        parent_policy_container_name = sec_policy_container.get_parent_name()
+
+                        helper.logging.info(f"Security policy container: {child_policy_container_name}, is the child of {parent_policy_container_name}.")
+                        security_policy_containers_info.append({
+                            'security_policy_container_name': child_policy_container_name,
+                            'security_policy_parent': parent_policy_container_name
+                        })
+
+                        # Retrieve the parent info to be processed in the next iteration of the loop
+                        sec_policy_container = self._sec_device_connection.get_security_policy_container_data_by_name(name=parent_policy_container_name)
+
+
+                    # If the parent policy does not have a parent, then map the ACP to None
+                    else:
+                        helper.logging.info(f"Security policy container: {parent_policy_container_name}, is not a child contaier.")
+                        security_policy_containers_info.append({
+                            'security_policy_container_name': parent_policy_container_name,
+                            'security_policy_parent': None
+                        })
+                
+                else:
+                    security_policy_containers_info.append({
+                        'security_policy_container_name': policy_container_name,
+                        'security_policy_parent': None
+                    })
+
+            except Exception as err:
+                helper.logging.error(f"Could not retrieve info regarding the container {policy_container_name}. Reason: {err}.")
+                sys.exit(1)
+
+        helper.logging.debug(f"I am done processing the info of security policy containers. Got the following data: {security_policy_containers_info}.")
+        return security_policy_containers_info
+
+    def get_device_version_from_device_conn(self):
+        helper.logging.debug("Called function det_device_version()")
+        """
+        Retrieve the version of the device's server.
+
+        Returns:
+            str: Version of the device's server.
+        """
+        # Retrieve device system information to get the server version
+        try:
+            device_version = self.get_device_version()
+            helper.logging.info(f"Got device version {device_version}")
+            return device_version
+        except Exception as err:
+            helper.logging.critical(f'Could not retrieve platform version. Reason: {err}')
+            sys.exit(1)
+
+    @abstractmethod
+    def get_device_version(self):
+        pass
+
+    def get_managed_devices_info_from_device_conn(self):
+        helper.logging.debug("Called function get_managed_devices_info().")
+        """
+        Retrieve information about managed devices.
+
+        Returns:
+            list: List of dictionaries containing information about managed devices.
+        """
+        helper.logging.info("################## GETTING MANAGED DEVICES INFO ##################")
+        try:
+            managed_devices_info = self.get_managed_devices_info()
+        except Exception as err:
+            helper.logging.critical(f'Could not retrieve managed devices. Reason: {err}')
+            sys.exit(1)
+
+        processed_managed_devices = []
+        for managed_device_entry in managed_devices_info:
+            device_name, assigned_security_policy_container, device_hostname, device_cluster = self.process_managed_device(managed_device_entry)
+            managed_device_entry = {
+                "managed_device_name": device_name,
+                "assigned_security_policy_container": assigned_security_policy_container,
+                "hostname": device_hostname,
+                "cluster": device_cluster
+            }
+            processed_managed_devices.append(managed_device_entry)
+
+        return processed_managed_devices
+
+    @abstractmethod
+    def get_managed_devices_info(self):
+        pass
+
+    @abstractmethod
+    def process_managed_device(self):
+        pass
+
+    def get_security_device_type_from_db(self):
         helper.logging.debug(f"Called get_security_device_type().")
         helper.logging.info(f"Fetching the device type of {self._name}.")
         """
@@ -308,7 +448,7 @@ class SecurityDevice:
         helper.logging.info(f"Got device type: {self._get_security_device_attribute('security_device_type')}.")
         return self._get_security_device_attribute('security_device_type')
 
-    def get_security_device_hostname(self):
+    def get_security_device_hostname_from_db(self):
         helper.logging.debug(f"Called get_security_device_hostname().")
         helper.logging.info(f"Fetching the hostname of {self._name}.")
         """
@@ -320,7 +460,7 @@ class SecurityDevice:
         helper.logging.info(f"Got device hostname: {self._get_security_device_attribute('security_device_hostname')}.")
         return self._get_security_device_attribute('security_device_hostname')
 
-    def get_security_device_username(self):
+    def get_security_device_username_from_db(self):
         helper.logging.debug(f"Called get_security_device_username().")
         helper.logging.info(f"Fetching the username of {self._name}.")
         """
@@ -332,7 +472,7 @@ class SecurityDevice:
         helper.logging.info(f"Got device username: {self._get_security_device_attribute('security_device_username')}.")
         return self._get_security_device_attribute('security_device_username')
 
-    def get_security_device_secret(self):
+    def get_security_device_secret_from_db(self):
         helper.logging.debug(f"Called get_security_device_secret().")
         helper.logging.info(f"Fetching the secret of {self._name}.")
         """
@@ -344,7 +484,7 @@ class SecurityDevice:
         helper.logging.info(f"Got device secret: SECRET.")
         return self._get_security_device_attribute('security_device_secret')
 
-    def get_security_device_domain(self):
+    def get_security_device_domain_from_db(self):
         helper.logging.debug(f"Called get_security_device_domain().")
         helper.logging.info(f"Fetching the domain of {self._name}.")
         """
@@ -356,7 +496,7 @@ class SecurityDevice:
         helper.logging.info(f"Got device domain: {self._get_security_device_attribute('security_device_domain')}.")
         return self._get_security_device_attribute('security_device_domain')
 
-    def get_security_device_port(self):
+    def get_security_device_port_from_db(self):
         helper.logging.debug(f"Called get_security_device_port().")
         helper.logging.info(f"Fetching the port of {self._name}.")
         """
@@ -368,7 +508,7 @@ class SecurityDevice:
         helper.logging.info(f"Got device port: {self._get_security_device_attribute('security_device_port')}.")
         return self._get_security_device_attribute('security_device_port')
 
-    def get_security_device_version(self):
+    def get_security_device_version_from_db(self):
         helper.logging.debug(f"Called get_security_device_version().")
         helper.logging.info(f"Fetching the version of {self._name}.")
         """
@@ -394,6 +534,10 @@ class SecurityDevice:
         select_command = f"SELECT {attribute} FROM general_data_table WHERE security_device_name = %s"
         result = self._database.get_table_value('general_data_table', select_command, (self._name,))
         return result[0][0] if result else None
+
+
+    def set_security_policy_connection(self, security_policy_connection):
+        self._security_policy_connection = security_policy_connection
 
     # the following functions process the data from the database. all the objects are processed, the unique values
     # are gathered and returned in a list that will be further processed by the program
@@ -921,8 +1065,6 @@ class SecurityDevice:
             # Execute the insert command with the specified values
             self._database.insert_table_value('geolocation_objects_table', insert_command, values)
 
-
-
     def verify_duplicate(self, table, column, value):
         helper.logging.debug("Called verify_duplicate().")
         helper.logging.info(f"Verifying duplicate in table {table}, column {column}, for value {value}.")
@@ -953,9 +1095,11 @@ class SecurityDevice:
 
     # the following methods must be overriden by the device's specific methods
     # TODO: add all the methods necessary here (e.g process methods)
-    @abstractmethod
-    def get_security_policy_containers_info(self):
-        pass
+    def set_object_container(self, object_container):
+        self._object_container = object_container
+    
+    def set_security_policy_container(self, security_policy_container):
+        self._security_policy_container = security_policy_container
     
     @abstractmethod
     def get_sec_policies_data(self):
@@ -1023,10 +1167,6 @@ class SecurityDevice:
 
     @abstractmethod
     def get_url_objects(self):
-        pass
-
-    @abstractmethod
-    def get_device_version(self):
         pass
     
     @abstractmethod

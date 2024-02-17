@@ -171,26 +171,26 @@ def main():
         GenericSecurityDevice = SecurityDevice(security_device_name, SecurityDeviceDB)
 
         # get the security device type
-        security_device_type = GenericSecurityDevice.get_security_device_type()
+        security_device_type = GenericSecurityDevice.get_security_device_type_from_db()
         helper.logging.info(f"Got device type {security_device_type}.")
 
         if '-api' in security_device_type:
             helper.logging.info(f"{security_device_name} is an API device. Type: {security_device_type}")
             # get the security device hostname
 
-            security_device_hostname = GenericSecurityDevice.get_security_device_hostname()
+            security_device_hostname = GenericSecurityDevice.get_security_device_hostname_from_db()
 
             # get the security device username
-            security_device_username = GenericSecurityDevice.get_security_device_username()
+            security_device_username = GenericSecurityDevice.get_security_device_username_from_db()
 
             # get the security device secret
-            security_device_secret = GenericSecurityDevice.get_security_device_secret()
+            security_device_secret = GenericSecurityDevice.get_security_device_secret_from_db()
 
             # get the security device port
-            security_device_port = GenericSecurityDevice.get_security_device_port()
+            security_device_port = GenericSecurityDevice.get_security_device_port_from_db()
 
             # get the security device domain
-            security_device_domain = GenericSecurityDevice.get_security_device_domain()
+            security_device_domain = GenericSecurityDevice.get_security_device_domain_from_db()
 
             # create the API security object based on the device type
             SpecificSecurityDeviceObject = APISecurityDeviceFactory.build_api_security_device(security_device_name, security_device_type, SecurityDeviceDB, security_device_hostname, security_device_username, security_device_secret, security_device_port, security_device_domain)
@@ -223,12 +223,17 @@ def main():
                 passed_container_names_list = []
                 passed_container_names_list.append(passed_container_names)
                 print("Importing the security policy containers info.")
+                # create the security policy containers objects
+                # ....
+                # pass them to the 
+
                 # print(f"I am now importing the policy container info for the following containers: {passed_container_names_list}.")
                 
                 # retrieve the security policy containers along with the parents
                 # insert them in the database
-                security_policy_containers_info = SpecificSecurityDeviceObject.get_security_policy_containers_info(passed_container_names_list)
-                SpecificSecurityDeviceObject.insert_into_security_policy_containers_table(security_policy_containers_info)
+                security_policy_containers_info = SpecificSecurityDeviceObject.get_security_policy_containers_info()
+                print(security_policy_containers_info)
+                #SpecificSecurityDeviceObject.insert_into_security_policy_containers_table(security_policy_containers_info)
 
                 # import the security policies (data) that are part of the imported security policy containers
                 # the policy container info extracted earlier can be used here. we can use the child container entry since the child container
@@ -249,6 +254,7 @@ def main():
                 helper.logging.info("\n################## IMPORTING OBJECTS DATA. ##################")
                 #######################################################################################################################################
                 # High level: basically, everything that is processed to and from the database should be moved to the SecurityDevice class, from the FMCSecurityDevice class
+                # TODO: re-add the classes form the intial design and rewrite the whole code toaccomodate the change
 
                 # TODO: write functions for retrievinng the device info from the device directly. and retrieve it here
                 # TODO: modify the prefixes "NL_" and "PL_"
