@@ -228,21 +228,23 @@ def main():
                 # insert them in the database
 
                 #TODO: Everything works up to this point. debug everything below
-                print("IM IN MAIN")
                 security_policy_containers_info = SpecificSecurityDeviceObject.get_security_policies_containers_info_from_device_conn(passed_container_names_list)
-            
+                print(security_policy_containers_info)
                 return
-
                 SpecificSecurityDeviceObject.insert_into_security_policy_containers_table(security_policy_containers_info)
 
                 # import the security policies (data) that are part of the imported security policy containers
                 # the policy container info extracted earlier can be used here. we can use the child container entry since the child container
                 # contains the information (thus the policies) it inherits from all the parents
                 print("Importing the security policy data.")
+
+                #TODO: Everything works up to this point. debug everything below
+                # do I keep this like this? or do i modify it to respect the new code better?
                 sec_policy_data = SpecificSecurityDeviceObject.get_sec_policies_data(passed_container_names_list)
                 helper.logging.info("\n################## EXTRACTED INFO FROM THE SECURITY POLICIES, INSERTING IN THE DATABASE. ##################")
                 # at this point, the data from all the security policies is extracted, it is time to insert it into the database
                 SpecificSecurityDeviceObject.insert_into_security_policies_table(sec_policy_data)
+                
 
             print("test_function value:", pioneer_args["test_function"])
             if pioneer_args["test_function"] == 'a':

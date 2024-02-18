@@ -281,24 +281,11 @@ class SecurityDeviceDatabase(PioneerDatabase):
 class SecurityDeviceConnection():
     def __init__(self) -> None:
         pass
-
-    def get_security_policy_container_data_by_name(self):
-        pass
-
-    def get_version(self):
-        pass
-
-class SecurityDevicePolicyContainer(Container):
-    def __init__(self, name, security_device_name, parent) -> None:
-        super().__init__(name, security_device_name, parent)
-
-    def is_child_container(self):
-        pass
-
 # this will be a generic security device only with a database, acessing it will be possible
 # in main, without acessing the protected attributes. better option for "--device"
+
 class SecurityDevice:
-    def __init__(self, name, sec_device_database, sec_device_connection = None, object_container = None, security_policy_containers = None):
+    def __init__(self, name, sec_device_database):
         """
         Initialize a SecurityDevice instance.
 
@@ -308,33 +295,57 @@ class SecurityDevice:
         """
         self._name = name
         self._database = sec_device_database
-        self._sec_device_connection = sec_device_connection
-        self._object_container = object_container
-        self._security_policy_containers = security_policy_containers
         helper.logging.debug("Called SecurityDevice __init__.")
 
-    # TODO: finish debugging this
-    def get_security_policies_containers_info_from_device_conn(self, container_list):
-        helper.logging.debug(f"Called get_security_policies_containers_info_from_device_conn() with the following container list: {container_list}")
+    def get_security_policies_containers_info_from_device_conn(self, security_policy_containers_list):
+        helper.logging.debug(f"Called get_security_policies_containers_info_from_device_conn()")
         helper.logging.info(f"################## Importing configuration of the security policy containers. ##################")
-        print("IM IN get_security_policies_containers_info_from_device_conn")
 
-        self._security_policy_containers = container_list
         processed_security_policies_containers = []
-        for security_policy_container_name in self._security_policy_containers:
+        for security_policy_container_name in security_policy_containers_list:
             helper.logging.info(f"I am now processing the security policy container: {security_policy_container_name}")
             try:
                 # Retrieve the info for the current acp
-                sec_policy_container = self.get_security_policy_container_info(security_policy_container_name)
-                processed_security_policies_containers.append(sec_policy_container.get_container_info())
+                sec_policy_containers_list = self.get_security_policy_container_info(security_policy_container_name)
+
+                # loop through the list returned eariler
+                for sec_policy_container in sec_policy_containers_list:
+                    processed_security_policies_containers.append(sec_policy_container.process_container_info())
 
                 return processed_security_policies_containers
             
             except Exception as err:
-                helper.logging.error(f"Could not retrieve info regarding the container {security_policy_container_name}. Reason: {err}.")
+                helper.logging.error(f"Could not retrieve info regarding the security policy container {security_policy_container_name}. Reason: {err}.")
                 print(err)
                 sys.exit(1)
+    
+    def get_security_policies_info_from_device_conn(self, sec_policy_containers_list):
+        """
+        Retrieve information about security policies from the specified policy containers.
 
+        Args:
+            sec_policy_container_list (list): List of security policy container names.
+
+        Returns:
+            list: List of dictionaries containing information about security policies.
+        """
+        # Loop through the policy containers provided by the user
+        helper.logging.debug("Called get_sec_policies_data().")
+        helper.logging.info("################## Importing security policy info configuration ##################.")
+        sec_policy_info = []
+
+        for sec_policy_container in sec_policy_containers_list:
+            helper.logging.info(f"I am processing the security policies of the following container: {sec_policy_container}.")
+            sec_policies = self._sec_device_connection.policy.accesspolicy.accessrule.get(container_name=sec_policy_container)
+
+            # Now loop through the policies
+            for sec_policy in sec_policies:
+                # Retrieve information for each policy
+                sec_policy_entry = self.process_sec_policy_entry(sec_policy, sec_policy_container)
+                sec_policy_info.append(sec_policy_entry)
+
+        return sec_policy_info
+        pass
 
     @abstractmethod
     def get_security_policy_container_info(self):

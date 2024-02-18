@@ -1,6 +1,6 @@
-from pkg import Container
+from pkg.Container import SecurityDevicePolicyContainer
 from pkg.SecurityDevice.APISecurityDevice.APISecurityDeviceConnection import APISecurityDeviceConnection
-from pkg.SecurityDevice import SecurityDevice, SecurityDevicePolicyContainer
+from pkg.SecurityDevice import SecurityDevice
 import utils.helper as helper
 import fireREST
 import sys
@@ -26,35 +26,61 @@ class FMCDeviceConnection(APISecurityDeviceConnection):
         except Exception as err:
             helper.logging.critical(f"Could not connect to FMC device. Reason: {err}")
             sys.exit(1)
-        
-class FMCSecurityPolicyContainer(SecurityDevicePolicyContainer):
-    def __init__(self, name, parent, security_device_name) -> None:
-        super().__init__(name, parent, security_device_name)
-      
+
+# class FMCObjectContainer(Container):
+#     pass
+
+# class NATPolicyContainer(Container):
+#     pass
 
 class FMCSecurityDevice(SecurityDevice):
     def __init__(self, name, sec_device_database, security_device_username, security_device_secret, security_device_hostname, security_device_port, domain, object_container = None, security_policy_container = None):
-        super().__init__(name, sec_device_database, object_container, security_policy_container)
+        super().__init__(name, sec_device_database)
         helper.logging.debug(f"Called FMCSecurityDevice __init__()")
         self._sec_device_connection = FMCDeviceConnection(security_device_username, security_device_secret, security_device_hostname, security_device_port, domain).connect_to_security_device()
 
     def get_security_policy_container_info(self, container_name):
-        # return a FMCSecurityPolicyContainer object with the data extracted from FMC
-        try:
-            acp_info = self._sec_device_connection.policy.accesspolicy.get(name=container_name)
-            helper.logging.debug(f"Got the following info for policy container {container_name}: {acp_info}")
+        helper.logging.debug("Called get_security_policy_container_info()")
+        """
+        Retrieves information about the security policy containers recursively,
+        including both the current container and its parent containers.
 
-        except Exception as err:
-            print(f"Problem with ACP {container_name}. Reason {err}")
-        
-        sec_policy_container_name = acp_info['name']
+        Args:
+            container_name (str): The name of the initial security policy container to retrieve information for.
 
-        try:
-            sec_policy_parent = acp_info['metadata']['inherit']
-        except:
-            sec_policy_parent = None
+        Returns:
+            list: List of FMCSecurityPolicyContainer instances representing the current and parent containers.
+        """
+        acp_objects = []  # List to store FMCSecurityPolicyContainer instances
+
+        # Attempt to retrieve information about the specified container
+        acp_info = self._sec_device_connection.policy.accesspolicy.get(name=container_name)
+        helper.logging.debug(f"Got the following info for policy container {container_name}: {acp_info}")
+            
+        acp_name = acp_info['name']  # Name of the current security policy container
         
-        return FMCSecurityPolicyContainer(sec_policy_container_name, sec_policy_parent, self._name)
+        while True:
+            acp_parent = None  # Initialize acp_parent to None
+            
+            if acp_info['metadata']['inherit']:
+                # If the current container inherits from a parent, retrieve information about the parent
+                acp_parent_name = acp_info['metadata']['parentPolicy']['name']
+                
+                # Create FMCSecurityPolicyContainer instance for the parent container
+                acp_parent = SecurityDevicePolicyContainer(acp_parent_name, self._name, acp_parent)
+                
+                # Append current ACP with its parent to the list
+                acp_objects.append(SecurityDevicePolicyContainer(acp_name, self._name, acp_parent))
+                
+                # Update acp_info and acp_name for the next iteration
+                acp_info = self._sec_device_connection.policy.accesspolicy.get(name=acp_parent_name)
+                acp_name = acp_parent_name
+            else:
+                # If there are no more parent containers, append the current ACP without a parent
+                acp_objects.append(SecurityDevicePolicyContainer(acp_name, self._name, acp_parent))
+                break  # Exit the loop if there are no more parent policies
+            
+        return acp_objects
 
 #     def import_nat_policy_containers(self):
 #         pass
@@ -99,6 +125,7 @@ class FMCSecurityDevice(SecurityDevice):
             "object_container_parent":"object_container_parent"
         }]
 
+    #NOTE: this must be moved in SecurityDevice -> already done
     def get_sec_policies_data(self, sec_policy_container_list):
         """
         Retrieve information about security policies from the specified policy containers.
@@ -126,6 +153,7 @@ class FMCSecurityDevice(SecurityDevice):
 
         return sec_policy_info
 
+    # NOTE this along with basically everythig must be moved to another place, probably to Policy classes
     def process_sec_policy_entry(self, sec_policy, sec_policy_container_name):
         """
         Process and extract information for a single security policy.
