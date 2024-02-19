@@ -15,7 +15,7 @@ class Container:
     def get_security_device_name(self):
         return self._security_device_name
 
-class SecurityDevicePolicyContainer(Container):
+class SecurityPolicyContainer(Container):
     def __init__(self, name, security_device_name, parent) -> None:
         super().__init__(name, security_device_name, parent)
 
@@ -26,6 +26,7 @@ class SecurityDevicePolicyContainer(Container):
                 'security_policy_parent': self.get_parent_name()
             })
         
+        # If the parent doesn't exist, then an Attribute Error exception will be raised
         except AttributeError:
             container_processed_info = ({
                 'security_policy_container_name': self.get_name(),
@@ -33,3 +34,25 @@ class SecurityDevicePolicyContainer(Container):
             })
 
         return container_processed_info
+
+class ObjectPolicyContainer(Container):
+    def __init__(self, name, security_device_name, parent) -> None:
+        super().__init__(name, security_device_name, parent)
+    
+    def process_container_info(self):
+        try:
+            container_processed_info = ({
+                'object_container_name': self.get_name(),
+                'object_container_parent': self.get_parent_name()
+            })
+        
+        except AttributeError:
+            container_processed_info = ({
+                'object_container_name': self.get_name(),
+                'object_container_parent': None
+            })
+
+        return container_processed_info
+
+class NATPolicyContainer:
+    pass

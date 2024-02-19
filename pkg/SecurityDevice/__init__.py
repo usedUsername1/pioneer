@@ -336,16 +336,29 @@ class SecurityDevice:
 
         for sec_policy_container in sec_policy_containers_list:
             helper.logging.info(f"I am processing the security policies of the following container: {sec_policy_container}.")
-            sec_policies = self._sec_device_connection.policy.accesspolicy.accessrule.get(container_name=sec_policy_container)
+            # device specific call
+            try:
+                sec_policies = self.get_security_policies_info(sec_policy_container)
 
-            # Now loop through the policies
-            for sec_policy in sec_policies:
-                # Retrieve information for each policy
-                sec_policy_entry = self.process_sec_policy_entry(sec_policy, sec_policy_container)
-                sec_policy_info.append(sec_policy_entry)
+                # Now loop through the policies
+                for sec_policy in sec_policies:
+                    # initialize a security policy object with the info retrieved
+                    # sec_pol_obj = Policy(sec_policy)
+                    # processed_sec_pol_info = sec_pol_obj.process_policy()
+                    # sec_policy_info.aooend(processed_sec_pol_info)
+                    # send it for processing
 
-        return sec_policy_info
-        pass
+                    # Retrieve information for each policy
+                    sec_policy_entry = self.process_sec_policy_entry(sec_policy, sec_policy_container)
+                    sec_policy_info.append(sec_policy_entry)
+                
+                return sec_policy_info
+            
+            except Exception as err:
+                helper.logging.error(f"Could not retrieve info regarding the security policy container {sec_policy_container}. Reason: {err}.")
+                print(err)
+                sys.exit(1)
+
 
     @abstractmethod
     def get_security_policy_container_info(self):
@@ -1064,83 +1077,3 @@ class SecurityDevice:
     def delete_security_device(self):
         pass
 
-
-    # the following methods must be overriden by the device's specific methods
-    # TODO: add all the methods necessary here (e.g process methods)
-    def set_object_container(self, object_container):
-        self._object_container = object_container
-    
-    def set_security_policy_container(self, security_policy_container):
-        self._security_policy_container = security_policy_container
-    
-    @abstractmethod
-    def get_sec_policies_data(self):
-        pass
-
-    @abstractmethod
-    def extract_security_zones(self):
-        pass
-
-    @abstractmethod
-    def extract_network_objects(self):
-        pass
-
-    @abstractmethod
-    def extract_port_objects(self):
-        pass
-
-    @abstractmethod
-    def extract_schedule_objects(self):
-        pass
-
-    @abstractmethod
-    def extract_policy_users(self):
-        pass
-
-    @abstractmethod
-    def extract_policy_urls(self):
-        pass
-
-    @abstractmethod
-    def extract_policy_apps(self):
-        pass
-
-    @abstractmethod
-    def extract_policy_comments(self):
-        pass
-
-    @abstractmethod
-    def get_nat_policy_containers(self):
-        pass
-
-    @abstractmethod
-    def get_object_containers(self):
-        pass
-
-    @abstractmethod
-    def get_objects(self):
-        pass
-
-    @abstractmethod
-    def get_network_address_objects(self):
-        pass
-
-    @abstractmethod
-    def get_network_group_objects(self):
-        pass
-
-    @abstractmethod
-    def get_port_objects(self):
-        pass
-
-    @abstractmethod
-    def get_port_group_objects(self):
-        pass
-
-    @abstractmethod
-    def get_url_objects(self):
-        pass
-    
-    @abstractmethod
-    def connect_to_security_device(self):
-        pass

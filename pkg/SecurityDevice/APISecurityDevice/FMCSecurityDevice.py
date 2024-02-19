@@ -1,4 +1,4 @@
-from pkg.Container import SecurityDevicePolicyContainer
+from pkg.Container import SecurityPolicyContainer
 from pkg.SecurityDevice.APISecurityDevice.APISecurityDeviceConnection import APISecurityDeviceConnection
 from pkg.SecurityDevice import SecurityDevice
 import utils.helper as helper
@@ -12,20 +12,13 @@ class FMCDeviceConnection(APISecurityDeviceConnection):
     def __init__(self, api_username, api_secret, api_hostname, api_port, domain):
         super().__init__(api_username, api_secret, api_hostname, api_port)
         self._domain = domain
+        self._device_connection = self.return_security_device_conn_object()  # Initialize _device_connection with FMC object
         helper.logging.debug(f"Called FMCDeviceConnection __init__ with parameters: username {api_username}, hostname {api_hostname}, port {api_port}, domain {domain}.")
-    
-    
+
     def connect_to_security_device(self):
-        helper.logging.debug(f"Called connect_to_security_device with parameters: username {self._api_username}, hostname {self._api_hostname}, port {self._api_port}, domain {self._domain}.")
-        try:
-            helper.logging.info(f"I am trying to connect to the FMC device using username {self._api_username}, hostname {self._api_hostname}, port {self._api_port}, domain {self._domain}.")
-            fmc_conn = fireREST.FMC(hostname=self._api_hostname, username=self._api_username, password=self._api_secret, domain=self._domain, protocol=self._api_port, timeout=30)
-            helper.logging.info(f"I have succsefully connected to the device. {fmc_conn}")
-            return fmc_conn
-        
-        except Exception as err:
-            helper.logging.critical(f"Could not connect to FMC device. Reason: {err}")
-            sys.exit(1)
+        # Implement connection to FMC specific to FMCDeviceConnection
+        fmc_conn = fireREST.FMC(hostname=self._api_hostname, username=self._api_username, password=self._api_secret, domain=self._domain, protocol=self._api_port, timeout=30)
+        return fmc_conn
 
 # class FMCObjectContainer(Container):
 #     pass
@@ -38,6 +31,16 @@ class FMCSecurityDevice(SecurityDevice):
         super().__init__(name, sec_device_database)
         helper.logging.debug(f"Called FMCSecurityDevice __init__()")
         self._sec_device_connection = FMCDeviceConnection(security_device_username, security_device_secret, security_device_hostname, security_device_port, domain).connect_to_security_device()
+
+    # the problem with this is that you need to rewrite it for every new class that you create
+        # for example, if i will have PaloAlotSecurityDevice, I will need to rewrite it, but very few things will be different
+        # for example, acp_info = self._sec_device_connection.policy.accesspolicy.get(name=container_name)
+        # acp_name = acp_info['name']
+        # if acp_info['metadata']['inherit']:
+        #         # If the current container inherits from a parent, retrieve information about the parent
+        #         acp_parent_name = acp_info['metadata']['parentPolicy']['name']
+
+        # but everything else will stay just the same. how to modify this code to accomodate this?
 
     def get_security_policy_container_info(self, container_name):
         helper.logging.debug("Called get_security_policy_container_info()")
@@ -67,23 +70,20 @@ class FMCSecurityDevice(SecurityDevice):
                 acp_parent_name = acp_info['metadata']['parentPolicy']['name']
                 
                 # Create FMCSecurityPolicyContainer instance for the parent container
-                acp_parent = SecurityDevicePolicyContainer(acp_parent_name, self._name, acp_parent)
+                acp_parent = SecurityPolicyContainer(acp_parent_name, self._name, acp_parent)
                 
                 # Append current ACP with its parent to the list
-                acp_objects.append(SecurityDevicePolicyContainer(acp_name, self._name, acp_parent))
+                acp_objects.append(SecurityPolicyContainer(acp_name, self._name, acp_parent))
                 
                 # Update acp_info and acp_name for the next iteration
                 acp_info = self._sec_device_connection.policy.accesspolicy.get(name=acp_parent_name)
                 acp_name = acp_parent_name
             else:
                 # If there are no more parent containers, append the current ACP without a parent
-                acp_objects.append(SecurityDevicePolicyContainer(acp_name, self._name, acp_parent))
+                acp_objects.append(SecurityPolicyContainer(acp_name, self._name, acp_parent))
                 break  # Exit the loop if there are no more parent policies
             
         return acp_objects
-
-#     def import_nat_policy_containers(self):
-#         pass
 
     def process_managed_device(self, managed_device):
         device_name = managed_device['name']
@@ -125,33 +125,20 @@ class FMCSecurityDevice(SecurityDevice):
             "object_container_parent":"object_container_parent"
         }]
 
-    #NOTE: this must be moved in SecurityDevice -> already done
-    def get_sec_policies_data(self, sec_policy_container_list):
+    def get_security_policies_info(self, policy_container_name):
+        helper.logging.debug("Called function get_security_policies_info().")
         """
-        Retrieve information about security policies from the specified policy containers.
-
-        Args:
-            sec_policy_container_list (list): List of security policy container names.
+        Retrieve information about managed devices.
 
         Returns:
-            list: List of dictionaries containing information about security policies.
+            list: List of dictionaries containing information about managed devices.
         """
-        # Loop through the policy containers provided by the user
-        helper.logging.debug("Called get_sec_policies_data().")
-        helper.logging.info("################## Importing security policy info configuration ##################.")
-        sec_policy_info = []
+        helper.logging.info("################## GETTING SECURITY POLICIES INFO ##################")
 
-        for sec_policy_container in sec_policy_container_list:
-            helper.logging.info(f"I am processing the security policies of the following container: {sec_policy_container}.")
-            sec_policies = self._sec_device_connection.policy.accesspolicy.accessrule.get(container_name=sec_policy_container)
-
-            # Now loop through the policies
-            for sec_policy in sec_policies:
-                # Retrieve information for each policy
-                sec_policy_entry = self.process_sec_policy_entry(sec_policy, sec_policy_container)
-                sec_policy_info.append(sec_policy_entry)
-
-        return sec_policy_info
+        # Execute the request to retrieve information about the devices
+        security_policies_info = self._sec_device_connection.policy.accesspolicy.accessrule.get(container_name=policy_container_name)
+        # helper.logging.debug(f"Executed API call to the FMC device, got the following info {security_policies_info}.")
+        return security_policies_info
 
     # NOTE this along with basically everythig must be moved to another place, probably to Policy classes
     def process_sec_policy_entry(self, sec_policy, sec_policy_container_name):
