@@ -385,12 +385,10 @@ class SecurityDevice:
             # Now loop through the policies
             for raw_sec_policy_object in raw_sec_policy_objects:
                 # Retrieve information for each policy
-                print(type(raw_sec_policy_object))
                 processed_sec_policy_entry = raw_sec_policy_object.process_sec_policy_info()
                 processed_sec_policy_info.append(processed_sec_policy_entry)
 
         return processed_sec_policy_info
-
 
     @abstractmethod
     def return_security_policy_object(self):

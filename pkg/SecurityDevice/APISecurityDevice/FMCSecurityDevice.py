@@ -66,60 +66,107 @@ class FMCSecurityPolicy(SecurityPolicy):
         return super().set_category(category)
 
     def set_source_zones(self):
-        source_zones = self._policy_info['sourceZones']['objects']
+        try:
+            source_zones = self._policy_info['sourceZones']['objects']
+        except KeyError:
+            source_zones = ['any']
         return super().set_source_zones(source_zones)
-    
-    def get_processed_destination_zones(self):
-        destination_zones = self._policy_info['destinationZones']['objects']
-        return super().get_processed_destination_zones()
-    
+
+    def set_destination_zones(self):
+        try:
+            destination_zones = self._policy_info['destinationZones']['objects']
+        except KeyError:
+            destination_zones = ['any']
+        return super().set_destination_zones(destination_zones)
+
     def set_source_networks(self):
-        source_networks = self._policy_info['sourceNetworks']['objects']
+        try:
+            source_networks = self._policy_info['sourceNetworks']['objects']
+        except KeyError:
+            helper.logging.info("It looks like there are no explicit source networks defined on this policy.")
+            source_networks = ['any']
         return super().set_source_networks(source_networks)
 
     def set_destination_networks(self):
-        destination_networks = self._policy_info['destinationNetworks']['objects']
+        try:
+            destination_networks = self._policy_info['destinationNetworks']['objects']
+        except KeyError:
+            helper.logging.info("It looks like there are no explicit destination networks defined on this policy.")
+            destination_networks = ['any']
         return super().set_destination_networks(destination_networks)
 
     def set_source_ports(self):
-        source_ports = self._policy_info['sourcePorts']['objects']
+        try:
+            source_ports = self._policy_info['sourcePorts']['objects']
+        except KeyError:
+            helper.logging.info("It looks like there are no explicit source ports defined on this policy.")
+            source_ports = ['any']
         return super().set_source_ports(source_ports)
 
     def set_destination_ports(self):
-        destination_ports = self._policy_info['destinationPorts']['objects']
+        try:
+            destination_ports = self._policy_info['destinationPorts']['objects']
+        except KeyError:
+            helper.logging.info("It looks like there are no explicit destination ports defined on this policy.")
+            destination_ports = ['any']
         return super().set_destination_ports(destination_ports)
 
     def set_schedule_objects(self):
-        schedule_objects = self._policy_info['timeRangeObjects']
+        try:
+            schedule_objects = self._policy_info['timeRangeObjects']
+        except KeyError:
+            helper.logging.info("It looks like there are no explicit schedule objects defined on this policy.")
+            schedule_objects = ['any']
         return super().set_schedule_objects(schedule_objects)
 
     def set_users(self):
-        users = self._policy_info['users']
+        try:
+            users = self._policy_info['users']
+        except KeyError:
+            helper.logging.info("It looks like there are no explicit users defined on this policy.")
+            users = ['any']
         return super().set_users(users)
 
     def set_urls(self):
-        urls = self._policy_info['urls']
+        try:
+            urls = self._policy_info['urls']
+        except KeyError:
+            helper.logging.info("It looks like there are no explicit URLs defined on this policy.")
+            urls = ['any']
         return super().set_urls(urls)
 
     def set_policy_apps(self):
-        policy_apps = self._policy_info['applications']
+        try:
+            policy_apps = self._policy_info['applications']
+        except KeyError:
+            helper.logging.info("It looks like there are no explicit applications defined on this policy.")
+            policy_apps = ['any']
         return super().set_policy_apps(policy_apps)
 
     def set_description(self):
-        description = self._policy_info['description']
+        try:
+            description = self._policy_info['description']
+        except KeyError:
+            helper.logging.info("It looks like there is no description defined on this policy.")
+            description = None
         return super().set_description(description)
 
     def set_comments(self):
-        comments = self._policy_info['commentHistoryList']
+        try:
+            comments = self._policy_info['commentHistoryList']
+        except KeyError:
+            helper.logging.info("It looks like there are no comments defined on this policy.")
+            comments = None
         return super().set_comments(comments)
 
-    #TODO: how to set logging?
-        # sec_policy_log_settings = ['FMC'] if sec_policy['sendEventsToFMC'] else []
-        # sec_policy_log_settings += ['Syslog'] if sec_policy['enableSyslog'] else []
     def set_log_setting(self):
-        log_settings = sec_policy_log_settings = ['FMC'] if self._policy_info['sendEventsToFMC'] else []
-        log_settings += ['Syslog'] if self._policy_info['enableSyslog'] else []
-        return super().set_log_setting(self._policy_info)
+        try:
+            log_settings = ['FMC'] if self._policy_info['sendEventsToFMC'] else []
+            log_settings += ['Syslog'] if self._policy_info['enableSyslog'] else []
+        except KeyError:
+            helper.logging.info("It looks like there are no log settings defined on this policy.")
+            log_settings = None
+        return super().set_log_setting(log_settings)
 
     def set_log_start(self):
         log_start = self._policy_info['logBegin']
@@ -231,47 +278,6 @@ class FMCSecurityDevice(SecurityDevice):
         helper.logging.debug(f"Executed API call to the FMC device, got the following info {device_system_info}.")
         device_version = device_system_info[0]['serverVersion']
         return device_version
-
-    def extract_security_zones(self, sec_policy, zone_type):
-        helper.logging.debug("Called extract_security_zones()")
-        """
-        Process security zones defined in the security policy.
-
-        Args:
-            sec_policy (dict): Security policy information.
-            zone_type (str): Type of security zones ('sourceZones' or 'destinationZones').
-
-        Returns:
-            list: List of security zone names.
-        """
-        helper.logging.info("################## SECURITY ZONE PROCESSING ##################.")
-        zone_list = []
-
-        try:
-            helper.logging.info(f"I am looking for {zone_type} objects.")
-
-            zone_objects = sec_policy[zone_type]['objects']
-            helper.logging.info(f"I have found {zone_type} objects. I will now start to process them.")
-            helper.logging.debug(f"Zone objects found: {zone_objects}.")
-
-            # Loop through the zone objects
-            for zone_object in zone_objects:
-                helper.logging.debug(f"Processing zone object: {zone_object}.")
-                # Retrieve the zone name
-                zone_name = zone_object['name']
-                helper.logging.info(f"Processed zone object {zone_name}.")
-
-                # Append it to the list
-                zone_list.append(zone_name)
-                helper.logging.debug(f"I am done processing {zone_object}. I have extracted the following data: name: {zone_name}")
-
-        except KeyError:
-            helper.logging.info(f"It looks like there are no {zone_type} objects defined on this policy.")
-            # If there are no zones defined on the policy, then return 'any'
-            zone_list = ['any']
-        
-        helper.logging.debug(f"Finished processing all the zones. This is the list with the processed list {zone_list}.")
-        return zone_list
 
     def convert_network_literals_to_objects(self, network_literals):
         helper.logging.debug("Called convert_network_literals_to_objects().")

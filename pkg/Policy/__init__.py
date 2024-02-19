@@ -43,13 +43,13 @@ class Policy:
         self._status = status
 
     def get_processed_source_zones(self):
-        return self.process_security_zones('source_networks')
+        return self.process_security_zones('source_zones')
 
     def set_source_zones(self, source_zones):
         self._source_zones = source_zones
 
     def get_processed_destination_zones(self):
-        return self.process_security_zones('destination_networks')
+        return self.process_security_zones('destination_zones')
 
     def set_destination_zones(self, destination_zones):
         self._destination_zones = destination_zones
@@ -60,8 +60,8 @@ class Policy:
     def set_description(self, description):
         self._description = description
 
-    def get_processed_comments(self, comments):
-        self._comments = comments
+    def get_processed_comments(self):
+        return self._comments
 
     def set_comments(self, comments):
         self._comments = comments
@@ -99,34 +99,31 @@ class Policy:
         helper.logging.info("################## SECURITY ZONE PROCESSING ##################.")
         zone_list = []
 
-        try:
-            helper.logging.info(f"I am looking for {zone_type} objects.")
+        helper.logging.info(f"I am looking for {zone_type} objects.")
 
-            # Determine which type of zones to retrieve based on zone_type
-            if zone_type == 'source_zones':
-                zone_objects = self.get_processed_source_zones()
-            elif zone_type == 'destination_zones':
-                zone_objects = self.get_processed_destination_zones()
+        # Determine which type of zones to retrieve based on zone_type
+        zone_objects = []
 
-            helper.logging.info(f"I have found {zone_type} objects. I will now start to process them.")
-            helper.logging.debug(f"Zone objects found: {zone_objects}.")
+        if zone_type == 'source_zones':
+            zone_objects = self._source_zones
+        elif zone_type == 'destination_zones':
+            zone_objects = self._destination_zones
 
-            # Loop through the zone objects
-            for zone_object in zone_objects:
-                helper.logging.debug(f"Processing zone object: {zone_object}.")
-                # Retrieve the zone name
-                processed_zone_name = self.extract_zones_info(zone_object)
-                helper.logging.info(f"Processed zone object: {processed_zone_name}.")
+        if zone_objects == ['any']:
+            helper.logging.info("No explicit zones defined on this policy. Defaulting to 'any'.")
+            return ['any']
 
-                # Append it to the list
-                zone_list.append(processed_zone_name)
-                helper.logging.debug(f"I am done processing {zone_object}. I have extracted the following data: name: {processed_zone_name}")
+        # Loop through the zone objects
+        for zone_object in zone_objects:
+            helper.logging.debug(f"Processing zone object: {zone_object}.")
+            # Retrieve the zone name
+            processed_zone_name = self.extract_zones_info(zone_object)
+            helper.logging.info(f"Processed zone object: {processed_zone_name}.")
 
-        except KeyError:
-            helper.logging.info(f"It looks like there are no {zone_type} objects defined on this policy.")
-            # If there are no zones defined on the policy, then return 'any'
-            zone_list = ['any']
-        
+            # Append it to the list
+            zone_list.append(processed_zone_name)
+            helper.logging.debug(f"I am done processing {zone_object}. I have extracted the following data: name: {processed_zone_name}")
+
         helper.logging.debug(f"Finished processing all the zones. This is the list with the processed list {zone_list}.")
         return zone_list
 
@@ -260,11 +257,11 @@ class SecurityPolicy(Policy):
         helper.logging.debug(f"Security policy data: {self._policy_info}")
 
         processed_policy_entry = {
-            "sec_policy_name": self._name(),
-            "sec_policy_container_name": self._container_name(),
+            "sec_policy_name": self._name,
+            "sec_policy_container_name": self._container_name,
             "security_policy_index": self._container_index,
-            "sec_policy_category": self._category(),
-            "sec_policy_status": self._status(),
+            "sec_policy_category": self._category,
+            "sec_policy_status": self._status,
             "sec_policy_source_zones": self.get_processed_source_zones(),
             "sec_policy_destination_zones": self.get_processed_destination_zones(),
             "sec_policy_source_networks": self.get_processed_source_networks(),
@@ -275,16 +272,16 @@ class SecurityPolicy(Policy):
             "sec_policy_users": self.get_processed_users(),
             "sec_policy_urls": self.get_processed_urls(),
             "sec_policy_apps": self.get_processed_policy_apps(),
-            "sec_policy_description": self._description(),
+            "sec_policy_description": self._description,
             "sec_policy_comments": self.get_processed_comments(),
             "sec_policy_log_settings": self.get_processed_log_settings(),
-            "sec_policy_log_start": self._log_start(),
-            "sec_policy_log_end": self._log_end(),
-            "sec_policy_section": self._section(),
-            "sec_policy_action": self._action(),
+            "sec_policy_log_start": self._log_start,
+            "sec_policy_log_end": self._log_end,
+            "sec_policy_section": self._section,
+            "sec_policy_action": self._action,
         }
 
-        helper.logging.info(f"Processed policy {self.get_name()}. Processed entry: {processed_policy_entry}")
+        helper.logging.info(f"Processed policy {self._name}. Processed entry: {processed_policy_entry}")
         return processed_policy_entry
 
 class NATPolicy:
