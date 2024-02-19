@@ -8,6 +8,7 @@ class ObjectContainer:
     def set_member_objects(self, member_objects):
         self._member_objects = member_objects
 
+
 class DeviceObject:
     def __init__(self, name, description, is_overridable, object_container_name = None) -> None:
         self._name = name

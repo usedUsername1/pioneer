@@ -1,6 +1,7 @@
 from pkg.Container import SecurityPolicyContainer
 from pkg.SecurityDevice.APISecurityDevice.APISecurityDeviceConnection import APISecurityDeviceConnection
 from pkg.SecurityDevice import SecurityDevice
+from pkg.Policy import SecurityPolicy
 import utils.helper as helper
 import fireREST
 import sys
@@ -39,25 +40,128 @@ class FMCPolicyContainer(SecurityPolicyContainer):
         except KeyError:
             return None
 
+class FMCSecurityPolicy(SecurityPolicy):
+    def __init__(self, policy_info_fmc) -> None:
+        super().__init__(policy_info_fmc)
 
+    # TODO: try/except statements for everything here    
+    def set_name(self):
+        name = self._policy_info['name']
+        return super().set_name(name)
+    
+    def set_container_name(self):
+        container_name = self._policy_info['metadata']['accessPolicy']['name']
+        return super().set_container_name(container_name)
+
+    def set_container_index(self):
+        index = self._policy_info['metadata']['ruleIndex']
+        return super().set_container_index(index)
+    
+    def set_status(self):
+        status = 'enabled' if self._policy_info['enabled'] else 'disabled'
+        return super().set_status(status)
+
+    def set_category(self):
+        category = self._policy_info['metadata']['category']
+        return super().set_category(category)
+
+    def set_source_zones(self):
+        source_zones = self._policy_info['sourceZones']['objects']
+        return super().set_source_zones(source_zones)
+    
+    def get_processed_destination_zones(self):
+        destination_zones = self._policy_info['destinationZones']['objects']
+        return super().get_processed_destination_zones()
+    
+    def set_source_networks(self):
+        source_networks = self._policy_info['sourceNetworks']['objects']
+        return super().set_source_networks(source_networks)
+
+    def set_destination_networks(self):
+        destination_networks = self._policy_info['destinationNetworks']['objects']
+        return super().set_destination_networks(destination_networks)
+
+    def set_source_ports(self):
+        source_ports = self._policy_info['sourcePorts']['objects']
+        return super().set_source_ports(source_ports)
+
+    def set_destination_ports(self):
+        destination_ports = self._policy_info['destinationPorts']['objects']
+        return super().set_destination_ports(destination_ports)
+
+    def set_schedule_objects(self):
+        schedule_objects = self._policy_info['timeRangeObjects']
+        return super().set_schedule_objects(schedule_objects)
+
+    def set_users(self):
+        users = self._policy_info['users']
+        return super().set_users(users)
+
+    def set_urls(self):
+        urls = self._policy_info['urls']
+        return super().set_urls(urls)
+
+    def set_policy_apps(self):
+        policy_apps = self._policy_info['applications']
+        return super().set_policy_apps(policy_apps)
+
+    def set_description(self):
+        description = self._policy_info['description']
+        return super().set_description(description)
+
+    def set_comments(self):
+        comments = self._policy_info['commentHistoryList']
+        return super().set_comments(comments)
+
+    #TODO: how to set logging?
+        # sec_policy_log_settings = ['FMC'] if sec_policy['sendEventsToFMC'] else []
+        # sec_policy_log_settings += ['Syslog'] if sec_policy['enableSyslog'] else []
+    def set_log_setting(self):
+        log_settings = sec_policy_log_settings = ['FMC'] if self._policy_info['sendEventsToFMC'] else []
+        log_settings += ['Syslog'] if self._policy_info['enableSyslog'] else []
+        return super().set_log_setting(self._policy_info)
+
+    def set_log_start(self):
+        log_start = self._policy_info['logBegin']
+        return super().set_log_start(log_start)
+
+    def set_log_end(self):
+        log_end = self._policy_info['logEnd']
+        return super().set_log_end(log_end)
+
+    def set_section(self):
+        section = self._policy_info['metadata']['section']
+        return super().set_section(section)
+
+    def set_action(self):
+        action = self._policy_info['action']
+        return super().set_action(action)
+
+    def extract_zones_info(self, zone_object):
+        zone_name = zone_object['name']
+        return zone_name
+    
+
+#TODO: maybe modify this class to return a list as well, like return_security_policy_object()
 class FMCSecurityDevice(SecurityDevice):
-    def __init__(self, name, sec_device_database, security_device_username, security_device_secret, security_device_hostname, security_device_port, domain, object_container = None, security_policy_container = None):
+    def __init__(self, name, sec_device_database, security_device_username, security_device_secret, security_device_hostname, security_device_port, domain):
         super().__init__(name, sec_device_database)
         helper.logging.debug(f"Called FMCSecurityDevice __init__()")
         self._sec_device_connection = FMCDeviceConnection(security_device_username, security_device_secret, security_device_hostname, security_device_port, domain).connect_to_security_device()
 
-    # the problem with this is that you need to rewrite it for every new class that you create
-        # for example, if i will have PaloAlotSecurityDevice, I will need to rewrite it, but very few things will be different
-        # for example, acp_info = self._sec_device_connection.policy.accesspolicy.get(name=container_name)
-        # acp_name = acp_info['name']
-        # if acp_info['metadata']['inherit']:
-        #         # If the current container inherits from a parent, retrieve information about the parent
-        #         acp_parent_name = acp_info['metadata']['parentPolicy']['name']
-
         # but everything else will stay just the same. how to modify this code to accomodate this?
-    def return_security_policy_container_objects(self, container_name):
+    def return_security_policy_container_object(self, container_name):
         acp_info = self._sec_device_connection.policy.accesspolicy.get(name=container_name)
         return FMCPolicyContainer(acp_info)
+
+    # return a list with policy objects for the whole container
+    def return_security_policy_object(self, container_name):
+        security_policy_objects = []
+        fmc_policy_info = self._sec_device_connection.policy.accesspolicy.accessrule.get(container_name=container_name)
+        for fmc_policy_entry in fmc_policy_info:
+            security_policy_objects.append(FMCSecurityPolicy(fmc_policy_entry))
+        
+        return security_policy_objects
 
     def process_managed_device(self, managed_device):
         device_name = managed_device['name']
@@ -113,76 +217,6 @@ class FMCSecurityDevice(SecurityDevice):
         security_policies_info = self._sec_device_connection.policy.accesspolicy.accessrule.get(container_name=policy_container_name)
         # helper.logging.debug(f"Executed API call to the FMC device, got the following info {security_policies_info}.")
         return security_policies_info
-
-    # NOTE this along with basically everythig must be moved to another place, probably to Policy classes
-    def process_sec_policy_entry(self, sec_policy, sec_policy_container_name):
-        """
-        Process and extract information for a single security policy.
-
-        Args:
-            sec_policy (dict): Security policy information.
-            sec_policy_container_name (str): Name of the security policy container.
-
-        Returns:
-            dict: Dictionary containing information about the security policy.
-        """
-        helper.logging.debug(f"Called process_sec_policy_entry()")
-        # Retrieve information for each policy
-        sec_policy_name = sec_policy['name']
-        sec_policy_index = sec_policy['metadata']['ruleIndex']
-        helper.logging.info(f"\n\n################## PROCESSING SECURITY POLICY: {sec_policy_name}. CONTAINER: {sec_policy_container_name}. Rule Index: {sec_policy_index}.##################")
-        helper.logging.debug(f"Security policy data is: {sec_policy}")
-        sec_policy_category = sec_policy['metadata']['category']
-        sec_policy_status = 'enabled' if sec_policy['enabled'] else 'disabled'
-
-        sec_policy_source_zones = self.extract_security_zones(sec_policy, 'sourceZones')
-        sec_policy_destination_zones = self.extract_security_zones(sec_policy, 'destinationZones')
-        sec_policy_source_networks = self.extract_network_objects(sec_policy, 'sourceNetworks')
-        sec_policy_destination_networks = self.extract_network_objects(sec_policy, 'destinationNetworks')
-        sec_policy_source_ports = self.extract_port_objects(sec_policy, 'sourcePorts')
-        sec_policy_destination_ports = self.extract_port_objects(sec_policy, 'destinationPorts')
-        sec_policy_schedule_objects = self.extract_schedule_objects(sec_policy)
-        sec_policy_users = self.extract_policy_users(sec_policy)
-        sec_policy_urls = self.extract_policy_urls(sec_policy)
-        sec_policy_apps = self.extract_policy_apps(sec_policy)
-
-        sec_policy_description = sec_policy.get('description', '')
-        sec_policy_comments = self.extract_policy_comments(sec_policy)
-        sec_policy_log_settings = ['FMC'] if sec_policy['sendEventsToFMC'] else []
-        sec_policy_log_settings += ['Syslog'] if sec_policy['enableSyslog'] else []
-        sec_policy_log_start = sec_policy['logBegin']
-        sec_policy_log_end = sec_policy['logEnd']
-        sec_policy_section = sec_policy['metadata']['section']
-        sec_policy_action = sec_policy['action']
-
-        # Create a dictionary for the security policy entry
-        sec_policy_entry = {
-            "sec_policy_name": sec_policy_name,
-            "sec_policy_container_name": sec_policy_container_name,
-            "security_policy_index":sec_policy_index,
-            "sec_policy_category": sec_policy_category,
-            "sec_policy_status": sec_policy_status,
-            "sec_policy_source_zones": sec_policy_source_zones,
-            "sec_policy_destination_zones": sec_policy_destination_zones,
-            "sec_policy_source_networks": sec_policy_source_networks,
-            "sec_policy_destination_networks": sec_policy_destination_networks,
-            "sec_policy_source_ports": sec_policy_source_ports,
-            "sec_policy_destination_ports": sec_policy_destination_ports,
-            "sec_policy_schedules": sec_policy_schedule_objects,
-            "sec_policy_users": sec_policy_users,
-            "sec_policy_urls": sec_policy_urls,
-            "sec_policy_apps": sec_policy_apps,
-            "sec_policy_description": sec_policy_description,
-            "sec_policy_comments": sec_policy_comments,
-            "sec_policy_log_settings": sec_policy_log_settings,
-            "sec_policy_log_start": sec_policy_log_start,
-            "sec_policy_log_end": sec_policy_log_end,
-            "sec_policy_section": sec_policy_section,
-            "sec_policy_action": sec_policy_action,
-        }
-
-        helper.logging.info(f"I have processed the policy {sec_policy_name}. This is the processed entry: {sec_policy_entry}.")
-        return sec_policy_entry
     
     def get_device_version(self):
         helper.logging.debug("Called function det_device_version()")
@@ -198,16 +232,6 @@ class FMCSecurityDevice(SecurityDevice):
         device_version = device_system_info[0]['serverVersion']
         return device_version
 
-
-    # this function is responsible for processing the zone information. it takes the current security policy that the program is processing
-    # the zone type (sourceZones or destinationZones). the zone_list array contains the info with the zones names
-    # when the parameter for source/destination zones is set to "Any" in the policy, then there is no
-    # 'sourceZones'/'destinationZones' attribute in the response and a KeyError will be generated.
-    # this is true for most of the configuration options which have the 'Any' parameter, therefore the retrieval of all
-    # configuration options will be processed in try except KeyError blocks
-    # the functions that extract users, apps and urls will append more information than the name
-    # since JSON and multi-dimensional arrays are a bitch to insert in postgresql, it's easier to add only a string containing all the info to the database
-    # the string will be a special string made out of the type of the object + ‽ + whatever + ‽...
     def extract_security_zones(self, sec_policy, zone_type):
         helper.logging.debug("Called extract_security_zones()")
         """

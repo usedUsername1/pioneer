@@ -2,8 +2,6 @@ import utils.helper as helper
 
 class Container:
     def __init__(self, container_info) -> None:
-        # intialize this only with the container info
-        # use setters for the rest of the attributes
         self._container_info = container_info
         self._name = None
         self._parent = None

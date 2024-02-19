@@ -234,8 +234,6 @@ def main():
                 # specific container classes are needed.
                 # 
                 security_policy_containers_info = SpecificSecurityDeviceObject.get_security_policies_containers_info_from_device_conn(passed_container_names_list)
-                print(security_policy_containers_info)
-                return
                 SpecificSecurityDeviceObject.insert_into_security_policy_containers_table(security_policy_containers_info)
 
                 # import the security policies (data) that are part of the imported security policy containers
@@ -245,7 +243,7 @@ def main():
 
                 #TODO: Everything works up to this point. debug everything below
                 # do I keep this like this? or do i modify it to respect the new code better?
-                sec_policy_data = SpecificSecurityDeviceObject.get_security_policies_info_from_device_conn(passed_container_names_list)
+                sec_policy_data = SpecificSecurityDeviceObject.get_security_policy_info_from_device_conn(passed_container_names_list)
                 return
                 helper.logging.info("\n################## EXTRACTED INFO FROM THE SECURITY POLICIES, INSERTING IN THE DATABASE. ##################")
                 # at this point, the data from all the security policies is extracted, it is time to insert it into the database
@@ -267,7 +265,7 @@ def main():
                     # assign the policy containers to the objects
                     SpecificSecurityDeviceObject.set_object_container(passed_container_names_list)
 
-                    security_policy_containers_info = SpecificSecurityDeviceObject.return_security_policy_container_objects(passed_container_names_list)
+                    security_policy_containers_info = SpecificSecurityDeviceObject.return_security_policy_container_object(passed_container_names_list)
                     print(security_policy_containers_info)
 
                     # SpecificSecurityDeviceObject.insert_into_security_policy_containers_table(security_policy_containers_info)

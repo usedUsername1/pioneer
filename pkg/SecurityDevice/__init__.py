@@ -306,7 +306,7 @@ class SecurityDevice:
             helper.logging.info(f"I am now processing the security policy container: {security_policy_container_name}")
             try:
                 # Retrieve the info for the current container
-                current_container = self.return_security_policy_container_objects(security_policy_container_name)
+                current_container = self.return_security_policy_container_object(security_policy_container_name)
 
                 # Check if the current container has parent containers
                 while current_container.is_child_container():
@@ -315,7 +315,7 @@ class SecurityDevice:
 
                     try:
                         # Retrieve the parent container object
-                        parent_container = self.return_security_policy_container_objects(parent_container_name)
+                        parent_container = self.return_security_policy_container_object(parent_container_name)
                         # set the current's container parent
                         current_container.set_parent(parent_container)
                         # Process the parent container
@@ -338,7 +338,7 @@ class SecurityDevice:
         return processed_security_policies_containers
 
     @abstractmethod
-    def return_security_policy_container_objects(self):
+    def return_security_policy_container_object(self):
         pass
 
     def get_device_version_from_device_conn(self):
@@ -362,6 +362,40 @@ class SecurityDevice:
     def get_device_version(self):
         pass
 
+    def get_security_policy_info_from_device_conn(self, sec_policy_containers_list):
+        """
+        Retrieve information about security policies from the specified policy containers.
+
+        Args:
+            sec_policy_container_list (list): List of security policy container names.
+
+        Returns:
+            list: List of dictionaries containing information about security policies.
+        """
+        # Loop through the policy containers provided by the user
+        helper.logging.debug("Called get_security_policy_info_from_device_conn().")
+        helper.logging.info("################## Importing security policy info configuration ##################.")
+        processed_sec_policy_info = []
+        raw_sec_policy_objects = []
+        for sec_policy_container_name in sec_policy_containers_list:
+            helper.logging.info(f"I am processing the security policies of the following container: {sec_policy_container_name}.")
+            print(f"I am processing the security policies of the following container: {sec_policy_container_name}.")
+            raw_sec_policy_objects = self.return_security_policy_object(sec_policy_container_name)
+
+            # Now loop through the policies
+            for raw_sec_policy_object in raw_sec_policy_objects:
+                # Retrieve information for each policy
+                print(type(raw_sec_policy_object))
+                processed_sec_policy_entry = raw_sec_policy_object.process_sec_policy_info()
+                processed_sec_policy_info.append(processed_sec_policy_entry)
+
+        return processed_sec_policy_info
+
+
+    @abstractmethod
+    def return_security_policy_object(self):
+        pass
+    #TODO: create object for managed devices and refactor
     def get_managed_devices_info_from_device_conn(self):
         helper.logging.debug("Called function get_managed_devices_info().")
         """
