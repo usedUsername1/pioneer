@@ -20,11 +20,25 @@ class FMCDeviceConnection(APISecurityDeviceConnection):
         fmc_conn = fireREST.FMC(hostname=self._api_hostname, username=self._api_username, password=self._api_secret, domain=self._domain, protocol=self._api_port, timeout=30)
         return fmc_conn
 
-# class FMCObjectContainer(Container):
-#     pass
+class FMCPolicyContainer(SecurityPolicyContainer):
+    def __init__(self, container_info) -> None:
+        super().__init__(container_info)
 
-# class NATPolicyContainer(Container):
-#     pass
+    def get_name(self):
+        return self._container_info['name']
+
+    def is_child_container(self):
+        if self._container_info['metadata']['inherit'] == True:
+            return True
+        else:
+            return False
+    
+    def get_parent_name(self):
+        try:
+            return self._container_info['metadata']['parentPolicy']['name']
+        except KeyError:
+            return None
+
 
 class FMCSecurityDevice(SecurityDevice):
     def __init__(self, name, sec_device_database, security_device_username, security_device_secret, security_device_hostname, security_device_port, domain, object_container = None, security_policy_container = None):
@@ -41,49 +55,9 @@ class FMCSecurityDevice(SecurityDevice):
         #         acp_parent_name = acp_info['metadata']['parentPolicy']['name']
 
         # but everything else will stay just the same. how to modify this code to accomodate this?
-
-    def get_security_policy_container_info(self, container_name):
-        helper.logging.debug("Called get_security_policy_container_info()")
-        """
-        Retrieves information about the security policy containers recursively,
-        including both the current container and its parent containers.
-
-        Args:
-            container_name (str): The name of the initial security policy container to retrieve information for.
-
-        Returns:
-            list: List of FMCSecurityPolicyContainer instances representing the current and parent containers.
-        """
-        acp_objects = []  # List to store FMCSecurityPolicyContainer instances
-
-        # Attempt to retrieve information about the specified container
+    def return_security_policy_container_objects(self, container_name):
         acp_info = self._sec_device_connection.policy.accesspolicy.get(name=container_name)
-        helper.logging.debug(f"Got the following info for policy container {container_name}: {acp_info}")
-            
-        acp_name = acp_info['name']  # Name of the current security policy container
-        
-        while True:
-            acp_parent = None  # Initialize acp_parent to None
-            
-            if acp_info['metadata']['inherit']:
-                # If the current container inherits from a parent, retrieve information about the parent
-                acp_parent_name = acp_info['metadata']['parentPolicy']['name']
-                
-                # Create FMCSecurityPolicyContainer instance for the parent container
-                acp_parent = SecurityPolicyContainer(acp_parent_name, self._name, acp_parent)
-                
-                # Append current ACP with its parent to the list
-                acp_objects.append(SecurityPolicyContainer(acp_name, self._name, acp_parent))
-                
-                # Update acp_info and acp_name for the next iteration
-                acp_info = self._sec_device_connection.policy.accesspolicy.get(name=acp_parent_name)
-                acp_name = acp_parent_name
-            else:
-                # If there are no more parent containers, append the current ACP without a parent
-                acp_objects.append(SecurityPolicyContainer(acp_name, self._name, acp_parent))
-                break  # Exit the loop if there are no more parent policies
-            
-        return acp_objects
+        return FMCPolicyContainer(acp_info)
 
     def process_managed_device(self, managed_device):
         device_name = managed_device['name']

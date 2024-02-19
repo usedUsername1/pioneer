@@ -234,6 +234,8 @@ def main():
                 # specific container classes are needed.
                 # 
                 security_policy_containers_info = SpecificSecurityDeviceObject.get_security_policies_containers_info_from_device_conn(passed_container_names_list)
+                print(security_policy_containers_info)
+                return
                 SpecificSecurityDeviceObject.insert_into_security_policy_containers_table(security_policy_containers_info)
 
                 # import the security policies (data) that are part of the imported security policy containers
@@ -265,7 +267,7 @@ def main():
                     # assign the policy containers to the objects
                     SpecificSecurityDeviceObject.set_object_container(passed_container_names_list)
 
-                    security_policy_containers_info = SpecificSecurityDeviceObject.get_security_policy_container_info(passed_container_names_list)
+                    security_policy_containers_info = SpecificSecurityDeviceObject.return_security_policy_container_objects(passed_container_names_list)
                     print(security_policy_containers_info)
 
                     # SpecificSecurityDeviceObject.insert_into_security_policy_containers_table(security_policy_containers_info)

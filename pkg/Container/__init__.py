@@ -1,10 +1,18 @@
 import utils.helper as helper
 
 class Container:
-    def __init__(self, name, security_device_name, parent) -> None:
+    def __init__(self, container_info) -> None:
+        # intialize this only with the container info
+        # use setters for the rest of the attributes
+        self._container_info = container_info
+        self._name = None
+        self._parent = None
+    
+    def set_name(self, name):
         self._name = name
-        self._security_device_name = security_device_name
-        self._parent = parent # parent is another Container
+
+    def set_parent(self, parent):
+        self._parent = parent
 
     def get_name(self):
         return self._name
@@ -16,8 +24,11 @@ class Container:
         return self._security_device_name
 
 class SecurityPolicyContainer(Container):
-    def __init__(self, name, security_device_name, parent) -> None:
-        super().__init__(name, security_device_name, parent)
+    def __init__(self, container_info) -> None:
+        super().__init__(container_info)
+
+    def get_device_container_info(self):
+        pass
 
     def process_container_info(self):
         try:

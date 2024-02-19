@@ -305,63 +305,40 @@ class SecurityDevice:
         for security_policy_container_name in security_policy_containers_list:
             helper.logging.info(f"I am now processing the security policy container: {security_policy_container_name}")
             try:
-                # Retrieve the info for the current acp
-                sec_policy_containers_list = self.get_security_policy_container_info(security_policy_container_name)
+                # Retrieve the info for the current container
+                current_container = self.return_security_policy_container_objects(security_policy_container_name)
 
-                # loop through the list returned eariler
-                for sec_policy_container in sec_policy_containers_list:
-                    processed_security_policies_containers.append(sec_policy_container.process_container_info())
+                # Check if the current container has parent containers
+                while current_container.is_child_container():
+                    # Retrieve the parent container name
+                    parent_container_name = current_container.get_parent_name()
 
-                return processed_security_policies_containers
-            
+                    try:
+                        # Retrieve the parent container object
+                        parent_container = self.return_security_policy_container_objects(parent_container_name)
+                        # set the current's container parent
+                        current_container.set_parent(parent_container)
+                        # Process the parent container
+                        processed_current_container = current_container.process_container_info()
+                        processed_security_policies_containers.append(processed_current_container)
+
+                        # Set the parent container as the current container for the next iteration
+                        current_container = parent_container
+                    except Exception as e:
+                        helper.logging.error(f"Error retrieving parent container '{parent_container_name}': {e}")
+                        break  # Break out of the loop if there's an error retrieving the parent container
+                else:
+                    processed_current_container = current_container.process_container_info()
+                    processed_security_policies_containers.append(processed_current_container)
             except Exception as err:
                 helper.logging.error(f"Could not retrieve info regarding the security policy container {security_policy_container_name}. Reason: {err}.")
                 print(err)
                 sys.exit(1)
-    
-    def get_security_policies_info_from_device_conn(self, sec_policy_containers_list):
-        """
-        Retrieve information about security policies from the specified policy containers.
 
-        Args:
-            sec_policy_container_list (list): List of security policy container names.
-
-        Returns:
-            list: List of dictionaries containing information about security policies.
-        """
-        # Loop through the policy containers provided by the user
-        helper.logging.debug("Called get_sec_policies_data().")
-        helper.logging.info("################## Importing security policy info configuration ##################.")
-        sec_policy_info = []
-
-        for sec_policy_container in sec_policy_containers_list:
-            helper.logging.info(f"I am processing the security policies of the following container: {sec_policy_container}.")
-            # device specific call
-            try:
-                sec_policies = self.get_security_policies_info(sec_policy_container)
-
-                # Now loop through the policies
-                for sec_policy in sec_policies:
-                    # initialize a security policy object with the info retrieved
-                    # sec_pol_obj = Policy(sec_policy)
-                    # processed_sec_pol_info = sec_pol_obj.process_policy()
-                    # sec_policy_info.aooend(processed_sec_pol_info)
-                    # send it for processing
-
-                    # Retrieve information for each policy
-                    sec_policy_entry = self.process_sec_policy_entry(sec_policy, sec_policy_container)
-                    sec_policy_info.append(sec_policy_entry)
-                
-                return sec_policy_info
-            
-            except Exception as err:
-                helper.logging.error(f"Could not retrieve info regarding the security policy container {sec_policy_container}. Reason: {err}.")
-                print(err)
-                sys.exit(1)
-
+        return processed_security_policies_containers
 
     @abstractmethod
-    def get_security_policy_container_info(self):
+    def return_security_policy_container_objects(self):
         pass
 
     def get_device_version_from_device_conn(self):
@@ -519,10 +496,6 @@ class SecurityDevice:
         select_command = f"SELECT {attribute} FROM general_data_table WHERE security_device_name = %s"
         result = self._database.get_table_value('general_data_table', select_command, (self._name,))
         return result[0][0] if result else None
-
-
-    def set_security_policy_connection(self, security_policy_connection):
-        self._security_policy_connection = security_policy_connection
 
     # the following functions process the data from the database. all the objects are processed, the unique values
     # are gathered and returned in a list that will be further processed by the program
