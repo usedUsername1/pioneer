@@ -40,11 +40,11 @@ class FMCPolicyContainer(SecurityPolicyContainer):
         except KeyError:
             return None
 
+# try/except should stay in setters. 
 class FMCSecurityPolicy(SecurityPolicy):
     def __init__(self, policy_info_fmc) -> None:
         super().__init__(policy_info_fmc)
 
-    # TODO: try/except statements for everything here    
     def set_name(self):
         name = self._policy_info['name']
         return super().set_name(name)
@@ -184,12 +184,50 @@ class FMCSecurityPolicy(SecurityPolicy):
         action = self._policy_info['action']
         return super().set_action(action)
 
-    def extract_zones_info(self, zone_object):
-        zone_name = zone_object['name']
-        return zone_name
-    
+    def extract_object_info(self, raw_object, object_type):
+        match object_type:
+            case 'security_zone':
+                return self.extract_security_zone_object_info(raw_object)
+            
+            case "network_address_object":
+                return self.extract_network_address_object_info(raw_object)
+            
+            case "port_object":
+                return self.extract_port_object_info(raw_object)
+            
+            case "user_object":
+                return self.extract_user_object_info(raw_object)
+            
+            case "schedule_object":
+                return self.extract_schedule_object_info(raw_object)
+            
+            case "url_objects":
+                return self.extract_url_object_info(raw_object)
+            
+            case "l7_app_object":
+                return self.extract_l7_app_object_info(raw_object)
 
-#TODO: maybe modify this class to return a list as well, like return_security_policy_object()
+    def extract_security_zone_object_info(self, security_zone_object):
+        return security_zone_object['name']
+
+    def extract_network_address_object_info(self, network_object):
+        pass
+
+    def extract_port_object_info(self, port_object):
+        pass
+
+    def extract_user_object_info(self, user_object):
+        pass
+
+    def extract_schedule_object_info(self, schedule_object):
+        pass
+
+    def extract_url_object_info(self, url_object):
+        pass
+
+    def extract_l7_app_object_info(self, l7_app_object):
+        pass
+    
 class FMCSecurityDevice(SecurityDevice):
     def __init__(self, name, sec_device_database, security_device_username, security_device_secret, security_device_hostname, security_device_port, domain):
         super().__init__(name, sec_device_database)

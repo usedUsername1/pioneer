@@ -28,7 +28,8 @@ class DeviceObject:
     def get_object_container_name(self):
         return self._object_container_name
     
-
+# should be initialized with a brief ifno variable.
+# the brief info is retrieved from the place where the object is located (in a Security Policy, NAT Policy, etc...)
 class NetworkObject(DeviceObject):
     def __init__(self, name, description, is_overridable, network_address_value, network_address_type) -> None:
         super().__init__(name, description, is_overridable)
@@ -48,5 +49,10 @@ class NetworkGroupObject(DeviceObject):
     
     def get_members(self):
         return self._members
+
+class SecurityZone(DeviceObject):
+    def __init__(self, name, description, is_overridable, object_container_name=None) -> None:
+        super().__init__(name, description, is_overridable, object_container_name)
+
 
     

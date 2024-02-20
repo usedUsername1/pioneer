@@ -245,6 +245,7 @@ def main():
                 # do I keep this like this? or do i modify it to respect the new code better?
                 sec_policy_data = SpecificSecurityDeviceObject.get_security_policy_info_from_device_conn(passed_container_names_list)
                 # print(sec_policy_data)
+                print(sec_policy_data)
                 return
                 helper.logging.info("\n################## EXTRACTED INFO FROM THE SECURITY POLICIES, INSERTING IN THE DATABASE. ##################")
                 # at this point, the data from all the security policies is extracted, it is time to insert it into the database
