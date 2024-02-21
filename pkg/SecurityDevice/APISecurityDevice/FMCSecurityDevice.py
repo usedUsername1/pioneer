@@ -40,7 +40,6 @@ class FMCPolicyContainer(SecurityPolicyContainer):
         except KeyError:
             return None
 
-# try/except should stay in setters. 
 class FMCSecurityPolicy(SecurityPolicy):
     def __init__(self, policy_info_fmc) -> None:
         super().__init__(policy_info_fmc)
@@ -67,21 +66,21 @@ class FMCSecurityPolicy(SecurityPolicy):
 
     def set_source_zones(self):
         try:
-            source_zones = self._policy_info['sourceZones']['objects']
+            source_zones = [self._policy_info['sourceZones']]
         except KeyError:
             source_zones = ['any']
         return super().set_source_zones(source_zones)
 
     def set_destination_zones(self):
         try:
-            destination_zones = self._policy_info['destinationZones']['objects']
+            destination_zones = [self._policy_info['destinationZones']]
         except KeyError:
             destination_zones = ['any']
         return super().set_destination_zones(destination_zones)
 
     def set_source_networks(self):
         try:
-            source_networks = self._policy_info['sourceNetworks']['objects']
+            source_networks = [self._policy_info['sourceNetworks']]
         except KeyError:
             helper.logging.info("It looks like there are no explicit source networks defined on this policy.")
             source_networks = ['any']
@@ -89,7 +88,7 @@ class FMCSecurityPolicy(SecurityPolicy):
 
     def set_destination_networks(self):
         try:
-            destination_networks = self._policy_info['destinationNetworks']['objects']
+            destination_networks = [self._policy_info['destinationNetworks']]
         except KeyError:
             helper.logging.info("It looks like there are no explicit destination networks defined on this policy.")
             destination_networks = ['any']
@@ -97,7 +96,7 @@ class FMCSecurityPolicy(SecurityPolicy):
 
     def set_source_ports(self):
         try:
-            source_ports = self._policy_info['sourcePorts']['objects']
+            source_ports = [self._policy_info['sourcePorts']]
         except KeyError:
             helper.logging.info("It looks like there are no explicit source ports defined on this policy.")
             source_ports = ['any']
@@ -105,7 +104,7 @@ class FMCSecurityPolicy(SecurityPolicy):
 
     def set_destination_ports(self):
         try:
-            destination_ports = self._policy_info['destinationPorts']['objects']
+            destination_ports = [self._policy_info['destinationPorts']]
         except KeyError:
             helper.logging.info("It looks like there are no explicit destination ports defined on this policy.")
             destination_ports = ['any']
@@ -113,7 +112,7 @@ class FMCSecurityPolicy(SecurityPolicy):
 
     def set_schedule_objects(self):
         try:
-            schedule_objects = self._policy_info['timeRangeObjects']
+            schedule_objects = [self._policy_info['timeRangeObjects']]
         except KeyError:
             helper.logging.info("It looks like there are no explicit schedule objects defined on this policy.")
             schedule_objects = ['any']
@@ -121,7 +120,7 @@ class FMCSecurityPolicy(SecurityPolicy):
 
     def set_users(self):
         try:
-            users = self._policy_info['users']
+            users = [self._policy_info['users']]
         except KeyError:
             helper.logging.info("It looks like there are no explicit users defined on this policy.")
             users = ['any']
@@ -129,7 +128,7 @@ class FMCSecurityPolicy(SecurityPolicy):
 
     def set_urls(self):
         try:
-            urls = self._policy_info['urls']
+            urls = [self._policy_info['urls']]
         except KeyError:
             helper.logging.info("It looks like there are no explicit URLs defined on this policy.")
             urls = ['any']
@@ -137,7 +136,7 @@ class FMCSecurityPolicy(SecurityPolicy):
 
     def set_policy_apps(self):
         try:
-            policy_apps = self._policy_info['applications']
+            policy_apps = [self._policy_info['applications']]
         except KeyError:
             helper.logging.info("It looks like there are no explicit applications defined on this policy.")
             policy_apps = ['any']
@@ -153,7 +152,7 @@ class FMCSecurityPolicy(SecurityPolicy):
 
     def set_comments(self):
         try:
-            comments = self._policy_info['commentHistoryList']
+            comments = [self._policy_info['commentHistoryList']]
         except KeyError:
             helper.logging.info("It looks like there are no comments defined on this policy.")
             comments = None
@@ -186,48 +185,304 @@ class FMCSecurityPolicy(SecurityPolicy):
 
     def extract_object_info(self, raw_object, object_type):
         match object_type:
-            case 'security_zone':
-                return self.extract_security_zone_object_info(raw_object)
-            
-            case "network_address_object":
-                return self.extract_network_address_object_info(raw_object)
-            
-            case "port_object":
-                return self.extract_port_object_info(raw_object)
-            
-            case "user_object":
-                return self.extract_user_object_info(raw_object)
-            
-            case "schedule_object":
-                return self.extract_schedule_object_info(raw_object)
-            
-            case "url_objects":
-                return self.extract_url_object_info(raw_object)
-            
-            case "l7_app_object":
-                return self.extract_l7_app_object_info(raw_object)
+            # case 'security_zone':
+            #     return self.extract_security_zone_object_info(raw_object)
+            # case 'network_address_object':
+            #     return self.extract_network_address_object_info(raw_object)
+            # case 'port_object':
+            #     return self.extract_port_object_info(raw_object)
+            # case 'user_object':
+            #     return self.extract_user_object_info(raw_object)
+            # case 'schedule_object':
+            #     return self.extract_schedule_object_info(raw_object)
+            # case 'url_object':
+            #     return self.extract_url_object_info(raw_object)
+            # case 'l7_app_object':
+            #     return self.extract_l7_app_object_info(raw_object)
+            case 'comment':
+                return self.extract_comments(raw_object)
+                
 
-    def extract_security_zone_object_info(self, security_zone_object):
-        return security_zone_object['name']
+    def extract_security_zone_object_info(self, security_zone_object_info):
+        helper.logging.debug("Called extract_security_zone_object_info()")
+        extracted_security_zones = []
+        for security_zone_entry in security_zone_object_info['objects']:
+            extracted_security_zones.append(security_zone_entry['name'])
+        
+        return extracted_security_zones
+        
+    def extract_network_address_object_info(self, network_object_info):
+        helper.logging.debug("Called extract_network_address_object_info()")
+        # network_object object could be a proper object or a network literal
+        extracted_member_network_objects = []
+        try:
+            # log that you found objects
+            network_object_info_objects = network_object_info['objects']
 
-    def extract_network_address_object_info(self, network_object):
-        pass
+            # loop through all the found member objects, extract the info and add it to the list that will be returned to the caller
+            for network_object_entry in network_object_info_objects:
+                network_object_name = network_object_entry['name']
+                network_object_type = network_object_entry['type']
+                if network_object_type == 'Country':
+                    network_object_name = network_object_entry['id'] + "‽" + network_object_name
+                extracted_member_network_objects.append(network_object_name)
+        except KeyError:
+            helper.logging.info(f"It looks like there are no network objects on this policy.")
 
-    def extract_port_object_info(self, port_object):
-        pass
-
-    def extract_user_object_info(self, user_object):
-        pass
-
-    def extract_schedule_object_info(self, schedule_object):
-        pass
-
-    def extract_url_object_info(self, url_object):
-        pass
-
-    def extract_l7_app_object_info(self, l7_app_object):
-        pass
+        try:
+            helper.logging.info(f"I am looking for literals.")
+            # log info that you found literals
+            network_literals = network_object_info['literals']
+            helper.logging.debug(f"Literals found {network_literals}.")
+            extracted_member_network_objects += self.convert_network_literals_to_objects(network_literals)
+        except KeyError:
+            helper.logging.info(f"It looks like there are no network literals on this policy.")
+        
+        return extracted_member_network_objects
     
+    def extract_port_object_info(self, port_object_info):
+        port_objects_list = []
+        try:
+            port_object_info_objects = port_object_info['objects']
+            # Process each port object
+            for port_object_entry in port_object_info_objects:
+                port_object_name = port_object_entry['name']
+                port_objects_list.append(port_object_name)
+        except KeyError:
+            helper.logging.info(f"It looks like there are no port objects on this policy.")
+        
+        try:
+            helper.logging.info(f"I am looking for port literals...")
+            port_literals = port_object_info['literals']
+            helper.logging.info(f"I have found literals.")
+            helper.logging.info(f"Port literals found: {port_literals}.")
+            # Process each port literal using the convert_port_literals_to_objects function
+            port_objects_list += self.convert_port_literals_to_objects(port_literals)
+        except KeyError:
+            helper.logging.info(f"It looks like there are no port literals on this policy.")
+
+    def extract_user_object_info(self, user_object_info):
+        helper.logging.debug("Called extract_user_object_info()")
+        extracted_user_objects = []
+
+        for user_object_entry in user_object_info['objects']:
+            user_object_name = user_object_entry['name']
+            user_object_processed_entry = user_object_entry['type'] + "‽" + user_object_name
+            extracted_user_objects.append(user_object_processed_entry)
+        
+        return extracted_user_objects
+    
+    def extract_schedule_object_info(self, schedule_object_info):
+        helper.logging.debug("Called extract_schedule_object_info()")
+        extracted_schedule_objects = []
+
+        for schedule_object_entry in schedule_object_info['objects']:
+            schedule_object_name = schedule_object_entry['name']
+            extracted_schedule_objects.append(schedule_object_name)
+        
+        return extracted_schedule_objects
+
+    # there are three cases which need to be processed here. the url can be an object, a literal, or a category with reputation
+    def extract_url_object_info(self, url_object_info):
+        policy_url_objects_list = []
+        try:
+            policy_url_objects = url_object_info['objects']
+            for policy_url_object in policy_url_objects:
+                policy_url_object_name = policy_url_object['name']
+                policy_url_objects_list.append(policy_url_object_name)
+
+        except KeyError:
+            helper.logging.info("It looks like there are no URL objects on this policy.")
+
+        try:
+            policy_url_literals = url_object_info['literals']
+            for policy_url_literal in policy_url_literals:
+                helper.logging.debug(f"Processing policy URL literal: {policy_url_literal}.")
+                policy_url_literal_value = policy_url_literal['url']
+                helper.logging.info(f"Processed policy URL literal: {policy_url_literal_value}.")
+                policy_url_objects_list.append(policy_url_literal_value)
+
+        except KeyError:
+            helper.logging.info("It looks like there are no URL literals on this policy.")
+
+        try:
+            policy_url_categories = url_object_info['urlCategoriesWithReputation']
+            for policy_url_category in policy_url_categories:
+                helper.logging.debug(f"Processing policy URL category: {policy_url_category}.")
+                category_name = policy_url_category['category']['name']
+
+                category_reputation = policy_url_category['reputation']
+                helper.logging.info(f"Processed policy URL category: {category_name}. It has a reputation of {category_reputation}")
+
+                category_name = f"URL_CATEGORY‽{category_name}‽{category_reputation}"
+
+                policy_url_objects_list.append(category_name)
+
+        except KeyError:
+            helper.logging.info("It looks like there are no URL categories on this policy.")
+
+        return policy_url_objects_list
+    
+    def extract_l7_app_object_info(self, l7_app_object_info):
+        policy_l7_apps_list = []
+
+        try:
+            policy_l7_apps = l7_app_object_info['applications']
+            for policy_l7_app in policy_l7_apps:
+                policy_l7_name = 'APP' + "‽" + policy_l7_app['name']
+                policy_l7_apps_list.append(policy_l7_name)
+
+        except KeyError:
+            helper.logging.info("It looks like there are no L7 apps on this policy.")
+
+        try:
+            helper.logging.info("I am looking for L7 applications filters on this policy.")
+            policy_l7_app_filters = l7_app_object_info['applicationFilters']
+            helper.logging.debug(f"Found L7 app filters: {policy_l7_app_filters}")
+
+            for policy_l7_app_filter in policy_l7_app_filters:
+                helper.logging.debug(f"Processing policy L7 app filter: {policy_l7_app_filter}.")
+                policy_l7_app_filter_name = 'APP_FILTER' + "‽" + policy_l7_app_filter['name']
+                helper.logging.info(f"Processed policy L7 app filter: {policy_l7_app_filter_name}.")
+                policy_l7_apps_list.append(policy_l7_app_filter_name)
+
+        except KeyError:
+            helper.logging.info("It looks like there are no L7 application filters on this policy.")
+
+        try:
+            # Access the Inline L7 application filters from the 'sec_policy' dictionary
+            policy_inline_l7_app_filters = l7_app_object_info['inlineApplicationFilters']
+
+            helper.logging.info(f"I have found L7 inline app filters on this policy.)")
+            helper.logging.debug(f"Found L7 inline app filters on this policy: {policy_inline_l7_app_filters}")
+
+            # Iterate over each dictionary in 'policy_inline_l7_app_filters' list.
+            # I have no idea what the fuck me and chatGPT did here, but it works very fine!
+            for index in range(len(policy_inline_l7_app_filters)):
+                # Iterate over each key/category in the current Inline L7 application filter dictionary.
+                for policy_inline_l7_app_filter_key, policy_inline_l7_app_filter_elements in policy_inline_l7_app_filters[index].items():
+                    # Skip any non-list elements
+                    if not isinstance(policy_inline_l7_app_filter_elements, list):
+                        continue
+
+                    # Create a list to store the names of filter elements in the current category
+                    # TODO: modify this so that " " are not present
+                    filter_element_names = [f"inlineApplicationFilters‽{policy_inline_l7_app_filter_key}‽{policy_inline_l7_app_filter_element['name']}" for policy_inline_l7_app_filter_element in policy_inline_l7_app_filter_elements]
+
+                    # Append the list of filter element names to the 'policy_l7_apps_list'
+                    policy_l7_apps_list.extend(filter_element_names)
+
+        except KeyError:
+            helper.logging.info("It looks like there are no Inline L7 application filters on this policy.")
+
+        return policy_l7_apps_list
+
+    def extract_comments(self, comment_info):
+        print("EXTRACTING COMMENTS")
+        helper.logging.debug("Called extract_comments()")
+        processed_comment_list = []
+
+        for comment_entry in comment_info:
+            comment_user = comment_entry['user']['name']
+            comment_content = comment_entry['comment']
+            processed_comment_list.append({'user': comment_user, 'content': comment_content})
+
+        helper.logging.debug(f"Finished processing comments. This is the list: {processed_comment_list}.")
+        return processed_comment_list
+    
+    #TODO: might need this in other places as well, maybe move it to another class
+    def convert_network_literals_to_objects(self, network_literals):
+        helper.logging.debug("Called convert_network_literals_to_objects().")
+        """
+        Convert network literals to objects.
+
+        Args:
+            network_literals (list): List of network literals.
+
+        Returns:
+            list: List of network object names.
+        """
+        network_objects_list = []
+
+        # Loop through the network literals.
+        for network_literal in network_literals:
+            helper.logging.debug(f"Converting literal {network_literal} to object.")
+            # Extract the value of the network literal
+            literal_value = network_literal['value']
+
+            # Extract the type of the network literal. Can be either "Host" or "Network"
+            # The name of the converted object will depend on the network literal type
+            literal_type = network_literal['type']
+
+            # The literal type can be either a host or a network
+            if literal_type == 'Network':
+                helper.logging.debug(f"{network_literal} is of type Network.")
+                # Define the CIDR notation IP address
+                ip_cidr = literal_value
+
+                # Create an IPv4 network object
+                network = ipaddress.ip_network(ip_cidr, strict=False)
+
+                # Extract the network address and netmask
+                network_address = network.network_address
+                netmask = str(network.prefixlen)  # Extract the prefix length instead of the full netmask
+
+            elif literal_type == 'Host':
+                helper.logging.debug(f"{network_literal} is of type Host.")
+                netmask = '32'
+                network_address = literal_value  # Assuming literal_value is the host address
+
+            else:
+                helper.logging.debug(f"Cannot determine type of {network_literal}. Presented type is {literal_type}.")
+                continue
+
+            # Create the name of the object (NL_networkaddress_netmask)
+            network_object_name = "NL_" + str(network_address) + "_" + str(netmask)
+            helper.logging.debug(f"Converted network literal {network_literal} to object {network_object_name}.")
+            network_objects_list.append(network_object_name)
+        
+        helper.logging.debug(f"Finished converting all literals to objects. This is the list with converted literals {network_objects_list}.")
+        return network_objects_list
+
+    # this too
+    def convert_port_literals_to_objects(self, port_literals):
+        helper.logging.debug("Called convert_port_literals_to_objects().")
+        """
+        Convert port literals to objects.
+
+        Args:
+            port_literals (list): List of port literals.
+
+        Returns:
+            list: List of port object names.
+        """
+        port_objects_list = []
+
+        # Process each port literal
+        for port_literal in port_literals:
+            literal_protocol = port_literal['protocol']
+
+            # Handle ICMP literals separately
+            if literal_protocol in ["1", "58"]:
+                helper.logging.info(f"I have encountered an ICMP literal: {port_literal['type']}.")
+                literal_port_nr = port_literal['icmpType']
+            else:
+                literal_port_nr = port_literal['port']
+
+            # Convert protocol number to a known IANA keyword
+            try:
+                literal_protocol_keyword = helper.protocol_number_to_keyword(literal_protocol)
+            except PioneerExceptions.UnknownProtocolNumber:
+                helper.logging.error(f"Protocol number: {literal_protocol} cannot be converted to a known IANA keyword.")
+                continue
+
+            # Create the name of the port object
+            port_object_name = f"PL_{literal_protocol_keyword}_{literal_port_nr}"
+            port_objects_list.append(port_object_name)
+
+        helper.logging.debug(f"Finished converting all literals to objects. This is the list with converted literals {port_objects_list}.")
+        return port_objects_list
+
 class FMCSecurityDevice(SecurityDevice):
     def __init__(self, name, sec_device_database, security_device_username, security_device_secret, security_device_hostname, security_device_port, domain):
         super().__init__(name, sec_device_database)
@@ -316,445 +571,6 @@ class FMCSecurityDevice(SecurityDevice):
         helper.logging.debug(f"Executed API call to the FMC device, got the following info {device_system_info}.")
         device_version = device_system_info[0]['serverVersion']
         return device_version
-
-    def convert_network_literals_to_objects(self, network_literals):
-        helper.logging.debug("Called convert_network_literals_to_objects().")
-        """
-        Convert network literals to objects.
-
-        Args:
-            network_literals (list): List of network literals.
-
-        Returns:
-            list: List of network object names.
-        """
-        network_objects_list = []
-
-        # Loop through the network literals.
-        for network_literal in network_literals:
-            helper.logging.debug(f"Converting literal {network_literal} to object.")
-            # Extract the value of the network literal
-            literal_value = network_literal['value']
-
-            # Extract the type of the network literal. Can be either "Host" or "Network"
-            # The name of the converted object will depend on the network literal type
-            literal_type = network_literal['type']
-
-            # The literal type can be either a host or a network
-            if literal_type == 'Network':
-                helper.logging.debug(f"{network_literal} is of type Network.")
-                # Define the CIDR notation IP address
-                ip_cidr = literal_value
-
-                # Create an IPv4 network object
-                network = ipaddress.ip_network(ip_cidr, strict=False)
-
-                # Extract the network address and netmask
-                network_address = network.network_address
-                netmask = str(network.prefixlen)  # Extract the prefix length instead of the full netmask
-
-            elif literal_type == 'Host':
-                helper.logging.debug(f"{network_literal} is of type Host.")
-                netmask = '32'
-                network_address = literal_value  # Assuming literal_value is the host address
-
-            else:
-                helper.logging.debug(f"Cannot determine type of {network_literal}. Presented type is {literal_type}.")
-                continue
-
-            # Create the name of the object (NL_networkaddress_netmask)
-            network_object_name = "NL_" + str(network_address) + "_" + str(netmask)
-            helper.logging.debug(f"Converted network literal {network_literal} to object {network_object_name}.")
-            network_objects_list.append(network_object_name)
-        
-        helper.logging.debug(f"Finished converting all literals to objects. This is the list with converted literals {network_objects_list}.")
-        return network_objects_list
-
-    #TODO: in order to add support for geolocation processing, combine the ID of the country to the name of the objects
-    #TODO: make sure that something didn't get fucked up regarding the extraction of objects
-    def extract_network_objects(self, sec_policy, network_object_type):
-        helper.logging.debug("Called extract_network_objects()")
-        """
-        Process network objects and literals defined in the security policy.
-
-        Args:
-            sec_policy (dict): Security policy information.
-            network_object_type (str): Type of network objects ('sourceNetworks' or 'destinationNetworks').
-
-        Returns:
-            list: List of network object names.
-        """
-        helper.logging.info("################## NETWORK ADDRESS PROCESSING.##################")
-        network_objects_list = []
-
-        # Check for objects
-        try:
-            helper.logging.info(f"I am looking for {network_object_type} objects.")
-            network_objects = sec_policy[network_object_type]['objects']
-            helper.logging.info(f"I have found {network_object_type} objects on the policy.")
-            helper.logging.debug(f"Objects found {network_objects}.")
-            for network_object in network_objects:
-                network_object_name = network_object['name']
-                network_object_type = network_object['type']
-                if network_object_type == 'Country':
-                    network_object_name = network_object['id'] + "‽" + network_object_name
-                network_objects_list.append(network_object_name)
-        except KeyError:
-            helper.logging.info(f"It looks like there are no {network_object_type} objects on this policy.")
-
-        # Check for literals
-        try:
-            helper.logging.info(f"I am looking for {network_object_type} literals.")
-            network_literals = sec_policy[network_object_type]['literals']
-            helper.logging.info(f"I have found {network_object_type} literals. These are: {network_literals}.")
-            helper.logging.debug(f"Literals found {network_literals}.")
-            network_objects_list += self.convert_network_literals_to_objects(network_literals)
-        except KeyError:
-            helper.logging.info(f"It looks like there are no {network_object_type} literals on this policy.")
-
-        # Append 'any' only if neither objects nor literals are found
-        if not network_objects_list:
-            helper.logging.info(f"There are no {network_object_type} objects/literals on this policy.")
-            network_objects_list.append('any')
-
-        helper.logging.debug(f"Finished processing all the network objects. This is the list with the processed objects {network_objects_list}.")
-        return network_objects_list
-
-    def convert_port_literals_to_objects(self, port_literals):
-        helper.logging.debug("Called convert_port_literals_to_objects().")
-        """
-        Convert port literals to objects.
-
-        Args:
-            port_literals (list): List of port literals.
-
-        Returns:
-            list: List of port object names.
-        """
-        port_objects_list = []
-
-        # Process each port literal
-        for port_literal in port_literals:
-            literal_protocol = port_literal['protocol']
-
-            # Handle ICMP literals separately
-            if literal_protocol in ["1", "58"]:
-                helper.logging.info(f"I have encountered an ICMP literal: {port_literal['type']}.")
-                literal_port_nr = port_literal['icmpType']
-            else:
-                literal_port_nr = port_literal['port']
-
-            # Convert protocol number to a known IANA keyword
-            try:
-                literal_protocol_keyword = helper.protocol_number_to_keyword(literal_protocol)
-            except PioneerExceptions.UnknownProtocolNumber:
-                helper.logging.error(f"Protocol number: {literal_protocol} cannot be converted to a known IANA keyword.")
-                continue
-
-            # Create the name of the port object
-            port_object_name = f"PL_{literal_protocol_keyword}_{literal_port_nr}"
-            port_objects_list.append(port_object_name)
-
-        helper.logging.debug(f"Finished converting all literals to objects. This is the list with converted literals {port_objects_list}.")
-        return port_objects_list
-
-    def extract_port_objects(self, sec_policy, port_object_type):
-        helper.logging.debug("Called extract_port_objects()")
-        """
-        Process port objects and literals defined in the security policy.
-
-        Args:
-            sec_policy (dict): Security policy information.
-            port_object_type (str): Type of port objects ('sourcePorts' or 'destinationPorts').
-
-        Returns:
-            list: List of port object names.
-        """
-        helper.logging.info("################## PORT OBJECTS PROCESSING ##################")
-        port_objects_list = []
-        found_objects_or_literals = False
-
-        # Check for objects in the security policy
-        try:
-            helper.logging.info(f"I am looking for {port_object_type} objects...")
-            port_objects = sec_policy[port_object_type]['objects']
-            helper.logging.info(f"I have found {port_object_type} objects.")
-            helper.logging.debug(f"Port objects found: {port_objects}.")
-
-            # Process each port object
-            for port_object in port_objects:
-                port_object_name = port_object['name']
-                port_objects_list.append(port_object_name)
-            found_objects_or_literals = True
-
-        except KeyError:
-            helper.logging.info(f"It looks like there are no {port_object_type} objects on this policy.")
-
-        # Check for literal values in the security policy
-        try:
-            helper.logging.info(f"I am looking for {port_object_type} literals...")
-            port_literals = sec_policy[port_object_type]['literals']
-            helper.logging.info(f"I have found {port_object_type} literals.")
-            helper.logging.info(f"Port literals found: {port_literals}.")
-            found_objects_or_literals = True
-
-            # Process each port literal using the convert_port_literals_to_objects function
-            port_objects_list += self.convert_port_literals_to_objects(port_literals)
-
-        except KeyError:
-            helper.logging.info(f"It looks like there are no {port_object_type} literals on this policy.")
-
-        # Append 'any' only if neither objects nor literals are found
-        if not found_objects_or_literals:
-            helper.logging.info(f"There are no {port_object_type} objects/literals on this policy.")
-            port_objects_list.append('any')
-
-        helper.logging.debug(f"Finished processing all the port objects. This is the list with the processed objects {port_objects_list}.")
-        return port_objects_list
-
-    #TODO: track them in reports, not in logging!
-    def extract_schedule_objects(self, sec_policy):
-        schedule_logger = helper.logging.getLogger('policies_with_schedule')
-        helper.logging.debug("Called extract_schedule_objects()")
-        """
-        Process schedule objects defined in the security policy.
-
-        Args:
-            sec_policy (dict): Security policy information.
-
-        Returns:
-            list: List of schedule object names.
-        """
-        helper.logging.info("################## SCHEDULE OBJECTS PROCESSING ##################")
-        schedule_object_list = []
-
-        try:
-            schedule_objects = sec_policy['timeRangeObjects']
-            helper.logging.info("I found schedule objects on this policy.")
-            helper.logging.debug(f"Found schedule objects are: {schedule_objects}.")
-
-            # Loop through the schedule objects
-            for schedule_object in schedule_objects:
-                helper.logging.debug(f"Processing schedule object: {schedule_object}.")
-                # Retrieve the schedule object name
-                schedule_object_name = schedule_object['name']
-                helper.logging.info(f"Processed schedule object {schedule_object_name}.")
-
-                # Append it to the list
-                schedule_object_list.append(schedule_object_name)
-                helper.logging.debug(f"I am done processing {schedule_object}. I have extracted the following data: name: {schedule_object_name}")
-
-            schedule_logger.info(f"Security policy: {sec_policy['name']} in container: {sec_policy['metadata']['accessPolicy']['name']}, has the following schedule objects: {schedule_object_list}.")
-
-        except KeyError:
-            helper.logging.info(f"It looks like there are no schedule objects defined on this policy.")
-            # If there are no schedules defined on the policy, then return 'any'
-            schedule_object_list = ['any']
-
-        helper.logging.debug(f"Finished processing all the schedule objects. This is the list with the processed objects {schedule_object_list}.")
-        return schedule_object_list
-
-    # TODO: do i need to extract also the realm of the user here?
-    def extract_policy_users(self, sec_policy):
-        """
-        Process policy users defined in the security policy.
-
-        Args:
-            sec_policy (dict): Security policy information.
-
-        Returns:
-            list: List of policy user names.
-        """
-        helper.logging.debug("Called extract_policy_users()")
-        helper.logging.info("################## USERS POLICY PROCESSING ##################")
-        policy_user_list = []
-
-        try:
-            helper.logging.info("I am looking for policy users...")
-            policy_users = sec_policy['users']['objects']
-            helper.logging.info(f"I have found policy users on this policy.")
-            helper.logging.debug(f"Found policy users: {policy_users}.")
-
-            # Loop through the policy user objects
-            for policy_user_object in policy_users:
-                helper.logging.debug(f"Processing policy user object: {policy_user_object}.")
-                # Retrieve the policy user name
-                policy_user_name = policy_user_object['name']
-                helper.logging.info(f"Processed policy user object {policy_user_name}.")
-
-                policy_user_entry = policy_user_object['type'] + "‽" + policy_user_name
-                # Append it to the list
-                policy_user_list.append(policy_user_entry)
-                helper.logging.debug(f"I am done processing {policy_user_object}. I have extracted the following data: name: {policy_user_name}, type: {policy_user_object['type']}")
-
-        except KeyError:
-            helper.logging.info("It looks like there are no policy users defined on this policy.")
-            # If there are no users defined on the policy, then return 'any'
-            policy_user_list = ['any']
-
-        helper.logging.debug(f"Finished processing all the users. This is the list with the processed objects {policy_user_list}.")
-        return policy_user_list
-
-    # there are three cases which need to be processed here. the url can be an object, a literal, or a category with reputation
-
-    def extract_policy_urls(self, sec_policy):
-        """
-        Process policy URLs defined in the security policy.
-
-        Args:
-            sec_policy (dict): Security policy information.
-
-        Returns:
-            list: List of policy URL names, literals, or categories.
-        """
-        helper.logging.debug("Called extract_policy_urls().")
-        helper.logging.info("################## URL PROCESSING ##################S")
-
-        policy_url_list = []
-        found_objects_or_literals = False
-
-        try:
-            policy_url_objects = sec_policy['urls']['objects']
-            helper.logging.info("I have found URL objects on the policy.")
-            helper.logging.debug(f"Found policy URLs {policy_url_objects}.")
-
-            for policy_url_object in policy_url_objects:
-                helper.logging.debug(f"Processing policy URL object: {policy_url_object}.")
-                policy_url_object_name = policy_url_object['name']
-                helper.logging.info(f"Processed policy URL object {policy_url_object_name}.")
-                policy_url_list.append(policy_url_object_name)
-
-            found_objects_or_literals = True
-
-        except KeyError:
-            helper.logging.info("It looks like there are no URL objects on this policy.")
-
-        try:
-            policy_url_literals = sec_policy['urls']['literals']
-            helper.logging.info("I have found URL literals on the policy.")
-            helper.logging.debug(f"Found policy URL literals: {policy_url_literals}.")
-
-            for policy_url_literal in policy_url_literals:
-                helper.logging.debug(f"Processing policy URL literal: {policy_url_literal}.")
-                policy_url_literal_value = policy_url_literal['url']
-                helper.logging.info(f"Processed policy URL literal: {policy_url_literal_value}.")
-                policy_url_list.append(policy_url_literal_value)
-
-            found_objects_or_literals = True
-
-        except KeyError:
-            helper.logging.info("It looks like there are no URL literals on this policy.")
-
-        try:
-            policy_url_categories = sec_policy['urls']['urlCategoriesWithReputation']
-            helper.logging.info("I have found URL categories on the policy.")
-            helper.logging.debug(f"Found policy URL categories: {policy_url_categories}.")
-            found_objects_or_literals = True
-
-            for policy_url_category in policy_url_categories:
-                helper.logging.debug(f"Processing policy URL category: {policy_url_category}.")
-                category_name = policy_url_category['category']['name']
-
-                category_reputation = policy_url_category['reputation']
-                helper.logging.info(f"Processed policy URL category: {category_name}. It has a reputation of {category_reputation}")
-
-                category_name = f"URL_CATEGORY‽{category_name}‽{category_reputation}"
-
-                policy_url_list.append(category_name)
-
-            found_objects_or_literals = True
-
-        except KeyError:
-            helper.logging.info("It looks like there are no URL categories on this policy.")
-
-        # Append 'any' only if neither objects nor literals are found
-        if not found_objects_or_literals:
-            helper.logging.info("It looks like there are no URL objects on this policy.")
-            policy_url_list.append('any')
-
-        helper.logging.debug(f"Finished processing all URL objects. This is the list with the processed objects {policy_url_list}.")
-        return policy_url_list
-
-    #TODO: remove the quotes from inline filters when chatGPT is back online
-    def extract_policy_apps(self, sec_policy):
-        """
-        Process Layer 7 (L7) applications defined in the security policy.
-
-        Args:
-            sec_policy (dict): Security policy information.
-
-        Returns:
-            list: List of Layer 7 application names.
-        """
-        helper.logging.info("################## L7 APPLICATION PROCESSING ##################")
-        policy_l7_apps_list = []
-        found_objects_or_literals = False
-
-        try:
-            policy_l7_apps = sec_policy['applications']['applications']
-            helper.logging.info(f"I have found L7 apps on this policy.)")
-            helper.logging.debug(f"Found L7 apps: {policy_l7_apps}")
-
-            for policy_l7_app in policy_l7_apps:
-                helper.logging.debug(f"Processing policy L7 app: {policy_l7_app}.")
-                policy_l7_name = 'APP' + "‽" + policy_l7_app['name']
-                helper.logging.info(f"Processed policy L7 app: {policy_l7_name}.")
-                policy_l7_apps_list.append(policy_l7_name)
-
-            found_objects_or_literals = True
-
-        except KeyError:
-            helper.logging.info("It looks like there are no L7 apps on this policy.")
-
-        try:
-            helper.logging.info("I am looking for L7 applications filters on this policy.")
-            policy_l7_app_filters = sec_policy['applications']['applicationFilters']
-            helper.logging.debug(f"Found L7 app filters: {policy_l7_app_filters}")
-
-            for policy_l7_app_filter in policy_l7_app_filters:
-                helper.logging.debug(f"Processing policy L7 app filter: {policy_l7_app_filter}.")
-                policy_l7_app_filter_name = 'APP_FILTER' + "‽" + policy_l7_app_filter['name']
-                helper.logging.info(f"Processed policy L7 app filter: {policy_l7_app_filter_name}.")
-                policy_l7_apps_list.append(policy_l7_app_filter_name)
-
-            found_objects_or_literals = True
-
-        except KeyError:
-            helper.logging.info("It looks like there are no L7 application filters on this policy.")
-
-        try:
-            # Access the Inline L7 application filters from the 'sec_policy' dictionary
-            policy_inline_l7_app_filters = sec_policy['applications']['inlineApplicationFilters']
-
-            helper.logging.info(f"I have found L7 inline app filters on this policy.)")
-            helper.logging.debug(f"Found L7 inline app filters on this policy: {policy_inline_l7_app_filters}")
-
-            # Iterate over each dictionary in 'policy_inline_l7_app_filters' list.
-            # I have no idea what the fuck me and chatGPT did here, but it works very fine!
-            for index in range(len(policy_inline_l7_app_filters)):
-                # Iterate over each key/category in the current Inline L7 application filter dictionary.
-                for policy_inline_l7_app_filter_key, policy_inline_l7_app_filter_elements in policy_inline_l7_app_filters[index].items():
-                    # Skip any non-list elements
-                    if not isinstance(policy_inline_l7_app_filter_elements, list):
-                        continue
-
-                    # Create a list to store the names of filter elements in the current category
-                    # TODO: modify this so that " " are not present
-                    filter_element_names = [f"inlineApplicationFilters‽{policy_inline_l7_app_filter_key}‽{policy_inline_l7_app_filter_element['name']}" for policy_inline_l7_app_filter_element in policy_inline_l7_app_filter_elements]
-
-                    # Append the list of filter element names to the 'policy_l7_apps_list'
-                    policy_l7_apps_list.extend(filter_element_names)
-
-            found_objects_or_literals = True
-
-        except KeyError:
-            helper.logging.info("It looks like there are no Inline L7 application filters on this policy.")
-
-        if not found_objects_or_literals:
-            helper.logging.info("It looks like there are no Layer 7 applications or app filters or inline filters this policy.")
-
-        helper.logging.debug(f"Finished processing Layer 7 applications. This is the list: {policy_l7_apps_list}")
-        return policy_l7_apps_list
     
     # TODO: process comments, don't return them as dict, maybe as list with user_comment
     def extract_policy_comments(self, sec_policy):
@@ -792,8 +608,6 @@ class FMCSecurityDevice(SecurityDevice):
         helper.logging.debug(f"Finished processing comments. This is the list: {comments_list}.")
         return comments_list
     
-    # def get_zone_objects_info(self):
-    #     pass
 
     def process_network_literals(self, network_address_literals):
         """

@@ -430,6 +430,12 @@ if __name__ == "__main__":
 # DEVICE CREATION:
     # catch the error when the device database is already created and prevent it from overwriting the log file!
 
+
+# CODE DOCUMENTATION:
+    # Document the getters, setters, processor functions, extractor functions and how they work together
+    # document all the flow of the code
+
+
 # FIRST MILESTONE: perform a full migration of L4 firewall rules (without the migration of users) from FMC to PANMC
 # SECOND MILESTONE: add support for migrating users as well
 # THIRD MILESTONE: add IPv6 support for the firewall rules
