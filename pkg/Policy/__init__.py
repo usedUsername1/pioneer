@@ -304,7 +304,7 @@ class Policy:
             # Log information message indicating no explicit object defined, defaulting to 'any'
             helper.logging.info(f"No explicit {object_type} defined for flow {flow_direction} in this policy.")
             # Return a list containing only 'any'
-            return ['any']
+            return ['any'] if raw_objects == ['any'] else None
         else:
             # Log information message indicating the presence of defined objects for the specified object type and flow direction
             helper.logging.info(f"Found {object_type} objects defined for flow {flow_direction} in this policy.")

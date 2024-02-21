@@ -185,20 +185,20 @@ class FMCSecurityPolicy(SecurityPolicy):
 
     def extract_object_info(self, raw_object, object_type):
         match object_type:
-            # case 'security_zone':
-            #     return self.extract_security_zone_object_info(raw_object)
-            # case 'network_address_object':
-            #     return self.extract_network_address_object_info(raw_object)
-            # case 'port_object':
-            #     return self.extract_port_object_info(raw_object)
-            # case 'user_object':
-            #     return self.extract_user_object_info(raw_object)
-            # case 'schedule_object':
-            #     return self.extract_schedule_object_info(raw_object)
-            # case 'url_object':
-            #     return self.extract_url_object_info(raw_object)
-            # case 'l7_app_object':
-            #     return self.extract_l7_app_object_info(raw_object)
+            case 'security_zone':
+                return self.extract_security_zone_object_info(raw_object)
+            case 'network_address_object':
+                return self.extract_network_address_object_info(raw_object)
+            case 'port_object':
+                return self.extract_port_object_info(raw_object)
+            case 'user_object':
+                return self.extract_user_object_info(raw_object)
+            case 'schedule_object':
+                return self.extract_schedule_object_info(raw_object)
+            case 'url_object':
+                return self.extract_url_object_info(raw_object)
+            case 'l7_app_object':
+                return self.extract_l7_app_object_info(raw_object)
             case 'comment':
                 return self.extract_comments(raw_object)
                 
@@ -260,6 +260,8 @@ class FMCSecurityPolicy(SecurityPolicy):
             port_objects_list += self.convert_port_literals_to_objects(port_literals)
         except KeyError:
             helper.logging.info(f"It looks like there are no port literals on this policy.")
+        
+        return port_objects_list
 
     def extract_user_object_info(self, user_object_info):
         helper.logging.debug("Called extract_user_object_info()")
@@ -275,8 +277,7 @@ class FMCSecurityPolicy(SecurityPolicy):
     def extract_schedule_object_info(self, schedule_object_info):
         helper.logging.debug("Called extract_schedule_object_info()")
         extracted_schedule_objects = []
-
-        for schedule_object_entry in schedule_object_info['objects']:
+        for schedule_object_entry in schedule_object_info:
             schedule_object_name = schedule_object_entry['name']
             extracted_schedule_objects.append(schedule_object_name)
         
@@ -378,7 +379,6 @@ class FMCSecurityPolicy(SecurityPolicy):
         return policy_l7_apps_list
 
     def extract_comments(self, comment_info):
-        print("EXTRACTING COMMENTS")
         helper.logging.debug("Called extract_comments()")
         processed_comment_list = []
 
