@@ -36,7 +36,6 @@ class SecurityDeviceDatabase(PioneerDatabase):
         self.table_factory("geolocation_objects_table")
         # self.table_factory("override_objects_table")
 
-    
     #TODO: tables for l7 and ping apps
     #TODO: table for time range objects
     def table_factory(self, table_name):
@@ -297,30 +296,43 @@ class SecurityDevice:
         self._database = sec_device_database
         helper.logging.debug("Called SecurityDevice __init__.")
 
-    def get_security_policies_containers_info_from_device_conn(self, security_policy_containers_list):
-        helper.logging.debug(f"Called get_security_policies_containers_info_from_device_conn()")
-        helper.logging.info(f"################## Importing configuration of the security policy containers. ##################")
+    #TODO: what to do when containers are conflicting? for example, when you have real security policy containers, but virtual containers?
+    def get_containers_info_from_device_conn(self, containers_list, container_type):
+        helper.logging.debug(f"Called get_containers_info_from_device_conn()")
+        helper.logging.info(f"################## Importing configuration of the device containers. ##################")
+        processed_container_list = []
+        
+        # Define a dictionary to map container types to their corresponding retrieval functions
+        container_type_mapping = {
+            'security_policies_container': self.return_security_policy_container_object,
+            'object_container': self.return_object_container_object
+        }
 
-        processed_security_policies_containers = []
-        for security_policy_container_name in security_policy_containers_list:
-            helper.logging.info(f"I am now processing the security policy container: {security_policy_container_name}")
+        for container_name in containers_list:
             try:
-                # Retrieve the info for the current container
-                current_container = self.return_security_policy_container_object(security_policy_container_name)
-
+                current_container = ''
+                # Use the container_type_mapping dictionary to retrieve the appropriate retrieval function
+                retrieve_container_function = container_type_mapping.get(container_type)
+                if retrieve_container_function is not None:
+                    current_container = retrieve_container_function(container_name)
+                else:
+                    helper.logging.error(f"Invalid container type: {container_type}")
+                    continue  # Skip to the next container if the container type is invalid
+                    
+                helper.logging.info(f"I am now processing the {container_type} container: {current_container.get_name()}")
                 # Check if the current container has parent containers
                 while current_container.is_child_container():
                     # Retrieve the parent container name
                     parent_container_name = current_container.get_parent_name()
-
                     try:
-                        # Retrieve the parent container object
-                        parent_container = self.return_security_policy_container_object(parent_container_name)
+                        # Retrieve the parent container object using the same retrieval function
+                        parent_container = retrieve_container_function(parent_container_name)
+
                         # set the current's container parent
                         current_container.set_parent(parent_container)
                         # Process the parent container
                         processed_current_container = current_container.process_container_info()
-                        processed_security_policies_containers.append(processed_current_container)
+                        processed_container_list.append(processed_current_container)
 
                         # Set the parent container as the current container for the next iteration
                         current_container = parent_container
@@ -329,14 +341,14 @@ class SecurityDevice:
                         break  # Break out of the loop if there's an error retrieving the parent container
                 else:
                     processed_current_container = current_container.process_container_info()
-                    processed_security_policies_containers.append(processed_current_container)
+                    processed_container_list.append(processed_current_container)
             except Exception as err:
-                helper.logging.error(f"Could not retrieve info regarding the security policy container {security_policy_container_name}. Reason: {err}.")
+                helper.logging.error(f"Could not retrieve info regarding the security policy container {container_name}. Reason: {err}.")
                 print(err)
                 sys.exit(1)
 
-        return processed_security_policies_containers
-
+        return processed_container_list
+    
     @abstractmethod
     def return_security_policy_container_object(self):
         pass
@@ -362,6 +374,7 @@ class SecurityDevice:
     def get_device_version(self):
         pass
 
+    #TODO, might also need to refactor this like the object function
     def get_security_policy_info_from_device_conn(self, sec_policy_containers_list):
         """
         Retrieve information about security policies from the specified policy containers.
@@ -428,6 +441,10 @@ class SecurityDevice:
 
     @abstractmethod
     def process_managed_device(self):
+        pass
+
+    @abstractmethod
+    def return_object_container_object(self, container_name):
         pass
 
     def get_security_device_type_from_db(self):

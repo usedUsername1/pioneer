@@ -227,13 +227,7 @@ def main():
                 # retrieve the security policy containers along with the parents
                 # insert them in the database
 
-                #TODO: Everything works up to this point. debug everything below
-                # another workflow: take all the info of the security policy containers, create objects with it
-                # make an overriden API call to the device and store the security policy container info and build an object with that
-                # now that you have the object, you can process it easier.
-                # specific container classes are needed.
-                # 
-                security_policy_containers_info = SpecificSecurityDeviceObject.get_security_policies_containers_info_from_device_conn(passed_container_names_list)
+                security_policy_containers_info = SpecificSecurityDeviceObject.get_containers_info_from_device_conn(passed_container_names_list, 'security_policies_container')
                 SpecificSecurityDeviceObject.insert_into_security_policy_containers_table(security_policy_containers_info)
 
                 # import the security policies (data) that are part of the imported security policy containers
@@ -247,32 +241,17 @@ def main():
                 helper.logging.info("\n################## EXTRACTED INFO FROM THE SECURITY POLICIES, INSERTING IN THE DATABASE. ##################")
                 # at this point, the data from all the security policies is extracted, it is time to insert it into the database
                 SpecificSecurityDeviceObject.insert_into_security_policies_table(sec_policy_data)
-                return
 
-            print("test_function value:", pioneer_args["test_function"])
-            if pioneer_args["test_function"] == 'a':
-                helper.logging.info(f"################## IMPORTING CONFIGURATION OF {security_device_name}.##################")
-                if(pioneer_args["security_policy_container [container_name]"]):
-                    passed_container_names = pioneer_args["security_policy_container [container_name]"]
-                    passed_container_names_list = []
-                    passed_container_names_list.append(passed_container_names)
-                    print("Importing the security policy containers info.")
-                    # print(f"I am now importing the policy container info for the following containers: {passed_container_names_list}.")
-                    
-                    # retrieve the security policy containers along with the parents
-                    # insert them in the database
-                    # assign the policy containers to the objects
-                    SpecificSecurityDeviceObject.set_object_container(passed_container_names_list)
 
-                    security_policy_containers_info = SpecificSecurityDeviceObject.return_security_policy_container_object(passed_container_names_list)
-                    print(security_policy_containers_info)
+                print("test_function value:", pioneer_args["test_function"])
+                if pioneer_args["test_function"] == 'a':
+                    helper.logging.info(f"################## IMPORTING CONFIGURATION OF {security_device_name}.##################")
 
-                    # SpecificSecurityDeviceObject.insert_into_security_policy_containers_table(security_policy_containers_info)
-                # print("Importing the object container data.")
-                # helper.logging.info("\n################## IMPORTING OBJECT CONTAINER DATA. ##################")
-                # # import and insert the object container first!
-                # object_containers_info = SpecificSecurityDeviceObject.get_object_containers_info(security_policy_containers_info)
-                # SpecificSecurityDeviceObject.insert_into_object_containers_table(object_containers_info)
+                    print("Importing the object container data.")
+                    helper.logging.info("\n################## IMPORTING OBJECT CONTAINER DATA. ##################")
+                    # import and insert the object container first!
+                    object_containers_info = SpecificSecurityDeviceObject.get_containers_info_from_device_conn(passed_container_names_list, 'object_container')
+                    SpecificSecurityDeviceObject.insert_into_object_containers_table(object_containers_info)
 
                 # print("Importing object data.")
                 # helper.logging.info("\n################## IMPORTING OBJECTS DATA. ##################")

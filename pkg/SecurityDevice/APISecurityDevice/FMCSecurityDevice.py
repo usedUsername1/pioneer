@@ -1,4 +1,4 @@
-from pkg.Container import SecurityPolicyContainer
+from pkg.Container import SecurityPolicyContainer, ObjectPolicyContainer
 from pkg.SecurityDevice.APISecurityDevice.APISecurityDeviceConnection import APISecurityDeviceConnection
 from pkg.SecurityDevice import SecurityDevice
 from pkg.Policy import SecurityPolicy
@@ -20,26 +20,36 @@ class FMCDeviceConnection(APISecurityDeviceConnection):
         # Implement connection to FMC specific to FMCDeviceConnection
         fmc_conn = fireREST.FMC(hostname=self._api_hostname, username=self._api_username, password=self._api_secret, domain=self._domain, protocol=self._api_port, timeout=30)
         return fmc_conn
-
+        
 class FMCPolicyContainer(SecurityPolicyContainer):
     def __init__(self, container_info) -> None:
         super().__init__(container_info)
-
-    def get_name(self):
-        return self._container_info['name']
-
-    def is_child_container(self):
-        if self._container_info['metadata']['inherit'] == True:
-            return True
-        else:
-            return False
     
     def get_parent_name(self):
         try:
             return self._container_info['metadata']['parentPolicy']['name']
         except KeyError:
             return None
+        
+    def is_child_container(self):
+        if self._container_info['metadata']['inherit'] == True:
+            return True
+        else:
+            return False
+        
+    def get_name(self):
+        return self._container_info['name']
 
+class FMCObjectContainer(ObjectPolicyContainer):
+    def __init__(self, container_info) -> None:
+        super().__init__(container_info)
+    
+    def is_child_container(self):
+        return False
+
+    def get_parent_name(self):
+        None
+    
 class FMCSecurityPolicy(SecurityPolicy):
     def __init__(self, policy_info_fmc) -> None:
         super().__init__(policy_info_fmc)
@@ -202,7 +212,6 @@ class FMCSecurityPolicy(SecurityPolicy):
             case 'comment':
                 return self.extract_comments(raw_object)
                 
-
     def extract_security_zone_object_info(self, security_zone_object_info):
         helper.logging.debug("Called extract_security_zone_object_info()")
         extracted_security_zones = []
@@ -391,6 +400,7 @@ class FMCSecurityPolicy(SecurityPolicy):
         return processed_comment_list
     
     #TODO: might need this in other places as well, maybe move it to another class
+    # Convert it to static method and put them in the FMCSecurityDevice class
     def convert_network_literals_to_objects(self, network_literals):
         helper.logging.debug("Called convert_network_literals_to_objects().")
         """
@@ -489,7 +499,6 @@ class FMCSecurityDevice(SecurityDevice):
         helper.logging.debug(f"Called FMCSecurityDevice __init__()")
         self._sec_device_connection = FMCDeviceConnection(security_device_username, security_device_secret, security_device_hostname, security_device_port, domain).connect_to_security_device()
 
-        # but everything else will stay just the same. how to modify this code to accomodate this?
     def return_security_policy_container_object(self, container_name):
         acp_info = self._sec_device_connection.policy.accesspolicy.get(name=container_name)
         return FMCPolicyContainer(acp_info)
@@ -502,6 +511,16 @@ class FMCSecurityDevice(SecurityDevice):
             security_policy_objects.append(FMCSecurityPolicy(fmc_policy_entry))
         
         return security_policy_objects
+
+    # there are no object containers per se in FMC, therefore, only dummy info will be returned
+    def return_object_container_object(self, container_name):
+        helper.logging.info("Called return_security_policy_container_object().")
+        helper.logging.info(f"################## Importing configuration of the object policy containers. This is a FMC device, nothing to import, will return: virtual_object_container ##################")
+        container_info = ''
+        dummy_container = FMCObjectContainer(container_info)
+        dummy_container.set_name("virtual_object_container")
+        dummy_container.set_parent(None)
+        return dummy_container
 
     def process_managed_device(self, managed_device):
         device_name = managed_device['name']
@@ -533,15 +552,6 @@ class FMCSecurityDevice(SecurityDevice):
         managed_devices = self._sec_device_connection.device.devicerecord.get()
         helper.logging.debug(f"Executed API call to the FMC device, got the following info {managed_devices}.")
         return managed_devices
-
-    # there are no object containers per se in FMC, therefore, only dummy info will be returned
-    def get_object_containers_info(self, policy_container_name):
-        helper.logging.info("Called get_object_containers_info().")
-        helper.logging.info(f"################## Importing configuration of the object policy containers. This is a FMC device, nothing to import, will return: virtual_object_container ##################")
-        return [{
-            "object_container_name":"virtual_object_container",
-            "object_container_parent":"object_container_parent"
-        }]
 
     def get_security_policies_info(self, policy_container_name):
         helper.logging.debug("Called function get_security_policies_info().")
@@ -608,7 +618,7 @@ class FMCSecurityDevice(SecurityDevice):
         helper.logging.debug(f"Finished processing comments. This is the list: {comments_list}.")
         return comments_list
     
-
+    #TODO: continue refactoring from here
     def process_network_literals(self, network_address_literals):
         """
         Process network address literals.

@@ -21,12 +21,15 @@ class Container:
     def get_security_device_name(self):
         return self._security_device_name
 
+    def process_container_info(self):
+        pass
+
+    def is_child_container(self):
+        pass
+
 class SecurityPolicyContainer(Container):
     def __init__(self, container_info) -> None:
         super().__init__(container_info)
-
-    def get_device_container_info(self):
-        pass
 
     def process_container_info(self):
         try:
@@ -44,9 +47,10 @@ class SecurityPolicyContainer(Container):
 
         return container_processed_info
 
+# fix this init
 class ObjectPolicyContainer(Container):
-    def __init__(self, name, security_device_name, parent) -> None:
-        super().__init__(name, security_device_name, parent)
+    def __init__(self, container_info) -> None:
+        super().__init__(container_info)
     
     def process_container_info(self):
         try:
