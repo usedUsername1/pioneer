@@ -1,4 +1,6 @@
+# interbang: ‽
 from pkg.Container import SecurityPolicyContainer, ObjectPolicyContainer
+from pkg.DeviceObject import Object, GroupObject
 from pkg.SecurityDevice.APISecurityDevice.APISecurityDeviceConnection import APISecurityDeviceConnection
 from pkg.SecurityDevice import SecurityDevice
 from pkg.Policy import SecurityPolicy
@@ -8,7 +10,25 @@ import sys
 import ipaddress
 import utils.exceptions as PioneerExceptions
 
-# interbang: ‽
+class FMCObject(Object):
+    pass
+
+class FMCGroupObject(GroupObject):
+    pass
+
+class FMCNetworkObject(FMCObject):
+    pass
+
+class FMCNetworkGroupObject(FMCGroupObject):
+    pass
+
+class FMCPortObject(FMCObject):
+    pass
+
+class FMCPortGroupObject(FMCGroupObject):
+    pass
+
+
 class FMCDeviceConnection(APISecurityDeviceConnection):
     def __init__(self, api_username, api_secret, api_hostname, api_port, domain):
         super().__init__(api_username, api_secret, api_hostname, api_port)
