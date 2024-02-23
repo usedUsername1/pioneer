@@ -374,7 +374,7 @@ class SecurityDevice:
     def get_device_version(self):
         pass
 
-    #TODO, might also need to refactor this like the object function
+    #TODO, might also need to refactor this like the object container function
     def get_security_policy_info_from_device_conn(self, sec_policy_containers_list):
         """
         Retrieve information about security policies from the specified policy containers.
@@ -445,6 +445,86 @@ class SecurityDevice:
 
     @abstractmethod
     def return_object_container_object(self, container_name):
+        pass
+    
+    # this function aggregates multiple functions, each responsible for getting data from different objects
+    # store all the info as a json, and return the json back to main, which will be responsible for adding it
+    # to the database
+    # get the objects from the database, send them to overriden methods which will get the data about them via API calls
+    # the data will be returned to this function as an object, which will be sent to processing functions, overriden based on device
+    # responsible for processing the object data and returning it
+
+    # this function gets all the info about all the objects, processes it and it returns back to main, where it will be inserted in the database
+    # get_containers_info_from_device_conn -> answer might be in here
+
+
+    # add a parameter for the object type
+    # based on that parameter, get the info about the object type specified in the paramter, like in get_containers_info_from_device_conn
+    # TODO: continue refactoring from here, better definition of object classes
+    def get_object_info_from_device_conn(self, object_type):
+        helper.logging.debug("Called get_object_info_from_device_conn()")
+        helper.logging.info(f"##################  FETCHING INFO ABOUT THE OBJECTS ##################")
+        
+        # pass the list with the names of the objects to the function which will get info about them. that function will also return
+        # a list with Python objects. that list will be then sent to further processing.
+        # get lists with objects for all types of objects
+
+        object_type_mapping = {
+            'network_objects': self.return_network_objects,
+            'port_objects': self.return_port_objects,
+            'schedule_objects': self.return_schedule_objects,
+            'policy_users': self.return_policy_users,
+            'url_objects': self.return_url_objects,
+            'app_objects': self.return_app_objects
+        }
+
+        # based on the object type, init the objects_db variable with the right info from the database
+        retrieved_objects = object_type_mapping.get(object_type)
+
+        # loop through the objects
+        # send them to the process function
+        # return the processed data in order to be inserted in the database. append each processed object to its right list
+
+        # get the network address objects data
+        helper.logging.info(f"\n################## FETCHING NETWORK ADDRESS OBJECTS AND NETWORK GROUPS INFO ##################")
+        print("Importing network addresses, network groups and geolocation objects data.")
+        # get the port objects data
+        helper.logging.info(f"\n################## FETCHING PORT OBJECTS AND PORT GROUPS INFO ##################")
+        print(f"Importing port objects, port group objects data")
+        return self.get_port_objects_info()
+        port_objects, port_group_objects = self.get_port_objects_info()
+
+        return network_objects, network_group_objects, geolocation_objects
+        # get the schedule objects data
+        print(f"######### SCHEDULE OBJECTS INFO RETRIEVAL")
+
+        # get the policy users data
+        print(f"######### POLICY USERS INFO RETRIEVAL")
+
+        # get the url objects data
+        print(f"######### URL OBJECTS INFO RETRIEVAL")
+
+        # get the applications
+        print(f"######### L7 APPS INFO RETRIEVAL")
+        pass
+    
+    # implemented in child SecurityDevices
+    def return_network_objects():
+        pass
+
+    def return_port_objects():
+        pass
+    
+    def return_schedule_objects():
+        pass
+
+    def return_policy_users():
+        pass
+
+    def return_url_objects():
+        pass
+
+    def return_app_objects():
         pass
 
     def get_security_device_type_from_db(self):

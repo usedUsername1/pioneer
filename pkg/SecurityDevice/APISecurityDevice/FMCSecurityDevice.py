@@ -28,6 +28,17 @@ class FMCPortObject(FMCObject):
 class FMCPortGroupObject(FMCGroupObject):
     pass
 
+class FMCNetworkLiteral(FMCNetworkObject):
+    pass
+
+class FMCGeolocation():
+    pass
+
+class FMCContinent():
+    pass
+
+class FMCCountry():
+    pass
 
 class FMCDeviceConnection(APISecurityDeviceConnection):
     def __init__(self, api_username, api_secret, api_hostname, api_port, domain):
@@ -602,43 +613,6 @@ class FMCSecurityDevice(SecurityDevice):
         device_version = device_system_info[0]['serverVersion']
         return device_version
     
-    # TODO: process comments, don't return them as dict, maybe as list with user_comment
-    def extract_policy_comments(self, sec_policy):
-        """
-        Process comments from the security policy.
-
-        Args:
-            sec_policy (dict): Security policy information.
-
-        Returns:
-            list: List of dictionaries with comment user and content.
-                  Returns None if no comments are found.
-        """
-        helper.logging.debug("Called extract_policy_comments()")
-        helper.logging.info("################## POLICY COMMENTS PROCESSING ##################")
-        comments_list = []
-
-        try:
-            helper.logging.info("I found comments on this policy.")
-            comments = sec_policy['commentHistoryList']
-            helper.logging.debug(f"Found comments {comments}.")
-            for comment in comments:
-                # retrieve the user that made the comment
-                comment_user = comment['user']['name']
-
-                # retrieve the content of the comment
-                comment_content = comment['comment']
-
-                # append a dictionary with the user who made the comment and the content of the comment
-                comments_list.append({'user': comment_user, 'content': comment_content})
-        except KeyError:
-            helper.logging.info("No comments found on this policy.")
-            comments_list = None
-
-        helper.logging.debug(f"Finished processing comments. This is the list: {comments_list}.")
-        return comments_list
-    
-    #TODO: continue refactoring from here
     def process_network_literals(self, network_address_literals):
         """
         Process network address literals.
@@ -928,85 +902,6 @@ class FMCSecurityDevice(SecurityDevice):
         
         return processed_geolocation_object_info
     
-    # TODO: this could probably be reused
-    # TODO: finish the last logging line
-    def get_network_objects_info(self):
-        helper.logging.debug("Called get_network_objects_info()")
-        helper.logging.info("I am now processing the network objects data info. I am retrieving all objects from the database, processing them, and returning all the info about them.")
-        # Retrieve all network object info from the database
-        network_objects_db = self.get_db_objects('network_objects')
-
-        # Get the information of all network address objects from FMC
-        network_address_objects_info = self._api_connection.object.networkaddress.get()
-        
-        # Get the information of all network group objects from FMC
-        network_address_group_objects_info = self._api_connection.object.networkgroup.get()
-
-        # Get the information of all geolocation objects, countries and continents from FMC
-        geolocation_objects_info = self._api_connection.object.geolocation.get()
-        countries_info = self._api_connection.object.country.get()
-        continents_info = self._api_connection.object.continent.get()
-
-        # Retrieve the names of all network address objects
-        fmc_network_objects_list = [fmc_network_object['name'] for fmc_network_object in network_address_objects_info]
-
-        # Retrieve the names of all network address group objects
-        fmc_network_group_objects_list = [fmc_network_group_object['name'] for fmc_network_group_object in network_address_group_objects_info]
-
-        # Convert these to dictionaries for more efficient lookups
-        network_address_group_objects_info = {entry['name']: entry for entry in network_address_group_objects_info}
-        network_address_objects_info = {entry['name']: entry for entry in network_address_objects_info}
-        
-        # convert info about geolocation objects, countries and FMC geolocation objects to dictionaries for more efficent lookups
-        geolocation_objects_info = {entry['name']: entry for entry in geolocation_objects_info}
-
-        # return countries_info
-        countries_info = {entry['id']: entry for entry in countries_info if 'id' in entry}
-        continents_info = {entry['name']: entry for entry in continents_info}
-
-        # Retrieve all network literals from the database
-        network_object_literals_list = [network_literal for network_literal in network_objects_db if "NL_" in network_literal]
-
-        # Remove all the network literals from the original list
-        network_objects_db = [obj for obj in network_objects_db if not obj.startswith("NL_")]
-
-        # Find all the network address objects
-        network_address_objects_list = [network_object for network_object in network_objects_db if network_object in fmc_network_objects_list]
-
-        # Remove all the network objects, leaving only the network group objects in the network_objects_db variable
-        network_objects_db = [network_object for network_object in network_objects_db if network_object not in network_address_objects_list]
-
-        # Find all the network group address objects
-        network_group_objects_list = [network_group_object for network_group_object in network_objects_db if network_group_object in fmc_network_group_objects_list]
-
-        # Remove all the network group address objects, leaving only the geolocation objects in the network_objects_db variable
-        geolocation_objects_list = [network_object for network_object in network_objects_db if network_object not in fmc_network_group_objects_list]
-        
-        # Process all the network objects to get the info that will be stored in the database
-        processed_network_group_objects_info, network_members_list, literal_members_list = [], [], []
-
-        processed_network_group_objects_info, network_members_list, literal_members_list = self.process_network_address_group_objects(network_group_objects_list, network_address_group_objects_info)
-
-        # Extend the network_object_literals_list and network_address_objects_list with the members that were previously found
-        network_object_literals_list.extend(literal_members_list)
-
-        # Send the full new list to processing
-        processed_network_literals_info = self.process_network_literals(network_object_literals_list) or []
-        
-        network_address_objects_list.extend(network_members_list)
-        processed_network_objects_info = self.process_network_address_objects(network_address_objects_list, network_address_objects_info) or []
-
-        # Process the geolocation objects
-        processed_geolocation_objects_info = self.process_geolocation_objects(geolocation_objects_list, geolocation_objects_info, continents_info, countries_info)
-
-        # Extend the original processed_network_objects_info with the processed_network_literals_info.
-        # Network objects and literals will be treated in the same way when added to the database.
-        # Extend it with the network members and network literal members of all the group objects
-        processed_network_objects_info.extend(processed_network_literals_info)
-
-        helper.logging.debug(f"I have retrieved all the information for all the objects stored in the database. The network objects info is: {processed_network_objects_info}. The group object info is {processed_network_group_objects_info}.")
-        return processed_network_objects_info, processed_network_group_objects_info, processed_geolocation_objects_info
-
     def process_port_literals(self):
         pass
     # TODO: should ICMP objects be processed here or somewhere else?
@@ -1040,35 +935,49 @@ class FMCSecurityDevice(SecurityDevice):
 
         return port_objects_db
 
+    # This function returns Python network objects back to the caller.
+    # for the objects stored in the database, it checks where they are exactly located on the Security Device
+    # if "example" is a network address, it will stop processing and then it will return a network address object
+    def return_network_objects(self):
+        helper.logging.debug("Called return_network_objects()")
+        helper.logging.info("Processing network objects data info. Retrieving all objects from the database, processing them, and returning their info.")
 
-    # this function aggregates multiple functions, each responsible for getting data from different objects
-    # store all the info as a json, and return the json back to main, which will be responsible for adding it
-    # to the database
-    def get_objects_data_info(self):
-        helper.logging.debug("Called get_objects_data_info()")
-        helper.logging.info(f"##################  FETCHING INFO ABOUT THE OBJECTS ##################")
-    
-        # get the network address objects data
-        helper.logging.info(f"\n################## FETCHING NETWORK ADDRESS OBJECTS AND NETWORK GROUPS INFO ##################")
-        print("Importing network addresses, network groups and geolocation objects data.")
-        network_objects, network_group_objects, geolocation_objects = self.get_network_objects_info()
-        # get the port objects data
-        helper.logging.info(f"\n################## FETCHING PORT OBJECTS AND PORT GROUPS INFO ##################")
-        print(f"Importing port objects, port group objects data")
-        return self.get_port_objects_info()
-        port_objects, port_group_objects = self.get_port_objects_info()
+        # Step 1: Retrieve all network object info from the database
+        network_objects_from_db = self.get_db_objects('network_objects')
+        
+        # Step 2: Get the information of all network address objects, network group objects, geolocation objects, countries, and continents from FMC
+        network_address_objects_info = self._api_connection.object.networkaddress.get()
+        network_group_objects_info = self._api_connection.object.networkgroup.get()
+        geolocation_objects_info = self._api_connection.object.geolocation.get()
+        countries_info = self._api_connection.object.country.get()
+        continents_info = self._api_connection.object.continent.get()
 
-        return network_objects, network_group_objects, geolocation_objects
-        # get the schedule objects data
-        print(f"######### SCHEDULE OBJECTS INFO RETRIEVAL")
+        # Step 3: Convert obtained data into dictionaries for efficient lookups
+        network_address_objects_dict = {entry['name']: entry for entry in network_address_objects_info}
+        network_group_objects_dict = {entry['name']: entry for entry in network_group_objects_info}
+        geolocation_objects_dict = {entry['name']: entry for entry in geolocation_objects_info}
+        countries_dict = {entry['id']: entry for entry in countries_info if 'id' in entry}
+        continents_dict = {entry['name']: entry for entry in continents_info}
 
-        # get the policy users data
-        print(f"######### POLICY USERS INFO RETRIEVAL")
+        network_objects_from_device_list = []
 
-        # get the url objects data
-        print(f"######### URL OBJECTS INFO RETRIEVAL")
+        for network_object_name in network_objects_from_db:
+            if network_object_name.startswith("NL_"):
+                network_objects_from_device_list.append(FMCNetworkLiteral(network_object_name))
+            #TODO: modify country lookup
+            elif "‽" in network_object_name:
+                country_name, _ = network_object_name.split("‽")
+                country_object_info = countries_dict.get(country_name)
+                if country_object_info:
+                    network_objects_from_device_list.append(FMCCountry(country_object_info))
+            else:
+                if network_object_name in network_address_objects_dict:
+                    network_objects_from_device_list.append(FMCNetworkObject(network_address_objects_dict[network_object_name]))
+                elif network_object_name in network_group_objects_dict:
+                    network_objects_from_device_list.append(FMCNetworkGroupObject(network_group_objects_dict[network_object_name]))
+                elif network_object_name in geolocation_objects_dict:
+                    network_objects_from_device_list.append(FMCGeolocation(geolocation_objects_dict[network_object_name]))
+                elif network_object_name in continents_dict:
+                    network_objects_from_device_list.append(FMCContinent(continents_dict[network_object_name]))
 
-        # get the applications
-        print(f"######### L7 APPS INFO RETRIEVAL")
-        pass
-
+        return network_objects_from_device_list
