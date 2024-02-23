@@ -1,6 +1,6 @@
 # interbang: ‽
 from pkg.Container import SecurityPolicyContainer, ObjectPolicyContainer
-from pkg.DeviceObject import Object, GroupObject
+from pkg.DeviceObject import Object, GroupObject, GeolocationObject
 from pkg.SecurityDevice.APISecurityDevice.APISecurityDeviceConnection import APISecurityDeviceConnection
 from pkg.SecurityDevice import SecurityDevice
 from pkg.Policy import SecurityPolicy
@@ -9,7 +9,9 @@ import fireREST
 import sys
 import ipaddress
 import utils.exceptions as PioneerExceptions
+import utils.gvars as gvars
 
+#TODO: define all the necessary setters here and set the values accordingly
 class FMCObject(Object):
     pass
 
@@ -31,14 +33,9 @@ class FMCPortGroupObject(FMCGroupObject):
 class FMCNetworkLiteral(FMCNetworkObject):
     pass
 
-class FMCGeolocation():
+class FMCGeolocationObject(GeolocationObject):
     pass
 
-class FMCContinent():
-    pass
-
-class FMCCountry():
-    pass
 
 class FMCDeviceConnection(APISecurityDeviceConnection):
     def __init__(self, api_username, api_secret, api_hostname, api_port, domain):
@@ -224,7 +221,7 @@ class FMCSecurityPolicy(SecurityPolicy):
         action = self._policy_info['action']
         return super().set_action(action)
 
-    def extract_object_info(self, raw_object, object_type):
+    def extract_policy_object_info(self, raw_object, object_type):
         match object_type:
             case 'security_zone':
                 return self.extract_security_zone_object_info(raw_object)
@@ -264,7 +261,7 @@ class FMCSecurityPolicy(SecurityPolicy):
                 network_object_name = network_object_entry['name']
                 network_object_type = network_object_entry['type']
                 if network_object_type == 'Country':
-                    network_object_name = network_object_entry['id'] + "‽" + network_object_name
+                    network_object_name = network_object_entry['id'] + gvars.separator_character + network_object_name
                 extracted_member_network_objects.append(network_object_name)
         except KeyError:
             helper.logging.info(f"It looks like there are no network objects on this policy.")
@@ -309,7 +306,7 @@ class FMCSecurityPolicy(SecurityPolicy):
 
         for user_object_entry in user_object_info['objects']:
             user_object_name = user_object_entry['name']
-            user_object_processed_entry = user_object_entry['type'] + "‽" + user_object_name
+            user_object_processed_entry = user_object_entry['type'] + gvars.separator_character + user_object_name
             extracted_user_objects.append(user_object_processed_entry)
         
         return extracted_user_objects
@@ -355,7 +352,7 @@ class FMCSecurityPolicy(SecurityPolicy):
                 category_reputation = policy_url_category['reputation']
                 helper.logging.info(f"Processed policy URL category: {category_name}. It has a reputation of {category_reputation}")
 
-                category_name = f"URL_CATEGORY‽{category_name}‽{category_reputation}"
+                category_name = f"URL_CATEGORY{gvars.separator_character}{category_name}{gvars.separator_character}{category_reputation}"
 
                 policy_url_objects_list.append(category_name)
 
@@ -370,7 +367,7 @@ class FMCSecurityPolicy(SecurityPolicy):
         try:
             policy_l7_apps = l7_app_object_info['applications']
             for policy_l7_app in policy_l7_apps:
-                policy_l7_name = 'APP' + "‽" + policy_l7_app['name']
+                policy_l7_name = 'APP' + gvars.separator_character + policy_l7_app['name']
                 policy_l7_apps_list.append(policy_l7_name)
 
         except KeyError:
@@ -383,7 +380,7 @@ class FMCSecurityPolicy(SecurityPolicy):
 
             for policy_l7_app_filter in policy_l7_app_filters:
                 helper.logging.debug(f"Processing policy L7 app filter: {policy_l7_app_filter}.")
-                policy_l7_app_filter_name = 'APP_FILTER' + "‽" + policy_l7_app_filter['name']
+                policy_l7_app_filter_name = 'APP_FILTER' + gvars.separator_character + policy_l7_app_filter['name']
                 helper.logging.info(f"Processed policy L7 app filter: {policy_l7_app_filter_name}.")
                 policy_l7_apps_list.append(policy_l7_app_filter_name)
 
@@ -408,7 +405,7 @@ class FMCSecurityPolicy(SecurityPolicy):
 
                     # Create a list to store the names of filter elements in the current category
                     # TODO: modify this so that " " are not present
-                    filter_element_names = [f"inlineApplicationFilters‽{policy_inline_l7_app_filter_key}‽{policy_inline_l7_app_filter_element['name']}" for policy_inline_l7_app_filter_element in policy_inline_l7_app_filter_elements]
+                    filter_element_names = [f"inlineApplicationFilters{gvars.separator_character}{policy_inline_l7_app_filter_key}{gvars.separator_character}{policy_inline_l7_app_filter_element['name']}" for policy_inline_l7_app_filter_element in policy_inline_l7_app_filter_elements]
 
                     # Append the list of filter element names to the 'policy_l7_apps_list'
                     policy_l7_apps_list.extend(filter_element_names)
@@ -478,7 +475,7 @@ class FMCSecurityPolicy(SecurityPolicy):
                 continue
 
             # Create the name of the object (NL_networkaddress_netmask)
-            network_object_name = "NL_" + str(network_address) + "_" + str(netmask)
+            network_object_name = gvars.network_literal_prefix + str(network_address) + "_" + str(netmask)
             helper.logging.debug(f"Converted network literal {network_literal} to object {network_object_name}.")
             network_objects_list.append(network_object_name)
         
@@ -518,7 +515,7 @@ class FMCSecurityPolicy(SecurityPolicy):
                 continue
 
             # Create the name of the port object
-            port_object_name = f"PL_{literal_protocol_keyword}_{literal_port_nr}"
+            port_object_name = f"{gvars.port_literal_prefix}_{literal_protocol_keyword}_{literal_port_nr}"
             port_objects_list.append(port_object_name)
 
         helper.logging.debug(f"Finished converting all literals to objects. This is the list with converted literals {port_objects_list}.")
@@ -533,7 +530,7 @@ class FMCSecurityDevice(SecurityDevice):
     def return_security_policy_container_object(self, container_name):
         acp_info = self._sec_device_connection.policy.accesspolicy.get(name=container_name)
         return FMCPolicyContainer(acp_info)
-
+    
     # return a list with policy objects for the whole container
     def return_security_policy_object(self, container_name):
         security_policy_objects = []
@@ -717,7 +714,6 @@ class FMCSecurityDevice(SecurityDevice):
     # be aware, you need to process:
         # objects that are part of a group. those objects could not be on the policy, therefore they are not in the DB yet
         # groups that are part of object groups. some recursive shit needs to be done here
-    # geo-location objects are treated as object groups
     def process_network_address_group_objects(self, network_address_group_objects_list, network_address_group_objects_info_dict):
         """
         Process network address group objects.
@@ -804,7 +800,6 @@ class FMCSecurityDevice(SecurityDevice):
         helper.logging.debug(f"Finished processing network address group object members. This is the formatted data of all the group objects {processed_network_address_group_object_info}. Additionally, I have found the following lists - object members {object_member_list} and - literal members {literal_group_member_list}.")
         return processed_network_address_group_object_info, object_member_list, literal_group_member_list
 
-    # TODO: docstring here
     def process_geolocation_objects(self, geolocation_objects_list, geolocation_objects_info, continents_info, countries_info):
         helper.logging.debug(f"Called process_geolocation_objects().")
         helper.logging.info("I am now processing the imported geolocation objects. I am processing and formatting all the data retrieved from the policies.")
@@ -829,9 +824,9 @@ class FMCSecurityDevice(SecurityDevice):
             matching_geolocation_continent = continents_info.get(geolocation_object_name, {})
             matching_geolocation_object = geolocation_objects_info.get(geolocation_object_name, {})
             # look in the name of the object. if it contains the interbang character, then split it. use the ID to lookup in the dictionary with the list
-            if '‽' in geolocation_object_name:
+            if gvars.separator_character in geolocation_object_name:
                 helper.logging.info(f"Location object: {geolocation_object_name} is a country defined directly on the policy.")
-                country_id, country_name = geolocation_object_name.split("‽")
+                country_id, country_name = geolocation_object_name.split(gvars.separator_character)
                 
                 # get the info of the country by its ID
                 matching_country = countries_info.get(country_id, {})
@@ -962,22 +957,20 @@ class FMCSecurityDevice(SecurityDevice):
         network_objects_from_device_list = []
 
         for network_object_name in network_objects_from_db:
-            if network_object_name.startswith("NL_"):
+            if network_object_name.startswith(gvars.network_literal_prefix):
                 network_objects_from_device_list.append(FMCNetworkLiteral(network_object_name))
             #TODO: modify country lookup
-            elif "‽" in network_object_name:
-                country_name, _ = network_object_name.split("‽")
+            elif gvars.separator_character in network_object_name:
+                country_name, _ = network_object_name.split(gvars.separator_character)
                 country_object_info = countries_dict.get(country_name)
                 if country_object_info:
-                    network_objects_from_device_list.append(FMCCountry(country_object_info))
+                    network_objects_from_device_list.append(FMCGeolocationObject(country_object_info))
             else:
                 if network_object_name in network_address_objects_dict:
                     network_objects_from_device_list.append(FMCNetworkObject(network_address_objects_dict[network_object_name]))
                 elif network_object_name in network_group_objects_dict:
                     network_objects_from_device_list.append(FMCNetworkGroupObject(network_group_objects_dict[network_object_name]))
-                elif network_object_name in geolocation_objects_dict:
-                    network_objects_from_device_list.append(FMCGeolocation(geolocation_objects_dict[network_object_name]))
-                elif network_object_name in continents_dict:
-                    network_objects_from_device_list.append(FMCContinent(continents_dict[network_object_name]))
+                elif network_object_name in geolocation_objects_dict or network_object_name in continents_dict:
+                    network_objects_from_device_list.append(FMCGeolocationObject(geolocation_objects_dict[network_object_name]))
 
         return network_objects_from_device_list

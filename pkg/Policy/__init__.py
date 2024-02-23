@@ -140,14 +140,14 @@ class Policy:
         """
         self._status = status
 
-    def get_source_zones(self):
+    def get_processed_source_zones(self):
         """
         Retrieve the source security zones associated with the policy.
 
         Returns:
             list: List of source security zones.
         """
-        return self.process_objects('security_zone', 'source')
+        return self.process_policy_objects('security_zone', 'source')
 
     def set_source_zones(self, source_zones):
         """
@@ -158,14 +158,14 @@ class Policy:
         """
         self._source_zones = source_zones
 
-    def get_destination_zones(self):
+    def get_processed_destination_zones(self):
         """
         Retrieve the destination security zones associated with the policy.
 
         Returns:
             list: List of destination security zones.
         """
-        return self.process_objects('security_zone', 'destination')
+        return self.process_policy_objects('security_zone', 'destination')
 
     def set_destination_zones(self, destination_zones):
         """
@@ -194,14 +194,14 @@ class Policy:
         """
         self._description = description
 
-    def get_comments(self):
+    def get_processed_comments(self):
         """
         Retrieve the comments associated with the policy.
 
         Returns:
             str: The comments associated with the policy.
         """
-        return self.process_objects('comment', None)
+        return self.process_policy_objects('comment', None)
 
     def set_comments(self, comments):
         """
@@ -248,28 +248,28 @@ class Policy:
         """
         self._log_end = log_end
 
-    def get_log_settings(self):
+    def get_processed_log_settings(self):
         """
         Retrieve the logging settings for the policy.
 
         Returns:
             str: The logging settings for the policy.
         """
-        return self._log_setting
+        return self._log_settings
 
-    def set_log_setting(self, log_setting):
+    def set_log_setting(self, log_settings):
         """
         Set the logging settings for the policy.
 
         Args:
             log_setting (str): The logging settings for the policy.
         """
-        self._log_setting = log_setting
+        self._log_settings = log_settings
     
     # This function is responsible for processing the object info. Based on the object_type and on the flow_direction
     # it will retrieve the raw information about the object_type and then extract the info from it.
     # the raw information is retrieved and stored in a dictionary
-    def process_objects(self, object_type, flow_direction):
+    def process_policy_objects(self, object_type, flow_direction):
         """
         Process security objects defined in the security policy.
 
@@ -297,7 +297,7 @@ class Policy:
             helper.logging.info(f"I am looking for {flow_direction} objects.")
         
         # Retrieve raw objects information based on the specified object type and flow direction
-        raw_objects = self.get_raw_objects_info(object_type, flow_direction)
+        raw_objects = self.get_raw_policy_objects_info(object_type, flow_direction)
 
         # Check if the raw_objects list contains only the 'any' keyword or if the raw_objects is 'None'
         if raw_objects == ['any'] or raw_objects is None:
@@ -316,7 +316,7 @@ class Policy:
             helper.logging.info(f"Processing raw object: {raw_object}.")
             
             # Extract information from the raw object
-            processed_objects_list = self.extract_object_info(raw_object, object_type)
+            processed_objects_list = self.extract_policy_object_info(raw_object, object_type)
             
             # Log information message indicating the processed object
             helper.logging.info(f"Finished processing object.")
@@ -329,12 +329,12 @@ class Policy:
 
     # This function is overriden in the Policy child class. It will extract all the necessary info about a single object of type object_type
     # that is being passed to it. 
-    def extract_object_info(raw_object, object_type):
+    def extract_policy_object_info(raw_object, object_type):
         pass
     
     # This function is overriden in the Policy child class. It is responsible for retrieving all the information about the object_type object
     # on a Policy object. It also takes into account if the object whose info needs to be extracted is a source or destination object.
-    def get_raw_objects_info(object_type, flow_direction):
+    def get_raw_policy_objects_info(object_type, flow_direction):
         pass
 
 class SecurityPolicy(Policy):
@@ -402,14 +402,14 @@ class SecurityPolicy(Policy):
         """
         self._source_networks = source_networks
 
-    def get_source_networks(self):
+    def get_processed_source_networks(self):
         """
         Retrieve the source networks associated with the security policy.
 
         Returns:
             list: List of source network objects.
         """
-        return self.process_objects("network_address_object", "source")
+        return self.process_policy_objects("network_address_object", "source")
 
     def set_destination_networks(self, destination_networks):
         """
@@ -420,14 +420,14 @@ class SecurityPolicy(Policy):
         """
         self._destination_networks = destination_networks
 
-    def get_destination_networks(self):
+    def get_processed_destination_networks(self):
         """
         Retrieve the destination networks associated with the security policy.
 
         Returns:
             list: List of destination network objects.
         """
-        return self.process_objects("network_address_object", "destination")
+        return self.process_policy_objects("network_address_object", "destination")
 
     def set_source_ports(self, source_ports):
         """
@@ -438,14 +438,14 @@ class SecurityPolicy(Policy):
         """
         self._source_ports = source_ports
 
-    def get_source_ports(self):
+    def get_processed_source_ports(self):
         """
         Retrieve the source ports associated with the security policy.
 
         Returns:
             list: List of source port objects.
         """
-        return self.process_objects("port_object", "source")
+        return self.process_policy_objects("port_object", "source")
 
     def set_destination_ports(self, destination_ports):
         """
@@ -456,14 +456,14 @@ class SecurityPolicy(Policy):
         """
         self._destination_ports = destination_ports
 
-    def get_destination_ports(self):
+    def get_processed_destination_ports(self):
         """
         Retrieve the destination ports associated with the security policy.
 
         Returns:
             list: List of destination port objects.
         """
-        return self.process_objects("port_object", "destination")
+        return self.process_policy_objects("port_object", "destination")
 
     def set_schedule_objects(self, schedule_objects):
         """
@@ -474,14 +474,14 @@ class SecurityPolicy(Policy):
         """
         self._schedule_objects = schedule_objects
 
-    def get_schedule_objects(self):
+    def get_processed_schedule_objects(self):
         """
         Retrieve the schedule objects associated with the security policy.
 
         Returns:
             list: List of schedule objects.
         """
-        return self.process_objects("schedule_object", None)
+        return self.process_policy_objects("schedule_object", None)
 
     def set_users(self, users):
         """
@@ -492,14 +492,14 @@ class SecurityPolicy(Policy):
         """
         self._users = users
 
-    def get_users(self):
+    def get_processed_users(self):
         """
         Retrieve the user objects associated with the security policy.
 
         Returns:
             list: List of user objects.
         """
-        return self.process_objects("user_object", None)
+        return self.process_policy_objects("user_object", None)
 
     def set_urls(self, urls):
         """
@@ -510,14 +510,14 @@ class SecurityPolicy(Policy):
         """
         self._url_objects = urls
 
-    def get_urls(self):
+    def get_processed_urls(self):
         """
         Retrieve the URL objects associated with the security policy.
 
         Returns:
             list: List of URL objects.
         """
-        return self.process_objects("url_object", None)
+        return self.process_policy_objects("url_object", None)
 
     def set_policy_apps(self, policy_apps):
         """
@@ -528,14 +528,14 @@ class SecurityPolicy(Policy):
         """
         self._l7_apps = policy_apps
 
-    def get_policy_apps(self):
+    def get_processed_policy_apps(self):
         """
         Retrieve the Layer 7 application objects associated with the security policy.
 
         Returns:
             list: List of Layer 7 application objects.
         """
-        return self.process_objects("l7_app_object", None)
+        return self.process_policy_objects("l7_app_object", None)
 
     def set_section(self, section):
         """
@@ -573,7 +573,7 @@ class SecurityPolicy(Policy):
         """
         return self._action
 
-    def get_raw_objects_info(self, object_type, flow_direction):
+    def get_raw_policy_objects_info(self, object_type, flow_direction):
         """
         Retrieve raw objects information based on the specified object type and flow direction.
 
@@ -631,7 +631,10 @@ class SecurityPolicy(Policy):
         """
         helper.logging.debug("Called process_sec_policy_info()")
 
-        # Set various attributes based on policy information
+        # Log information about the security policy being processed
+        helper.logging.info(f"\n\n################## PROCESSING SECURITY POLICY: {self._name}. CONTAINER:  {self._container_name}. RULE INDEX: {self._container_index}.##################")
+        helper.logging.debug(f"Security policy data: {self._policy_info}")
+        
         self.set_name()
         self.set_container_name()
         self.set_container_index()
@@ -655,10 +658,6 @@ class SecurityPolicy(Policy):
         self.set_section()
         self.set_action()
 
-        # Log information about the security policy being processed
-        helper.logging.info(f"\n\n################## PROCESSING SECURITY POLICY: {self._name}. CONTAINER:  {self._container_name}. RULE INDEX: {self._container_index}.##################")
-        helper.logging.debug(f"Security policy data: {self._policy_info}")
-
         # Construct the processed policy entry dictionary
         processed_policy_entry = {
             "sec_policy_name": self._name,
@@ -666,19 +665,19 @@ class SecurityPolicy(Policy):
             "security_policy_index": self._container_index,
             "sec_policy_category": self._category,
             "sec_policy_status": self._status,
-            "sec_policy_source_zones": self.get_source_zones(),
-            "sec_policy_destination_zones": self.get_destination_zones(),
-            "sec_policy_source_networks": self.get_source_networks(),
-            "sec_policy_destination_networks": self.get_destination_networks(),
-            "sec_policy_source_ports": self.get_source_ports(),
-            "sec_policy_destination_ports": self.get_destination_ports(),
-            "sec_policy_schedules": self.get_schedule_objects(),
-            "sec_policy_users": self.get_users(),
-            "sec_policy_urls": self.get_urls(),
-            "sec_policy_apps": self.get_policy_apps(),
+            "sec_policy_source_zones": self.get_processed_source_zones(),
+            "sec_policy_destination_zones": self.get_processed_destination_zones(),
+            "sec_policy_source_networks": self.get_processed_source_networks(),
+            "sec_policy_destination_networks": self.get_processed_destination_networks(),
+            "sec_policy_source_ports": self.get_processed_source_ports(),
+            "sec_policy_destination_ports": self.get_processed_destination_ports(),
+            "sec_policy_schedules": self.get_processed_schedule_objects(),
+            "sec_policy_users": self.get_processed_users(),
+            "sec_policy_urls": self.get_processed_urls(),
+            "sec_policy_apps": self.get_processed_policy_apps(),
             "sec_policy_description": self._description,
-            "sec_policy_comments": self.get_comments(),
-            "sec_policy_log_settings": self.get_log_settings(),
+            "sec_policy_comments": self.get_processed_comments(),
+            "sec_policy_log_settings": self.get_processed_log_settings(),
             "sec_policy_log_start": self._log_start,
             "sec_policy_log_end": self._log_end,
             "sec_policy_section": self._section,

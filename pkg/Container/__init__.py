@@ -33,37 +33,36 @@ class SecurityPolicyContainer(Container):
 
     def process_container_info(self):
         try:
-            container_processed_info = ({
+            container_processed_info = {
                 'security_policy_container_name': self.get_name(),
                 'security_policy_parent': self.get_parent_name()
-            })
+            }
         
         # If the parent doesn't exist, then an Attribute Error exception will be raised
         except AttributeError:
-            container_processed_info = ({
+            container_processed_info = {
                 'security_policy_container_name': self.get_name(),
                 'security_policy_parent': None
-            })
+            }
 
         return container_processed_info
 
-# fix this init
 class ObjectPolicyContainer(Container):
     def __init__(self, container_info) -> None:
         super().__init__(container_info)
     
     def process_container_info(self):
         try:
-            container_processed_info = ({
+            container_processed_info = {
                 'object_container_name': self.get_name(),
                 'object_container_parent': self.get_parent_name()
-            })
+            }
         
         except AttributeError:
-            container_processed_info = ({
+            container_processed_info = {
                 'object_container_name': self.get_name(),
                 'object_container_parent': None
-            })
+            }
 
         return container_processed_info
 
