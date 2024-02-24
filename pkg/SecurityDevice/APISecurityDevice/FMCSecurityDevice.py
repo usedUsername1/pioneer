@@ -33,8 +33,115 @@ class FMCPortGroupObject(FMCGroupObject):
 class FMCNetworkLiteral(FMCNetworkObject):
     pass
 
+# since a geolocation object is made out both of continents and countries, wouldn't creatin objects with the data be easier?
 class FMCGeolocationObject(GeolocationObject):
-    pass
+    def __init__(self, object_info) -> None:
+        super().__init__(object_info)
+    
+    def set_name(self, value):
+        name = self._object_info['name']
+        return super().set_name(name)
+    
+    # Geolocation objects don't have a description
+    def set_description(self, value):
+        value = None
+        return super().set_description(value)
+    
+    def set_continents(self, continents):
+        try:
+            continents = self._object_info['continents']
+        except KeyError:
+            continents = None        
+        return super().set_continents(continents)
+    
+    def set_countries(self, countries):
+        try:
+            countries = self._object_info['countries']
+        except KeyError:
+            countries = None    
+        return super().set_countries(countries)
+    
+    # thhis function will work as long as continents different from None
+    def extract_continents_info(self):
+        continent_names = []
+        continent_countries_names = []
+        continent_countries_alpha2_codes = []
+        continent_countries_alpha3_codes = []
+        continent_countries_numeric_codes = []
+
+        continent_countries = []
+        if self._continents is None:
+            return None
+        
+        # loop through the continents, extract the continent info and create continent objects with it
+        for continent_info in self._continents:
+            continent_object = FMCContinentObject(continent_info)
+            
+            # set the attributes of the continent object
+            continent_object.set_name()
+            continent_object.set_description()
+            continent_object.set_continents()
+            continent_object.set_countries()
+            
+            continent_country_objects = continent_object.get_countries()
+            for country_object in continent_country_objects:
+                # for every country object, extract the whatever codes names from it and append it to the list
+                pass
+
+            # append the countries of the
+            continent_countries.append(continent_object)
+
+
+# since a continent is made out of multiple countries, wouldn't it be easier to set country objects to it, and then use the setters and getters for countries?
+class FMCContinentObject(FMCGeolocationObject):
+    def __init__(self, object_info) -> None:
+        super().__init__(object_info)
+
+    def set_name(self, name):
+        name = self._object_info['name']
+        return super().set_name(name)
+    
+    def set_continents(self, continent_name):
+        continent_name = self._object_info['name']
+        return super().set_continents(continent_name)
+    
+    def set_countries(self, countries):
+        countries = self._object_info['countries']
+        return super().set_countries(countries)
+
+    def extract_countries_info(self):
+        pass
+
+# be aware, objects_info is a dict with the key being the ID of the country
+class FMCCountryObject(FMCGeolocationObject):
+    def __init__(self, object_info) -> None:
+        super().__init__(object_info)
+
+    # TODO: is setting the name like this really going to work?
+    def set_name(self, name):
+        name = self._object_info['name']
+        return super().set_name(name)
+    
+    # A country object can't have continent members
+    def set_continents(self, value):
+        value = None
+        return super().set_continents(value)
+    
+    def set_countries(self, name):
+        name = self._object_info['name']
+        return super().set_countries(name)
+    
+    def set_country_alpha2_codes(self, alpha2_code):
+        alpha2_code = self._object_info['iso2']
+        return super().set_country_alpha2_codes(alpha2_code)
+    
+    def set_country_alpha3_codes(self, alpha3_code):
+        alpha3_code = self._object_info['iso3']
+        return super().set_country_alpha3_codes(alpha3_code)
+    
+    def set_country_numeric_codes(self, numeric_code):
+        numeric_code = self._object_info['id']
+        return super().set_country_numeric_codes(numeric_code)
 
 
 class FMCDeviceConnection(APISecurityDeviceConnection):
@@ -77,7 +184,11 @@ class FMCObjectContainer(ObjectPolicyContainer):
 
     def get_parent_name(self):
         None
-    
+
+# TODO; wouldn't it be simpler to process the data in the setter functions?
+# actually no, because the problem is that you DON'T use objects for all the Policy elements
+# like you use for Device objects. you don't 
+# like, set the processed data as attribute and have it returned?    
 class FMCSecurityPolicy(SecurityPolicy):
     def __init__(self, policy_info_fmc) -> None:
         super().__init__(policy_info_fmc)
@@ -948,6 +1059,7 @@ class FMCSecurityDevice(SecurityDevice):
         continents_info = self._api_connection.object.continent.get()
 
         # Step 3: Convert obtained data into dictionaries for efficient lookups
+        # TODO: try and excepts here, in case conversion might fail
         network_address_objects_dict = {entry['name']: entry for entry in network_address_objects_info}
         network_group_objects_dict = {entry['name']: entry for entry in network_group_objects_info}
         geolocation_objects_dict = {entry['name']: entry for entry in geolocation_objects_info}
@@ -964,13 +1076,18 @@ class FMCSecurityDevice(SecurityDevice):
                 country_name, _ = network_object_name.split(gvars.separator_character)
                 country_object_info = countries_dict.get(country_name)
                 if country_object_info:
-                    network_objects_from_device_list.append(FMCGeolocationObject(country_object_info))
+                    network_objects_from_device_list.append(FMCCountryObject(country_object_info))
             else:
                 if network_object_name in network_address_objects_dict:
                     network_objects_from_device_list.append(FMCNetworkObject(network_address_objects_dict[network_object_name]))
                 elif network_object_name in network_group_objects_dict:
                     network_objects_from_device_list.append(FMCNetworkGroupObject(network_group_objects_dict[network_object_name]))
-                elif network_object_name in geolocation_objects_dict or network_object_name in continents_dict:
+                elif network_object_name in geolocation_objects_dict:
                     network_objects_from_device_list.append(FMCGeolocationObject(geolocation_objects_dict[network_object_name]))
+                elif network_object_name in continents_dict:
+                    network_objects_from_device_list.append(FMCContinentObject(continents_dict[network_object_name]))
+                else:
+                    helper.logging.error(f"{network_object_name} in an invalid object!")
 
+                    
         return network_objects_from_device_list

@@ -283,10 +283,10 @@ class Policy:
             list: List of processed security objects.
         """
         # Log debug message indicating the function has been called
-        helper.logging.debug("Called process_objects()")
+        helper.logging.debug("Called process_policy_objects()")
         
         # Log information message indicating the start of processing for the specified object type
-        helper.logging.info(f"################## {object_type} processing ##################.")
+        helper.logging.info(f"################## Processing policy objects info, processing the following objects: '{object_type}' ##################.")
         
         # Initialize an empty list to store processed security objects
         processed_objects_list = []
