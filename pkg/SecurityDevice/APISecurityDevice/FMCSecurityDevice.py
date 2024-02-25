@@ -1,4 +1,5 @@
 # interbang: ‽
+from abc import abstractmethod
 from pkg.Container import SecurityPolicyContainer, ObjectPolicyContainer
 from pkg.DeviceObject import Object, GroupObject, GeolocationObject
 from pkg.SecurityDevice.APISecurityDevice.APISecurityDeviceConnection import APISecurityDeviceConnection
@@ -33,116 +34,311 @@ class FMCPortGroupObject(FMCGroupObject):
 class FMCNetworkLiteral(FMCNetworkObject):
     pass
 
-# since a geolocation object is made out both of continents and countries, wouldn't creatin objects with the data be easier?
 class FMCGeolocationObject(GeolocationObject):
+    """
+    A class representing a FMC geolocation object
+    """
+
     def __init__(self, object_info) -> None:
+        """
+        Initialize the FMCGeolocationObject instance.
+
+        Args:
+            object_info (dict): Information about the geolocation object.
+        """
         super().__init__(object_info)
-    
-    def set_name(self, value):
+
+    def set_name(self):
+        """
+        Set the name of the geolocation object.
+        
+        Returns:
+            str: The name of the geolocation object.
+        """
         name = self._object_info['name']
         return super().set_name(name)
-    
-    # Geolocation objects don't have a description
-    def set_description(self, value):
+
+    def set_description(self):
+        """
+        Set the description of the geolocation object.
+
+        Returns:
+            None
+        """
         value = None
         return super().set_description(value)
-    
-    def set_continents(self, continents):
+
+    def set_object_container_name(self):
+        """
+        Set the name of the object container for the geolocation object.
+
+        Returns:
+            str: The name of the object container.
+        """
+        object_container_name = 'virtual_object_container'
+        return super().set_object_container_name(object_container_name)
+
+    def set_continents(self):
+        """
+        Set the continents associated with the geolocation object.
+
+        Returns:
+            list: A list of FMCContinentObject instances representing continents.
+        """
+        continent_objects_list = []
         try:
-            continents = self._object_info['continents']
+            continents_info = self._object_info['continents']
+            for continent_info in continents_info:
+                continent_objects_list.append(FMCContinentObject(continent_info))
         except KeyError:
-            continents = None        
-        return super().set_continents(continents)
-    
-    def set_countries(self, countries):
+            continent_objects_list = None
+        return super().set_continents(continent_objects_list)
+
+    def set_countries(self):
+        """
+        Set the countries associated with the geolocation object.
+
+        Returns:
+            list: A list of FMCCountryObject instances representing countries.
+        """
+        countries_objects_list = []
         try:
-            countries = self._object_info['countries']
+            country_info = self._object_info['countries']
+            for country_entry in country_info:
+                countries_objects_list.append(FMCCountryObject(country_entry))
         except KeyError:
-            countries = None    
-        return super().set_countries(countries)
-    
-    # thhis function will work as long as continents different from None
-    def extract_continents_info(self):
-        continent_names = []
-        continent_countries_names = []
-        continent_countries_alpha2_codes = []
-        continent_countries_alpha3_codes = []
-        continent_countries_numeric_codes = []
+            countries_objects_list = None
 
-        continent_countries = []
-        if self._continents is None:
-            return None
-        
-        # loop through the continents, extract the continent info and create continent objects with it
-        for continent_info in self._continents:
-            continent_object = FMCContinentObject(continent_info)
-            
-            # set the attributes of the continent object
-            continent_object.set_name()
-            continent_object.set_description()
-            continent_object.set_continents()
-            continent_object.set_countries()
-            
-            continent_country_objects = continent_object.get_countries()
-            for country_object in continent_country_objects:
-                # for every country object, extract the whatever codes names from it and append it to the list
-                pass
+        # Add countries of the continents
+        for continent in self._continents:
+            for country_info in continent.get_continent_info()['countries']:
+                countries_objects_list.append(FMCCountryObject(country_info))
 
-            # append the countries of the
-            continent_countries.append(continent_object)
+        return super().set_countries(countries_objects_list)
 
-
-# since a continent is made out of multiple countries, wouldn't it be easier to set country objects to it, and then use the setters and getters for countries?
-class FMCContinentObject(FMCGeolocationObject):
-    def __init__(self, object_info) -> None:
-        super().__init__(object_info)
-
-    def set_name(self, name):
-        name = self._object_info['name']
-        return super().set_name(name)
-    
-    def set_continents(self, continent_name):
-        continent_name = self._object_info['name']
-        return super().set_continents(continent_name)
-    
-    def set_countries(self, countries):
-        countries = self._object_info['countries']
-        return super().set_countries(countries)
-
-    def extract_countries_info(self):
+    @abstractmethod
+    def set_member_alpha2_codes(self):
+        """
+        Abstract method to set the member alpha-2 codes.
+        """
         pass
 
-# be aware, objects_info is a dict with the key being the ID of the country
-class FMCCountryObject(FMCGeolocationObject):
-    def __init__(self, object_info) -> None:
-        super().__init__(object_info)
+    @abstractmethod
+    def set_member_alpha3_codes(self):
+        """
+        Abstract method to set the member alpha-3 codes.
+        """
+        pass
 
-    # TODO: is setting the name like this really going to work?
-    def set_name(self, name):
+    @abstractmethod
+    def set_member_numeric_codes(self):
+        """
+        Abstract method to set the member numeric codes.
+        """
+        pass
+
+class FMCContinentObject(GeolocationObject):
+    """
+    A class representing a FMC continent object
+    """
+
+    def __init__(self, object_info) -> None:
+        """
+        Initialize the FMCContinentObject instance.
+
+        Args:
+            object_info (dict): Information about the continent object.
+        """
+        super().__init__(object_info)
+        
+    def set_name(self):
+        """
+        Set the name of the continent object.
+        
+        Returns:
+            str: The name of the continent object.
+        """
         name = self._object_info['name']
         return super().set_name(name)
-    
-    # A country object can't have continent members
-    def set_continents(self, value):
-        value = None
-        return super().set_continents(value)
-    
-    def set_countries(self, name):
-        name = self._object_info['name']
-        return super().set_countries(name)
-    
-    def set_country_alpha2_codes(self, alpha2_code):
-        alpha2_code = self._object_info['iso2']
-        return super().set_country_alpha2_codes(alpha2_code)
-    
-    def set_country_alpha3_codes(self, alpha3_code):
-        alpha3_code = self._object_info['iso3']
-        return super().set_country_alpha3_codes(alpha3_code)
-    
-    def set_country_numeric_codes(self, numeric_code):
-        numeric_code = self._object_info['id']
-        return super().set_country_numeric_codes(numeric_code)
 
+    def set_object_container_name(self):
+        """
+        Set the name of the object container for the continent object.
+
+        Returns:
+            str: The name of the object container.
+        """
+        object_container_name = 'virtual_object_container'
+        return super().set_object_container_name(object_container_name)
+    
+    def set_continents(self):
+        """
+        Set the continents associated with the continent object.
+
+        Returns:
+            None
+        """
+        self._continents = None
+    
+    def get_member_continent_names(self):
+        """
+        Get the name of the continent.
+
+        Returns:
+            str: The name of the continent.
+        """
+        return self._object_info['name']
+    
+    @abstractmethod
+    def set_continents(self):
+        """
+        Abstract method to set the continents associated with the continent object.
+        """
+        pass
+
+    def set_countries(self):
+        countries_objects_list = []
+        try:
+            country_info = self._object_info['countries']
+            for country_info in country_info:
+                countries_objects_list.append(FMCCountryObject(country_info))
+        except KeyError:
+            countries_objects_list = None    
+        return super().set_countries(countries_objects_list)
+
+    def set_member_alpha2_codes(self):
+        pass
+
+    def set_member_alpha3_codes(self):
+        pass
+
+    def set_member_numeric_codes(self):
+        pass
+
+    #TODO: move this
+    def get_continent_info(self):
+        return self._object_info
+
+class FMCCountryObject(GeolocationObject):
+    """
+    A class representing a FMC country object.
+    """
+
+    def __init__(self, object_info) -> None:
+        """
+        Initialize the FMCCountryObject instance.
+
+        Args:
+            object_info (dict): Information about the country object.
+        """
+        super().__init__(object_info)
+    
+    def set_name(self):
+        """
+        Set the name of the country object.
+
+        Returns:
+            str: The name of the country object.
+        """
+        try:
+            name = self._object_info['name']
+        except KeyError:
+            name = None
+        return super().set_name(name)
+
+    def set_object_container_name(self):
+        """
+        Set the name of the object container for the country object.
+
+        Returns:
+            str: The name of the object container.
+        """
+        object_container_name = 'virtual_object_container'
+        return super().set_object_container_name(object_container_name)
+    
+    def set_continents(self):
+        """
+        Set the continents associated with the country object.
+
+        Returns:
+            None
+        """
+        return super().set_continents(None)
+    
+    def set_countries(self):
+        """
+        Set the countries associated with the country object.
+
+        Returns:
+            None
+        """
+        pass
+
+    def set_member_alpha2_codes(self):
+        """
+        Set the member alpha-2 code of the country object.
+
+        Returns:
+            str: The alpha-2 code of the country.
+        """
+        alpha2_code = self._object_info['iso2']
+        return super().set_member_alpha2_codes(alpha2_code)
+    
+    def set_member_alpha3_codes(self):
+        """
+        Set the member alpha-3 code of the country object.
+
+        Returns:
+            str: The alpha-3 code of the country.
+        """
+        alpha3_code = self._object_info['iso3']
+        return super().set_member_alpha3_codes(alpha3_code)
+    
+    def set_member_numeric_codes(self):
+        """
+        Set the member numeric code of the country object.
+
+        Returns:
+            int: The numeric code of the country.
+        """
+        numeric_code = self._object_info['id']
+        return super().set_member_numeric_codes(numeric_code)
+    
+    def get_member_country_names(self):
+        """
+        Get the name of the country.
+
+        Returns:
+            str: The name of the country.
+        """
+        return self._name
+
+    def get_member_alpha2_codes(self):
+        """
+        Get the alpha-2 code of the country.
+
+        Returns:
+            str: The alpha-2 code of the country.
+        """
+        return self._country_alpha2_codes
+    
+    def get_member_alpha3_codes(self):
+        """
+        Get the alpha-3 code of the country.
+
+        Returns:
+            str: The alpha-3 code of the country.
+        """
+        return self._country_alpha3_codes
+    
+    def get_member_numeric_codes(self):
+        """
+        Get the numeric code of the country.
+
+        Returns:
+            int: The numeric code of the country.
+        """
+        return self._country_numeric_codes
 
 class FMCDeviceConnection(APISecurityDeviceConnection):
     def __init__(self, api_username, api_secret, api_hostname, api_port, domain):
@@ -910,103 +1106,6 @@ class FMCSecurityDevice(SecurityDevice):
         
         helper.logging.debug(f"Finished processing network address group object members. This is the formatted data of all the group objects {processed_network_address_group_object_info}. Additionally, I have found the following lists - object members {object_member_list} and - literal members {literal_group_member_list}.")
         return processed_network_address_group_object_info, object_member_list, literal_group_member_list
-
-    def process_geolocation_objects(self, geolocation_objects_list, geolocation_objects_info, continents_info, countries_info):
-        helper.logging.debug(f"Called process_geolocation_objects().")
-        helper.logging.info("I am now processing the imported geolocation objects. I am processing and formatting all the data retrieved from the policies.")
-        
-        if not geolocation_objects_list:
-            helper.logging.info("There are no geolocation objects to process.")
-            return []
-        
-        processed_geolocation_object_info = []
-        object_container_name = "virtual_object_container"
-        
-        # loop through the geo-location objects and check:
-        for geolocation_object_name in geolocation_objects_list:
-            continent_member_names = []
-
-            country_member_names = []
-            country_member_numeric_codes = []
-            country_member_alpha2_codes = []
-            country_member_alpha3_codes = []
-
-            helper.logging.info(f"I am processing geolocation object {geolocation_object_name}.")
-            matching_geolocation_continent = continents_info.get(geolocation_object_name, {})
-            matching_geolocation_object = geolocation_objects_info.get(geolocation_object_name, {})
-            # look in the name of the object. if it contains the interbang character, then split it. use the ID to lookup in the dictionary with the list
-            if gvars.separator_character in geolocation_object_name:
-                helper.logging.info(f"Location object: {geolocation_object_name} is a country defined directly on the policy.")
-                country_id, country_name = geolocation_object_name.split(gvars.separator_character)
-                
-                # get the info of the country by its ID
-                matching_country = countries_info.get(country_id, {})
-                helper.logging.debug(f"Found matching entry for object {geolocation_object_name}. Entry data: {matching_country}")
-
-                # create the lists with the info about the country members
-                country_member_names.append(country_name)
-                country_member_numeric_codes.append(country_id)
-                country_member_alpha2_codes.append(matching_country['iso2'])
-                country_member_alpha3_codes.append(matching_country['iso3'])
-                
-            # look up in the dictionary containing the info about the continet objects and see if there is an entry found for the current geolocation object
-            elif matching_geolocation_continent is not None and matching_geolocation_continent != {}:
-                helper.logging.info(f"Location object: {geolocation_object_name} is a continent defined directly on the policy.")
-                helper.logging.debug(f"Found matching entry for object {geolocation_object_name}. Entry data: {matching_geolocation_continent}.")
-                # now loop through the countries of the continent and add them to the members list
-                continent_member_names.append(geolocation_object_name)
-                for continent_country in matching_geolocation_continent['countries']:
-                    try:
-                        country_member_names.append(continent_country['name'])
-                    except KeyError:
-                        helper.logging.error(f"There is a problem with the following continent country object: {continent_country}")
-                        continue
-                    country_member_numeric_codes.append(continent_country['id'])
-                    country_member_alpha2_codes.append(continent_country['iso2'])
-                    country_member_alpha3_codes.append(continent_country['iso3'])   
-            
-            # look up in the dictionary containing the info about the geolocation objects and see if there is an entry found for the current geolocation object
-            elif matching_geolocation_object is not None and matching_geolocation_object != {}:
-                helper.logging.info(f"Location object: {geolocation_object_name} is an actual object.")
-                helper.logging.debug(f"Found matching entry for object {geolocation_object_name}. Entry data: {matching_geolocation_object}.")
-                # go through the continents of the geolocation object
-                if 'continents' in matching_geolocation_object:
-                    for continent in matching_geolocation_object['continents']:
-                        continent_member_names.append(continent['name'])
-                        # and go through the countries of the continent, extract the data and add it to the lists tracking it
-                        for country in continent['countries']:
-                            country_member_names.append(country['name'])
-                            country_member_numeric_codes.append(country['id'])
-                            country_member_alpha2_codes.append(country['iso2'])
-                            country_member_alpha3_codes.append(country['iso3'])     
-                
-                # check if there are countries on the
-                if 'countries' in matching_geolocation_object:
-                    for country in matching_geolocation_object['countries']:
-                        country_member_names.append(country['name'])
-                        country_member_numeric_codes.append(country['id'])
-                        country_member_alpha2_codes.append(country['iso2'])
-                        country_member_alpha3_codes.append(country['iso3'])
- 
-            else:
-                helper.logging.error(f"Object: {geolocation_object_name} is of type unknown. I cannot import/process it.")
-            # look up in the dictionary containing the info about the continet objects and see if there is an entry found for the current geolocation object
-
-            # Build the processed network object entry
-            processed_geolocation_object_entry = {
-                "geolocation_object_name": geolocation_object_name,
-                "object_container_name": object_container_name,
-                "continent_member_names": continent_member_names,
-                "country_member_names": country_member_names,
-                "country_member_alpha2_codes": country_member_alpha2_codes,
-                "country_member_alpha3_codes": country_member_alpha3_codes,
-                "country_member_numeric_codes": country_member_numeric_codes,
-            }
-            helper.logging.info(f"Finished processing object {geolocation_object_name}.")
-            helper.logging.debug(f"Processed entry for this object is: {processed_geolocation_object_entry}.")
-            processed_geolocation_object_info.append(processed_geolocation_object_entry)
-        
-        return processed_geolocation_object_info
     
     def process_port_literals(self):
         pass
@@ -1052,11 +1151,11 @@ class FMCSecurityDevice(SecurityDevice):
         network_objects_from_db = self.get_db_objects('network_objects')
         
         # Step 2: Get the information of all network address objects, network group objects, geolocation objects, countries, and continents from FMC
-        network_address_objects_info = self._api_connection.object.networkaddress.get()
-        network_group_objects_info = self._api_connection.object.networkgroup.get()
-        geolocation_objects_info = self._api_connection.object.geolocation.get()
-        countries_info = self._api_connection.object.country.get()
-        continents_info = self._api_connection.object.continent.get()
+        network_address_objects_info = self._sec_device_connection.object.networkaddress.get()
+        network_group_objects_info = self._sec_device_connection.object.networkgroup.get()
+        geolocation_objects_info = self._sec_device_connection.object.geolocation.get()
+        countries_info = self._sec_device_connection.object.country.get()
+        continents_info = self._sec_device_connection.object.continent.get()
 
         # Step 3: Convert obtained data into dictionaries for efficient lookups
         # TODO: try and excepts here, in case conversion might fail
@@ -1073,8 +1172,8 @@ class FMCSecurityDevice(SecurityDevice):
                 network_objects_from_device_list.append(FMCNetworkLiteral(network_object_name))
             #TODO: modify country lookup
             elif gvars.separator_character in network_object_name:
-                country_name, _ = network_object_name.split(gvars.separator_character)
-                country_object_info = countries_dict.get(country_name)
+                country_id, country_name = network_object_name.split(gvars.separator_character)
+                country_object_info = countries_dict.get(country_id)
                 if country_object_info:
                     network_objects_from_device_list.append(FMCCountryObject(country_object_info))
             else:

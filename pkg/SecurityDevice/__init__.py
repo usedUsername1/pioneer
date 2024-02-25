@@ -374,7 +374,7 @@ class SecurityDevice:
     def get_device_version(self):
         pass
 
-    #TODO, might also need to refactor this like the object container function
+    #TODO, might also need to refactor this like the object container function and like the get object info function
     def get_security_policy_info_from_device_conn(self, sec_policy_containers_list):
         """
         Retrieve information about security policies from the specified policy containers.
@@ -468,45 +468,50 @@ class SecurityDevice:
         # pass the list with the names of the objects to the function which will get info about them. that function will also return
         # a list with Python objects. that list will be then sent to further processing.
         # get lists with objects for all types of objects
-
         object_type_mapping = {
-            'network_objects': self.return_network_objects,
-            'port_objects': self.return_port_objects,
-            'schedule_objects': self.return_schedule_objects,
-            'policy_users': self.return_policy_users,
-            'url_objects': self.return_url_objects,
-            'app_objects': self.return_app_objects
+            'network_objects': self.return_network_objects(),
+            # 'port_objects': self.return_port_objects(),
+            # 'schedule_objects': self.return_schedule_objects(),
+            # 'policy_users': self.return_policy_users(),
+            # 'url_objects': self.return_url_objects(),
+            # 'app_objects': self.return_app_objects()
         }
 
         # based on the object type, init the objects_db variable with the right info from the database
         retrieved_objects = object_type_mapping.get(object_type)
 
+        for retrieved_object in retrieved_objects:
+            processed_objects = retrieved_object.process_object()
+            print(processed_objects)
+        
+            
+
         # loop through the objects
         # send them to the process function
         # return the processed data in order to be inserted in the database. append each processed object to its right list
 
-        # get the network address objects data
-        helper.logging.info(f"\n################## FETCHING NETWORK ADDRESS OBJECTS AND NETWORK GROUPS INFO ##################")
-        print("Importing network addresses, network groups and geolocation objects data.")
-        # get the port objects data
-        helper.logging.info(f"\n################## FETCHING PORT OBJECTS AND PORT GROUPS INFO ##################")
-        print(f"Importing port objects, port group objects data")
-        return self.get_port_objects_info()
-        port_objects, port_group_objects = self.get_port_objects_info()
+        # # get the network address objects data
+        # helper.logging.info(f"\n################## FETCHING NETWORK ADDRESS OBJECTS AND NETWORK GROUPS INFO ##################")
+        # print("Importing network addresses, network groups and geolocation objects data.")
+        # # get the port objects data
+        # helper.logging.info(f"\n################## FETCHING PORT OBJECTS AND PORT GROUPS INFO ##################")
+        # print(f"Importing port objects, port group objects data")
+        # return self.get_port_objects_info()
+        # port_objects, port_group_objects = self.get_port_objects_info()
 
-        return network_objects, network_group_objects, geolocation_objects
-        # get the schedule objects data
-        print(f"######### SCHEDULE OBJECTS INFO RETRIEVAL")
+        # return network_objects, network_group_objects, geolocation_objects
+        # # get the schedule objects data
+        # print(f"######### SCHEDULE OBJECTS INFO RETRIEVAL")
 
-        # get the policy users data
-        print(f"######### POLICY USERS INFO RETRIEVAL")
+        # # get the policy users data
+        # print(f"######### POLICY USERS INFO RETRIEVAL")
 
-        # get the url objects data
-        print(f"######### URL OBJECTS INFO RETRIEVAL")
+        # # get the url objects data
+        # print(f"######### URL OBJECTS INFO RETRIEVAL")
 
-        # get the applications
-        print(f"######### L7 APPS INFO RETRIEVAL")
-        pass
+        # # get the applications
+        # print(f"######### L7 APPS INFO RETRIEVAL")
+        # pass
     
     # implemented in child SecurityDevices
     def return_network_objects():

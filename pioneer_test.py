@@ -238,8 +238,6 @@ def main():
                 #TODO: Everything works up to this point. debug everything below
                 # do I keep this like this? or do i modify it to respect the new code better?
                 sec_policy_data = SpecificSecurityDeviceObject.get_security_policy_info_from_device_conn(passed_container_names_list)
-                print(sec_policy_data)
-                return
                 helper.logging.info("\n################## EXTRACTED INFO FROM THE SECURITY POLICIES, INSERTING IN THE DATABASE. ##################")
                 # at this point, the data from all the security policies is extracted, it is time to insert it into the database
                 SpecificSecurityDeviceObject.insert_into_security_policies_table(sec_policy_data)
@@ -250,16 +248,16 @@ def main():
                 if pioneer_args["test_function"] == 'a':
                     helper.logging.info(f"################## IMPORTING CONFIGURATION OF {security_device_name}.##################")
 
-                    print("Importing the object container data.")
-                    helper.logging.info("\n################## IMPORTING OBJECT CONTAINER DATA. ##################")
-                    # import and insert the object container first!
-                    object_containers_info = SpecificSecurityDeviceObject.get_containers_info_from_device_conn(passed_container_names_list, 'object_container')
-                    SpecificSecurityDeviceObject.insert_into_object_containers_table(object_containers_info)
+                    # print("Importing the object container data.")
+                    # helper.logging.info("\n################## IMPORTING OBJECT CONTAINER DATA. ##################")
+                    # # import and insert the object container first!
+                    # object_containers_info = SpecificSecurityDeviceObject.get_containers_info_from_device_conn(passed_container_names_list, 'object_container')
+                    # SpecificSecurityDeviceObject.insert_into_object_containers_table(object_containers_info)
 
-                # print("Importing object data.")
-                # helper.logging.info("\n################## IMPORTING OBJECTS DATA. ##################")
-                # # at this point all the security policy data is imported. it is time to import the object data.
-                # network_objects_data, network_group_objects_data = SpecificSecurityDeviceObject.get_objects_data_info()
+                print("Importing object data.")
+                helper.logging.info("\n################## IMPORTING OBJECTS DATA. ##################")
+                # at this point all the security policy data is imported. it is time to import the object data.
+                network_objects_data = SpecificSecurityDeviceObject.get_object_info_from_device_conn('network_objects')
                 
                 # # all the network objects and network group objects data has been extracted, now insert it into the database
                 # helper.logging.info("\n################## EXTRACTED OBJECTS DATA, INSERTING IN THE DATABASE. ##################")

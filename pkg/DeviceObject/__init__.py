@@ -36,12 +36,8 @@ class Object:
     def process_object(self):
         pass
 
-    def process_device_object(self, object_type):
-        helper.logging.debug("Called process_device_object()")
-        helper.logging.info(f"################## Processing device objects info. Processing the following objects: '{object_type}' ##################.")
-
-
-
+    def get_object_device_info(self):
+        return self._object_info
 
 class GroupObject(Object):
     def __init__(self, object_info) -> None:
@@ -110,7 +106,17 @@ class NetworkGroupObject(GroupObject):
 # For example, in FMC, you have Geolocation objects (made out of countries and other continents), and then you have the countries and the continents. they are not object entities per se
 # but can be treated as such
 class GeolocationObject(Object):
+    """
+    A class representing a geolocation object.
+    """
+
     def __init__(self, object_info) -> None:
+        """
+        Initialize the GeolocationObject instance.
+
+        Args:
+            object_info (dict): Information about the geolocation object.
+        """
         super().__init__(object_info)
         self._continents = None
         self._countries = None
@@ -119,52 +125,203 @@ class GeolocationObject(Object):
         self._country_numeric_codes = None
 
     def set_continents(self, value):
+        """
+        Set the continents associated with the geolocation object.
+
+        Args:
+            value (list): List of continents.
+        """
         self._continents = value
 
     def get_continents(self):
+        """
+        Get the continents associated with the geolocation object.
+
+        Returns:
+            list: List of continents.
+        """
         return self._continents
 
     def set_countries(self, value):
+        """
+        Set the countries associated with the geolocation object.
+
+        Args:
+            value (list): List of countries.
+        """
         self._countries = value
 
     def get_countries(self):
+        """
+        Get the countries associated with the geolocation object.
+
+        Returns:
+            list: List of countries.
+        """
         return self._countries
 
-    def set_country_alpha2_codes(self, value):
+    def set_member_alpha2_codes(self, value):
+        """
+        Set the member alpha-2 codes of the geolocation object.
+
+        Args:
+            value (list): List of alpha-2 codes.
+        """
         self._country_alpha2_codes = value
 
-    def get_country_alpha2_codes(self):
+    def get_alpha2_codes(self):
+        """
+        Get the member alpha-2 codes of the geolocation object.
+
+        Returns:
+            list: List of alpha-2 codes.
+        """
         return self._country_alpha2_codes
 
-    def set_country_alpha3_codes(self, value):
+    def set_member_alpha3_codes(self, value):
+        """
+        Set the member alpha-3 codes of the geolocation object.
+
+        Args:
+            value (list): List of alpha-3 codes.
+        """
         self._country_alpha3_codes = value
 
-    def get_country_alpha3_codes(self):
+    def get_alpha3_codes(self):
+        """
+        Get the member alpha-3 codes of the geolocation object.
+
+        Returns:
+            list: List of alpha-3 codes.
+        """
         return self._country_alpha3_codes
 
-    def set_country_numeric_codes(self, value):
+    def set_member_numeric_codes(self, value):
+        """
+        Set the member numeric codes of the geolocation object.
+
+        Args:
+            value (list): List of numeric codes.
+        """
         self._country_numeric_codes = value
 
-    def get_country_numeric_codes(self):
+    def get_numeric_codes(self):
+        """
+        Get the member numeric codes of the geolocation object.
+
+        Returns:
+            list: List of numeric codes.
+        """
         return self._country_numeric_codes
 
+    def get_member_continent_names(self):
+        """
+        Get the names of the continents associated with the geolocation object.
+
+        Returns:
+            list: List of continent names.
+        """
+        if self._continents is None:
+            return None
+        
+        continent_member_names = []
+        for continent in self._continents:
+            continent.set_name()
+            continent_member_names.append(continent.get_name())
+        
+        return continent_member_names
+    
+    def get_member_country_names(self):
+        """
+        Get the names of the countries associated with the geolocation object.
+
+        Returns:
+            list: List of country names.
+        """
+        if self._countries is None:
+            return None
+        
+        country_member_names = []
+        for country in self._countries:
+            country.set_name()
+            country_member_names.append(country.get_name())
+        
+        return country_member_names
+    
+    def get_member_alpha2_codes(self):
+        """
+        Get the alpha-2 codes of the countries associated with the geolocation object.
+
+        Returns:
+            list: List of alpha-2 codes.
+        """
+        if self._countries is None:
+            return None
+        
+        country_alpha2_codes = []
+        for country in self._countries:
+            country.set_member_alpha2_codes()
+            country_alpha2_codes.append(country.get_alpha2_codes())
+
+        return country_alpha2_codes
+    
+    def get_member_alpha3_codes(self):
+        """
+        Get the alpha-3 codes of the countries associated with the geolocation object.
+
+        Returns:
+            list: List of alpha-3 codes.
+        """
+        if self._countries is None:
+            return None
+        
+        country_alpha3_codes = []
+        for country in self._countries:
+            country.set_member_alpha3_codes()
+            country_alpha3_codes.append(country.get_alpha3_codes())
+
+        return country_alpha3_codes
+    
+    def get_member_numeric_codes(self):
+        """
+        Get the numeric codes of the countries associated with the geolocation object.
+
+        Returns:
+            list: List of numeric codes.
+        """
+        if self._countries is None:
+            return None
+        
+        country_numeric_codes = []
+        for country in self._countries:
+            country.set_member_numeric_codes()
+            country_numeric_codes.append(country.get_numeric_codes())
+
+        return country_numeric_codes
+
     def process_object(self):
+        """
+        Process the geolocation object.
+
+        Returns:
+            dict: Processed information about the geolocation object.
+        """
         self.set_name()
         self.set_object_container_name()
         self.set_continents()
         self.set_countries()
-        self.set_country_alpha2_codes()
-        self.set_country_alpha3_codes()
-        self.set_country_numeric_codes()
+        self.set_member_alpha2_codes()
+        self.set_member_alpha3_codes()
+        self.set_member_numeric_codes()
 
         processed_geolocation_object_info = {
-            "geolocation_object_name": self._name,
-            "object_container_name": self._object_container,
-            "continent_member_names": self._continents,
-            "country_member_names": self._countries,
-            "country_member_alpha2_codes": self._country_alpha2_codes,
-            "country_member_alpha3_codes": self._country_alpha3_codes,
-            "country_member_numeric_codes": self._country_numeric_codes,           
+            "geolocation_object_name": self.get_name(),
+            "object_container_name": self.get_object_container_name(),
+            "continent_member_names": self.get_member_continent_names(),
+            "country_member_names": self.get_member_country_names(),
+            "country_member_alpha2_codes": self.get_member_alpha2_codes(),
+            "country_member_alpha3_codes": self.get_member_alpha3_codes(),
+            "country_member_numeric_codes": self.get_member_numeric_codes(),           
         }
 
         return processed_geolocation_object_info
