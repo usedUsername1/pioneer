@@ -1,4 +1,3 @@
-# interbang: ‽
 from abc import abstractmethod
 from pkg.Container import SecurityPolicyContainer, ObjectPolicyContainer
 from pkg.DeviceObject import Object, GroupObject, GeolocationObject
@@ -12,7 +11,6 @@ import ipaddress
 import utils.exceptions as PioneerExceptions
 import utils.gvars as gvars
 
-#TODO: define all the necessary setters here and set the values accordingly
 class FMCObject(Object):
     pass
 
@@ -380,11 +378,7 @@ class FMCObjectContainer(ObjectPolicyContainer):
 
     def get_parent_name(self):
         None
-
-# TODO; wouldn't it be simpler to process the data in the setter functions?
-# actually no, because the problem is that you DON'T use objects for all the Policy elements
-# like you use for Device objects. you don't 
-# like, set the processed data as attribute and have it returned?    
+  
 class FMCSecurityPolicy(SecurityPolicy):
     def __init__(self, policy_info_fmc) -> None:
         super().__init__(policy_info_fmc)

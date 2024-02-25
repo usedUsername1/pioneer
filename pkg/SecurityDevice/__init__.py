@@ -460,7 +460,6 @@ class SecurityDevice:
 
     # add a parameter for the object type
     # based on that parameter, get the info about the object type specified in the paramter, like in get_containers_info_from_device_conn
-    # TODO: continue refactoring from here, better definition of object classes
     def get_object_info_from_device_conn(self, object_type):
         helper.logging.debug("Called get_object_info_from_device_conn()")
         helper.logging.info(f"##################  FETCHING INFO ABOUT THE OBJECTS ##################")
