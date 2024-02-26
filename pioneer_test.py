@@ -252,10 +252,10 @@ def main():
                     # object_containers_info = SpecificSecurityDeviceObject.get_containers_info_from_device_conn(passed_container_names_list, 'object_container')
                     # SpecificSecurityDeviceObject.insert_into_object_containers_table(object_containers_info)
 
-                print("Importing object data.")
-                helper.logging.info("\n################## IMPORTING OBJECTS DATA. ##################")
-                # at this point all the security policy data is imported. it is time to import the object data.
-                network_objects_data = SpecificSecurityDeviceObject.get_object_info_from_device_conn('network_objects')
+                # print("Importing object data.")
+                # helper.logging.info("\n################## IMPORTING OBJECTS DATA. ##################")
+                # # at this point all the security policy data is imported. it is time to import the object data.
+                # network_objects_data = SpecificSecurityDeviceObject.get_object_info_from_device_conn('network_objects')
                 
                 # # all the network objects and network group objects data has been extracted, now insert it into the database
                 # helper.logging.info("\n################## EXTRACTED OBJECTS DATA, INSERTING IN THE DATABASE. ##################")

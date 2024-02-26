@@ -407,7 +407,7 @@ class SecurityPolicy(Policy):
         Args:
             policy_info (dict): Information about the security policy.
         """
-        helper.logging("Called SecurityPolicy::__init__()")
+        helper.logging.debug("Called SecurityPolicy::__init__()")
         super().__init__(policy_info)
         self._category = None
         self._container_index = None

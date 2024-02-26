@@ -121,7 +121,6 @@ class FMCGeolocationObject(GeolocationObject):
         This method sets the countries associated with the geolocation object by creating instances of
         FMCCountryObject for each country retrieved from the object's information.
         It also adds countries of the continents associated with the geolocation object.
-        If there are no countries associated with the geolocation object, it sets the countries list to None.
 
         Returns:
             list: A list of FMCCountryObject instances representing countries.
@@ -132,22 +131,17 @@ class FMCGeolocationObject(GeolocationObject):
         # Initialize an empty list to store country objects
         countries_objects_list = []
         
-        try:
-            # Attempt to retrieve country information from the object's information
-            country_info = self._object_info['countries']
-            
-            # Iterate over each country information entry
-            for country_entry in country_info:
-                # Create an FMCCountryObject instance for each country and append it to the list
-                countries_objects_list.append(FMCCountryObject(country_entry))
+        # Attempt to retrieve country information from the object's information
+        country_info = self._object_info.get('countries', [])
         
-        except KeyError:
-            # If there is no country information, set the countries list to None
-            countries_objects_list = None
+        # Iterate over each country information entry
+        for country_entry in country_info:
+            # Create an FMCCountryObject instance for each country and append it to the list
+            countries_objects_list.append(FMCCountryObject(country_entry))
         
         # Add countries of the continents associated with the geolocation object
         for continent in self._continents:
-            for country_info in continent.get_continent_info()['countries']:
+            for country_info in continent.get_continent_info().get('countries', []):
                 countries_objects_list.append(FMCCountryObject(country_info))
         
         # Call the superclass method to set the countries list
@@ -611,182 +605,195 @@ class FMCSecurityPolicy(SecurityPolicy):
     def set_source_zones(self):
         """
         Set the source zones for the security policy.
+
+        Returns:
+            list: List of source zones.
         """
         helper.logging.debug("Called FMCSecurityPolicy::set_source_zones()")
-        source_zones = self._policy_info.get('sourceZones', ['any'])
+        try:
+            source_zones = [self._policy_info['sourceZones']]
+        except KeyError:
+            source_zones = ['any']
         return super().set_source_zones(source_zones)
+
 
     def set_destination_zones(self):
         """
         Set the destination zones for the security policy.
+
+        Returns:
+            list: List of destination zones.
         """
         helper.logging.debug("Called FMCSecurityPolicy::set_destination_zones()")
-        destination_zones = self._policy_info.get('destinationZones', ['any'])
+        try:
+            destination_zones = [self._policy_info['destinationZones']]
+        except KeyError:
+            destination_zones = ['any']
         return super().set_destination_zones(destination_zones)
 
     def set_source_networks(self):
         """
         Set the source networks for the security policy.
         """
+        helper.logging.debug("Called FMCSecurityPolicy::set_source_networks()")
         try:
             source_networks = [self._policy_info['sourceNetworks']]
         except KeyError:
             helper.logging.info("It looks like there are no explicit source networks defined on this policy.")
             source_networks = ['any']
-        helper.logging.debug("Called FMCSecurityPolicy::set_source_networks()")
         return super().set_source_networks(source_networks)
 
     def set_destination_networks(self):
         """
         Set the destination networks for the security policy.
         """
+        helper.logging.debug("Called FMCSecurityPolicy::set_destination_networks()")
         try:
             destination_networks = [self._policy_info['destinationNetworks']]
         except KeyError:
             helper.logging.info("It looks like there are no explicit destination networks defined on this policy.")
             destination_networks = ['any']
-        helper.logging.debug("Called FMCSecurityPolicy::set_destination_networks()")
         return super().set_destination_networks(destination_networks)
 
     def set_source_ports(self):
         """
         Set the source ports for the security policy.
         """
+        helper.logging.debug("Called FMCSecurityPolicy::set_source_ports()")
         try:
             source_ports = [self._policy_info['sourcePorts']]
         except KeyError:
             helper.logging.info("It looks like there are no explicit source ports defined on this policy.")
             source_ports = ['any']
-        helper.logging.debug("Called FMCSecurityPolicy::set_source_ports()")
         return super().set_source_ports(source_ports)
 
     def set_destination_ports(self):
         """
         Set the destination ports for the security policy.
         """
+        helper.logging.debug("Called FMCSecurityPolicy::set_destination_ports()")
         try:
             destination_ports = [self._policy_info['destinationPorts']]
         except KeyError:
             helper.logging.info("It looks like there are no explicit destination ports defined on this policy.")
             destination_ports = ['any']
-        helper.logging.debug("Called FMCSecurityPolicy::set_destination_ports()")
         return super().set_destination_ports(destination_ports)
 
     def set_schedule_objects(self):
         """
         Set the schedule objects for the security policy.
         """
+        helper.logging.debug("Called FMCSecurityPolicy::set_schedule_objects()")
         try:
             schedule_objects = [self._policy_info['timeRangeObjects']]
         except KeyError:
             helper.logging.info("It looks like there are no explicit schedule objects defined on this policy.")
             schedule_objects = ['any']
-        helper.logging.debug("Called FMCSecurityPolicy::set_schedule_objects()")
         return super().set_schedule_objects(schedule_objects)
 
     def set_users(self):
         """
         Set the users for the security policy.
         """
+        helper.logging.debug("Called FMCSecurityPolicy::set_users()")
         try:
             users = [self._policy_info['users']]
         except KeyError:
             helper.logging.info("It looks like there are no explicit users defined on this policy.")
             users = ['any']
-        helper.logging.debug("Called FMCSecurityPolicy::set_users()")
         return super().set_users(users)
 
     def set_urls(self):
         """
         Set the URLs for the security policy.
         """
+        helper.logging.debug("Called FMCSecurityPolicy::set_urls()")
         try:
             urls = [self._policy_info['urls']]
         except KeyError:
             helper.logging.info("It looks like there are no explicit URLs defined on this policy.")
             urls = ['any']
-        helper.logging.debug("Called FMCSecurityPolicy::set_urls()")
         return super().set_urls(urls)
 
     def set_policy_apps(self):
         """
         Set the applications for the security policy.
         """
+        helper.logging.debug("Called FMCSecurityPolicy::set_policy_apps()")
         try:
             policy_apps = [self._policy_info['applications']]
         except KeyError:
             helper.logging.info("It looks like there are no explicit applications defined on this policy.")
             policy_apps = ['any']
-        helper.logging.debug("Called FMCSecurityPolicy::set_policy_apps()")
         return super().set_policy_apps(policy_apps)
 
     def set_description(self):
         """
         Set the description for the security policy.
         """
+        helper.logging.debug("Called FMCSecurityPolicy::set_description()")
         try:
             description = self._policy_info['description']
         except KeyError:
             helper.logging.info("It looks like there is no description defined on this policy.")
             description = None
-        helper.logging.debug("Called FMCSecurityPolicy::set_description()")
         return super().set_description(description)
 
     def set_comments(self):
         """
         Set the comments for the security policy.
         """
+        helper.logging.debug("Called FMCSecurityPolicy::set_comments()")
         try:
             comments = [self._policy_info['commentHistoryList']]
         except KeyError:
             helper.logging.info("It looks like there are no comments defined on this policy.")
             comments = None
-        helper.logging.debug("Called FMCSecurityPolicy::set_comments()")
         return super().set_comments(comments)
 
     def set_log_setting(self):
         """
         Set the log settings for the security policy.
         """
+        helper.logging.debug("Called FMCSecurityPolicy::set_log_setting()")
         try:
             log_settings = ['FMC'] if self._policy_info['sendEventsToFMC'] else []
             log_settings += ['Syslog'] if self._policy_info['enableSyslog'] else []
         except KeyError:
             helper.logging.info("It looks like there are no log settings defined on this policy.")
             log_settings = None
-        helper.logging.debug("Called FMCSecurityPolicy::set_log_setting()")
         return super().set_log_setting(log_settings)
 
     def set_log_start(self):
         """
         Set the start logging for the security policy.
         """
-        log_start = self._policy_info['logBegin']
         helper.logging.debug("Called FMCSecurityPolicy::set_log_start()")
+        log_start = self._policy_info['logBegin']
         return super().set_log_start(log_start)
 
     def set_log_end(self):
         """
         Set the end logging for the security policy.
         """
-        log_end = self._policy_info['logEnd']
         helper.logging.debug("Called FMCSecurityPolicy::set_log_end()")
+        log_end = self._policy_info['logEnd']
         return super().set_log_end(log_end)
 
     def set_section(self):
         """
         Set the section for the security policy.
         """
-        section = self._policy_info['metadata']['section']
         helper.logging.debug("Called FMCSecurityPolicy::set_section()")
+        section = self._policy_info['metadata']['section']
         return super().set_section(section)
 
     def set_action(self):
         """
         Set the action for the security policy.
         """
-        action = self._policy_info['action']
         helper.logging.debug("Called FMCSecurityPolicy::set_action()")
+        action = self._policy_info['action']
         return super().set_action(action)
 
 #TODO: see if debugging is really necessary on these functions
@@ -1361,7 +1368,7 @@ class FMCSecurityDevice(SecurityDevice):
         Returns:
             FMCObjectContainer: The object container object.
         """
-        container_info = ''
+        container_info = 'DUMMY_CONTAINER'
         dummy_container = FMCObjectContainer(container_info)
         dummy_container.set_name("virtual_object_container")
         dummy_container.set_parent(None)

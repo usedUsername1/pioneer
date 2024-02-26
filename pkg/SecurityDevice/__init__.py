@@ -400,7 +400,7 @@ class SecurityDevice:
         - list: List of processed container information.
         """
         helper.logging.debug(f"Called SecurityDevice::get_containers_info_from_device_conn()")
-        helper.logging.info(f"################## Importing configuration of the device containers. ##################")
+        helper.logging.info(f"################## Importing configuration of the device containers. Container type: <{container_type}> ##################")
         processed_container_list = []
         
         # Define a dictionary to map container types to their corresponding retrieval functions
@@ -454,7 +454,8 @@ class SecurityDevice:
                     helper.logging.debug(f"Processed container info is: <{processed_current_container}>.")
                     processed_container_list.append(processed_current_container)
             except Exception as err:
-                helper.logging.error(f"Could not retrieve info regarding the security policy container {container_name}. Reason: {err}.")
+                helper.logging.error(f"Could not retrieve info regarding the container {container_name}. Reason: {err}.")
+                print(f"Could not retrieve info regarding the container {container_name}. Reason: {err}.")
                 sys.exit(1)
         
         helper.logging.info(f"I have finished completely processing <{container_type}> container, name: <{CurrentContainer.get_name()}> ")

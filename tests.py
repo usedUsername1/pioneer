@@ -2,13 +2,14 @@ import fireREST
 
 fmc = fireREST.FMC(hostname='10.2.196.131', username='admin', password='2wsx#EDC', domain='Global')
 
-# policy = fmc.policy.accesspolicy.accessrule.get(container_name="debug2", name="test")
+policy = fmc.policy.accesspolicy.accessrule.get(container_name="debug3", name="test-usr")
 
+print(policy)
 # policy = fmc.policy.accesspolicy.accessrule.get(container_name="Global Internet Access Policy")
 
-geolocation_object = fmc.object.geolocation.get(name="GEO-TEST-COMBO")
+# geolocation_object = fmc.object.geolocation.get(name="GEO-TEST-COMBO")
 
-print(geolocation_object)
+# print(geolocation_object)
 
 
 # ports = fmc.object.port.get()

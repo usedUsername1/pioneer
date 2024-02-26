@@ -245,13 +245,13 @@ def main():
                 print("Importing the object container data.")
                 helper.logging.info("\n################## IMPORTING OBJECT CONTAINER DATA. ##################")
                 # import and insert the object container first!
-                object_containers_info = SpecificSecurityDeviceObject.get_object_containers_info(security_policy_containers_info)
+                object_containers_info = SpecificSecurityDeviceObject.get_containers_info_from_device_conn(security_policy_containers_info, 'object_container')
                 SpecificSecurityDeviceObject.insert_into_object_containers_table(object_containers_info)
 
-                print("Importing object data.")
-                helper.logging.info("\n################## IMPORTING OBJECTS DATA. ##################")
-                # at this point all the security policy data is imported. it is time to import the object data.
-                network_objects_data = SpecificSecurityDeviceObject.get_object_info_from_device_conn('network_objects')
+                # print("Importing object data.")
+                # helper.logging.info("\n################## IMPORTING OBJECTS DATA. ##################")
+                # # at this point all the security policy data is imported. it is time to import the object data.
+                # network_objects_data = SpecificSecurityDeviceObject.get_object_info_from_device_conn('network_objects')
 
 
 
