@@ -663,7 +663,7 @@ class SecurityDevice:
         processed_objects_list = []
         
         # Process retrieved objects
-        for RetrievedObject in processed_objects_list:
+        for RetrievedObject in retrieved_objects_list:
             helper.logging.info(f"Processing object: <{RetrievedObject.get_name()}. Object type is: <{object_type}>>")
             helper.logging.debug(f"Raw object info: <{RetrievedObject.get_name()}>")
             # Process the retrieved object
