@@ -44,6 +44,7 @@ class FMCGeolocationObject(GeolocationObject):
         Args:
             object_info (dict): Information about the geolocation object.
         """
+        helper.logging.debug(f"Called FMCGeolocationObject::__init__()")
         super().__init__(object_info)
 
     def set_name(self):
@@ -53,6 +54,7 @@ class FMCGeolocationObject(GeolocationObject):
         Returns:
             str: The name of the geolocation object.
         """
+        helper.logging.debug("Called FMCGeolocationObject::set_name()")
         name = self._object_info['name']
         return super().set_name(name)
 
@@ -63,6 +65,7 @@ class FMCGeolocationObject(GeolocationObject):
         Returns:
             None
         """
+        helper.logging.debug("Called FMCGeolocationObject::set_description()")
         value = None
         return super().set_description(value)
 
@@ -73,6 +76,7 @@ class FMCGeolocationObject(GeolocationObject):
         Returns:
             str: The name of the object container.
         """
+        helper.logging.debug("Called FMCGeolocationObject::set_object_container_name()")
         object_container_name = 'virtual_object_container'
         return super().set_object_container_name(object_container_name)
 
@@ -80,40 +84,77 @@ class FMCGeolocationObject(GeolocationObject):
         """
         Set the continents associated with the geolocation object.
 
+        This method sets the continents associated with the geolocation object by creating instances of
+        FMCContinentObject for each continent retrieved from the object's information.
+        If there are no continents associated with the geolocation object, it sets the continents list to None.
+
         Returns:
             list: A list of FMCContinentObject instances representing continents.
         """
+        # Debugging message to indicate that the method is being called
+        helper.logging.debug("Called FMCGeolocationObject::set_continents()")
+        
+        # Initialize an empty list to store continent objects
         continent_objects_list = []
+        
         try:
+            # Attempt to retrieve continent information from the object's information
             continents_info = self._object_info['continents']
+            
+            # Iterate over each continent information entry
             for continent_info in continents_info:
+                # Create an FMCContinentObject instance for each continent and append it to the list
                 continent_objects_list.append(FMCContinentObject(continent_info))
+        
         except KeyError:
+            # If there is no continent information, set the continents list to None
             continent_objects_list = None
+        
+        # Call the superclass method to set the continents list
         return super().set_continents(continent_objects_list)
 
+    #TODO: maybe make this method static?
     def set_countries(self):
         """
         Set the countries associated with the geolocation object.
 
+        This method sets the countries associated with the geolocation object by creating instances of
+        FMCCountryObject for each country retrieved from the object's information.
+        It also adds countries of the continents associated with the geolocation object.
+        If there are no countries associated with the geolocation object, it sets the countries list to None.
+
         Returns:
             list: A list of FMCCountryObject instances representing countries.
         """
+        # Debugging message to indicate that the method is being called
+        helper.logging.debug("Called FMCGeolocationObject::set_countries()")
+        
+        # Initialize an empty list to store country objects
         countries_objects_list = []
+        
         try:
+            # Attempt to retrieve country information from the object's information
             country_info = self._object_info['countries']
+            
+            # Iterate over each country information entry
             for country_entry in country_info:
+                # Create an FMCCountryObject instance for each country and append it to the list
                 countries_objects_list.append(FMCCountryObject(country_entry))
+        
         except KeyError:
+            # If there is no country information, set the countries list to None
             countries_objects_list = None
-
-        # Add countries of the continents
+        
+        # Add countries of the continents associated with the geolocation object
         for continent in self._continents:
             for country_info in continent.get_continent_info()['countries']:
                 countries_objects_list.append(FMCCountryObject(country_info))
-
+        
+        # Call the superclass method to set the countries list
         return super().set_countries(countries_objects_list)
 
+    # Don't delete this. They need to be here, otherwise GeolocationObject::process_policy_info() will throw an error since the method
+    # called in there doesn't have parameters, however, the method definition of the class includes parameters.
     @abstractmethod
     def set_member_alpha2_codes(self):
         """
@@ -137,7 +178,7 @@ class FMCGeolocationObject(GeolocationObject):
 
 class FMCContinentObject(GeolocationObject):
     """
-    A class representing a FMC continent object
+    A class representing an FMC continent object.
     """
 
     def __init__(self, object_info) -> None:
@@ -147,6 +188,7 @@ class FMCContinentObject(GeolocationObject):
         Args:
             object_info (dict): Information about the continent object.
         """
+        helper.logging.debug("Called FMCContinentObject::__init__()")
         super().__init__(object_info)
         
     def set_name(self):
@@ -156,6 +198,7 @@ class FMCContinentObject(GeolocationObject):
         Returns:
             str: The name of the continent object.
         """
+        helper.logging.debug("Called FMCContinentObject::set_name()")
         name = self._object_info['name']
         return super().set_name(name)
 
@@ -166,6 +209,7 @@ class FMCContinentObject(GeolocationObject):
         Returns:
             str: The name of the object container.
         """
+        helper.logging.debug("Called FMCContinentObject::set_object_container_name()")
         object_container_name = 'virtual_object_container'
         return super().set_object_container_name(object_container_name)
     
@@ -176,6 +220,7 @@ class FMCContinentObject(GeolocationObject):
         Returns:
             None
         """
+        helper.logging.debug("Called FMCContinentObject::set_continents()")
         self._continents = None
     
     def get_member_continent_names(self):
@@ -185,6 +230,7 @@ class FMCContinentObject(GeolocationObject):
         Returns:
             str: The name of the continent.
         """
+        helper.logging.debug("Called FMCContinentObject::get_member_continent_names()")
         return self._object_info['name']
     
     @abstractmethod
@@ -195,26 +241,77 @@ class FMCContinentObject(GeolocationObject):
         pass
 
     def set_countries(self):
+        """
+        Set the countries associated with the continent object.
+
+        This method retrieves information about the countries associated with the continent from the object's information.
+        It constructs a list of FMCCountryObject instances based on the retrieved country information.
+        If there are no countries associated with the continent, the method sets the countries list to None.
+
+        Returns:
+            None
+        """
+        # Debugging message to indicate that the method is being called
+        helper.logging.debug("Called FMCContinentObject::set_countries()")
+        
+        # Initialize an empty list to store country objects
         countries_objects_list = []
+        
         try:
+            # Attempt to retrieve country information from the object's information
             country_info = self._object_info['countries']
-            for country_info in country_info:
-                countries_objects_list.append(FMCCountryObject(country_info))
+            
+            # Iterate over each country information entry
+            for country_info_entry in country_info:
+                # Create an FMCCountryObject instance for each country and append it to the list
+                countries_objects_list.append(FMCCountryObject(country_info_entry))
+        
         except KeyError:
-            countries_objects_list = None    
+            # If there is no country information, set the countries list to None
+            countries_objects_list = None
+            
+        # Call the superclass method to set the countries list
         return super().set_countries(countries_objects_list)
 
     def set_member_alpha2_codes(self):
+        """
+        Set the member alpha-2 codes of the continent object.
+
+        Returns:
+            None
+        """
+        helper.logging.debug("Called FMCContinentObject::set_member_alpha2_codes()")
         pass
 
     def set_member_alpha3_codes(self):
+        """
+        Set the member alpha-3 codes of the continent object.
+
+        Returns:
+            None
+        """
+        helper.logging.debug("Called FMCContinentObject::set_member_alpha3_codes()")
         pass
 
     def set_member_numeric_codes(self):
+        """
+        Set the member numeric codes of the continent object.
+
+        Returns:
+            None
+        """
+        helper.logging.debug("Called FMCContinentObject::set_member_numeric_codes()")
         pass
 
     #TODO: move this
     def get_continent_info(self):
+        """
+        Get information about the continent.
+
+        Returns:
+            dict: Information about the continent.
+        """
+        helper.logging.debug("Called FMCContinentObject::get_continent_info()")
         return self._object_info
 
 class FMCCountryObject(GeolocationObject):
@@ -467,28 +564,39 @@ class FMCSecurityPolicy(SecurityPolicy):
         Parameters:
             policy_info_fmc (dict): Information about the security policy.
         """
+        helper.logging.debug("FMCSecurityPolicy::__init__()")
         super().__init__(policy_info_fmc)
 
     # Methods for setting various attributes of the security policy
     def set_name(self):
-        """Set the name of the security policy."""
+        """
+        Set the name of the security policy.
+        """
+        helper.logging.debug("Called FMCSecurityPolicy::set_name()")
         name = self._policy_info['name']
         return super().set_name(name)
 
     def set_container_name(self):
-        """Set the name of the policy container."""
+        """
+        Set the name of the policy container.
+        """
+        helper.logging.debug("Called FMCSecurityPolicy::set_container_name()")
         container_name = self._policy_info['metadata']['accessPolicy']['name']
         return super().set_container_name(container_name)
 
     def set_container_index(self):
-        """Set the index of the policy container."""
+        """
+        Set the index of the policy container.
+        """
+        helper.logging.debug("Called FMCSecurityPolicy::set_container_index()")
         index = self._policy_info['metadata']['ruleIndex']
         return super().set_container_index(index)
-    
+
     def set_status(self):
         """
         Set the status of the security policy (enabled or disabled).
         """
+        helper.logging.debug("Called FMCSecurityPolicy::set_status()")
         status = 'enabled' if self._policy_info.get('enabled', False) else 'disabled'
         return super().set_status(status)
 
@@ -496,6 +604,7 @@ class FMCSecurityPolicy(SecurityPolicy):
         """
         Set the category of the security policy.
         """
+        helper.logging.debug("Called FMCSecurityPolicy::set_category()")
         category = self._policy_info['metadata']['category']
         return super().set_category(category)
 
@@ -503,6 +612,7 @@ class FMCSecurityPolicy(SecurityPolicy):
         """
         Set the source zones for the security policy.
         """
+        helper.logging.debug("Called FMCSecurityPolicy::set_source_zones()")
         source_zones = self._policy_info.get('sourceZones', ['any'])
         return super().set_source_zones(source_zones)
 
@@ -510,6 +620,7 @@ class FMCSecurityPolicy(SecurityPolicy):
         """
         Set the destination zones for the security policy.
         """
+        helper.logging.debug("Called FMCSecurityPolicy::set_destination_zones()")
         destination_zones = self._policy_info.get('destinationZones', ['any'])
         return super().set_destination_zones(destination_zones)
 
@@ -522,6 +633,7 @@ class FMCSecurityPolicy(SecurityPolicy):
         except KeyError:
             helper.logging.info("It looks like there are no explicit source networks defined on this policy.")
             source_networks = ['any']
+        helper.logging.debug("Called FMCSecurityPolicy::set_source_networks()")
         return super().set_source_networks(source_networks)
 
     def set_destination_networks(self):
@@ -533,6 +645,7 @@ class FMCSecurityPolicy(SecurityPolicy):
         except KeyError:
             helper.logging.info("It looks like there are no explicit destination networks defined on this policy.")
             destination_networks = ['any']
+        helper.logging.debug("Called FMCSecurityPolicy::set_destination_networks()")
         return super().set_destination_networks(destination_networks)
 
     def set_source_ports(self):
@@ -544,6 +657,7 @@ class FMCSecurityPolicy(SecurityPolicy):
         except KeyError:
             helper.logging.info("It looks like there are no explicit source ports defined on this policy.")
             source_ports = ['any']
+        helper.logging.debug("Called FMCSecurityPolicy::set_source_ports()")
         return super().set_source_ports(source_ports)
 
     def set_destination_ports(self):
@@ -555,6 +669,7 @@ class FMCSecurityPolicy(SecurityPolicy):
         except KeyError:
             helper.logging.info("It looks like there are no explicit destination ports defined on this policy.")
             destination_ports = ['any']
+        helper.logging.debug("Called FMCSecurityPolicy::set_destination_ports()")
         return super().set_destination_ports(destination_ports)
 
     def set_schedule_objects(self):
@@ -566,6 +681,7 @@ class FMCSecurityPolicy(SecurityPolicy):
         except KeyError:
             helper.logging.info("It looks like there are no explicit schedule objects defined on this policy.")
             schedule_objects = ['any']
+        helper.logging.debug("Called FMCSecurityPolicy::set_schedule_objects()")
         return super().set_schedule_objects(schedule_objects)
 
     def set_users(self):
@@ -577,6 +693,7 @@ class FMCSecurityPolicy(SecurityPolicy):
         except KeyError:
             helper.logging.info("It looks like there are no explicit users defined on this policy.")
             users = ['any']
+        helper.logging.debug("Called FMCSecurityPolicy::set_users()")
         return super().set_users(users)
 
     def set_urls(self):
@@ -588,6 +705,7 @@ class FMCSecurityPolicy(SecurityPolicy):
         except KeyError:
             helper.logging.info("It looks like there are no explicit URLs defined on this policy.")
             urls = ['any']
+        helper.logging.debug("Called FMCSecurityPolicy::set_urls()")
         return super().set_urls(urls)
 
     def set_policy_apps(self):
@@ -599,6 +717,7 @@ class FMCSecurityPolicy(SecurityPolicy):
         except KeyError:
             helper.logging.info("It looks like there are no explicit applications defined on this policy.")
             policy_apps = ['any']
+        helper.logging.debug("Called FMCSecurityPolicy::set_policy_apps()")
         return super().set_policy_apps(policy_apps)
 
     def set_description(self):
@@ -610,6 +729,7 @@ class FMCSecurityPolicy(SecurityPolicy):
         except KeyError:
             helper.logging.info("It looks like there is no description defined on this policy.")
             description = None
+        helper.logging.debug("Called FMCSecurityPolicy::set_description()")
         return super().set_description(description)
 
     def set_comments(self):
@@ -621,6 +741,7 @@ class FMCSecurityPolicy(SecurityPolicy):
         except KeyError:
             helper.logging.info("It looks like there are no comments defined on this policy.")
             comments = None
+        helper.logging.debug("Called FMCSecurityPolicy::set_comments()")
         return super().set_comments(comments)
 
     def set_log_setting(self):
@@ -633,6 +754,7 @@ class FMCSecurityPolicy(SecurityPolicy):
         except KeyError:
             helper.logging.info("It looks like there are no log settings defined on this policy.")
             log_settings = None
+        helper.logging.debug("Called FMCSecurityPolicy::set_log_setting()")
         return super().set_log_setting(log_settings)
 
     def set_log_start(self):
@@ -640,6 +762,7 @@ class FMCSecurityPolicy(SecurityPolicy):
         Set the start logging for the security policy.
         """
         log_start = self._policy_info['logBegin']
+        helper.logging.debug("Called FMCSecurityPolicy::set_log_start()")
         return super().set_log_start(log_start)
 
     def set_log_end(self):
@@ -647,6 +770,7 @@ class FMCSecurityPolicy(SecurityPolicy):
         Set the end logging for the security policy.
         """
         log_end = self._policy_info['logEnd']
+        helper.logging.debug("Called FMCSecurityPolicy::set_log_end()")
         return super().set_log_end(log_end)
 
     def set_section(self):
@@ -654,6 +778,7 @@ class FMCSecurityPolicy(SecurityPolicy):
         Set the section for the security policy.
         """
         section = self._policy_info['metadata']['section']
+        helper.logging.debug("Called FMCSecurityPolicy::set_section()")
         return super().set_section(section)
 
     def set_action(self):
@@ -661,8 +786,10 @@ class FMCSecurityPolicy(SecurityPolicy):
         Set the action for the security policy.
         """
         action = self._policy_info['action']
+        helper.logging.debug("Called FMCSecurityPolicy::set_action()")
         return super().set_action(action)
 
+#TODO: see if debugging is really necessary on these functions
     def extract_policy_object_info(self, raw_object, object_type):
         """
         Extract information about policy objects based on object type.
@@ -674,6 +801,7 @@ class FMCSecurityPolicy(SecurityPolicy):
         Returns:
             dict: Extracted information about the policy object.
         """
+        helper.logging.debug(f"Called FMCSecurityPolicy::extract_policy_object_info().")
         match object_type:
             case 'security_zone':
                 return self.extract_security_zone_object_info(raw_object)
@@ -691,130 +819,199 @@ class FMCSecurityPolicy(SecurityPolicy):
                 return self.extract_l7_app_object_info(raw_object)
             case 'comment':
                 return self.extract_comments(raw_object)
-                
+                    
     def extract_security_zone_object_info(self, security_zone_object_info):
         """
         Extract security zone information from the provided data structure.
 
+        This method extracts the names of security zones from the given data structure.
+
         Parameters:
-            security_zone_object_info (dict): Information about security zone objects.
+            security_zone_object_info (dict): A dictionary containing information about security zone objects.
 
         Returns:
-            list: List of security zone names.
+            list: A list of security zone names extracted from the provided data structure.
         """
-        helper.logging.debug("Called extract_security_zone_object_info()")
+        # Log a debug message indicating the function call
+        helper.logging.debug("Called FMCSecurityPolicy::extract_security_zone_object_info()")
+        
+        # Initialize an empty list to store the extracted security zone names
         extracted_security_zones = []
+
+        # Iterate through each security zone entry in the provided data structure
         for security_zone_entry in security_zone_object_info['objects']:
+            # Extract the name of the security zone and append it to the list
             extracted_security_zones.append(security_zone_entry['name'])
         
+        # Return the list of extracted security zone names
         return extracted_security_zones
         
     def extract_network_address_object_info(self, network_object_info):
         """
         Extract network address object information from the provided data structure.
 
+        This method extracts the names of network address objects from the given data structure.
+
         Parameters:
             network_object_info (dict): Information about network address objects.
 
         Returns:
-            list: List of network address object names.
+            list: A list of network address object names extracted from the provided data structure.
         """
-        helper.logging.debug("Called extract_network_address_object_info()")
+        # Log a debug message indicating the function call
+        helper.logging.debug("Called FMCSecurityPolicy::extract_network_address_object_info()")
+
+        # Initialize an empty list to store the extracted network address object names
         extracted_member_network_objects = []
 
         # Extract information from proper network objects
         try:
+            helper.logging.info(f"Found network objects on this policy.")
+            # Retrieve the list of network objects from the provided data structure
             network_object_info_objects = network_object_info['objects']
+            
+            # Iterate through each network object entry
             for network_object_entry in network_object_info_objects:
+                # Extract the name and type of the network object
                 network_object_name = network_object_entry['name']
                 network_object_type = network_object_entry['type']
+                
+                # Append the network object name to the list
                 if network_object_type == 'Country':
+                    # If the network object is of type 'Country', prepend its ID before the name
                     network_object_name = network_object_entry['id'] + gvars.separator_character + network_object_name
                 extracted_member_network_objects.append(network_object_name)
         except KeyError:
+            # If there are no network objects, log an informational message
             helper.logging.info(f"It looks like there are no network objects on this policy.")
 
         # Extract information from network literals
         try:
-            helper.logging.info(f"I am looking for literals.")
+            helper.logging.info(f"Found network literals on this policy.")
+            # Retrieve the list of network literals from the provided data structure
             network_literals = network_object_info['literals']
+            # Log an informational message indicating the search for literals
+            helper.logging.info(f"I am looking for literals.")
+            # Log debug information about the found literals
             helper.logging.debug(f"Literals found {network_literals}.")
+            # Convert network literals to network objects and add them to the extracted list
             extracted_member_network_objects += self.convert_network_literals_to_objects(network_literals)
         except KeyError:
+            # If there are no network literals, log an informational message
             helper.logging.info(f"It looks like there are no network literals on this policy.")
-        
+
+        # Return the list of extracted network address object names
         return extracted_member_network_objects
     
     def extract_port_object_info(self, port_object_info):
         """
         Extract port object information from the provided data structure.
 
+        This method extracts the names of port objects from the given data structure.
+
         Parameters:
             port_object_info (dict): Information about port objects.
 
         Returns:
-            list: List of port object names.
+            list: A list of port object names extracted from the provided data structure.
         """
+        # Log a debug message indicating the function call
+        helper.logging.debug("Called FMCSecurityPolicy::extract_port_object_info()")
+
+        # Initialize an empty list to store the extracted port object names
         port_objects_list = []
 
         # Extract information from proper port objects
         try:
+            helper.logging.info(f"Found port objects on this policy.")
+            # Retrieve the list of port objects from the provided data structure
             port_object_info_objects = port_object_info['objects']
+            
+            # Iterate through each port object entry
             for port_object_entry in port_object_info_objects:
+                # Extract the name of the port object and append it to the list
                 port_object_name = port_object_entry['name']
                 port_objects_list.append(port_object_name)
         except KeyError:
+            # If there are no port objects, log an informational message
             helper.logging.info(f"It looks like there are no port objects on this policy.")
         
         # Extract information from port literals
         try:
+            helper.logging.info(f"Found port literals on this policy.")
+            # Log an informational message indicating the search for port literals
             helper.logging.info(f"I am looking for port literals...")
+            # Retrieve the list of port literals from the provided data structure
             port_literals = port_object_info['literals']
+            # Log an informational message indicating the found port literals
             helper.logging.info(f"I have found literals.")
+            # Log debug information about the found port literals
             helper.logging.info(f"Port literals found: {port_literals}.")
             # Process each port literal using the convert_port_literals_to_objects function
             port_objects_list += self.convert_port_literals_to_objects(port_literals)
         except KeyError:
+            # If there are no port literals, log an informational message
             helper.logging.info(f"It looks like there are no port literals on this policy.")
         
+        # Return the list of extracted port object names
         return port_objects_list
 
     def extract_user_object_info(self, user_object_info):
         """
         Extract user object information from the provided data structure.
 
+        This method extracts the names of user objects from the given data structure.
+
         Parameters:
             user_object_info (dict): Information about user objects.
 
         Returns:
-            list: List of processed user object entries.
+            list: A list of processed user object entries containing user type and name.
         """
-        helper.logging.debug("Called extract_user_object_info()")
+        # Log a debug message indicating the function call
+        helper.logging.debug("Called FMCSecurityPolicy::extract_user_object_info()")
+        helper.logging.info(f"Found users on this policy.")
+        # Initialize an empty list to store the processed user object entries
         extracted_user_objects = []
 
+        # Iterate through each user object entry in the provided data structure
         for user_object_entry in user_object_info['objects']:
+            # Extract the name of the user object
             user_object_name = user_object_entry['name']
+            # Construct the processed user object entry containing user type and name
             user_object_processed_entry = user_object_entry['type'] + gvars.separator_character + user_object_name
+            # Append the processed user object entry to the list
             extracted_user_objects.append(user_object_processed_entry)
         
+        # Return the list of processed user object entries
         return extracted_user_objects
 
     def extract_schedule_object_info(self, schedule_object_info):
         """
         Extract schedule object information from the provided data structure.
 
+        This method extracts the names of schedule objects from the given data structure.
+
         Parameters:
             schedule_object_info (list): Information about schedule objects.
 
         Returns:
-            list: List of schedule object names.
+            list: A list of schedule object names extracted from the provided data structure.
         """
-        helper.logging.debug("Called extract_schedule_object_info()")
+        # Log a debug message indicating the function call
+        helper.logging.debug("Called FMCSecurityPolicy::extract_schedule_object_info()")
+        
+        helper.logging.info(f"Found schedule objects on this policy.")
+        # Initialize an empty list to store the extracted schedule object names
         extracted_schedule_objects = []
+        
+        # Iterate through each schedule object entry in the provided data structure
         for schedule_object_entry in schedule_object_info:
+            # Extract the name of the schedule object and append it to the list
             schedule_object_name = schedule_object_entry['name']
             extracted_schedule_objects.append(schedule_object_name)
         
+        # Return the list of extracted schedule object names
         return extracted_schedule_objects
 
     # there are three cases which need to be processed here. the url can be an object, a literal, or a category with reputation
@@ -822,117 +1019,170 @@ class FMCSecurityPolicy(SecurityPolicy):
         """
         Extract URL object information from the provided data structure.
 
+        This method extracts information about URL objects, literals, and categories from the given data structure.
+
         Parameters:
             url_object_info (dict): Information about URL objects.
 
         Returns:
-            list: List of URL objects, including objects, literals, and categories.
+            list: A list of URL objects, including objects, literals, and categories, extracted from the provided data structure.
         """
+        # Log a debug message indicating the function call
+        helper.logging.debug("Called FMCSecurityPolicy::extract_url_object_info()")
+        
+        # Initialize an empty list to store the extracted URL objects
         policy_url_objects_list = []
 
         # Extract URL objects
         try:
+            helper.logging.info(f"Found URL objects on this policy.")
+            # Retrieve the list of URL objects from the provided data structure
             policy_url_objects = url_object_info['objects']
+            # Iterate through each URL object entry
             for policy_url_object in policy_url_objects:
+                # Extract the name of the URL object and append it to the list
                 policy_url_object_name = policy_url_object['name']
                 policy_url_objects_list.append(policy_url_object_name)
         except KeyError:
+            # If there are no URL objects, log an informational message
             helper.logging.info("It looks like there are no URL objects on this policy.")
 
         # Extract URL literals
         try:
+            helper.logging.info(f"Found URL literals on this policy.")
+            # Retrieve the list of URL literals from the provided data structure
             policy_url_literals = url_object_info['literals']
+            # Iterate through each URL literal entry
             for policy_url_literal in policy_url_literals:
+                # Extract the URL literal value and append it to the list
                 policy_url_literal_value = policy_url_literal['url']
                 policy_url_objects_list.append(policy_url_literal_value)
         except KeyError:
+            # If there are no URL literals, log an informational message
             helper.logging.info("It looks like there are no URL literals on this policy.")
 
         # Extract URL categories with reputation
         try:
+            helper.logging.info(f"Found URL categories with reputation on this policy.")
+            # Retrieve the list of URL categories with reputation from the provided data structure
             policy_url_categories = url_object_info['urlCategoriesWithReputation']
+            # Iterate through each URL category entry
             for policy_url_category in policy_url_categories:
+                # Extract the category name and reputation, then construct a formatted name and append it to the list
                 category_name = policy_url_category['category']['name']
                 category_reputation = policy_url_category['reputation']
                 category_name = f"URL_CATEGORY{gvars.separator_character}{category_name}{gvars.separator_character}{category_reputation}"
                 policy_url_objects_list.append(category_name)
         except KeyError:
+            # If there are no URL categories with reputation, log an informational message
             helper.logging.info("It looks like there are no URL categories on this policy.")
 
+        # Return the list of extracted URL objects
         return policy_url_objects_list
     
     def extract_l7_app_object_info(self, l7_app_object_info):
         """
         Extract Layer 7 application object information from the provided data structure.
 
+        This method extracts information about Layer 7 applications and their associated filters from the given data structure.
+
         Parameters:
             l7_app_object_info (dict): Information about Layer 7 application objects.
 
         Returns:
-            list: List of Layer 7 application names and their associated filters.
+            list: A list of Layer 7 application names and their associated filters extracted from the provided data structure.
         """
+        # Initialize an empty list to store the extracted Layer 7 application information
         policy_l7_apps_list = []
 
-        # Extract regular L7 applications
+        # Log a debug message indicating the function call
+        helper.logging.debug("Called FMCSecurityPolicy::extract_l7_app_object_info()")
+        
+        # Extract regular Layer 7 applications
         try:
+            helper.logging.info(f"Found L7 applications on this policy.")
+            # Retrieve the list of Layer 7 applications from the provided data structure
             policy_l7_apps = l7_app_object_info['applications']
+            # Iterate through each Layer 7 application entry
             for policy_l7_app in policy_l7_apps:
+                # Construct the name of the Layer 7 application and append it to the list
                 policy_l7_name = 'APP' + gvars.separator_character + policy_l7_app['name']
                 policy_l7_apps_list.append(policy_l7_name)
         except KeyError:
+            # If there are no Layer 7 applications, log an informational message
             helper.logging.info("It looks like there are no Layer 7 apps on this policy.")
 
-        # Extract L7 application filters
+        # Extract Layer 7 application filters
         try:
+            helper.logging.info(f"Found L7 application filters on this policy.")
+            # Retrieve the list of Layer 7 application filters from the provided data structure
             policy_l7_app_filters = l7_app_object_info['applicationFilters']
+            # Iterate through each Layer 7 application filter entry
             for policy_l7_app_filter in policy_l7_app_filters:
+                # Construct the name of the Layer 7 application filter and append it to the list
                 policy_l7_app_filter_name = 'APP_FILTER' + gvars.separator_character + policy_l7_app_filter['name']
                 policy_l7_apps_list.append(policy_l7_app_filter_name)
         except KeyError:
+            # If there are no Layer 7 application filters, log an informational message
             helper.logging.info("It looks like there are no Layer 7 application filters on this policy.")
 
-        # Extract inline L7 application filters
+        # Extract inline Layer 7 application filters
         try:
+            helper.logging.info(f"Found L7 inline application filters on this policy.")
+            # Retrieve the list of inline Layer 7 application filters from the provided data structure
             policy_inline_l7_app_filters = l7_app_object_info['inlineApplicationFilters']
+            # Iterate through each entry in the list of inline Layer 7 application filters
             for filter_dict in policy_inline_l7_app_filters:
                 for key, elements in filter_dict.items():
                     if isinstance(elements, list):
+                        # Iterate through each element in the inline Layer 7 application filter entry
                         for element in elements:
+                            # Construct the name of the inline Layer 7 application filter and append it to the list
                             filter_name = f"inlineApplicationFilters{gvars.separator_character}{key}{gvars.separator_character}{element['name']}"
                             policy_l7_apps_list.append(filter_name)
         except KeyError:
+            # If there are no inline Layer 7 application filters, log an informational message
             helper.logging.info("It looks like there are no Inline Layer 7 application filters on this policy.")
 
+        # Return the list of extracted Layer 7 application information
         return policy_l7_apps_list
 
     def extract_comments(self, comment_info):
         """
         Extract comments from the provided data structure.
 
+        This method extracts comments from the given data structure and returns a list of dictionaries containing user and comment content.
+
         Parameters:
             comment_info (list): Information about comments.
 
         Returns:
-            list: List of dictionaries containing user and comment content.
+            list: A list of dictionaries containing user and comment content extracted from the provided data structure.
         """
-        helper.logging.debug("Called extract_comments()")
+        # Log a debug message indicating the function call
+        helper.logging.debug("Called FMCSecurityPolicu::extract_comments()")
+        helper.logging.info(f"Found comments on this policy.")
+        # Initialize an empty list to store the processed comments
         processed_comment_list = []
 
         # Iterate over each comment entry
         for comment_entry in comment_info:
-            # Extract user's name and comment content
+            # Extract the user's name and comment content
             comment_user = comment_entry['user']['name']
             comment_content = comment_entry['comment']
-            # Store user and comment content in a dictionary and append it to the list
+            # Store the user and comment content in a dictionary and append it to the list
             processed_comment_list.append({'user': comment_user, 'content': comment_content})
 
+        # Log a debug message indicating the completion of comment processing
         helper.logging.debug(f"Finished processing comments. This is the list: {processed_comment_list}.")
+        
+        # Return the list of processed comments
         return processed_comment_list
     
     #TODO: might need this in other places as well, maybe move it to another class
     # Convert it to static method and put them in the FMCSecurityDevice class
     def convert_network_literals_to_objects(self, network_literals):
-        helper.logging.debug("Called convert_network_literals_to_objects().")
+        helper.logging.debug("Called FMSecurityPolicy::convert_network_literals_to_objects().")
         """
         Convert network literals to objects.
 
@@ -986,7 +1236,7 @@ class FMCSecurityPolicy(SecurityPolicy):
 
     # this too
     def convert_port_literals_to_objects(self, port_literals):
-        helper.logging.debug("Called convert_port_literals_to_objects().")
+        helper.logging.debug("Called FMCSecurityPolicy::convert_port_literals_to_objects().")
         """
         Convert port literals to objects.
 
@@ -1421,12 +1671,17 @@ class FMCSecurityDevice(SecurityDevice):
     # if "example" is a network address, it will stop processing and then it will return a network address object
     def return_network_objects(self):
         """
-        Retrieve information about network objects.
+        Retrieve Python objects with the information about network objects from the device.
+
+        This method retrieves network objects' information from the device, processes it, and returns Python representations of network objects.
 
         Returns:
-            list: List of network objects.
+            list: A list of Python representations of network objects.
         """
-        helper.logging.debug("Called return_network_objects()")
+        # Log a debug message indicating the function call
+        helper.logging.debug("Called FMCSecurityDevice::return_network_objects()")
+        
+        # Log an informative message about processing network objects data info
         helper.logging.info("Processing network objects data info. Retrieving all objects from the database, processing them, and returning their info.")
 
         # Retrieve all network object info from the database
@@ -1446,18 +1701,28 @@ class FMCSecurityDevice(SecurityDevice):
         countries_dict = {entry['id']: entry for entry in countries_info if 'id' in entry}
         continents_dict = {entry['name']: entry for entry in continents_info}
 
+        # Initialize an empty list to store network objects retrieved from the device
         network_objects_from_device_list = []
 
+        # Iterate over each network object name retrieved from the database
         for network_object_name in network_objects_from_db:
+            # Check if the network object is a literal
             if network_object_name.startswith(gvars.network_literal_prefix):
+                # Create a network literal object and append it to the list
                 network_objects_from_device_list.append(FMCNetworkLiteral(network_object_name))
-
+            
+            # Check if the network object represents a country
             elif gvars.separator_character in network_object_name:
                 country_id, country_name = network_object_name.split(gvars.separator_character)
+                # Get the country object information from the countries dictionary
                 country_object_info = countries_dict.get(country_id)
                 if country_object_info:
+                    # Create a country object and append it to the list
                     network_objects_from_device_list.append(FMCCountryObject(country_object_info))
+            
+            # Handle other types of network objects
             else:
+                # Check if the network object name exists in any of the dictionaries
                 if network_object_name in network_address_objects_dict:
                     network_objects_from_device_list.append(FMCNetworkObject(network_address_objects_dict[network_object_name]))
                 elif network_object_name in network_group_objects_dict:
@@ -1467,6 +1732,8 @@ class FMCSecurityDevice(SecurityDevice):
                 elif network_object_name in continents_dict:
                     network_objects_from_device_list.append(FMCContinentObject(continents_dict[network_object_name]))
                 else:
+                    # Log an error message for invalid network objects
                     helper.logging.error(f"{network_object_name} is an invalid object!")
-                    
+        
+        # Return the list of network objects retrieved from the device
         return network_objects_from_device_list

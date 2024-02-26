@@ -546,44 +546,48 @@ class SecurityDevice:
             # Exit the program with status code 1 indicating a critical error
             sys.exit(1)
 
-    # TODO: this needs to be rewritten to be more general. Take the example of importing the object_containers and get_object_info_from_device_conn()
-    def get_security_policy_info_from_device_conn(self, sec_policy_containers_list):
+    def get_policy_info_from_device_conn(self, policy_type, sec_policy_containers_list):
         """
-        Retrieve information about security policies from the specified policy containers.
+        Retrieve information about policies from the specified policy containers.
 
         Args:
-            sec_policy_containers_list (list): List of security policy container names.
+            sec_policy_containers_list (list): List of policy container names.
 
         Returns:
-            list: List of dictionaries containing information about security policies.
+            list: List of dictionaries containing information about policies.
         """
         # Log a debug message indicating that the function is called
-        helper.logging.debug("Called get_security_policy_info_from_device_conn().")
-        # Log an informational message indicating that security policy info configuration is being imported
-        helper.logging.info("################## Importing security policy info configuration ##################")
+        helper.logging.debug("Called get_policy_info_from_device_conn().")
+        # Log an informational message indicating that policy info configuration is being imported
+
+
+        # Define a dictionary to map container types to their corresponding retrieval functions
+        policy_type_mapping = {
+            'security_policy': self.return_security_policy_object,
+            # 'nat_policy': self.return_object_container_object
+        }
+        helper.logging.info(f"################## Importing policy info configuration. Policy type is <{policy_type}>. ##################")
+        # Initialize an empty list to store processed policy information
+        processed_policy_info = []
         
-        # Initialize an empty list to store processed security policy information
-        processed_sec_policy_info = []
-
-        # Iterate over each security policy container name in the provided list
+        policy_retriever_function = policy_type_mapping.get(policy_type)
+        # Iterate over each policy container name in the provided list
         for sec_policy_container_name in sec_policy_containers_list:
-            # Log an informational message indicating the processing of security policies for the current container
-            helper.logging.info(f"Processing security policies of the following container: {sec_policy_container_name}.")
-            # Print a message indicating the processing of security policies for the current container (for debugging)
-            print(f"Processing security policies of the following container: {sec_policy_container_name}.")
+            # Log an informational message indicating the processing of policies for the current container
+            helper.logging.info(f"Processing policies, type <{policy_type}> of the following container: <{sec_policy_container_name}>.")
             
-            # Retrieve raw security policy objects from the specified container
-            raw_sec_policy_objects_list = self.return_security_policy_object(sec_policy_container_name)
+            # Retrieve raw policy objects from the specified container
+            raw_policy_objects_list = policy_retriever_function(sec_policy_container_name)
 
-            # Iterate over each raw security policy object
-            for RawPolicyObject in raw_sec_policy_objects_list:
-                # Process the raw security policy object to extract relevant information
-                processed_sec_policy_entry = RawPolicyObject.process_sec_policy_info()
-                # Append the processed security policy entry to the list
-                processed_sec_policy_info.append(processed_sec_policy_entry)
+            # Iterate over each raw policy object
+            for RawPolicyObject in raw_policy_objects_list:
+                # Process the raw policy object to extract relevant information
+                processed_sec_policy_entry = RawPolicyObject.process_policy_info()
+                # Append the processed policy entry to the list
+                processed_policy_info.append(processed_sec_policy_entry)
 
-        # Return the list of processed security policy information
-        return processed_sec_policy_info
+        # Return the list of processed policy information
+        return processed_policy_info
 
     #TODO: this needs to be modified when ManagedDevice class will be implemented
     def get_managed_devices_info_from_device_conn(self):
@@ -652,19 +656,24 @@ class SecurityDevice:
         }
 
         # Retrieve objects of the specified type using the object type mapping dictionary
-        retrieved_objects = object_type_mapping.get(object_type)
+        retrieved_objects_list = object_type_mapping.get(object_type)
 
+        helper.logging.info(f"################## Importing object configuration. Object type is: <{object_type}>. ##################")
         # Initialize an empty list to store processed objects
         processed_objects_list = []
         
         # Process retrieved objects
-        for retrieved_object in retrieved_objects:
+        for RetrievedObject in processed_objects_list:
+            helper.logging.info(f"Processing object: <{RetrievedObject.get_name()}. Object type is: <{object_type}>>")
+            helper.logging.debug(f"Raw object info: <{RetrievedObject.get_name()}>")
             # Process the retrieved object
-            processed_object = retrieved_object.process_object()
+            processed_object_info = RetrievedObject.process_object()
             # Append the processed object to the list
-            processed_objects_list.append(processed_object)
+            processed_objects_list.append(processed_object_info)
+            helper.logging.info(f"Processed object: <{RetrievedObject.get_name()}. Object type is: <{object_type}>>")
+            helper.logging.debug(f"Processed object info: <{processed_object_info}>")
             # Print the processed object (for debugging purposes)
-            print(processed_object)
+            print(processed_object_info)
         
         # Return the list of processed objects
         return processed_objects_list

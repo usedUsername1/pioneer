@@ -13,9 +13,12 @@ class Object:
         Parameters:
         - object_info (dict): Information about the object.
         """
+        helper.logging.debug("Called Object::__init__()")
+        # Store the provided object information
         self._object_info = object_info
+        
+        # Initialize attributes
         self._name = None
-        self._object_container = None
         self._description = None
         self._is_overridable = None
 
@@ -26,6 +29,7 @@ class Object:
         Returns:
             str: Name of the object.
         """
+        helper.logging.debug("Called Object::get_name()")
         return self._name
 
     def set_name(self, value):
@@ -35,6 +39,7 @@ class Object:
         Parameters:
             value (str): Name of the object.
         """
+        helper.logging.debug("Called Object::set_name()")
         self._name = value
 
     def get_description(self):
@@ -44,6 +49,7 @@ class Object:
         Returns:
             str: Description of the object.
         """
+        helper.logging.debug("Called Object::get_description()")
         return self._description
 
     def set_description(self, value):
@@ -53,6 +59,7 @@ class Object:
         Parameters:
             value (str): Description of the object.
         """
+        helper.logging.debug("Called Object::set_description()")
         self._description = value
 
     def get_override_bool(self):
@@ -62,6 +69,7 @@ class Object:
         Returns:
             bool: Override status of the object.
         """
+        helper.logging.debug("Called Object::get_override_bool()")
         return self._is_overridable
 
     def set_override_bool(self, value):
@@ -71,6 +79,7 @@ class Object:
         Parameters:
             value (bool): Override status of the object.
         """
+        helper.logging.debug("Called Object::set_override_bool()")
         self._is_overridable = value
 
     def get_object_container_name(self):
@@ -80,6 +89,7 @@ class Object:
         Returns:
             str: Name of the object container.
         """
+        helper.logging.debug("Called Object::get_object_container_name()")
         return self._object_container
 
     def set_object_container_name(self, value):
@@ -89,23 +99,19 @@ class Object:
         Parameters:
             value (str): Name of the object container.
         """
+        helper.logging.debug("Called Object::set_object_container_name()")
         self._object_container = value
 
-    @abstractmethod
-    def process_object(self):
-        """
-        Process the object.
-        """
-        pass
-
-    def get_object_device_info(self):
+    def get_info(self):
         """
         Get information about the object.
 
         Returns:
             dict: Information about the object.
         """
+        helper.logging.debug("Called Object::get_object_device_info()")
         return self._object_info
+    
 
 #TODO: implement group objects
 class GroupObject(Object):
@@ -176,6 +182,10 @@ class NetworkGroupObject(GroupObject):
 # For simplicity, all geo data is going to be treated as a Geolocation object.
 # For example, in FMC, you have Geolocation objects (made out of countries and other continents), and then you have the countries and the continents. they are not object entities per se
 # but can be treated as such
+# There is a problem with treating all the entities (Geolocation, Continent and Country) as the same Python object, however.
+# Geolocation can have continents (which can also be made out of multiple countries) or countries. All the information is retrieved at the country object level!
+# All objects can have member alpha2, alpha3 and numeric codes, but only country objects have these actual values defined on them.
+# Hence, there are getters and setters for both the actual values and for the members.
 class GeolocationObject(Object):
     """
     A class representing a geolocation object.
@@ -188,6 +198,7 @@ class GeolocationObject(Object):
         Args:
             object_info (dict): Information about the geolocation object.
         """
+        helper.logging.debug("Called GeolocationObject::__init__()")
         super().__init__(object_info)
         self._continents = None
         self._countries = None
@@ -202,6 +213,7 @@ class GeolocationObject(Object):
         Args:
             value (list): List of continents.
         """
+        helper.logging.debug("Called GeolocationObject::set_continents()")
         self._continents = value
 
     def get_continents(self):
@@ -211,6 +223,7 @@ class GeolocationObject(Object):
         Returns:
             list: List of continents.
         """
+        helper.logging.debug("Called GeolocationObject::get_continents()")
         return self._continents
 
     def set_countries(self, value):
@@ -220,6 +233,7 @@ class GeolocationObject(Object):
         Args:
             value (list): List of countries.
         """
+        helper.logging.debug("Called GeolocationObject::set_countries()")
         self._countries = value
 
     def get_countries(self):
@@ -229,6 +243,7 @@ class GeolocationObject(Object):
         Returns:
             list: List of countries.
         """
+        helper.logging.debug("Called GeolocationObject::get_countries()")
         return self._countries
 
     def set_member_alpha2_codes(self, value):
@@ -238,6 +253,7 @@ class GeolocationObject(Object):
         Args:
             value (list): List of alpha-2 codes.
         """
+        helper.logging.debug("Called GeolocationObject::set_member_alpha2_codes()")
         self._country_alpha2_codes = value
 
     def get_alpha2_codes(self):
@@ -247,6 +263,7 @@ class GeolocationObject(Object):
         Returns:
             list: List of alpha-2 codes.
         """
+        helper.logging.debug("Called GeolocationObject::get_alpha2_codes()")
         return self._country_alpha2_codes
 
     def set_member_alpha3_codes(self, value):
@@ -256,6 +273,7 @@ class GeolocationObject(Object):
         Args:
             value (list): List of alpha-3 codes.
         """
+        helper.logging.debug("Called GeolocationObject::set_member_alpha3_codes()")
         self._country_alpha3_codes = value
 
     def get_alpha3_codes(self):
@@ -265,6 +283,7 @@ class GeolocationObject(Object):
         Returns:
             list: List of alpha-3 codes.
         """
+        helper.logging.debug("Called GeolocationObject::get_alpha3_codes()")
         return self._country_alpha3_codes
 
     def set_member_numeric_codes(self, value):
@@ -274,6 +293,7 @@ class GeolocationObject(Object):
         Args:
             value (list): List of numeric codes.
         """
+        helper.logging.debug("Called GeolocationObject::set_member_numeric_codes()")
         self._country_numeric_codes = value
 
     def get_numeric_codes(self):
@@ -283,6 +303,7 @@ class GeolocationObject(Object):
         Returns:
             list: List of numeric codes.
         """
+        helper.logging.debug("Called GeolocationObject::get_numeric_codes()")
         return self._country_numeric_codes
 
     def get_member_continent_names(self):
@@ -292,6 +313,7 @@ class GeolocationObject(Object):
         Returns:
             list: List of continent names.
         """
+        helper.logging.debug("Called GeolocationObject::get_member_continent_names()")
         if self._continents is None:
             return None
         
@@ -301,7 +323,7 @@ class GeolocationObject(Object):
             continent_member_names.append(continent.get_name())
         
         return continent_member_names
-    
+
     def get_member_country_names(self):
         """
         Get the names of the countries associated with the geolocation object.
@@ -309,6 +331,7 @@ class GeolocationObject(Object):
         Returns:
             list: List of country names.
         """
+        helper.logging.debug("Called GeolocationObject::get_member_country_names()")
         if self._countries is None:
             return None
         
@@ -318,7 +341,7 @@ class GeolocationObject(Object):
             country_member_names.append(country.get_name())
         
         return country_member_names
-    
+
     def get_member_alpha2_codes(self):
         """
         Get the alpha-2 codes of the countries associated with the geolocation object.
@@ -326,6 +349,7 @@ class GeolocationObject(Object):
         Returns:
             list: List of alpha-2 codes.
         """
+        helper.logging.debug("Called GeolocationObject::get_member_alpha2_codes()")
         if self._countries is None:
             return None
         
@@ -335,7 +359,7 @@ class GeolocationObject(Object):
             country_alpha2_codes.append(country.get_alpha2_codes())
 
         return country_alpha2_codes
-    
+
     def get_member_alpha3_codes(self):
         """
         Get the alpha-3 codes of the countries associated with the geolocation object.
@@ -343,6 +367,7 @@ class GeolocationObject(Object):
         Returns:
             list: List of alpha-3 codes.
         """
+        helper.logging.debug("Called GeolocationObject::get_member_alpha3_codes()")
         if self._countries is None:
             return None
         
@@ -352,7 +377,7 @@ class GeolocationObject(Object):
             country_alpha3_codes.append(country.get_alpha3_codes())
 
         return country_alpha3_codes
-    
+
     def get_member_numeric_codes(self):
         """
         Get the numeric codes of the countries associated with the geolocation object.
@@ -360,6 +385,7 @@ class GeolocationObject(Object):
         Returns:
             list: List of numeric codes.
         """
+        helper.logging.debug("Called GeolocationObject::get_member_numeric_codes()")
         if self._countries is None:
             return None
         
@@ -377,6 +403,9 @@ class GeolocationObject(Object):
         Returns:
             dict: Processed information about the geolocation object.
         """
+        helper.logging.debug("Called GeolocationObject::process_object()")
+        # Setters are necessary because the objects' attributes are not set upon their creation. We can only get this data after we construct the object with the data from the security device.
+
         self.set_name()
         self.set_object_container_name()
         self.set_continents()
