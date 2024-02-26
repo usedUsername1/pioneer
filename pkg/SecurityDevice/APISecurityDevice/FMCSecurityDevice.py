@@ -339,85 +339,175 @@ class FMCCountryObject(GeolocationObject):
         return self._country_numeric_codes
 
 class FMCDeviceConnection(APISecurityDeviceConnection):
+    """
+    Represents a connection to a Firepower Management Center (FMC) device.
+    """
+
     def __init__(self, api_username, api_secret, api_hostname, api_port, domain):
+        """
+        Initialize an FMCDeviceConnection instance.
+
+        Parameters:
+            api_username (str): The API username for the connection.
+            api_secret (str): The API secret for the connection.
+            api_hostname (str): The hostname of the FMC device.
+            api_port (int): The port number for the connection.
+            domain (str): The domain of the FMC device.
+        """
         super().__init__(api_username, api_secret, api_hostname, api_port)
         self._domain = domain
         self._device_connection = self.return_security_device_conn_object()  # Initialize _device_connection with FMC object
         helper.logging.debug(f"Called FMCDeviceConnection __init__ with parameters: username {api_username}, hostname {api_hostname}, port {api_port}, domain {domain}.")
 
     def connect_to_security_device(self):
+        """
+        Connect to the Firepower Management Center (FMC) device.
+
+        Returns:
+            fireREST.FMC: An FMC connection object.
+        """
         # Implement connection to FMC specific to FMCDeviceConnection
         fmc_conn = fireREST.FMC(hostname=self._api_hostname, username=self._api_username, password=self._api_secret, domain=self._domain, protocol=self._api_port, timeout=30)
         return fmc_conn
         
 class FMCPolicyContainer(SecurityPolicyContainer):
+    """
+    Represents a policy container specific to the Firepower Management Center (FMC).
+    """
+
     def __init__(self, container_info) -> None:
+        """
+        Initialize an FMCPolicyContainer instance.
+
+        Parameters:
+            container_info (dict): Information about the policy container.
+        """
         super().__init__(container_info)
-    
+
     def get_parent_name(self):
+        """
+        Get the name of the parent policy.
+
+        Returns:
+            str: Name of the parent policy.
+        """
         try:
             return self._container_info['metadata']['parentPolicy']['name']
         except KeyError:
             return None
-        
+
     def is_child_container(self):
-        if self._container_info['metadata']['inherit'] == True:
-            return True
-        else:
-            return False
-        
+        """
+        Check if the container is a child container.
+
+        Returns:
+            bool: True if the container is a child container, False otherwise.
+        """
+        return self._container_info['metadata']['inherit']
+
     def get_name(self):
+        """
+        Get the name of the policy container.
+
+        Returns:
+            str: Name of the policy container.
+        """
         return self._container_info['name']
 
 class FMCObjectContainer(ObjectPolicyContainer):
+    """
+    Represents an object container specific to the Firepower Management Center (FMC).
+    """
+
     def __init__(self, container_info) -> None:
+        """
+        Initialize an FMCObjectContainer instance.
+
+        Parameters:
+            container_info (dict): Information about the object container.
+        """
         super().__init__(container_info)
-    
+
     def is_child_container(self):
+        """
+        Check if the container is a child container.
+
+        Returns:
+            bool: Always returns False for FMC object containers.
+        """
         return False
 
     def get_parent_name(self):
-        None
+        """
+        Get the name of the parent container.
+
+        Returns:
+            None: Since FMC object containers do not have parent containers, it returns None.
+        """
+        return None
   
 class FMCSecurityPolicy(SecurityPolicy):
+    """
+    Represents a security policy specific to the Firepower Management Center (FMC).
+    """
+
     def __init__(self, policy_info_fmc) -> None:
+        """
+        Initialize an FMCSecurityPolicy instance.
+
+        Parameters:
+            policy_info_fmc (dict): Information about the security policy.
+        """
         super().__init__(policy_info_fmc)
 
+    # Methods for setting various attributes of the security policy
     def set_name(self):
+        """Set the name of the security policy."""
         name = self._policy_info['name']
         return super().set_name(name)
-    
+
     def set_container_name(self):
+        """Set the name of the policy container."""
         container_name = self._policy_info['metadata']['accessPolicy']['name']
         return super().set_container_name(container_name)
 
     def set_container_index(self):
+        """Set the index of the policy container."""
         index = self._policy_info['metadata']['ruleIndex']
         return super().set_container_index(index)
     
     def set_status(self):
-        status = 'enabled' if self._policy_info['enabled'] else 'disabled'
+        """
+        Set the status of the security policy (enabled or disabled).
+        """
+        status = 'enabled' if self._policy_info.get('enabled', False) else 'disabled'
         return super().set_status(status)
 
     def set_category(self):
+        """
+        Set the category of the security policy.
+        """
         category = self._policy_info['metadata']['category']
         return super().set_category(category)
 
     def set_source_zones(self):
-        try:
-            source_zones = [self._policy_info['sourceZones']]
-        except KeyError:
-            source_zones = ['any']
+        """
+        Set the source zones for the security policy.
+        """
+        source_zones = self._policy_info.get('sourceZones', ['any'])
         return super().set_source_zones(source_zones)
 
     def set_destination_zones(self):
-        try:
-            destination_zones = [self._policy_info['destinationZones']]
-        except KeyError:
-            destination_zones = ['any']
+        """
+        Set the destination zones for the security policy.
+        """
+        destination_zones = self._policy_info.get('destinationZones', ['any'])
         return super().set_destination_zones(destination_zones)
 
     def set_source_networks(self):
+        """
+        Set the source networks for the security policy.
+        """
         try:
             source_networks = [self._policy_info['sourceNetworks']]
         except KeyError:
@@ -426,6 +516,9 @@ class FMCSecurityPolicy(SecurityPolicy):
         return super().set_source_networks(source_networks)
 
     def set_destination_networks(self):
+        """
+        Set the destination networks for the security policy.
+        """
         try:
             destination_networks = [self._policy_info['destinationNetworks']]
         except KeyError:
@@ -434,6 +527,9 @@ class FMCSecurityPolicy(SecurityPolicy):
         return super().set_destination_networks(destination_networks)
 
     def set_source_ports(self):
+        """
+        Set the source ports for the security policy.
+        """
         try:
             source_ports = [self._policy_info['sourcePorts']]
         except KeyError:
@@ -442,6 +538,9 @@ class FMCSecurityPolicy(SecurityPolicy):
         return super().set_source_ports(source_ports)
 
     def set_destination_ports(self):
+        """
+        Set the destination ports for the security policy.
+        """
         try:
             destination_ports = [self._policy_info['destinationPorts']]
         except KeyError:
@@ -450,6 +549,9 @@ class FMCSecurityPolicy(SecurityPolicy):
         return super().set_destination_ports(destination_ports)
 
     def set_schedule_objects(self):
+        """
+        Set the schedule objects for the security policy.
+        """
         try:
             schedule_objects = [self._policy_info['timeRangeObjects']]
         except KeyError:
@@ -458,6 +560,9 @@ class FMCSecurityPolicy(SecurityPolicy):
         return super().set_schedule_objects(schedule_objects)
 
     def set_users(self):
+        """
+        Set the users for the security policy.
+        """
         try:
             users = [self._policy_info['users']]
         except KeyError:
@@ -466,6 +571,9 @@ class FMCSecurityPolicy(SecurityPolicy):
         return super().set_users(users)
 
     def set_urls(self):
+        """
+        Set the URLs for the security policy.
+        """
         try:
             urls = [self._policy_info['urls']]
         except KeyError:
@@ -474,6 +582,9 @@ class FMCSecurityPolicy(SecurityPolicy):
         return super().set_urls(urls)
 
     def set_policy_apps(self):
+        """
+        Set the applications for the security policy.
+        """
         try:
             policy_apps = [self._policy_info['applications']]
         except KeyError:
@@ -482,6 +593,9 @@ class FMCSecurityPolicy(SecurityPolicy):
         return super().set_policy_apps(policy_apps)
 
     def set_description(self):
+        """
+        Set the description for the security policy.
+        """
         try:
             description = self._policy_info['description']
         except KeyError:
@@ -490,6 +604,9 @@ class FMCSecurityPolicy(SecurityPolicy):
         return super().set_description(description)
 
     def set_comments(self):
+        """
+        Set the comments for the security policy.
+        """
         try:
             comments = [self._policy_info['commentHistoryList']]
         except KeyError:
@@ -498,6 +615,9 @@ class FMCSecurityPolicy(SecurityPolicy):
         return super().set_comments(comments)
 
     def set_log_setting(self):
+        """
+        Set the log settings for the security policy.
+        """
         try:
             log_settings = ['FMC'] if self._policy_info['sendEventsToFMC'] else []
             log_settings += ['Syslog'] if self._policy_info['enableSyslog'] else []
@@ -507,22 +627,44 @@ class FMCSecurityPolicy(SecurityPolicy):
         return super().set_log_setting(log_settings)
 
     def set_log_start(self):
+        """
+        Set the start logging for the security policy.
+        """
         log_start = self._policy_info['logBegin']
         return super().set_log_start(log_start)
 
     def set_log_end(self):
+        """
+        Set the end logging for the security policy.
+        """
         log_end = self._policy_info['logEnd']
         return super().set_log_end(log_end)
 
     def set_section(self):
+        """
+        Set the section for the security policy.
+        """
         section = self._policy_info['metadata']['section']
         return super().set_section(section)
 
     def set_action(self):
+        """
+        Set the action for the security policy.
+        """
         action = self._policy_info['action']
         return super().set_action(action)
 
     def extract_policy_object_info(self, raw_object, object_type):
+        """
+        Extract information about policy objects based on object type.
+
+        Parameters:
+            raw_object (dict): Information about the policy object.
+            object_type (str): Type of the policy object.
+
+        Returns:
+            dict: Extracted information about the policy object.
+        """
         match object_type:
             case 'security_zone':
                 return self.extract_security_zone_object_info(raw_object)
@@ -542,6 +684,15 @@ class FMCSecurityPolicy(SecurityPolicy):
                 return self.extract_comments(raw_object)
                 
     def extract_security_zone_object_info(self, security_zone_object_info):
+        """
+        Extract security zone information from the provided data structure.
+
+        Parameters:
+            security_zone_object_info (dict): Information about security zone objects.
+
+        Returns:
+            list: List of security zone names.
+        """
         helper.logging.debug("Called extract_security_zone_object_info()")
         extracted_security_zones = []
         for security_zone_entry in security_zone_object_info['objects']:
@@ -550,14 +701,21 @@ class FMCSecurityPolicy(SecurityPolicy):
         return extracted_security_zones
         
     def extract_network_address_object_info(self, network_object_info):
-        helper.logging.debug("Called extract_network_address_object_info()")
-        # network_object object could be a proper object or a network literal
-        extracted_member_network_objects = []
-        try:
-            # log that you found objects
-            network_object_info_objects = network_object_info['objects']
+        """
+        Extract network address object information from the provided data structure.
 
-            # loop through all the found member objects, extract the info and add it to the list that will be returned to the caller
+        Parameters:
+            network_object_info (dict): Information about network address objects.
+
+        Returns:
+            list: List of network address object names.
+        """
+        helper.logging.debug("Called extract_network_address_object_info()")
+        extracted_member_network_objects = []
+
+        # Extract information from proper network objects
+        try:
+            network_object_info_objects = network_object_info['objects']
             for network_object_entry in network_object_info_objects:
                 network_object_name = network_object_entry['name']
                 network_object_type = network_object_entry['type']
@@ -567,9 +725,9 @@ class FMCSecurityPolicy(SecurityPolicy):
         except KeyError:
             helper.logging.info(f"It looks like there are no network objects on this policy.")
 
+        # Extract information from network literals
         try:
             helper.logging.info(f"I am looking for literals.")
-            # log info that you found literals
             network_literals = network_object_info['literals']
             helper.logging.debug(f"Literals found {network_literals}.")
             extracted_member_network_objects += self.convert_network_literals_to_objects(network_literals)
@@ -579,16 +737,27 @@ class FMCSecurityPolicy(SecurityPolicy):
         return extracted_member_network_objects
     
     def extract_port_object_info(self, port_object_info):
+        """
+        Extract port object information from the provided data structure.
+
+        Parameters:
+            port_object_info (dict): Information about port objects.
+
+        Returns:
+            list: List of port object names.
+        """
         port_objects_list = []
+
+        # Extract information from proper port objects
         try:
             port_object_info_objects = port_object_info['objects']
-            # Process each port object
             for port_object_entry in port_object_info_objects:
                 port_object_name = port_object_entry['name']
                 port_objects_list.append(port_object_name)
         except KeyError:
             helper.logging.info(f"It looks like there are no port objects on this policy.")
         
+        # Extract information from port literals
         try:
             helper.logging.info(f"I am looking for port literals...")
             port_literals = port_object_info['literals']
@@ -602,6 +771,15 @@ class FMCSecurityPolicy(SecurityPolicy):
         return port_objects_list
 
     def extract_user_object_info(self, user_object_info):
+        """
+        Extract user object information from the provided data structure.
+
+        Parameters:
+            user_object_info (dict): Information about user objects.
+
+        Returns:
+            list: List of processed user object entries.
+        """
         helper.logging.debug("Called extract_user_object_info()")
         extracted_user_objects = []
 
@@ -611,8 +789,17 @@ class FMCSecurityPolicy(SecurityPolicy):
             extracted_user_objects.append(user_object_processed_entry)
         
         return extracted_user_objects
-    
+
     def extract_schedule_object_info(self, schedule_object_info):
+        """
+        Extract schedule object information from the provided data structure.
+
+        Parameters:
+            schedule_object_info (list): Information about schedule objects.
+
+        Returns:
+            list: List of schedule object names.
+        """
         helper.logging.debug("Called extract_schedule_object_info()")
         extracted_schedule_objects = []
         for schedule_object_entry in schedule_object_info:
@@ -623,106 +810,111 @@ class FMCSecurityPolicy(SecurityPolicy):
 
     # there are three cases which need to be processed here. the url can be an object, a literal, or a category with reputation
     def extract_url_object_info(self, url_object_info):
+        """
+        Extract URL object information from the provided data structure.
+
+        Parameters:
+            url_object_info (dict): Information about URL objects.
+
+        Returns:
+            list: List of URL objects, including objects, literals, and categories.
+        """
         policy_url_objects_list = []
+
+        # Extract URL objects
         try:
             policy_url_objects = url_object_info['objects']
             for policy_url_object in policy_url_objects:
                 policy_url_object_name = policy_url_object['name']
                 policy_url_objects_list.append(policy_url_object_name)
-
         except KeyError:
             helper.logging.info("It looks like there are no URL objects on this policy.")
 
+        # Extract URL literals
         try:
             policy_url_literals = url_object_info['literals']
             for policy_url_literal in policy_url_literals:
-                helper.logging.debug(f"Processing policy URL literal: {policy_url_literal}.")
                 policy_url_literal_value = policy_url_literal['url']
-                helper.logging.info(f"Processed policy URL literal: {policy_url_literal_value}.")
                 policy_url_objects_list.append(policy_url_literal_value)
-
         except KeyError:
             helper.logging.info("It looks like there are no URL literals on this policy.")
 
+        # Extract URL categories with reputation
         try:
             policy_url_categories = url_object_info['urlCategoriesWithReputation']
             for policy_url_category in policy_url_categories:
-                helper.logging.debug(f"Processing policy URL category: {policy_url_category}.")
                 category_name = policy_url_category['category']['name']
-
                 category_reputation = policy_url_category['reputation']
-                helper.logging.info(f"Processed policy URL category: {category_name}. It has a reputation of {category_reputation}")
-
                 category_name = f"URL_CATEGORY{gvars.separator_character}{category_name}{gvars.separator_character}{category_reputation}"
-
                 policy_url_objects_list.append(category_name)
-
         except KeyError:
             helper.logging.info("It looks like there are no URL categories on this policy.")
 
         return policy_url_objects_list
     
     def extract_l7_app_object_info(self, l7_app_object_info):
+        """
+        Extract Layer 7 application object information from the provided data structure.
+
+        Parameters:
+            l7_app_object_info (dict): Information about Layer 7 application objects.
+
+        Returns:
+            list: List of Layer 7 application names and their associated filters.
+        """
         policy_l7_apps_list = []
 
+        # Extract regular L7 applications
         try:
             policy_l7_apps = l7_app_object_info['applications']
             for policy_l7_app in policy_l7_apps:
                 policy_l7_name = 'APP' + gvars.separator_character + policy_l7_app['name']
                 policy_l7_apps_list.append(policy_l7_name)
-
         except KeyError:
-            helper.logging.info("It looks like there are no L7 apps on this policy.")
+            helper.logging.info("It looks like there are no Layer 7 apps on this policy.")
 
+        # Extract L7 application filters
         try:
-            helper.logging.info("I am looking for L7 applications filters on this policy.")
             policy_l7_app_filters = l7_app_object_info['applicationFilters']
-            helper.logging.debug(f"Found L7 app filters: {policy_l7_app_filters}")
-
             for policy_l7_app_filter in policy_l7_app_filters:
-                helper.logging.debug(f"Processing policy L7 app filter: {policy_l7_app_filter}.")
                 policy_l7_app_filter_name = 'APP_FILTER' + gvars.separator_character + policy_l7_app_filter['name']
-                helper.logging.info(f"Processed policy L7 app filter: {policy_l7_app_filter_name}.")
                 policy_l7_apps_list.append(policy_l7_app_filter_name)
-
         except KeyError:
-            helper.logging.info("It looks like there are no L7 application filters on this policy.")
+            helper.logging.info("It looks like there are no Layer 7 application filters on this policy.")
 
+        # Extract inline L7 application filters
         try:
-            # Access the Inline L7 application filters from the 'sec_policy' dictionary
             policy_inline_l7_app_filters = l7_app_object_info['inlineApplicationFilters']
-
-            helper.logging.info(f"I have found L7 inline app filters on this policy.)")
-            helper.logging.debug(f"Found L7 inline app filters on this policy: {policy_inline_l7_app_filters}")
-
-            # Iterate over each dictionary in 'policy_inline_l7_app_filters' list.
-            # I have no idea what the fuck me and chatGPT did here, but it works very fine!
-            for index in range(len(policy_inline_l7_app_filters)):
-                # Iterate over each key/category in the current Inline L7 application filter dictionary.
-                for policy_inline_l7_app_filter_key, policy_inline_l7_app_filter_elements in policy_inline_l7_app_filters[index].items():
-                    # Skip any non-list elements
-                    if not isinstance(policy_inline_l7_app_filter_elements, list):
-                        continue
-
-                    # Create a list to store the names of filter elements in the current category
-                    # TODO: modify this so that " " are not present
-                    filter_element_names = [f"inlineApplicationFilters{gvars.separator_character}{policy_inline_l7_app_filter_key}{gvars.separator_character}{policy_inline_l7_app_filter_element['name']}" for policy_inline_l7_app_filter_element in policy_inline_l7_app_filter_elements]
-
-                    # Append the list of filter element names to the 'policy_l7_apps_list'
-                    policy_l7_apps_list.extend(filter_element_names)
-
+            for filter_dict in policy_inline_l7_app_filters:
+                for key, elements in filter_dict.items():
+                    if isinstance(elements, list):
+                        for element in elements:
+                            filter_name = f"inlineApplicationFilters{gvars.separator_character}{key}{gvars.separator_character}{element['name']}"
+                            policy_l7_apps_list.append(filter_name)
         except KeyError:
-            helper.logging.info("It looks like there are no Inline L7 application filters on this policy.")
+            helper.logging.info("It looks like there are no Inline Layer 7 application filters on this policy.")
 
         return policy_l7_apps_list
 
     def extract_comments(self, comment_info):
+        """
+        Extract comments from the provided data structure.
+
+        Parameters:
+            comment_info (list): Information about comments.
+
+        Returns:
+            list: List of dictionaries containing user and comment content.
+        """
         helper.logging.debug("Called extract_comments()")
         processed_comment_list = []
 
+        # Iterate over each comment entry
         for comment_entry in comment_info:
+            # Extract user's name and comment content
             comment_user = comment_entry['user']['name']
             comment_content = comment_entry['comment']
+            # Store user and comment content in a dictionary and append it to the list
             processed_comment_list.append({'user': comment_user, 'content': comment_content})
 
         helper.logging.debug(f"Finished processing comments. This is the list: {processed_comment_list}.")
@@ -823,19 +1015,69 @@ class FMCSecurityPolicy(SecurityPolicy):
         return port_objects_list
 
 class FMCSecurityDevice(SecurityDevice):
+    """
+    Represents a security device connected to Cisco Firepower Management Center (FMC).
+
+    Args:
+        name (str): The name of the security device.
+        sec_device_database: The database for the security device.
+        security_device_username (str): The username for accessing the security device.
+        security_device_secret (str): The secret for accessing the security device.
+        security_device_hostname (str): The hostname or IP address of the security device.
+        security_device_port (int): The port number for connecting to the security device.
+        domain (str): The domain of the security device.
+
+    Attributes:
+        _sec_device_connection: The connection to the FMC device.
+    """
+
     def __init__(self, name, sec_device_database, security_device_username, security_device_secret, security_device_hostname, security_device_port, domain):
+        """
+        Initializes an FMCSecurityDevice instance.
+
+        Args:
+            name (str): The name of the security device.
+            sec_device_database: The database for the security device.
+            security_device_username (str): The username for accessing the security device.
+            security_device_secret (str): The secret for accessing the security device.
+            security_device_hostname (str): The hostname or IP address of the security device.
+            security_device_port (int): The port number for connecting to the security device.
+            domain (str): The domain of the security device.
+        """
         super().__init__(name, sec_device_database)
         helper.logging.debug(f"Called FMCSecurityDevice __init__()")
+        # Establish connection to FMC device
         self._sec_device_connection = FMCDeviceConnection(security_device_username, security_device_secret, security_device_hostname, security_device_port, domain).connect_to_security_device()
 
     def return_security_policy_container_object(self, container_name):
+        """
+        Returns the security policy container object.
+
+        Args:
+            container_name (str): The name of the container.
+
+        Returns:
+            FMCPolicyContainer: The security policy container object.
+        """
+        # Retrieve ACP information from FMC device
         acp_info = self._sec_device_connection.policy.accesspolicy.get(name=container_name)
+        # Initialize and return FMCPolicyContainer object
         return FMCPolicyContainer(acp_info)
     
-    # return a list with policy objects for the whole container
     def return_security_policy_object(self, container_name):
+        """
+        Returns a list of security policy objects.
+
+        Args:
+            container_name (str): The name of the container.
+
+        Returns:
+            list: A list of FMCSecurityPolicy objects.
+        """
         security_policy_objects = []
+        # Retrieve security policy information from FMC device
         fmc_policy_info = self._sec_device_connection.policy.accesspolicy.accessrule.get(container_name=container_name)
+        # Initialize FMCSecurityPolicy objects for each policy and add them to the list
         for fmc_policy_entry in fmc_policy_info:
             security_policy_objects.append(FMCSecurityPolicy(fmc_policy_entry))
         
@@ -843,6 +1085,15 @@ class FMCSecurityDevice(SecurityDevice):
 
     # there are no object containers per se in FMC, therefore, only dummy info will be returned
     def return_object_container_object(self, container_name):
+        """
+        Returns the object container object.
+
+        Args:
+            container_name (str): The name of the container.
+
+        Returns:
+            FMCObjectContainer: The object container object.
+        """
         helper.logging.info("Called return_security_policy_container_object().")
         helper.logging.info(f"################## Importing configuration of the object policy containers. This is a FMC device, nothing to import, will return: virtual_object_container ##################")
         container_info = ''
@@ -852,6 +1103,15 @@ class FMCSecurityDevice(SecurityDevice):
         return dummy_container
 
     def process_managed_device(self, managed_device):
+        """
+        Process a managed device.
+
+        Args:
+            managed_device (dict): Information about the managed device.
+
+        Returns:
+            tuple: A tuple containing device name, assigned security policy container, device hostname, and device cluster.
+        """
         device_name = managed_device['name']
         helper.logging.info(f"Got the following managed device {device_name}.")
         assigned_security_policy_container = managed_device['accessPolicy']['name']
@@ -864,17 +1124,17 @@ class FMCSecurityDevice(SecurityDevice):
             helper.logging.info(f"Managed device {managed_device} is part of a cluster {device_cluster}.")
         except KeyError:
             helper.logging.info(f"Managed device {managed_device} is NOT part of a cluster {device_cluster}.")
-        
+
         return device_name, assigned_security_policy_container, device_hostname, device_cluster
 
     def get_managed_devices_info(self):
-        helper.logging.debug("Called function get_managed_devices_info().")
         """
         Retrieve information about managed devices.
 
         Returns:
             list: List of dictionaries containing information about managed devices.
         """
+        helper.logging.debug("Called function get_managed_devices_info().")
         helper.logging.info("################## GETTING MANAGED DEVICES INFO ##################")
 
         # Execute the request to retrieve information about the devices
@@ -883,34 +1143,39 @@ class FMCSecurityDevice(SecurityDevice):
         return managed_devices
 
     def get_security_policies_info(self, policy_container_name):
-        helper.logging.debug("Called function get_security_policies_info().")
         """
-        Retrieve information about managed devices.
+        Retrieve information about security policies within a specified container.
+
+        Args:
+            policy_container_name (str): Name of the container containing the security policies.
 
         Returns:
-            list: List of dictionaries containing information about managed devices.
+            list: List of dictionaries containing information about security policies.
         """
+        helper.logging.debug("Called function get_security_policies_info().")
         helper.logging.info("################## GETTING SECURITY POLICIES INFO ##################")
 
-        # Execute the request to retrieve information about the devices
+        # Execute the request to retrieve information about the security policies
         security_policies_info = self._sec_device_connection.policy.accesspolicy.accessrule.get(container_name=policy_container_name)
-        # helper.logging.debug(f"Executed API call to the FMC device, got the following info {security_policies_info}.")
         return security_policies_info
     
     def get_device_version(self):
-        helper.logging.debug("Called function det_device_version()")
         """
         Retrieve the version of the device's server.
 
         Returns:
             str: Version of the device's server.
         """
+        helper.logging.debug("Called function get_device_version()")
+        helper.logging.info("################## GETTING DEVICE VERSION INFO ##################")
+
         # Retrieve device system information to get the server version
         device_system_info = self._sec_device_connection.system.info.serverversion.get()
-        helper.logging.debug(f"Executed API call to the FMC device, got the following info {device_system_info}.")
         device_version = device_system_info[0]['serverVersion']
         return device_version
-    
+
+# everything enclosed here must disappear
+########################################
     def process_network_literals(self, network_address_literals):
         """
         Process network address literals.
@@ -1133,26 +1398,32 @@ class FMCSecurityDevice(SecurityDevice):
         port_address_objects_info = {entry['name']: entry for entry in port_address_objects_info}
 
         return port_objects_db
-
+########################################
+    
     # This function returns Python network objects back to the caller.
     # for the objects stored in the database, it checks where they are exactly located on the Security Device
     # if "example" is a network address, it will stop processing and then it will return a network address object
     def return_network_objects(self):
+        """
+        Retrieve information about network objects.
+
+        Returns:
+            list: List of network objects.
+        """
         helper.logging.debug("Called return_network_objects()")
         helper.logging.info("Processing network objects data info. Retrieving all objects from the database, processing them, and returning their info.")
 
-        # Step 1: Retrieve all network object info from the database
+        # Retrieve all network object info from the database
         network_objects_from_db = self.get_db_objects('network_objects')
         
-        # Step 2: Get the information of all network address objects, network group objects, geolocation objects, countries, and continents from FMC
+        # Get the information of all network address objects, network group objects, geolocation objects, countries, and continents from FMC
         network_address_objects_info = self._sec_device_connection.object.networkaddress.get()
         network_group_objects_info = self._sec_device_connection.object.networkgroup.get()
         geolocation_objects_info = self._sec_device_connection.object.geolocation.get()
         countries_info = self._sec_device_connection.object.country.get()
         continents_info = self._sec_device_connection.object.continent.get()
 
-        # Step 3: Convert obtained data into dictionaries for efficient lookups
-        # TODO: try and excepts here, in case conversion might fail
+        # Convert obtained data into dictionaries for efficient lookups
         network_address_objects_dict = {entry['name']: entry for entry in network_address_objects_info}
         network_group_objects_dict = {entry['name']: entry for entry in network_group_objects_info}
         geolocation_objects_dict = {entry['name']: entry for entry in geolocation_objects_info}
@@ -1164,7 +1435,7 @@ class FMCSecurityDevice(SecurityDevice):
         for network_object_name in network_objects_from_db:
             if network_object_name.startswith(gvars.network_literal_prefix):
                 network_objects_from_device_list.append(FMCNetworkLiteral(network_object_name))
-            #TODO: modify country lookup
+
             elif gvars.separator_character in network_object_name:
                 country_id, country_name = network_object_name.split(gvars.separator_character)
                 country_object_info = countries_dict.get(country_id)
@@ -1180,7 +1451,6 @@ class FMCSecurityDevice(SecurityDevice):
                 elif network_object_name in continents_dict:
                     network_objects_from_device_list.append(FMCContinentObject(continents_dict[network_object_name]))
                 else:
-                    helper.logging.error(f"{network_object_name} in an invalid object!")
-
+                    helper.logging.error(f"{network_object_name} is an invalid object!")
                     
         return network_objects_from_device_list

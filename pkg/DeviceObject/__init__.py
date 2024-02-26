@@ -1,44 +1,113 @@
 import utils.helper as helper
+from abc import abstractmethod
 
 class Object:
+    """
+    Base class for representing objects in the system.
+    """
+
     def __init__(self, object_info) -> None:
+        """
+        Initialize an Object instance.
+
+        Parameters:
+        - object_info (dict): Information about the object.
+        """
         self._object_info = object_info
         self._name = None
         self._object_container = None
         self._description = None
         self._is_overridable = None
-        self._object_container = None
-    
+
     def get_name(self):
+        """
+        Get the name of the object.
+
+        Returns:
+            str: Name of the object.
+        """
         return self._name
-    
+
     def set_name(self, value):
+        """
+        Set the name of the object.
+
+        Parameters:
+            value (str): Name of the object.
+        """
         self._name = value
-    
+
     def get_description(self):
+        """
+        Get the description of the object.
+
+        Returns:
+            str: Description of the object.
+        """
         return self._description
-    
+
     def set_description(self, value):
+        """
+        Set the description of the object.
+
+        Parameters:
+            value (str): Description of the object.
+        """
         self._description = value
-    
+
     def get_override_bool(self):
+        """
+        Get the override status of the object.
+
+        Returns:
+            bool: Override status of the object.
+        """
         return self._is_overridable
-    
+
     def set_override_bool(self, value):
+        """
+        Set the override status of the object.
+
+        Parameters:
+            value (bool): Override status of the object.
+        """
         self._is_overridable = value
-    
+
     def get_object_container_name(self):
+        """
+        Get the name of the object container.
+
+        Returns:
+            str: Name of the object container.
+        """
         return self._object_container
-    
+
     def set_object_container_name(self, value):
+        """
+        Set the name of the object container.
+
+        Parameters:
+            value (str): Name of the object container.
+        """
         self._object_container = value
-    
+
+    @abstractmethod
     def process_object(self):
+        """
+        Process the object.
+        """
         pass
 
     def get_object_device_info(self):
+        """
+        Get information about the object.
+
+        Returns:
+            dict: Information about the object.
+        """
         return self._object_info
 
+#TODO: implement group objects
 class GroupObject(Object):
     def __init__(self, object_info) -> None:
         super().__init__(object_info)
@@ -68,7 +137,8 @@ class GroupObject(Object):
         }
 
         return processed_group_object_info
-    
+
+#TODO: implement network objects
 class NetworkObject(Object):
     def __init__(self, object_info) -> None:
         super().__init__(object_info)
@@ -99,6 +169,7 @@ class NetworkObject(Object):
 
         return processed_group_object_info
 
+#TODO: implement network group objects
 class NetworkGroupObject(GroupObject):
     pass
 

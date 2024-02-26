@@ -8,12 +8,25 @@ import sys
 
 # TODO: create all the tables for all the objects
 class SecurityDeviceDatabase(PioneerDatabase):
+    """
+    A class representing a database for security devices.
+    """
+
     def __init__(self, cursor):
+        """
+        Initialize the SecurityDeviceDatabase instance.
+
+        Args:
+            cursor: The cursor object for database operations.
+        """
         super().__init__(cursor)
         helper.logging.debug(f"Called SecurityDeviceDatabase __init__ with the following cursor {self._cursor}.")
     
     def create_security_device_tables(self):
-        helper.logging.debug(f"Called create_security_device_tables().")
+        """
+        Create tables for security device data in the database.
+        """
+        helper.logging.debug("Called create_security_device_tables().")
         self.table_factory("general_data_table")
         self.table_factory("security_policy_containers_table")
         self.table_factory("nat_policy_containers_table")
@@ -39,10 +52,16 @@ class SecurityDeviceDatabase(PioneerDatabase):
     #TODO: tables for l7 and ping apps
     #TODO: table for time range objects
     def table_factory(self, table_name):
+        """
+        Create a table in the database if it does not already exist.
+
+        Args:
+            table_name (str): The name of the table to create.
+        """
         helper.logging.debug(f"Called table_factory() with the following parameters: table name: {table_name}.")
         match table_name:
             case 'general_data_table':
-                # define the command for creating the table
+                # Define the command for creating the general_data_table
                 command = """CREATE TABLE IF NOT EXISTS general_data_table (
                 security_device_name TEXT PRIMARY KEY,
                 security_device_username TEXT NOT NULL,
@@ -53,6 +72,8 @@ class SecurityDeviceDatabase(PioneerDatabase):
                 security_device_version TEXT NOT NULL,
                 security_device_domain TEXT NOT NULL
                 );"""
+                # Execute the command to create the table
+                self.execute_command(command)
 
             case 'security_policy_containers_table':
                 command = """CREATE TABLE IF NOT EXISTS security_policy_containers_table (
@@ -277,11 +298,16 @@ class SecurityDeviceDatabase(PioneerDatabase):
         # create the table in the database
         self.create_table(table_name, command)
 
-class SecurityDeviceConnection():
+class SecurityDeviceConnection:
+    """
+    A class representing a connection to a security device.
+    """
+
     def __init__(self) -> None:
+        """
+        Initialize the SecurityDeviceConnection instance.
+        """
         pass
-# this will be a generic security device only with a database, acessing it will be possible
-# in main, without acessing the protected attributes. better option for "--device"
 
 class SecurityDevice:
     def __init__(self, name, sec_device_database):
@@ -296,8 +322,17 @@ class SecurityDevice:
         self._database = sec_device_database
         helper.logging.debug("Called SecurityDevice __init__.")
 
-    #TODO: what to do when containers are conflicting? for example, when you have real security policy containers, but virtual containers?
     def get_containers_info_from_device_conn(self, containers_list, container_type):
+        """
+        Retrieve information about containers from the security device.
+
+        Parameters:
+        - containers_list (list): List of container names to retrieve information for.
+        - container_type (str): Type of containers to retrieve information for.
+
+        Returns:
+        - list: List of processed container information.
+        """
         helper.logging.debug(f"Called get_containers_info_from_device_conn()")
         helper.logging.info(f"################## Importing configuration of the device containers. ##################")
         processed_container_list = []
@@ -351,17 +386,69 @@ class SecurityDevice:
     
     @abstractmethod
     def return_security_policy_container_object(self):
+        """
+        Abstract method to return a security policy container object.
+        """
+        pass
+
+    @abstractmethod
+    def get_device_version(self):
+        """
+        Abstract method to retrieve the version of the device's server.
+
+        Returns:
+            str: Version of the device's server.
+        """
+        pass
+
+    @abstractmethod
+    def return_security_policy_object(self):
+        """
+        Abstract method to return a security policy object.
+        """
+        pass
+
+    @abstractmethod
+    def return_object_container_object(self, container_name):
+        """
+        Abstract method to return an object container object.
+
+        Args:
+            container_name (str): Name of the object container.
+
+        Returns:
+            Object: Object container object.
+        """
+        pass
+
+    @abstractmethod
+    def get_managed_devices_info(self):
+        """
+        Abstract method to retrieve information about managed devices.
+
+        Returns:
+            list: List of dictionaries containing information about managed devices.
+        """
+        pass
+
+    @abstractmethod
+    def process_managed_device(self):
+        """
+        Abstract method to process information about a managed device.
+
+        Returns:
+            tuple: Tuple containing information about the managed device.
+        """
         pass
 
     def get_device_version_from_device_conn(self):
-        helper.logging.debug("Called function det_device_version()")
         """
         Retrieve the version of the device's server.
 
         Returns:
             str: Version of the device's server.
         """
-        # Retrieve device system information to get the server version
+        helper.logging.debug("Called function det_device_version()")
         try:
             device_version = self.get_device_version()
             helper.logging.info(f"Got device version {device_version}")
@@ -370,52 +457,43 @@ class SecurityDevice:
             helper.logging.critical(f'Could not retrieve platform version. Reason: {err}')
             sys.exit(1)
 
-    @abstractmethod
-    def get_device_version(self):
-        pass
-
-    #TODO, might also need to refactor this like the object container function and like the get object info function
     def get_security_policy_info_from_device_conn(self, sec_policy_containers_list):
         """
         Retrieve information about security policies from the specified policy containers.
 
         Args:
-            sec_policy_container_list (list): List of security policy container names.
+            sec_policy_containers_list (list): List of security policy container names.
 
         Returns:
             list: List of dictionaries containing information about security policies.
         """
-        # Loop through the policy containers provided by the user
         helper.logging.debug("Called get_security_policy_info_from_device_conn().")
-        helper.logging.info("################## Importing security policy info configuration ##################.")
+        helper.logging.info("################## Importing security policy info configuration ##################")
+        
         processed_sec_policy_info = []
-        raw_sec_policy_objects = []
+
         for sec_policy_container_name in sec_policy_containers_list:
-            helper.logging.info(f"I am processing the security policies of the following container: {sec_policy_container_name}.")
-            print(f"I am processing the security policies of the following container: {sec_policy_container_name}.")
+            helper.logging.info(f"Processing security policies of the following container: {sec_policy_container_name}.")
+            print(f"Processing security policies of the following container: {sec_policy_container_name}.")
+            
             raw_sec_policy_objects = self.return_security_policy_object(sec_policy_container_name)
 
-            # Now loop through the policies
             for raw_sec_policy_object in raw_sec_policy_objects:
-                # Retrieve information for each policy
                 processed_sec_policy_entry = raw_sec_policy_object.process_sec_policy_info()
                 processed_sec_policy_info.append(processed_sec_policy_entry)
 
         return processed_sec_policy_info
 
-    @abstractmethod
-    def return_security_policy_object(self):
-        pass
-    #TODO: create object for managed devices and refactor
     def get_managed_devices_info_from_device_conn(self):
-        helper.logging.debug("Called function get_managed_devices_info().")
         """
         Retrieve information about managed devices.
 
         Returns:
             list: List of dictionaries containing information about managed devices.
         """
+        helper.logging.debug("Called function get_managed_devices_info().")
         helper.logging.info("################## GETTING MANAGED DEVICES INFO ##################")
+        
         try:
             managed_devices_info = self.get_managed_devices_info()
         except Exception as err:
@@ -434,18 +512,6 @@ class SecurityDevice:
             processed_managed_devices.append(managed_device_entry)
 
         return processed_managed_devices
-
-    @abstractmethod
-    def get_managed_devices_info(self):
-        pass
-
-    @abstractmethod
-    def process_managed_device(self):
-        pass
-
-    @abstractmethod
-    def return_object_container_object(self, container_name):
-        pass
     
     # this function aggregates multiple functions, each responsible for getting data from different objects
     # store all the info as a json, and return the json back to main, which will be responsible for adding it
@@ -461,12 +527,19 @@ class SecurityDevice:
     # add a parameter for the object type
     # based on that parameter, get the info about the object type specified in the paramter, like in get_containers_info_from_device_conn
     def get_object_info_from_device_conn(self, object_type):
+        """
+        Retrieve information about objects of a specified type from the security device.
+
+        Args:
+            object_type (str): Type of objects to retrieve information for.
+
+        Returns:
+            list: List of processed objects.
+        """
         helper.logging.debug("Called get_object_info_from_device_conn()")
-        helper.logging.info(f"##################  FETCHING INFO ABOUT THE OBJECTS ##################")
+        helper.logging.info("##################  FETCHING INFO ABOUT THE OBJECTS ##################")
         
-        # pass the list with the names of the objects to the function which will get info about them. that function will also return
-        # a list with Python objects. that list will be then sent to further processing.
-        # get lists with objects for all types of objects
+        # Dictionary mapping object types to functions retrieving objects
         object_type_mapping = {
             'network_objects': self.return_network_objects(),
             # 'port_objects': self.return_port_objects(),
@@ -476,59 +549,59 @@ class SecurityDevice:
             # 'app_objects': self.return_app_objects()
         }
 
-        # based on the object type, init the objects_db variable with the right info from the database
+        # Retrieve objects of the specified type
         retrieved_objects = object_type_mapping.get(object_type)
 
+        processed_objects_list = []
+        # Process retrieved objects
         for retrieved_object in retrieved_objects:
             processed_objects = retrieved_object.process_object()
+            processed_objects_list.append(processed_objects)
             print(processed_objects)
         
-            
-
-        # loop through the objects
-        # send them to the process function
-        # return the processed data in order to be inserted in the database. append each processed object to its right list
-
-        # # get the network address objects data
-        # helper.logging.info(f"\n################## FETCHING NETWORK ADDRESS OBJECTS AND NETWORK GROUPS INFO ##################")
-        # print("Importing network addresses, network groups and geolocation objects data.")
-        # # get the port objects data
-        # helper.logging.info(f"\n################## FETCHING PORT OBJECTS AND PORT GROUPS INFO ##################")
-        # print(f"Importing port objects, port group objects data")
-        # return self.get_port_objects_info()
-        # port_objects, port_group_objects = self.get_port_objects_info()
-
-        # return network_objects, network_group_objects, geolocation_objects
-        # # get the schedule objects data
-        # print(f"######### SCHEDULE OBJECTS INFO RETRIEVAL")
-
-        # # get the policy users data
-        # print(f"######### POLICY USERS INFO RETRIEVAL")
-
-        # # get the url objects data
-        # print(f"######### URL OBJECTS INFO RETRIEVAL")
-
-        # # get the applications
-        # print(f"######### L7 APPS INFO RETRIEVAL")
-        # pass
+        return processed_objects_list
     
     # implemented in child SecurityDevices
-    def return_network_objects():
+    @abstractmethod
+    def return_network_objects(self):
+        """
+        Abstract method to return network objects.
+        """
         pass
 
-    def return_port_objects():
+    @abstractmethod
+    def return_port_objects(self):
+        """
+        Abstract method to return port objects.
+        """
         pass
     
-    def return_schedule_objects():
+    @abstractmethod
+    def return_schedule_objects(self):
+        """
+        Abstract method to return schedule objects.
+        """
         pass
 
-    def return_policy_users():
+    @abstractmethod
+    def return_policy_users(self):
+        """
+        Abstract method to return policy users.
+        """
         pass
 
-    def return_url_objects():
+    @abstractmethod
+    def return_url_objects(self):
+        """
+        Abstract method to return URL objects.
+        """
         pass
 
-    def return_app_objects():
+    @abstractmethod
+    def return_app_objects(self):
+        """
+        Abstract method to return application objects.
+        """
         pass
 
     def get_security_device_type_from_db(self):
@@ -1182,4 +1255,3 @@ class SecurityDevice:
 
     def delete_security_device(self):
         pass
-
