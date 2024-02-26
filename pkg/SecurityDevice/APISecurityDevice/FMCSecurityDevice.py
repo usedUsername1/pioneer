@@ -369,7 +369,8 @@ class FMCDeviceConnection(APISecurityDeviceConnection):
         # Implement connection to FMC specific to FMCDeviceConnection
         fmc_conn = fireREST.FMC(hostname=self._api_hostname, username=self._api_username, password=self._api_secret, domain=self._domain, protocol=self._api_port, timeout=30)
         return fmc_conn
-        
+
+#TODO: maybe use setters for setting the values in here, and use the getters from the parent class to retrieve the info
 class FMCPolicyContainer(SecurityPolicyContainer):
     """
     Represents a policy container specific to the Firepower Management Center (FMC).
@@ -382,6 +383,7 @@ class FMCPolicyContainer(SecurityPolicyContainer):
         Parameters:
             container_info (dict): Information about the policy container.
         """
+        helper.logging.debug("Called FMCPolicyContainer::__init__()")
         super().__init__(container_info)
 
     def get_parent_name(self):
@@ -391,6 +393,7 @@ class FMCPolicyContainer(SecurityPolicyContainer):
         Returns:
             str: Name of the parent policy.
         """
+        helper.logging.debug("Called FMCPolicyContainer::get_parent_name()")
         try:
             return self._container_info['metadata']['parentPolicy']['name']
         except KeyError:
@@ -403,6 +406,7 @@ class FMCPolicyContainer(SecurityPolicyContainer):
         Returns:
             bool: True if the container is a child container, False otherwise.
         """
+        helper.logging.debug("Called FMCPolicyContainer::is_child_container()")
         return self._container_info['metadata']['inherit']
 
     def get_name(self):
@@ -412,8 +416,10 @@ class FMCPolicyContainer(SecurityPolicyContainer):
         Returns:
             str: Name of the policy container.
         """
+        helper.logging.debug("Called FMCPolicyContainer::get_name()")
         return self._container_info['name']
 
+#TODO: maybe use setters for setting the values in here, and use the getters from the parent class to retrieve the info
 class FMCObjectContainer(ObjectPolicyContainer):
     """
     Represents an object container specific to the Firepower Management Center (FMC).
@@ -426,6 +432,7 @@ class FMCObjectContainer(ObjectPolicyContainer):
         Parameters:
             container_info (dict): Information about the object container.
         """
+        helper.logging.debug("Called FMCObjectContainer::__init__()")
         super().__init__(container_info)
 
     def is_child_container(self):
@@ -435,6 +442,7 @@ class FMCObjectContainer(ObjectPolicyContainer):
         Returns:
             bool: Always returns False for FMC object containers.
         """
+        helper.logging.debug("Called FMCObjectContainer::is_child_container()")
         return False
 
     def get_parent_name(self):
@@ -444,6 +452,7 @@ class FMCObjectContainer(ObjectPolicyContainer):
         Returns:
             None: Since FMC object containers do not have parent containers, it returns None.
         """
+        helper.logging.debug("Called FMCObjectContainer::get_parent_name()")
         return None
   
 class FMCSecurityPolicy(SecurityPolicy):
@@ -1044,12 +1053,13 @@ class FMCSecurityDevice(SecurityDevice):
             security_device_port (int): The port number for connecting to the security device.
             domain (str): The domain of the security device.
         """
+        helper.logging.debug("Called FMCSecurityDevice::__init__()")
         super().__init__(name, sec_device_database)
-        helper.logging.debug(f"Called FMCSecurityDevice __init__()")
         # Establish connection to FMC device
         self._sec_device_connection = FMCDeviceConnection(security_device_username, security_device_secret, security_device_hostname, security_device_port, domain).connect_to_security_device()
 
     def return_security_policy_container_object(self, container_name):
+        helper.logging.debug("Called FMCSecurityDevice::return_security_policy_container_object()")
         """
         Returns the security policy container object.
 
@@ -1065,6 +1075,7 @@ class FMCSecurityDevice(SecurityDevice):
         return FMCPolicyContainer(acp_info)
     
     def return_security_policy_object(self, container_name):
+        helper.logging.debug("Called FMCSecurityDevice::return_security_policy_object()")
         """
         Returns a list of security policy objects.
 
@@ -1074,17 +1085,23 @@ class FMCSecurityDevice(SecurityDevice):
         Returns:
             list: A list of FMCSecurityPolicy objects.
         """
+        # Initialize an empty list to store FMCSecurityPolicy objects
         security_policy_objects = []
-        # Retrieve security policy information from FMC device
+
+        # Retrieve security policy information from FMC device using the provided container name
         fmc_policy_info = self._sec_device_connection.policy.accesspolicy.accessrule.get(container_name=container_name)
-        # Initialize FMCSecurityPolicy objects for each policy and add them to the list
+
+        # Iterate through each policy entry retrieved from the FMC device
         for fmc_policy_entry in fmc_policy_info:
+            # Create an instance of FMCSecurityPolicy using the policy entry and append it to the list
             security_policy_objects.append(FMCSecurityPolicy(fmc_policy_entry))
         
+        # Return the list of FMCSecurityPolicy objects
         return security_policy_objects
 
     # there are no object containers per se in FMC, therefore, only dummy info will be returned
     def return_object_container_object(self, container_name):
+        helper.logging.debug("Called FMCSecurityDevice::return_object_container_object(). There are no actual containers on this type of security device. Will return a virtual one.")
         """
         Returns the object container object.
 
@@ -1094,14 +1111,13 @@ class FMCSecurityDevice(SecurityDevice):
         Returns:
             FMCObjectContainer: The object container object.
         """
-        helper.logging.info("Called return_security_policy_container_object().")
-        helper.logging.info(f"################## Importing configuration of the object policy containers. This is a FMC device, nothing to import, will return: virtual_object_container ##################")
         container_info = ''
         dummy_container = FMCObjectContainer(container_info)
         dummy_container.set_name("virtual_object_container")
         dummy_container.set_parent(None)
         return dummy_container
 
+    #TODO: move this managed devices functions
     def process_managed_device(self, managed_device):
         """
         Process a managed device.
@@ -1166,11 +1182,11 @@ class FMCSecurityDevice(SecurityDevice):
         Returns:
             str: Version of the device's server.
         """
-        helper.logging.debug("Called function get_device_version()")
-        helper.logging.info("################## GETTING DEVICE VERSION INFO ##################")
-
+        helper.logging.debug("Called FMCSecurityDevice::get_device_version()")
         # Retrieve device system information to get the server version
         device_system_info = self._sec_device_connection.system.info.serverversion.get()
+
+        # Extract the exact info needed from the response got from the device
         device_version = device_system_info[0]['serverVersion']
         return device_version
 

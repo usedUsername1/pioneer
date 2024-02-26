@@ -79,7 +79,7 @@ def main():
         log_file = 'general.log'
         helper.setup_logging(log_folder, log_file)
 
-        helper.logging.info("################## CREATING A NEW DEVICE ##################")
+        helper.logging.info(f"################## CREATING A NEW DEVICE: <{security_device_name}> ##################")
 
         security_device_type = pioneer_args["device_type [type]"]
         security_device_hostname = pioneer_args["hostname [hostname]"]
@@ -87,14 +87,16 @@ def main():
         security_device_secret = pioneer_args["secret [secret]"]
         security_device_port = pioneer_args["port [port]"]
         domain = pioneer_args["domain [fmc_domain]"]
-        
+        helper.logging.debug(f"Got the following info about device from user, security device name: <{security_device_name}>, type <{security_device_type}>, hostname <{security_device_hostname}, username <{security_device_username}>, secret <>, port: <{security_device_port}>, domain <{domain}>.")
+
         # connect to the postgres, create cursor and security device database
         security_device_db_name = security_device_name + "_db"
         database_conn = DBConnection(db_user, landing_database , db_password, db_host, db_port)
         db_cursor = database_conn.create_cursor()
         PioneerProjectsDB = PioneerDatabase(db_cursor)
 
-        helper.logging.info(f"Creating device database: {security_device_db_name}.")
+        helper.logging.info(f"Creating device database: <{security_device_db_name}>.")
+        helper.logging.debug(f"Connecting to the Postgres using, user: <{db_user}>, password ..., host: <{db_host}>, port: <{db_port}>, landing database: <{landing_database}>.")
         PioneerProjectsDB.create_database(security_device_db_name)
         
         # in order to succesfully create a security device, it needs to have valid data
@@ -102,7 +104,7 @@ def main():
         # connect to the device database and get a cursor for the database connection
         security_device_db_conn = DBConnection(db_user, security_device_db_name, db_password, db_host, db_port)
         
-        helper.logging.info(f"Connecting to device database: {security_device_db_name}.")
+        helper.logging.info(f"Connecting to device database: <{security_device_db_name}>.")
         security_device_cursor = security_device_db_conn.create_cursor()
 
         # note: the reason a device connection can't be created here is because the connection is relying on the device type
@@ -113,7 +115,7 @@ def main():
         
 
         # and create the specific tables of the security device
-        helper.logging.info(f"Creating the tables in device database: {security_device_db_name}.")
+        helper.logging.info(f"Creating the tables in device database: <{security_device_db_name}>.")
         SecurityDeviceDB.create_security_device_tables()
 
         # based on the device type, generate a security device object
@@ -125,20 +127,18 @@ def main():
         #     SecurityDeviceObject = ConfigSecurityDeviceFactory.build_config_security_device()
 
         else:
-            helper.logging.critical(f"Provided device type {security_device_type} is invalid.")
+            helper.logging.critical(f"Provided device type <{security_device_type}> is invalid.")
             sys.exit(1)
         
         # get version of the security device
-        helper.logging.info(f"################## Getting the device version for device: {security_device_name}. ##################")
+        helper.logging.info(f"################## Getting the device version for device: <{security_device_name}>. ##################")
         security_device_version = SecurityDeviceObject.get_device_version_from_device_conn()
         # insert the device name, username, secret, hostname, type and version into the general_data table
         helper.logging.info(f"Inserting general device info in the database.")
         SecurityDeviceObject.insert_into_general_table(security_device_username, security_device_secret, security_device_hostname, security_device_type, security_device_port, security_device_version, domain)
 
-        # TODO refactor import managed devices
-
         # retrive the information about the managed devices. if the device is a standalone device, the managed device will be the standalone device
-        helper.logging.info(f"################## Getting the managed devices of device: {security_device_name}. ##################")
+        helper.logging.info(f"################## Getting the managed devices of device: <{security_device_name}>. ##################")
         managed_devices_info = SecurityDeviceObject.get_managed_devices_info_from_device_conn()
 
         # insert it into the table
@@ -158,7 +158,7 @@ def main():
         general_logger = helper.logging.getLogger('general') 
 
         general_logger.info("################## Security device data processing ##################")
-        general_logger.info(f"I am now processing security device {security_device_name}.")
+        general_logger.info(f"I am now processing security device <{security_device_name}>.")
         security_device_db_name = security_device_name + "_db"
         security_device_db_conn = DBConnection(db_user, security_device_db_name, db_password, db_host, db_port)
         security_device_cursor = security_device_db_conn.create_cursor()
@@ -171,10 +171,10 @@ def main():
 
         # get the security device type
         security_device_type = GenericSecurityDevice.get_security_device_type_from_db()
-        helper.logging.info(f"Got device type {security_device_type}.")
+        helper.logging.info(f"Got device type <{security_device_type}>.")
 
         if '-api' in security_device_type:
-            helper.logging.info(f"{security_device_name} is an API device. Type: {security_device_type}")
+            helper.logging.info(f"<{security_device_name}> is an API device. Type: <{security_device_type}>")
             # get the security device hostname
 
             security_device_hostname = GenericSecurityDevice.get_security_device_hostname_from_db()
@@ -216,7 +216,7 @@ def main():
             # and pretty much the rest of the config (routing, VPNs, etc...)
         if pioneer_args["import_config"]:
             # import the policy containers of the device.
-            helper.logging.info(f"################## IMPORTING CONFIGURATION OF {security_device_name}.##################")
+            helper.logging.info(f"################## IMPORTING CONFIGURATION OF <{security_device_name}>.##################")
             if(pioneer_args["security_policy_container [container_name]"]):
                 passed_container_names = pioneer_args["security_policy_container [container_name]"]
                 passed_container_names_list = []
@@ -235,13 +235,11 @@ def main():
                 # contains the information (thus the policies) it inherits from all the parents
                 print("Importing the security policy data.")
 
-                #TODO: Everything works up to this point. debug everything below
-                # do I keep this like this? or do i modify it to respect the new code better?
+                # TODO: continue documenting and debugging from this function
                 sec_policy_data = SpecificSecurityDeviceObject.get_security_policy_info_from_device_conn(passed_container_names_list)
                 helper.logging.info("\n################## EXTRACTED INFO FROM THE SECURITY POLICIES, INSERTING IN THE DATABASE. ##################")
                 # at this point, the data from all the security policies is extracted, it is time to insert it into the database
                 SpecificSecurityDeviceObject.insert_into_security_policies_table(sec_policy_data)
-
 
                 # TODO: this below
                 print("Importing the object container data.")
@@ -252,42 +250,10 @@ def main():
 
                 print("Importing object data.")
                 helper.logging.info("\n################## IMPORTING OBJECTS DATA. ##################")
-                #######################################################################################################################################
-                #######################################################################################################################################
-
-                # 
                 # at this point all the security policy data is imported. it is time to import the object data.
-                network_objects_processed_data, network_group_objects_processed_data, geolocation_objects_processed_data = SpecificSecurityDeviceObject.get_objects_data_info()
-                
-                # all the network objects and network group objects data has been extracted, now insert it into the database
-
-                helper.logging.info("\n################## EXTRACTED OBJECTS DATA, INSERTING IN THE DATABASE. ##################")
-                SpecificSecurityDeviceObject.insert_into_network_address_objects_table(network_objects_processed_data)
-                SpecificSecurityDeviceObject.insert_into_network_address_object_groups_table(network_group_objects_processed_data)
-                SpecificSecurityDeviceObject.insert_into_geolocation_table(geolocation_objects_processed_data)
+                network_objects_data = SpecificSecurityDeviceObject.get_object_info_from_device_conn('network_objects')
 
 
-
-
-            # # append the security policies names to the list with all the policies
-            # policy_list.append(security_policies)
-            # # should there be a function that imports only the objects? if so, that function will be used to parse the policy list and import the objects
-            # # import the address objects
-
-            # SpecificSecurityDeviceObject.import_objects(policy_list)
-            # SpecificSecurityDeviceObject.import_network_address_objects(policy_list)
-
-            # # import the address groups
-            # SpecificSecurityDeviceObject.import_network_group_objects(policy_list)
-
-            # # import the port objects
-            # SpecificSecurityDeviceObject.import_port_objects(policy_list)
-
-            # # import the port group objects
-            # SpecificSecurityDeviceObject.import_port_group_objects(policy_list)
-
-            # # import the URL objects
-            # SpecificSecurityDeviceObject.import_url_objects(policy_list)
 
 if __name__ == "__main__":
     main()

@@ -7,15 +7,31 @@ import utils.helper as helper
 # the function form here will interact with the objects databases
 class DBConnection():
     def __init__(self, user, database, password, host, port):
+        """
+        Initialize a database connection.
+
+        Args:
+            user (str): The username for the database connection.
+            database (str): The name of the database to connect to.
+            password (str): The password for the database connection.
+            host (str): The hostname of the database server.
+            port (int): The port number for connecting to the database server.
+        """
         self._user = user,
         self._database = database,
         self._password = password,
         self._host = host,
         self._port = port,
-        helper.logging.debug(f"Called DBConnection __init__, with the following parameters: user: {self._user}, database: {self._database}, host: {host}, port: {port}.")
+        helper.logging.debug(f"Called DBConnection::__init__()")
     
     def create_cursor(self):
-        helper.logging.debug(f"Called create_cursor().")
+        """
+        Create a cursor for interacting with the database.
+
+        Returns:
+            cursor: The database cursor.
+        """
+        helper.logging.debug(f"Called DBConnection::create_cursor().")
         # self parameters are returned as a tuple, they need to be extracted
         try:
             postgres_conn = psycopg2.connect(
@@ -44,7 +60,7 @@ class DBConnection():
 class PioneerDatabase():
     def __init__(self, cursor):
         self._cursor = cursor
-        helper.logging.debug(f"Called PioneerDatabase __init__ with the following cursor {self._cursor}.")
+        helper.logging.debug(f"Called PioneerDatabase::__init__().")
     
     @abstractmethod
     def create_specific_tables(self):
@@ -57,7 +73,7 @@ class PioneerDatabase():
     def create_database(self, name):
         # execute the request to create the database for the project. no need to specify the owner
         # as the owner will be the creator of the database.
-        helper.logging.debug(f"Called create_database() with parameters: {name}.")
+        helper.logging.debug(f"Called PioneerDatabase::create_database().")
         try:
             # execute the query to create the database
             query = """CREATE DATABASE {};""".format(name)
@@ -75,7 +91,7 @@ class PioneerDatabase():
 
     
     def delete_database(self, name):
-        helper.logging.debug(f"Called delete_database() with parameters: {name}.")
+        helper.logging.debug(f"Called PioneerDatabase::delete_database().")
         try:
             query = """DROP DATABASE {};""".format(name)
             helper.logging.debug(f"Executing the following query: {query}.")
@@ -89,7 +105,7 @@ class PioneerDatabase():
     
 
     def create_table(self, table_name, table_command):
-        helper.logging.debug(f"Called create_table() with parameters: table name: {table_name}, query {table_command}.")
+        helper.logging.debug(f"Called PioneerDatabase::create_table().")
         try:
             self._cursor.execute(table_command)
             helper.logging.info(f"Succesfully created table {table_name}")
@@ -101,7 +117,7 @@ class PioneerDatabase():
     
 
     def get_table_value(self, table_name, select_command, parameters=None):
-        helper.logging.debug(f"Called get_table_value() with parameters: table name: {table_name}, query {select_command}, parameters {parameters}.")
+        helper.logging.debug(f"Called PioneerDatabase::get_table_value().")
         """
         Retrieve values from the specified table using the given SQL select command.
 
@@ -124,7 +140,7 @@ class PioneerDatabase():
 
         # Fetch the returned query values
         postgres_cursor_data = self._cursor.fetchall()
-        helper.logging.info(f"Succesfully retrieved values from table {table_name}. These are: {postgres_cursor_data}.")
+        helper.logging.info(f"Succesfully retrieved values from table {table_name}.")
         return postgres_cursor_data
 
 
@@ -141,15 +157,14 @@ class PioneerDatabase():
         Returns:
         None
         """
-        helper.logging.debug(f"Called insert_table_value() with parameters: table name {table_name}, insert command {insert_command}, values {values}.")
+        helper.logging.debug(f"Called PioneerDatabase::insert_table_value().")
         try:
             if values is not None:
                 self._cursor.execute(insert_command, values)
-                helper.logging.info(f"Succesfully inserted values {values} into table {table_name}.")
             else:
                 self._cursor.execute(insert_command)
-                helper.logging.info(f"Succesfully executed command {insert_command}.")
 
+            helper.logging.info(f"Succesfully inserted values into table {table_name}.")
         except psycopg2.Error as err:
             helper.logging.error(f"Failed to insert values {values} into: {table_name}. Reason: {err}")
             # sys.exit(1)
@@ -167,7 +182,7 @@ class PioneerDatabase():
 
 
     def flatten_query_result(self, query_result):
-        helper.logging.debug(f"Called flatten_query_result() with parameters.")
+        helper.logging.debug(f"Called PioneerDatabase::flatten_query_result().")
         # Flatten both lists within each tuple and handle any number of sublists
         flattened_list = [item for tuple_item in query_result for sublist_part in tuple_item for item in sublist_part]
 
