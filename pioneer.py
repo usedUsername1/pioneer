@@ -130,17 +130,16 @@ def main():
         
         # get version of the security device
         helper.logging.info(f"################## Getting the device version for device: {security_device_name}. ##################")
-        security_device_version = SecurityDeviceObject.get_device_version()
-        
+        security_device_version = SecurityDeviceObject.get_device_version_from_device_conn()
         # insert the device name, username, secret, hostname, type and version into the general_data table
         helper.logging.info(f"Inserting general device info in the database.")
         SecurityDeviceObject.insert_into_general_table(security_device_username, security_device_secret, security_device_hostname, security_device_type, security_device_port, security_device_version, domain)
-        # import other essential configuration here, so that the user is not required to enter it.
-        # import managed devices
+
+        # TODO refactor import managed devices
 
         # retrive the information about the managed devices. if the device is a standalone device, the managed device will be the standalone device
         helper.logging.info(f"################## Getting the managed devices of device: {security_device_name}. ##################")
-        managed_devices_info = SecurityDeviceObject.get_managed_devices_info()
+        managed_devices_info = SecurityDeviceObject.get_managed_devices_info_from_device_conn()
 
         # insert it into the table
         helper.logging.info(f"Inserting managed device info in the database.")
@@ -223,27 +222,28 @@ def main():
                 passed_container_names_list = []
                 passed_container_names_list.append(passed_container_names)
                 print("Importing the security policy containers info.")
-                # create the security policy containers objects
-                # ....
-                # pass them to the 
-
                 # print(f"I am now importing the policy container info for the following containers: {passed_container_names_list}.")
                 
                 # retrieve the security policy containers along with the parents
                 # insert them in the database
-                security_policy_containers_info = SpecificSecurityDeviceObject.get_security_policy_containers_info()
-                print(security_policy_containers_info)
-                #SpecificSecurityDeviceObject.insert_into_security_policy_containers_table(security_policy_containers_info)
+
+                security_policy_containers_info = SpecificSecurityDeviceObject.get_containers_info_from_device_conn(passed_container_names_list, 'security_policies_container')
+                SpecificSecurityDeviceObject.insert_into_security_policy_containers_table(security_policy_containers_info)
 
                 # import the security policies (data) that are part of the imported security policy containers
                 # the policy container info extracted earlier can be used here. we can use the child container entry since the child container
                 # contains the information (thus the policies) it inherits from all the parents
                 print("Importing the security policy data.")
-                sec_policy_data = SpecificSecurityDeviceObject.get_sec_policies_data(passed_container_names_list)
+
+                #TODO: Everything works up to this point. debug everything below
+                # do I keep this like this? or do i modify it to respect the new code better?
+                sec_policy_data = SpecificSecurityDeviceObject.get_security_policy_info_from_device_conn(passed_container_names_list)
                 helper.logging.info("\n################## EXTRACTED INFO FROM THE SECURITY POLICIES, INSERTING IN THE DATABASE. ##################")
                 # at this point, the data from all the security policies is extracted, it is time to insert it into the database
                 SpecificSecurityDeviceObject.insert_into_security_policies_table(sec_policy_data)
 
+
+                # TODO: this below
                 print("Importing the object container data.")
                 helper.logging.info("\n################## IMPORTING OBJECT CONTAINER DATA. ##################")
                 # import and insert the object container first!
@@ -289,130 +289,5 @@ def main():
             # # import the URL objects
             # SpecificSecurityDeviceObject.import_url_objects(policy_list)
 
-
-
-
-
-
-
 if __name__ == "__main__":
     main()
-
-# logging:
-# for every device and project, create a separate logging folder
-# the logging folders should have the following files:
-    # files containing the configuration being pulled from the security device. called smth like: {device}_objects_config.conf, {device}_security_policies.conf... etc
-    # files keeping track of failed imported policies/rules. failed_imported_objects.log, failed_imported_security_policies.log, etc
-    # files keeping track of the database operations (as well as the commands being issued)
-    # a file that tracks all the policies using L7 apps
-    # a file that tracks all the policies using vendor specific URL categories
-    # a file that tracks all the policies using time objects
-    # a file that tracks all the policies using users
-    # TODO: better and prettier logging. right now it is pretty difficult to follow stuff when debugging -> looks better, wip
-
-    # TODO: BLOCKER: code refactoring. python objects for different security device objects can be created after the information about the sec devices exists in the database
-
-
-# TODO SOON:
-# add description for both the device and the project
-# ask the user if he is sure that he wants to delete the project
-# add a timestamp for creation of the device and the project
-# create --list functionality (both terse and verbose) for projects and security devices
-    # listed device info: name, type, description, creation date
-    # listed project info: name, the devices of the project, description, creation date
-# create a verbose list functionality, in which the user can see all the info related to a security device, for example. extend this to more than just the security device
-# tell the user what parameter he is missing when using the --craete-security-device
-# make a list with valid device types and make sure only valid types are used
-# adding a policy/object count per container/per device would be nice. adding the description of the security policy container would also be nice
-# maybe the process functions could be defined in the SecurityDevice class, as they might not have any specific device attributes
-
-# GEOLOCATION NOTES:
-    # Oceania is not recognized as a continent. Everything under Oceania will be under Australia
-    # Special characters in the names of the countries are not supported
-
-
-# TODO ?? 
-# there might be a need to create very specific tables for the firewall rules. these tables
-# will be related to the device type
-# for example, we might need a table for palo alto rules, which stores all the proprietary palo alto attributes of a firewall policy
-
-# tell the user that the config of a device has already been imported and error out if they want to import it again
-# should the security policies table be split into multiple tables based on the UML?
-# find how to process the hitcount values for firewall managers, eventually get the last hit as well.
-# add write functionality + input validation for the project
-# project changelog, save and keep track of the actions happened in a project (when a device is added, when stuff is migrated, etc)
-# fix the arguments mess and create proper mutually exclusive groups.
-# decide on whether you should be able to create/delete multiple projects and set constraint to set only one project
-# enable the user to specify the parameters to be used for the database connection
-# find a way to perform operations on security objects directly on the migration object. do i actually need this?
-# implement debugging messages
-# check if arguments that should be used together with another argument are being used appropriately. for example "--type" must be used with "--create-security-device". if this is not the case, throw an error and inform the user # https://copyprogramming.com/howto/python-argparse-conditionally-required-arguments-based-on-the-value-of-another-argument
-# see if you can do something about the --port parameter. fmc requires it to be https. can fmc run on another port?
-# make sure the import of duplicaes is prevented in both the project database and the device database
-# error messages when user tries to perfrom action on non-existing device/project
-# ensure single quotes are always used when passing arguments
-#POLICY CONTAINERS
-    # list, delete of policy containers. 
-    # support importing a list of containers
-
-#MIGRATION
-    # support for migrating managed devices. for example, migrate fw-01 managed by FMC to fw-01 managed by PANMC
-    # progress bar 
-    # mechanism for checking failed migration objects on policies. for example, for every policy you could make a diff between
-    # how the policy looked like on the source device and how it looks on the target device
-    #TODO: what to do with the URLs names and with other unsupported parameters? for example,
-    # PA does not support "/" in the names of URL objects, like Cisco does. maybe we can use a function that will apply naming constraints when migrating.
-    # by doing this, this becomes a migrating issue, not an importing issue. everything should be imported exactly as it is defined on the source device. naming constraints and existance of the name constrained objects should be done accoriding to the target's device constraints
-    
-
-#IMPORTING
-    # caching is implemented somehow. all info about objects and policies is retrieved once.
-    # duplicate policies name are both imported as long as they are part of different containers
-
-    #TODO: ICMP, schedules, url and app policies, are not tracked separately. However, csv reports are generated so that the user is aware that they exist.
-    #TODO: get a count with the policies retrieved and the policies imported
-    
-    # maybe process the Failed to insert values into: security_policies_table. Reason: duplicate key value violates unique constraint in a better way
-
-    #TODO:enable the import of every single container/config if "import-config --all"
-
-    # track all protocols that are not TCP or UDP
-
-    # MAYBE: support for creating interfaces and security zones
-
-    # if there are problems with importing a policy/object of a policy and so on, track that policy, log it along with the reason why it failed
-
-
-# CISCO FMC Security zones
-    # add support for interface groups
-
-# code in general:
-    # is there anyway in which every security device classes can have their own code file?
-    # add doc strings for the parameters to all functions
-
-# DATABASE:
-    # ensure the cursor and db conn are properly closed after executing database oprations
-    # parameterize all the queries
-
-# LOGGING:
-    # make sure you don't log passwords!
-
-# DEVICE CREATION:
-    # catch the error when the device database is already created and prevent it from overwriting the log file!
-
-
-# CODE DOCUMENTATION:
-    # Document the getters, setters, processor functions, extractor functions and how they work together
-    # document all the flow of the code
-
-
-# FIRST MILESTONE: perform a full migration of L4 firewall rules (without the migration of users) from FMC to PANMC
-# SECOND MILESTONE: add support for migrating users as well
-# THIRD MILESTONE: add IPv6 support for the firewall rules
-# FOURTH MILESTONE: implement NAT migration
-# FIFTH MILESTONE: implement migration of firewall/NAT rules from ASA to FMC
-# SIXTH MILESTONE: implement migration of L7 apps and URL categories between FMC and PANMC
-# SEVENTH MILESTONE: implement migration of routing configuration between FMC and PANMC
-# EIGHT MILESTONE: implement migration of VPN tunnels between FMC and PANMC
-# NINETH MILESTONE: implement migration between all of the following platforms: FMC, PANMC, FTD, PAN, ASA, Meraki, iOS, FortiManager, FortiGate, JunOS, Checkpoint
-# TENTH MILESTONE: finish everythin in the long-term TODO list. actually, finish all the TODO lists.

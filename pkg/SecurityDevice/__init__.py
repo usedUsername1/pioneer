@@ -320,20 +320,23 @@ class SecurityDevice:
         """
         self._name = name
         self._database = sec_device_database
-        helper.logging.debug("Called SecurityDevice __init__.")
+        helper.logging.debug("Called SecurityDevice::__init__.")
 
     def get_containers_info_from_device_conn(self, containers_list, container_type):
         """
         Retrieve information about containers from the security device.
-
+        The purpose of this function is to provide a flexible and robust mechanism for retrieving information about containers from a security device,
+        processing it, and returning the processed information in a structured format.
+        It handles different types of containers, and can handle nested containers with parent-child relationships.
+        Additionally, it includes logging and error handling to ensure smooth execution and provide informative messages in case of errors.
         Parameters:
-        - containers_list (list): List of container names to retrieve information for.
-        - container_type (str): Type of containers to retrieve information for.
+        - containers_list (list): List of container names passed by the user to retrieve information for.
+        - container_type (str): Type of containers to retrieve information for. E.g: object, security policy containers
 
         Returns:
         - list: List of processed container information.
         """
-        helper.logging.debug(f"Called get_containers_info_from_device_conn()")
+        helper.logging.debug(f"Called SecurityDevice::get_containers_info_from_device_conn()")
         helper.logging.info(f"################## Importing configuration of the device containers. ##################")
         processed_container_list = []
         
@@ -387,31 +390,34 @@ class SecurityDevice:
     @abstractmethod
     def return_security_policy_container_object(self):
         """
-        Abstract method to return a security policy container object.
+        Abstract method to return a security policy container object. This method is overridden by the implementation of a child SecurityDevice class.
         """
         pass
 
     @abstractmethod
     def get_device_version(self):
         """
-        Abstract method to retrieve the version of the device's server.
-
+        Abstract method to retrieve the version of the device's server. This method is overridden by the implementation of a child SecurityDevice class.
+        
         Returns:
-            str: Version of the device's server.
+            String: A string containing info about the platform on which the security device is running
         """
         pass
 
     @abstractmethod
     def return_security_policy_object(self):
         """
-        Abstract method to return a security policy object.
+        Abstract method to return a security policy object. This method is overridden by the implementation of a child SecurityDevice class.
+        
+        Returns:
+            Object: A device-specifc security policy object.
         """
         pass
 
     @abstractmethod
     def return_object_container_object(self, container_name):
         """
-        Abstract method to return an object container object.
+        Abstract method to return an object container object. This method is overridden by the implementation of a child SecurityDevice class.
 
         Args:
             container_name (str): Name of the object container.
@@ -424,7 +430,7 @@ class SecurityDevice:
     @abstractmethod
     def get_managed_devices_info(self):
         """
-        Abstract method to retrieve information about managed devices.
+        Abstract method to retrieve information about managed devices. This method is overridden by the implementation of a child SecurityDevice class.
 
         Returns:
             list: List of dictionaries containing information about managed devices.
@@ -434,7 +440,7 @@ class SecurityDevice:
     @abstractmethod
     def process_managed_device(self):
         """
-        Abstract method to process information about a managed device.
+        Abstract method to process information about a managed device. This method is overridden by the implementation of a child SecurityDevice class.
 
         Returns:
             tuple: Tuple containing information about the managed device.
@@ -443,20 +449,31 @@ class SecurityDevice:
 
     def get_device_version_from_device_conn(self):
         """
-        Retrieve the version of the device's server.
+        Retrieve the version of the device's server using the established device connection.
 
         Returns:
             str: Version of the device's server.
         """
+        # Log a debug message to indicate that the function is called
         helper.logging.debug("Called function det_device_version()")
+
         try:
+            # Attempt to retrieve the device version using the method get_device_version()
             device_version = self.get_device_version()
+            
+            # Log an informational message indicating that the device version is retrieved successfully
             helper.logging.info(f"Got device version {device_version}")
+            
+            # Return the retrieved device version
             return device_version
         except Exception as err:
+            # Log a critical error message if there is an exception during the retrieval process
             helper.logging.critical(f'Could not retrieve platform version. Reason: {err}')
+            
+            # Exit the program with status code 1 indicating a critical error
             sys.exit(1)
 
+    # TODO: this needs to be rewritten to be more general. Take the example of importing the object_containers and get_object_info_from_device_conn()
     def get_security_policy_info_from_device_conn(self, sec_policy_containers_list):
         """
         Retrieve information about security policies from the specified policy containers.
@@ -467,23 +484,36 @@ class SecurityDevice:
         Returns:
             list: List of dictionaries containing information about security policies.
         """
+        # Log a debug message indicating that the function is called
         helper.logging.debug("Called get_security_policy_info_from_device_conn().")
+        # Log an informational message indicating that security policy info configuration is being imported
         helper.logging.info("################## Importing security policy info configuration ##################")
         
+        # Initialize an empty list to store processed security policy information
         processed_sec_policy_info = []
 
+        # Iterate over each security policy container name in the provided list
         for sec_policy_container_name in sec_policy_containers_list:
+            # Log an informational message indicating the processing of security policies for the current container
             helper.logging.info(f"Processing security policies of the following container: {sec_policy_container_name}.")
+            # Print a message indicating the processing of security policies for the current container (for debugging)
             print(f"Processing security policies of the following container: {sec_policy_container_name}.")
             
-            raw_sec_policy_objects = self.return_security_policy_object(sec_policy_container_name)
+            # Retrieve raw security policy objects from the specified container
+            #TODO: continue documenting from here
+            raw_sec_policy_objects_list = self.return_security_policy_object(sec_policy_container_name)
 
-            for raw_sec_policy_object in raw_sec_policy_objects:
-                processed_sec_policy_entry = raw_sec_policy_object.process_sec_policy_info()
+            # Iterate over each raw security policy object
+            for RawPolicyObject in raw_sec_policy_objects_list:
+                # Process the raw security policy object to extract relevant information
+                processed_sec_policy_entry = RawPolicyObject.process_sec_policy_info()
+                # Append the processed security policy entry to the list
                 processed_sec_policy_info.append(processed_sec_policy_entry)
 
+        # Return the list of processed security policy information
         return processed_sec_policy_info
 
+    #TODO: this needs to be modified when ManagedDevice class will be implemented
     def get_managed_devices_info_from_device_conn(self):
         """
         Retrieve information about managed devices.
@@ -491,44 +521,44 @@ class SecurityDevice:
         Returns:
             list: List of dictionaries containing information about managed devices.
         """
+        # Log a debug message indicating that the function is called
         helper.logging.debug("Called function get_managed_devices_info().")
+        # Log an informational message indicating that managed devices info retrieval is initiated
         helper.logging.info("################## GETTING MANAGED DEVICES INFO ##################")
         
         try:
+            # Attempt to retrieve managed devices info from the security device connection
             managed_devices_info = self.get_managed_devices_info()
         except Exception as err:
+            # Log a critical error message if managed devices retrieval fails and exit the program
             helper.logging.critical(f'Could not retrieve managed devices. Reason: {err}')
             sys.exit(1)
 
+        # Initialize an empty list to store processed managed devices
         processed_managed_devices = []
+        
+        # Iterate over each managed device entry in the retrieved managed devices info
         for managed_device_entry in managed_devices_info:
+            # Process the managed device entry to extract relevant information
             device_name, assigned_security_policy_container, device_hostname, device_cluster = self.process_managed_device(managed_device_entry)
-            managed_device_entry = {
+            # Create a dictionary containing processed information about the managed device
+            processed_managed_device = {
                 "managed_device_name": device_name,
                 "assigned_security_policy_container": assigned_security_policy_container,
                 "hostname": device_hostname,
                 "cluster": device_cluster
             }
-            processed_managed_devices.append(managed_device_entry)
+            # Append the processed managed device entry to the list
+            processed_managed_devices.append(processed_managed_device)
 
+        # Return the list of processed managed devices
         return processed_managed_devices
     
-    # this function aggregates multiple functions, each responsible for getting data from different objects
-    # store all the info as a json, and return the json back to main, which will be responsible for adding it
-    # to the database
-    # get the objects from the database, send them to overriden methods which will get the data about them via API calls
-    # the data will be returned to this function as an object, which will be sent to processing functions, overriden based on device
-    # responsible for processing the object data and returning it
-
-    # this function gets all the info about all the objects, processes it and it returns back to main, where it will be inserted in the database
-    # get_containers_info_from_device_conn -> answer might be in here
-
-
-    # add a parameter for the object type
-    # based on that parameter, get the info about the object type specified in the paramter, like in get_containers_info_from_device_conn
     def get_object_info_from_device_conn(self, object_type):
         """
-        Retrieve information about objects of a specified type from the security device.
+        Retrieve information about objects of a specified type from the security device. It defines a dictionary mapping object types to functions retrieving objects
+        It then retrieves objects of the specified type using the dictionary, processes each retrieved object, appends the processed objects to a list,
+        and finally returns the list of processed objects.
 
         Args:
             object_type (str): Type of objects to retrieve information for.
@@ -536,10 +566,12 @@ class SecurityDevice:
         Returns:
             list: List of processed objects.
         """
+        # Log a debug message indicating that the function is called
         helper.logging.debug("Called get_object_info_from_device_conn()")
+        # Log an informational message indicating that object info fetching is initiated
         helper.logging.info("##################  FETCHING INFO ABOUT THE OBJECTS ##################")
         
-        # Dictionary mapping object types to functions retrieving objects
+        # Define a dictionary mapping object types to functions retrieving objects
         object_type_mapping = {
             'network_objects': self.return_network_objects(),
             # 'port_objects': self.return_port_objects(),
@@ -549,58 +581,81 @@ class SecurityDevice:
             # 'app_objects': self.return_app_objects()
         }
 
-        # Retrieve objects of the specified type
+        # Retrieve objects of the specified type using the object type mapping dictionary
         retrieved_objects = object_type_mapping.get(object_type)
 
+        # Initialize an empty list to store processed objects
         processed_objects_list = []
+        
         # Process retrieved objects
         for retrieved_object in retrieved_objects:
-            processed_objects = retrieved_object.process_object()
-            processed_objects_list.append(processed_objects)
-            print(processed_objects)
+            # Process the retrieved object
+            processed_object = retrieved_object.process_object()
+            # Append the processed object to the list
+            processed_objects_list.append(processed_object)
+            # Print the processed object (for debugging purposes)
+            print(processed_object)
         
+        # Return the list of processed objects
         return processed_objects_list
     
-    # implemented in child SecurityDevices
     @abstractmethod
     def return_network_objects(self):
         """
-        Abstract method to return network objects.
+        Abstract method to return network objects. This method is overridden by the implementation of a child SecurityDevice class.
+
+        Returns:
+            list: List of processed network objects.
         """
         pass
 
     @abstractmethod
     def return_port_objects(self):
         """
-        Abstract method to return port objects.
+        Abstract method to return port objects. This method is overridden by the implementation of a child SecurityDevice class.
+
+        Returns:
+            list: List of processed port objects.
         """
         pass
     
     @abstractmethod
     def return_schedule_objects(self):
         """
-        Abstract method to return schedule objects.
+        Abstract method to return schedule objects. This method is overridden by the implementation of a child SecurityDevice class.
+
+        Returns:
+            list: List of processed schedule objects.
         """
         pass
 
     @abstractmethod
     def return_policy_users(self):
         """
-        Abstract method to return policy users.
+        Abstract method to return policy users. This method is overridden by the implementation of a child SecurityDevice class.
+
+        Returns:
+            list: List of processed policy users.
         """
         pass
 
     @abstractmethod
     def return_url_objects(self):
         """
-        Abstract method to return URL objects.
+        Abstract method to return URL objects. This method is overridden by the implementation of a child SecurityDevice class.
+
+        Returns:
+            list: List of processed URL objects.
         """
         pass
 
     @abstractmethod
     def return_app_objects(self):
         """
-        Abstract method to return application objects.
+        Abstract method to return application objects. This method is overridden by the implementation of a child SecurityDevice class.
+
+        Returns:
+            list: List of processed application objects.
         """
         pass
 
