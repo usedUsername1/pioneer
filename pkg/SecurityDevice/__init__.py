@@ -647,8 +647,13 @@ class SecurityDevice:
         helper.logging.debug("Called SecurityDevice::get_object_info_from_device_conn()")
         # Define a dictionary mapping object types to functions retrieving objects
 
+        match object_type:
+            case 'network_objects':
+                self.fetch_objects_info('network_objects')
+                object_names = self.get_db_objects('network_objects')
+
         object_type_mapping = {
-            'network_objects': self.return_network_objects(),
+            'network_objects': self.return_network_objects(object_names),
             # 'port_objects': self.return_port_objects(),
             # 'schedule_objects': self.return_schedule_objects(),
             # 'policy_users': self.return_policy_users(),
@@ -664,6 +669,10 @@ class SecurityDevice:
         processed_objects_list = []
         
         # Process retrieved objects
+        # the problem here is that processed_objects_list will contain the info for groups and simple objects
+        # in the same list. they need to be organized in dictionaries, with a key to which the whole list of correspondibg objects is tied to
+        # for example [{"network_objects":[processed_network_objects_data], "network_group_objects":[processed_network_group_objects_data]]
+        # TODO: test with network objects, then test with network groups
         for RetrievedObject in retrieved_objects_list:
             helper.logging.info(f"Processing object: <{RetrievedObject.get_name()}. Object type is: <{object_type}>>")
             helper.logging.debug(f"Raw object info: <{RetrievedObject.get_name()}>")
@@ -679,6 +688,10 @@ class SecurityDevice:
         # Return the list of processed objects
         return processed_objects_list
     
+    @abstractmethod
+    def fetch_objects_info(self, object_type):
+        pass
+
     @abstractmethod
     def return_network_objects(self):
         """
