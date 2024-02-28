@@ -683,7 +683,6 @@ class SecurityDevice:
             helper.logging.info(f"Processed object: <{RetrievedObject.get_name()}. Object type is: <{object_type}>>")
             helper.logging.debug(f"Processed object info: <{processed_object_info}>")
             # Print the processed object (for debugging purposes)
-            print(processed_object_info)
         
         # Return the list of processed objects
         return processed_objects_list

@@ -78,6 +78,7 @@ class FMCNetworkGroupObject(FMCObject, NetworkGroupObject):
         super().__init__(object_info)
     
     def set_member_names(self, members):
+        print("Called FMCNetworkGroupObject::set_member_names with members ", members)
         return super().set_member_names(members)
     
 class FMCNetworkObject(FMCObject, NetworkObject):
@@ -1526,6 +1527,8 @@ class FMCSecurityDevice(SecurityDevice):
     # TODO: this could probabily be rewritten in a better way
     def _return_group_object_members_helper(self, group_object, object_type, group_member_objects):
         group_member_object_names = []
+        group_member_literals_list = []
+        
         # look for literals and objects in the info of the object
         group_object_info = group_object.get_info()
 
@@ -1538,17 +1541,23 @@ class FMCSecurityDevice(SecurityDevice):
         
         try:
             literal_members = group_object_info['literals']
-            group_member_object_names += FMCSecurityDevice.convert_network_literals_to_objects(literal_members)
+            group_member_literals_list += FMCSecurityDevice.convert_network_literals_to_objects(literal_members)
+
+            for literal_member in group_member_literals_list:
+                group_member_object_names.append(literal_member)
 
         except KeyError:
             print("No literal members")
 
         # set the member names of the group
+        group_object.set_name()
         group_object.set_member_names(group_member_object_names)
+        print(group_object.get_name(),group_object.get_member_names())
 
-        match object_type:
-            case 'network_objects':
-                group_member_objects.append(self.return_network_objects(group_member_object_names))
+        # Recursively fetch objects for group members
+        if object_type == 'network_objects':
+            # Extend the list instead of appending
+            group_member_objects.extend(self.return_network_objects(group_member_object_names))
 
     # TODO: rewrite this function
     # init all the info of the objects (in the init of FMCSecurityDevice)
@@ -1594,16 +1603,13 @@ class FMCSecurityDevice(SecurityDevice):
                 if network_object_name in self._network_address_objects_info:
                     network_objects_from_device_list.append(FMCNetworkObject(self._network_address_objects_info[network_object_name]))
                 
-                    #######
                 elif network_object_name in self._network_group_objects_info:
                     network_group_object = FMCNetworkGroupObject(self._network_group_objects_info[network_object_name])
-                    
+                    # Process the group object members
                     self._return_group_object_members_helper(network_group_object, 'network_objects', network_objects_from_device_list)
-                    # loop through objects, if member is network group, create group object with it and loop through it again
-                    # now process this object and get the member info, and based on the member info, append the created object to the network_objects_from_device_list
-                    network_objects_from_device_list.append(FMCNetworkGroupObject(self._network_group_objects_info[network_object_name]))
-                    #########
-
+                    # Append the group object to the list
+                    network_objects_from_device_list.append(network_group_object)
+                
                 elif network_object_name in self._geolocation_objects_info:
                     network_objects_from_device_list.append(FMCGeolocationObject(self._geolocation_objects_info[network_object_name]))
                 
