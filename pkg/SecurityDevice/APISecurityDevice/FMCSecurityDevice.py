@@ -77,6 +77,9 @@ class FMCNetworkGroupObject(FMCObject, NetworkGroupObject):
     def __init__(self, object_info) -> None:
         super().__init__(object_info)
     
+    def set_member_names(self, members):
+        return super().set_member_names(members)
+    
 class FMCNetworkObject(FMCObject, NetworkObject):
     """
     A class representing a network object in Firepower Management Center (FMC).
@@ -114,11 +117,44 @@ class FMCNetworkObject(FMCObject, NetworkObject):
         type = self._object_info['type']
         return super().set_network_address_type(type)
 
-#TODO: implement this
-class FMCNetworkLiteralObject(FMCNetworkObject):
+class FMCNetworkLiteralObject(NetworkObject):
     def __init__(self, object_info) -> None:
         super().__init__(object_info)
+    
+    def set_name(self):
+        name = self._object_info
+        return super().set_name(name)
 
+    def set_object_container_name(self):
+        container_name = 'virtual_object_container'
+        return super().set_object_container_name(container_name)
+
+    def set_network_address_value(self):
+        split_name = self._name.split('_')
+        subnet_id = split_name[1]
+        netmask = split_name[2]
+        value = subnet_id + '/' + netmask
+        return super().set_network_address_value(value)
+
+    def set_description(self):
+        description = gvars.literal_objects_description
+        return super().set_description(description)
+
+    def set_network_address_type(self):
+        split_name = self._name.split('_')
+        netmask = split_name[2]
+        type = ''
+
+        if netmask == '32':
+            type = 'Host'
+        else:
+            type = 'Network'
+
+        return super().set_network_address_type(type)
+    
+    def set_override_bool(self):
+        is_overridable = False
+        return super().set_override_bool(is_overridable)
 
 # class FMCPortObject(FMCObject):
 #     pass
@@ -126,8 +162,6 @@ class FMCNetworkLiteralObject(FMCNetworkObject):
 # class FMCPortGroupObject(FMCGroupObject):
 #     pass
 
-class FMCNetworkLiteral(NetworkObject):
-    pass
 
 class FMCGeolocationObject(GeolocationObject):
     """
@@ -1490,9 +1524,8 @@ class FMCSecurityDevice(SecurityDevice):
     # it also sets the members of a group objects to be the objects retrieved
     # what if i set the members of the object here?
     # TODO: this could probabily be rewritten in a better way
-    def _return_group_object_members_helper(self, group_object, object_type):
+    def _return_group_object_members_helper(self, group_object, object_type, group_member_objects):
         group_member_object_names = []
-        group_member_objects = []
         # look for literals and objects in the info of the object
         group_object_info = group_object.get_info()
 
@@ -1505,10 +1538,7 @@ class FMCSecurityDevice(SecurityDevice):
         
         try:
             literal_members = group_object_info['literals']
-            for literal_member in literal_members:
-                # convert the literal name to a NL name CONTINUE HERE
-                # append it to the group_member_object_names list
-                pass
+            group_member_object_names += FMCSecurityDevice.convert_network_literals_to_objects(literal_members)
 
         except KeyError:
             print("No literal members")
@@ -1519,7 +1549,6 @@ class FMCSecurityDevice(SecurityDevice):
         match object_type:
             case 'network_objects':
                 group_member_objects.append(self.return_network_objects(group_member_object_names))
-
 
     # TODO: rewrite this function
     # init all the info of the objects (in the init of FMCSecurityDevice)
@@ -1548,7 +1577,7 @@ class FMCSecurityDevice(SecurityDevice):
             # Check if the network object is a literal
             if network_object_name.startswith(gvars.network_literal_prefix):
                 # Create a network literal object and append it to the list
-                network_objects_from_device_list.append(FMCNetworkLiteral(network_object_name))
+                network_objects_from_device_list.append(FMCNetworkLiteralObject(network_object_name))
             
             # Check if the network object represents a country
             elif gvars.separator_character in network_object_name:
@@ -1565,17 +1594,14 @@ class FMCSecurityDevice(SecurityDevice):
                 if network_object_name in self._network_address_objects_info:
                     network_objects_from_device_list.append(FMCNetworkObject(self._network_address_objects_info[network_object_name]))
                 
-                # for the groups, what if i call return_network_objects here as well?
                     #######
                 elif network_object_name in self._network_group_objects_info:
                     network_group_object = FMCNetworkGroupObject(self._network_group_objects_info[network_object_name])
                     
-                    network_group_object_member_objects = self._return_group_object_members_helper(network_group_object, 'network_objects')
-
+                    self._return_group_object_members_helper(network_group_object, 'network_objects', network_objects_from_device_list)
                     # loop through objects, if member is network group, create group object with it and loop through it again
                     # now process this object and get the member info, and based on the member info, append the created object to the network_objects_from_device_list
                     network_objects_from_device_list.append(FMCNetworkGroupObject(self._network_group_objects_info[network_object_name]))
-                    network_objects_from_device_list.append(network_group_object_member_objects)
                     #########
 
                 elif network_object_name in self._geolocation_objects_info:

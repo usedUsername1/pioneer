@@ -228,13 +228,9 @@ class NetworkGroupObject(GroupObject):
 
         self.set_name()
         self.set_object_container_name()
-        self.set_member_names()
+        # self.set_member_names()
         self.set_description()
         self.set_override_bool()
-
-        # make sure you process the members of each network group
-        for member in self._members:
-            processed_group_object_info.append(self.process_members(member))
 
         processed_group_object_info = {
         "network_address_group_name": self.get_name(),
