@@ -75,10 +75,23 @@ class FMCObject(Object):
 
 class FMCNetworkGroupObject(FMCObject, NetworkGroupObject):
     def __init__(self, object_info) -> None:
+        """
+        Initializes a new FMCNetworkGroupObject.
+
+        Args:
+            object_info (dict): Information about the network group object.
+        """
+        helper.logging.debug("Called FMCNetworkGroupObject::__init__()")
         super().__init__(object_info)
     
     def set_member_names(self, members):
-        print("Called FMCNetworkGroupObject::set_member_names with members ", members)
+        """
+        Sets the member names of the network group object.
+
+        Args:
+            members (list): A list of member names.
+        """
+        helper.logging.debug("Called FMCNetworkGroupObject::set_member_names()")
         return super().set_member_names(members)
     
 class FMCNetworkObject(FMCObject, NetworkObject):
@@ -1494,80 +1507,119 @@ class FMCSecurityDevice(SecurityDevice):
     # for the objects stored in the database, it checks where they are exactly located on the Security Device
     # if "example" is a network address, it will stop processing and then it will return a network address object
     def fetch_objects_info(self, object_type):
-        match object_type:
-            case 'network_objects':
-                if not self._network_address_objects_info:
-                    self._network_address_objects_info = self._sec_device_connection.object.networkaddress.get()
-                    network_address_objects_dict = {entry['name']: entry for entry in self._network_address_objects_info}
-                    self._network_address_objects_info = network_address_objects_dict
+        """
+        This function fetches information about different types of objects from the security device based on the specified object type.
+        It checks if the information has already been fetched to avoid redundant API calls.
+        If the information is not already available, it fetches it from the device and converts it into dictionaries for efficient lookup.
 
-                if not self._network_group_objects_info:
-                    self._network_group_objects_info = self._sec_device_connection.object.networkgroup.get()
-                    network_group_objects_dict = {entry['name']: entry for entry in self._network_group_objects_info}
-                    self._network_group_objects_info = network_group_objects_dict
+        Args:
+            object_type (str): Type of objects to fetch information for.
 
-                if not self._geolocation_objects_info:
-                    self._geolocation_objects_info = self._sec_device_connection.object.geolocation.get()
-                    geolocation_objects_dict = {entry['name']: entry for entry in self._geolocation_objects_info}
-                    self._geolocation_objects_info = geolocation_objects_dict
+        Returns:
+            None
+        """
+        helper.logging.debug("Called FMCSecurityDevice::fetch_objects_info()")
+        # Fetch information for network objects
+        if object_type == 'network_objects':
+            # Fetch network address objects if not already fetched
+            if not self._network_address_objects_info:
+                self._network_address_objects_info = self._sec_device_connection.object.networkaddress.get()
+                # Convert the fetched information into a dictionary for efficient lookup
+                network_address_objects_dict = {entry['name']: entry for entry in self._network_address_objects_info}
+                self._network_address_objects_info = network_address_objects_dict
 
-                if not self._countries_info:
-                    self._countries_info = self._sec_device_connection.object.country.get()
-                    countries_dict = {entry['id']: entry for entry in self._countries_info if 'id' in entry}
-                    self._countries_info = countries_dict
+            # Fetch network group objects if not already fetched
+            if not self._network_group_objects_info:
+                self._network_group_objects_info = self._sec_device_connection.object.networkgroup.get()
+                # Convert the fetched information into a dictionary for efficient lookup
+                network_group_objects_dict = {entry['name']: entry for entry in self._network_group_objects_info}
+                self._network_group_objects_info = network_group_objects_dict
 
-                if not self._continents_info:
-                    self._continents_info = self._sec_device_connection.object.continent.get()
-                    continents_dict = {entry['name']: entry for entry in self._continents_info}
-                    self._continents_info = continents_dict
+            # Fetch geolocation objects if not already fetched
+            if not self._geolocation_objects_info:
+                self._geolocation_objects_info = self._sec_device_connection.object.geolocation.get()
+                # Convert the fetched information into a dictionary for efficient lookup
+                geolocation_objects_dict = {entry['name']: entry for entry in self._geolocation_objects_info}
+                self._geolocation_objects_info = geolocation_objects_dict
+
+            # Fetch country objects if not already fetched
+            if not self._countries_info:
+                self._countries_info = self._sec_device_connection.object.country.get()
+                # Convert the fetched information into a dictionary for efficient lookup
+                countries_dict = {entry['id']: entry for entry in self._countries_info if 'id' in entry}
+                self._countries_info = countries_dict
+
+            # Fetch continent objects if not already fetched
+            if not self._continents_info:
+                self._continents_info = self._sec_device_connection.object.continent.get()
+                # Convert the fetched information into a dictionary for efficient lookup
+                continents_dict = {entry['name']: entry for entry in self._continents_info}
+                self._continents_info = continents_dict
 
     # this function is responsible for retrieving all the member objects
     # it also sets the members of a group objects to be the objects retrieved
     # what if i set the members of the object here?
     # TODO: this could probabily be rewritten in a better way
     def _return_group_object_members_helper(self, group_object, object_type, group_member_objects):
+        """
+        Helper function to retrieve and process group member objects.
+
+        This function extracts information about the members of a group object, including both objects and literals.
+        It then sets the member names of the group object and recursively fetches objects for group members.
+
+        Args:
+            group_object: The group object for which member objects are to be retrieved.
+            object_type (str): The type of objects to retrieve (e.g., 'network_objects').
+            group_member_objects (list): A list to store the processed member objects.
+
+        Returns:
+            None
+        """
+        # Log a debug message indicating the function call
+        helper.logging.debug("Called FMCSecurityDevice::_return_group_object_members_helper()")
+
+        # Initialize lists to store member names
         group_member_object_names = []
         group_member_literals_list = []
         
-        # look for literals and objects in the info of the object
+        # Get the information of the group object
         group_object_info = group_object.get_info()
 
+        # Try to retrieve object members from the group object information
         try:
             object_members = group_object_info['objects']
+            # Extract object names and append to the list
             for object_member in object_members:
                 group_member_object_names.append(object_member['name'])
         except KeyError:
             print('No member objects')
         
+        # Try to retrieve literal members from the group object information
         try:
             literal_members = group_object_info['literals']
+            # Convert literal members to objects and append to the list
             group_member_literals_list += FMCSecurityDevice.convert_network_literals_to_objects(literal_members)
-
             for literal_member in group_member_literals_list:
                 group_member_object_names.append(literal_member)
-
         except KeyError:
             print("No literal members")
 
-        # set the member names of the group
-        group_object.set_name()
+        # Set the member names of the group object
         group_object.set_member_names(group_member_object_names)
-        print(group_object.get_name(),group_object.get_member_names())
 
-        # Recursively fetch objects for group members
+        # Recursively fetch objects for group members if the object type is 'network_objects'
         if object_type == 'network_objects':
-            # Extend the list instead of appending
+            # Extend the list of group member objects instead of appending
             group_member_objects.extend(self.return_network_objects(group_member_object_names))
 
-    # TODO: rewrite this function
-    # init all the info of the objects (in the init of FMCSecurityDevice)
-    # convert it to dictionaries (new function required)
-    # loop through the members of an object and recursively look it up (new function required)
     def return_network_objects(self, object_names):
         """
-        Retrieve Python objects with the information about network objects from the device.
+        Retrieve Python objects with information about network objects from the device.
 
-        This method retrieves network objects' information from the device, processes it, and returns Python representations of network objects.
+        This method retrieves information about network objects from the device, processes it, and returns Python representations of network objects.
+
+        Args:
+            object_names (list): A list of names of network objects to retrieve.
 
         Returns:
             list: A list of Python representations of network objects.
@@ -1601,9 +1653,11 @@ class FMCSecurityDevice(SecurityDevice):
             else:
                 # Check if the network object name exists in any of the dictionaries
                 if network_object_name in self._network_address_objects_info:
+                    # Append the network object to the list
                     network_objects_from_device_list.append(FMCNetworkObject(self._network_address_objects_info[network_object_name]))
                 
                 elif network_object_name in self._network_group_objects_info:
+                    # Create a network group object
                     network_group_object = FMCNetworkGroupObject(self._network_group_objects_info[network_object_name])
                     # Process the group object members
                     self._return_group_object_members_helper(network_group_object, 'network_objects', network_objects_from_device_list)
@@ -1611,9 +1665,11 @@ class FMCSecurityDevice(SecurityDevice):
                     network_objects_from_device_list.append(network_group_object)
                 
                 elif network_object_name in self._geolocation_objects_info:
+                    # Append the geolocation object to the list
                     network_objects_from_device_list.append(FMCGeolocationObject(self._geolocation_objects_info[network_object_name]))
                 
                 elif network_object_name in self._continents_info:
+                    # Append the continent object to the list
                     network_objects_from_device_list.append(FMCContinentObject(self._continents_info[network_object_name]))
                 else:
                     # Log an error message for invalid network objects

@@ -7,7 +7,7 @@ fmc = fireREST.FMC(hostname='10.2.196.131', username='admin', password='2wsx#EDC
 # print(policy)
 
 
-object = fmc.object.networkgroup.get(name="TEST-FOR-SCRIPT")
+object = fmc.object.portobjectgroup.get(name="EXCHANGE_ports")
 print(object)
 
 # ports = fmc.object.port.get()

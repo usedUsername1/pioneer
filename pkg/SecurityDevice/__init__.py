@@ -672,15 +672,14 @@ class SecurityDevice:
         # the problem here is that processed_objects_list will contain the info for groups and simple objects
         # in the same list. they need to be organized in dictionaries, with a key to which the whole list of correspondibg objects is tied to
         # for example [{"network_objects":[processed_network_objects_data], "network_group_objects":[processed_network_group_objects_data]]
-        # TODO: test with network objects, then test with network groups
         for RetrievedObject in retrieved_objects_list:
-            helper.logging.info(f"Processing object: <{RetrievedObject.get_name()}. Object type is: <{object_type}>>")
-            helper.logging.debug(f"Raw object info: <{RetrievedObject.get_name()}>")
+            helper.logging.info(f"Processing object: <{RetrievedObject.get_name()}. Object type is: <{object_type}>")
+            helper.logging.debug(f"Raw object info: <{RetrievedObject.get_info()}>")
             # Process the retrieved object
             processed_object_info = RetrievedObject.process_object()
             # Append the processed object to the list
             processed_objects_list.append(processed_object_info)
-            helper.logging.info(f"Processed object: <{RetrievedObject.get_name()}. Object type is: <{object_type}>>")
+            helper.logging.info(f"Processed object: <{RetrievedObject.get_name()}. Object type is: <{object_type}>")
             helper.logging.debug(f"Processed object info: <{processed_object_info}>")
             # Print the processed object (for debugging purposes)
         
