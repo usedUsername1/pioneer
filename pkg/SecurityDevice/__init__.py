@@ -5,7 +5,7 @@ import utils.helper as helper
 import utils.gvars as gvars
 import json
 import sys
-
+from pkg.DeviceObject import Object, NetworkObject, GroupObject, NetworkGroupObject, GeolocationObject
 # TODO: create all the tables for all the objects
 class SecurityDeviceDatabase(PioneerDatabase):
     """
@@ -646,7 +646,6 @@ class SecurityDevice:
         # Log a debug message indicating that the function is called
         helper.logging.debug("Called SecurityDevice::get_object_info_from_device_conn()")
         # Define a dictionary mapping object types to functions retrieving objects
-
         match object_type:
             case 'network_objects':
                 self.fetch_objects_info('network_objects')
@@ -665,26 +664,33 @@ class SecurityDevice:
         retrieved_objects_list = object_type_mapping.get(object_type)
 
         helper.logging.info(f"################## Importing object configuration. Object type is: <{object_type}>. ##################")
-        # Initialize an empty list to store processed objects
-        processed_objects_list = []
+        # Initialize an empty dictionary to store processed objects organized by type
+        processed_objects_dict = {
+            "network_objects": [],
+            "network_group_objects": [],
+            "geolocation_objects": []
+        }
         
         # Process retrieved objects
-        # the problem here is that processed_objects_list will contain the info for groups and simple objects
-        # in the same list. they need to be organized in dictionaries, with a key to which the whole list of correspondibg objects is tied to
-        # for example [{"network_objects":[processed_network_objects_data], "network_group_objects":[processed_network_group_objects_data]]
         for RetrievedObject in retrieved_objects_list:
             helper.logging.info(f"Processing object: <{RetrievedObject.get_name()}. Object type is: <{object_type}>")
             helper.logging.debug(f"Raw object info: <{RetrievedObject.get_info()}>")
             # Process the retrieved object
             processed_object_info = RetrievedObject.process_object()
-            # Append the processed object to the list
-            processed_objects_list.append(processed_object_info)
+            # Append the processed object to the corresponding list based on its type
+            if isinstance(RetrievedObject, NetworkObject):
+                processed_objects_dict["network_objects"].append(processed_object_info)
+            elif isinstance(RetrievedObject, NetworkGroupObject):
+                processed_objects_dict["network_group_objects"].append(processed_object_info)
+            elif isinstance(RetrievedObject, GeolocationObject):
+                processed_objects_dict["geolocation_objects"].append(processed_object_info)
             helper.logging.info(f"Processed object: <{RetrievedObject.get_name()}. Object type is: <{object_type}>")
             helper.logging.debug(f"Processed object info: <{processed_object_info}>")
             # Print the processed object (for debugging purposes)
         
-        # Return the list of processed objects
-        return processed_objects_list
+        # Return the dictionary of processed objects
+        return [processed_objects_dict]
+
     
     @abstractmethod
     def fetch_objects_info(self, object_type):
