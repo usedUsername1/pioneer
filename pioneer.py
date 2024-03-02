@@ -252,7 +252,7 @@ def main():
                 # helper.logging.info("\n################## IMPORTING OBJECTS DATA. ##################")
                 # # at this point all the security policy data is imported. it is time to import the object data.
                 network_objects_data = SpecificSecurityDeviceObject.get_object_info_from_device_conn('network_objects')
-                print(network_objects_data)
+                print(network_objects_data)#
 
 
 
