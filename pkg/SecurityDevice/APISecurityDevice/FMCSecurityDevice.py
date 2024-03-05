@@ -1,6 +1,6 @@
 from abc import abstractmethod
 from pkg.Container import SecurityPolicyContainer, ObjectPolicyContainer
-from pkg.DeviceObject import Object, NetworkObject, GroupObject, NetworkGroupObject, GeolocationObject
+from pkg.DeviceObject import Object, NetworkObject, NetworkGroupObject, GeolocationObject, PortObject, PortGroupObject
 from pkg.SecurityDevice.APISecurityDevice.APISecurityDeviceConnection import APISecurityDeviceConnection
 from pkg.SecurityDevice import SecurityDevice
 from pkg.Policy import SecurityPolicy
@@ -170,11 +170,15 @@ class FMCNetworkLiteralObject(NetworkObject):
         is_overridable = False
         return super().set_override_bool(is_overridable)
 
-# class FMCPortObject(FMCObject):
-#     pass
+#TODO: do the classes
+class FMCPortObject(FMCObject, PortObject):
+    pass
 
-# class FMCPortGroupObject(FMCGroupObject):
-#     pass
+class FMCPortGroupObject(PortGroupObject):
+    pass
+
+class FMCPortLiteralObject(FMCPortObject):
+    pass
 
 
 class FMCGeolocationObject(GeolocationObject):
@@ -1678,6 +1682,21 @@ class FMCSecurityDevice(SecurityDevice):
         # Return the list of network objects retrieved from the device
         return network_objects_from_device_list
 
+    #TODO: continue here, create the classes for the ports
+    def return_port_objects(self, object_names):
+        # Log a debug message indicating the function call
+        helper.logging.debug("Called FMCSecurityDevice::return_port_objects()")
+        
+        # Log an informative message about processing network objects data info
+        helper.logging.info("Processing port objects data info. Retrieving all objects from the database, processing them, and returning their info.")
+
+        port_objects_from_device_list = []
+
+        for port_object_name in object_names:
+            if port_object_name.startswith(gvars.port_literal_prefix):
+                pass
+
+
     @staticmethod
     def convert_port_literals_to_objects(port_literals):
         helper.logging.debug("Called FMCSecurityDevice::convert_port_literals_to_objects().")
@@ -1770,3 +1789,5 @@ class FMCSecurityDevice(SecurityDevice):
         
         helper.logging.debug(f"Finished converting all literals to objects. This is the list with converted literals {network_objects_list}.")
         return network_objects_list
+
+#TODO: static methods for port literals

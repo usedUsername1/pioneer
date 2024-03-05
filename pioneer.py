@@ -248,13 +248,22 @@ def main():
                 object_containers_info = SpecificSecurityDeviceObject.get_containers_info_from_device_conn(security_policy_containers_info, 'object_container')
                 SpecificSecurityDeviceObject.insert_into_object_containers_table(object_containers_info)
 
-                # print("Importing object data.")
-                # helper.logging.info("\n################## IMPORTING OBJECTS DATA. ##################")
+                print("Importing network object data.")
+                helper.logging.info("\n################## IMPORTING NETWORK OBJECTS DATA. ##################")
                 # # at this point all the security policy data is imported. it is time to import the object data.
                 network_objects_data = SpecificSecurityDeviceObject.get_object_info_from_device_conn('network_objects')
+                
+                print("Inserting network object data.")
+                helper.logging.info("\n################## INSERTING NETWORK OBJECTS DATA. ##################")                
                 SpecificSecurityDeviceObject.insert_into_network_address_objects_table(network_objects_data[0]['network_objects'])
                 SpecificSecurityDeviceObject.insert_into_network_address_object_groups_table(network_objects_data[0]['network_group_objects'])
                 SpecificSecurityDeviceObject.insert_into_geolocation_table(network_objects_data[0]['geolocation_objects'])
+
+                print("Importing port object data.")
+                helper.logging.info("\n################## IMPORTING PORT OBJECTS DATA. ##################")
+                port_objects_data = SpecificSecurityDeviceObject.get_object_info_from_device_conn('port_objects')
+
+
                 
 
 

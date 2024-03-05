@@ -294,7 +294,8 @@ class SecurityDeviceDatabase(PioneerDatabase):
                 port_name TEXT PRIMARY KEY,
                 security_device_name TEXT NOT NULL,
                 object_container_name TEXT NOT NULL,
-                port_value TEXT,
+                port_protocol TEXT,
+                port_number TEXT,
                 port_description TEXT,
                 overridable_object BOOLEAN NOT NULL,
                 FOREIGN KEY(object_container_name) REFERENCES object_containers_table(object_container_name)
@@ -650,10 +651,13 @@ class SecurityDevice:
             case 'network_objects':
                 self.fetch_objects_info('network_objects')
                 object_names = self.get_db_objects('network_objects')
+            case 'port_objects':
+                self.fetch_objects_info('port_objects')
+                object_names = self.get_db_objects('port_objects')
 
         object_type_mapping = {
             'network_objects': self.return_network_objects(object_names),
-            # 'port_objects': self.return_port_objects(),
+            'port_objects': self.return_port_objects(object_names),
             # 'schedule_objects': self.return_schedule_objects(),
             # 'policy_users': self.return_policy_users(),
             # 'url_objects': self.return_url_objects(),

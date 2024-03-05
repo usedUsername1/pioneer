@@ -114,24 +114,37 @@ class Object:
     
 # regarding processing groups: the object members of the groups have to be processed as well
 class GroupObject(Object):
+    """
+    A class representing a group object.
+    """
+
     def __init__(self, object_info) -> None:
+        """
+        Initialize the GroupObject instance.
+
+        Args:
+            object_info (dict): Information about the group object.
+        """
         super().__init__(object_info)
         self._members = None
     
-    # get the member names. for storing the names in the database, in the network_address_group_members column
-    # this will return a list with the names of all the objects of the members
     def get_member_names(self):
+        """
+        Get the member names of the group object.
+
+        Returns:
+            list: The names of the members.
+        """
         return self._members
     
-    # set the member objects of the group objects
     def set_member_names(self, members):
+        """
+        Set the member objects of the group object.
+
+        Parameters:
+            members (list): The list of member names.
+        """
         self._members = members
-
-    #TODO: implement this
-    @abstractmethod
-    def is_group(self):
-        pass
-
 
 class NetworkObject(Object):
     """
@@ -207,7 +220,7 @@ class NetworkObject(Object):
         self.set_network_address_type()
         self.set_override_bool()
 
-        processed_group_object_info = {
+        processed_object_info = {
             "network_address_name": self.get_name(),
             "object_container_name": self.get_object_container_name(),
             "network_address_value": self.get_network_address_value(),
@@ -216,35 +229,46 @@ class NetworkObject(Object):
             "overridable_object": self.get_override_bool()
         }
 
-        return processed_group_object_info
+        return processed_object_info
 
 class NetworkGroupObject(GroupObject):
+    """
+    A class representing a network group object.
+    """
+
     def __init__(self, object_info) -> None:
+        """
+        Initialize the NetworkGroupObject instance.
+
+        Args:
+            object_info (dict): Information about the network group object.
+        """
         super().__init__(object_info)
 
-    # regarding processing groups    
     def process_object(self):
+        """
+        Process the network group object.
+
+        Returns:
+            dict: Information about the processed network group object.
+        """
         processed_group_object_info = []
 
         self.set_name()
         self.set_object_container_name()
-        # self.set_member_names()
+        # no need to set the member names, they will be set in the implementation of return_network_objects function
         self.set_description()
         self.set_override_bool()
 
         processed_group_object_info = {
-        "network_address_group_name": self.get_name(),
-        "object_container_name": self.get_object_container_name(),
-        "network_address_group_members": self.get_member_names(),
-        "network_address_group_description": self.get_description(),
-        "overridable_object": self.get_override_bool()
+            "network_address_group_name": self.get_name(),
+            "object_container_name": self.get_object_container_name(),
+            "network_address_group_members": self.get_member_names(),
+            "network_address_group_description": self.get_description(),
+            "overridable_object": self.get_override_bool()
         }
 
         return processed_group_object_info
-
-    @abstractmethod
-    def process_members(self, member):
-        pass
 
 # For simplicity, all geo data is going to be treated as a Geolocation object.
 # For example, in FMC, you have Geolocation objects (made out of countries and other continents), and then you have the countries and the continents. they are not object entities per se
@@ -494,6 +518,127 @@ class GeolocationObject(Object):
         }
 
         return processed_geolocation_object_info
+
+class PortObject(Object):
+    """
+    A class representing a port object.
+    """
+
+    def __init__(self, object_info) -> None:
+        """
+        Initialize the PortObject instance.
+
+        Args:
+            object_info (dict): Information about the port object.
+        """
+        helper.logging.debug("Called PortObject::__init__()")
+        super().__init__(object_info)
+        self._port_protocol = None
+        self._port_number = None
+
+    def get_port_protocol(self):
+        """
+        Get the port protocol of the object.
+
+        Returns:
+            str: The port protocol.
+        """
+        helper.logging.debug("Called PortObject::get_port_protocol()")
+        return self._port_protocol
+    
+    def set_port_protocol(self, protocol):
+        """
+        Set the port protocol of the object.
+
+        Parameters:
+            protocol (str): The port protocol.
+        """
+        helper.logging.debug("Called PortObject::set_port_protocol()")
+        self._port_protocol = protocol
+
+    def get_port_number(self):
+        """
+        Get the port number of the object.
+
+        Returns:
+            int: The port number.
+        """
+        helper.logging.debug("Called PortObject::get_port_number()")
+        return self._port_number
+    
+    def set_port_number(self, number):
+        """
+        Set the port number of the object.
+
+        Parameters:
+            number (int): The port number.
+        """
+        helper.logging.debug("Called PortObject::set_port_number()")
+        self._port_number = number
+    
+    def process_object(self):
+        """
+        Process the network object.
+
+        Returns:
+            dict: Processed information about the port object.
+        """
+        helper.logging.debug("Called PortObject::process_object()")
+        # Set the values with for the object with the data you got in the object_info variable, which holds the info of the device as extracted from the Security Device
+        self.set_name()
+        self.set_object_container_name()        
+        self.set_description()
+        self.set_override_bool()
+
+        processed_object_info = {
+            "port_name": self.get_name(),
+            "object_container_name": self.get_object_container_name(),
+            "port_protocol": self.get_port_protocol(),
+            "port_number": self.get_port_number(),
+            "port_description": self.get_description(),
+            "overridable_object": self.get_override_bool()
+        }
+
+        return processed_object_info
+    
+class PortGroupObject(GroupObject):
+    """
+    A class representing a port group object.
+    """
+
+    def __init__(self, object_info) -> None:
+        """
+        Initialize the PortGroupObject instance.
+
+        Args:
+            object_info (dict): Information about the port group object.
+        """
+        super().__init__(object_info)
+
+    def process_object(self):
+        """
+        Process the port group object.
+
+        Returns:
+            dict: Information about the processed port group object.
+        """
+        processed_group_object_info = []
+
+        self.set_name()
+        self.set_object_container_name()
+        # no need to set the member names, they will be set in the implementation of return_network_objects function
+        self.set_description()
+        self.set_override_bool()
+
+        processed_group_object_info = {
+            "port_group_name": self.get_name(),
+            "object_container_name": self.get_object_container_name(),
+            "port_group_members": self.get_member_names(),
+            "port_group_description": self.get_description(),
+            "overridable_object": self.get_override_bool()
+        }
+
+        return processed_group_object_info
 
 
 # class SecurityZone(Object):
