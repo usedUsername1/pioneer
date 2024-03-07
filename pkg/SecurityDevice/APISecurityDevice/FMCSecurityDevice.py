@@ -11,6 +11,7 @@ import ipaddress
 import utils.exceptions as PioneerExceptions
 import utils.gvars as gvars
 
+# TODO: maybe create a class for literal objects, FMCLiteralObject
 class FMCObject(Object):
     """
     A class representing a FMC object.
@@ -85,15 +86,15 @@ class FMCNetworkGroupObject(FMCObject, NetworkGroupObject):
         super().__init__(object_info)
 
     #TODO: this is not actually needed, or is it?    
-    # def set_member_names(self, members):
-    #     """
-    #     Sets the member names of the network group object.
+    def set_member_names(self, members):
+        """
+        Sets the member names of the network group object.
 
-    #     Args:
-    #         members (list): A list of member names.
-    #     """
-    #     helper.logging.debug("Called FMCNetworkGroupObject::set_member_names()")
-    #     return super().set_member_names(members)
+        Args:
+            members (list): A list of member names.
+        """
+        helper.logging.debug("Called FMCNetworkGroupObject::set_member_names()")
+        return super().set_member_names(members)
     
 class FMCNetworkObject(FMCObject, NetworkObject):
     """
@@ -151,6 +152,17 @@ class FMCNetworkLiteralObject(NetworkObject):
         description = gvars.literal_objects_description
         return super().set_description(description)
 
+    def set_object_container_name(self):
+        """
+        Set the name of the object container for the FMC object.
+
+        Returns:
+            str: The name of the object container.
+        """
+        helper.logging.debug("Called FMCNetworkLiteralObject::set_object_container_name()")
+        container_name = 'virtual_object_container'
+        return super().set_object_container_name(container_name)
+
     def set_network_address_type(self):
         split_name = self._name.split('_')
         netmask = split_name[2]
@@ -167,6 +179,16 @@ class FMCNetworkLiteralObject(NetworkObject):
         is_overridable = False
         return super().set_override_bool(is_overridable)
 
+    def set_object_container_name(self):
+        """
+        Set the name of the object container for the FMC object.
+
+        Returns:
+            str: The name of the object container.
+        """
+        helper.logging.debug("Called FMCObject::set_object_container_name()")
+        container_name = 'virtual_object_container'
+        return super().set_object_container_name(container_name)
 #TODO: do the classes
 class FMCPortObject(FMCObject, PortObject):
     def __init__(self, object_info) -> None:
@@ -180,11 +202,11 @@ class FMCPortObject(FMCObject, PortObject):
         protocol = self._object_info['protocol']
         return super().set_port_protocol(protocol)
 
-class FMCPortGroupObject(PortGroupObject):
+class FMCPortGroupObject(FMCObject, PortGroupObject):
     def __init__(self, object_info) -> None:
         super().__init__(object_info)
 
-class FMCPortLiteralObject(FMCPortObject):
+class FMCPortLiteralObject(PortObject):
     def __init__(self, object_info) -> None:
         super().__init__(object_info)
     
@@ -205,6 +227,21 @@ class FMCPortLiteralObject(FMCPortObject):
         split_name = self._name.split('_')
         protocol = split_name[1]
         return super().set_port_protocol(protocol)
+
+    def set_object_container_name(self):
+        """
+        Set the name of the object container for the FMC object.
+
+        Returns:
+            str: The name of the object container.
+        """
+        helper.logging.debug("Called FMCPortLiteralObject::set_object_container_name()")
+        container_name = 'virtual_object_container'
+        return super().set_object_container_name(container_name)
+
+    def set_override_bool(self):
+        is_overridable = False
+        return super().set_override_bool(is_overridable)
     
 class FMCGeolocationObject(GeolocationObject):
     """
@@ -1731,7 +1768,6 @@ class FMCSecurityDevice(SecurityDevice):
         helper.logging.info("Processing port objects data info. Retrieving all objects from the database, processing them, and returning their info.")
 
         port_objects_from_device_list = []
-
         for port_object_name in object_names:
             if port_object_name.startswith(gvars.port_literal_prefix):
                 port_objects_from_device_list.append(FMCPortLiteralObject(port_object_name))

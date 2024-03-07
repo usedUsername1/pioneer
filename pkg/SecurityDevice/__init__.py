@@ -651,21 +651,28 @@ class SecurityDevice:
             case 'network_objects':
                 self.fetch_objects_info('network_objects')
                 object_names = self.get_db_objects('network_objects')
+                
             case 'port_objects':
                 self.fetch_objects_info('port_objects')
                 object_names = self.get_db_objects('port_objects')
 
         object_type_mapping = {
-            'network_objects': self.return_network_objects(object_names),
-            'port_objects': self.return_port_objects(object_names),
+            'network_objects': self.return_network_objects,
+            'port_objects': self.return_port_objects,
             # 'schedule_objects': self.return_schedule_objects(),
             # 'policy_users': self.return_policy_users(),
             # 'url_objects': self.return_url_objects(),
             # 'app_objects': self.return_app_objects()
         }
 
-        # Retrieve objects of the specified type using the object type mapping dictionary
-        retrieved_objects_list = object_type_mapping.get(object_type)
+        # Retrieve the function corresponding to the specified object type
+        retrieve_function = object_type_mapping.get(object_type)
+
+        if retrieve_function is None:
+            return []  # Or raise an error if necessary
+
+        # Call the function to retrieve objects of the specified type
+        retrieved_objects_list = retrieve_function(object_names)
 
         helper.logging.info(f"################## Importing object configuration. Object type is: <{object_type}>. ##################")
         # Initialize an empty dictionary to store processed objects organized by type
@@ -681,6 +688,7 @@ class SecurityDevice:
             helper.logging.debug(f"Raw object info: <{RetrievedObject.get_info()}>")
             # Process the retrieved object
             processed_object_info = RetrievedObject.process_object()
+            print(processed_object_info)
             # Append the processed object to the corresponding list based on its type
             if isinstance(RetrievedObject, NetworkObject):
                 processed_objects_dict["network_objects"].append(processed_object_info)
