@@ -83,16 +83,17 @@ class FMCNetworkGroupObject(FMCObject, NetworkGroupObject):
         """
         helper.logging.debug("Called FMCNetworkGroupObject::__init__()")
         super().__init__(object_info)
-    
-    def set_member_names(self, members):
-        """
-        Sets the member names of the network group object.
 
-        Args:
-            members (list): A list of member names.
-        """
-        helper.logging.debug("Called FMCNetworkGroupObject::set_member_names()")
-        return super().set_member_names(members)
+    #TODO: this is not actually needed, or is it?    
+    # def set_member_names(self, members):
+    #     """
+    #     Sets the member names of the network group object.
+
+    #     Args:
+    #         members (list): A list of member names.
+    #     """
+    #     helper.logging.debug("Called FMCNetworkGroupObject::set_member_names()")
+    #     return super().set_member_names(members)
     
 class FMCNetworkObject(FMCObject, NetworkObject):
     """
@@ -139,10 +140,6 @@ class FMCNetworkLiteralObject(NetworkObject):
         name = self._object_info
         return super().set_name(name)
 
-    def set_object_container_name(self):
-        container_name = 'virtual_object_container'
-        return super().set_object_container_name(container_name)
-
     def set_network_address_value(self):
         split_name = self._name.split('_')
         subnet_id = split_name[1]
@@ -172,15 +169,43 @@ class FMCNetworkLiteralObject(NetworkObject):
 
 #TODO: do the classes
 class FMCPortObject(FMCObject, PortObject):
-    pass
+    def __init__(self, object_info) -> None:
+        super().__init__(object_info)
+    
+    def set_port_number(self):
+        port_number = self._object_info['port']
+        return super().set_port_number(port_number)
+
+    def set_port_protocol(self, protocol):
+        protocol = self._object_info['protocol']
+        return super().set_port_protocol(protocol)
 
 class FMCPortGroupObject(PortGroupObject):
-    pass
+    def __init__(self, object_info) -> None:
+        super().__init__(object_info)
 
 class FMCPortLiteralObject(FMCPortObject):
-    pass
-
-
+    def __init__(self, object_info) -> None:
+        super().__init__(object_info)
+    
+    def set_name(self):
+        name = self._object_info
+        return super().set_name(name)
+    
+    def set_description(self):
+        description = gvars.literal_objects_description
+        return super().set_description(description)
+    
+    def set_port_number(self):
+        split_name = self._name.split('_')
+        port_number = split_name[2]
+        return super().set_port_number(port_number)
+    
+    def set_port_protocol(self, protocol):
+        split_name = self._name.split('_')
+        protocol = split_name[1]
+        return super().set_port_protocol(protocol)
+    
 class FMCGeolocationObject(GeolocationObject):
     """
     A class representing a FMC geolocation object
@@ -1374,6 +1399,8 @@ class FMCSecurityDevice(SecurityDevice):
         self._geolocation_objects_info = None
         self._countries_info = None
         self._continents_info = None
+        self._port_objects_info = None
+        self._port_group_objects_info = None
 
     def return_security_policy_container_object(self, container_name):
         helper.logging.debug("Called FMCSecurityDevice::return_security_policy_container_object()")
@@ -1559,6 +1586,17 @@ class FMCSecurityDevice(SecurityDevice):
                 # Convert the fetched information into a dictionary for efficient lookup
                 continents_dict = {entry['name']: entry for entry in self._continents_info}
                 self._continents_info = continents_dict
+        
+        if object_type == 'port_objects':
+            if not self._port_objects_info:
+                self._port_objects_info = self._sec_device_connection.object.port.get()
+                ports_dict = {entry['name']: entry for entry in self._port_objects_info if 'name' in entry}
+                self._port_objects_info = ports_dict
+            
+            if not self._port_group_objects_info:
+                self._port_group_objects_info = self._sec_device_connection.object.portobjectgroup.get()
+                port_groups_dict = {entry['name']: entry for entry in self._port_group_objects_info if 'name' in entry}
+                self._port_group_objects_info = port_groups_dict
 
     # this function is responsible for retrieving all the member objects
     # it also sets the members of a group objects to be the objects retrieved
@@ -1596,7 +1634,7 @@ class FMCSecurityDevice(SecurityDevice):
             for object_member in object_members:
                 group_member_object_names.append(object_member['name'])
         except KeyError:
-            print('No member objects')
+            helper.logging.info("No member objects")
         
         # Try to retrieve literal members from the group object information
         try:
@@ -1606,7 +1644,7 @@ class FMCSecurityDevice(SecurityDevice):
             for literal_member in group_member_literals_list:
                 group_member_object_names.append(literal_member)
         except KeyError:
-            print("No literal members")
+            helper.logging.info("No literal members")
 
         # Set the member names of the group object
         group_object.set_member_names(group_member_object_names)
@@ -1615,6 +1653,8 @@ class FMCSecurityDevice(SecurityDevice):
         if object_type == 'network_objects':
             # Extend the list of group member objects instead of appending
             group_member_objects.extend(self.return_network_objects(group_member_object_names))
+        elif object_type == 'port_objects':
+            group_member_objects.extend(self.return_port_objects(group_member_object_names))
 
     def return_network_objects(self, object_names):
         """
@@ -1694,9 +1734,16 @@ class FMCSecurityDevice(SecurityDevice):
 
         for port_object_name in object_names:
             if port_object_name.startswith(gvars.port_literal_prefix):
-                pass
-
-
+                port_objects_from_device_list.append(FMCPortLiteralObject(port_object_name))
+            elif port_object_name in self._port_objects_info:
+                port_objects_from_device_list.append(FMCPortObject(self._port_objects_info[port_object_name]))
+            elif port_object_name in self._port_group_objects_info:
+                port_group_object = FMCPortGroupObject(self._port_group_objects_info[port_object_name])
+                self._return_group_object_members_helper(port_group_object, 'port_objects', port_objects_from_device_list)
+                port_objects_from_device_list.append(port_group_object)
+        
+        return port_objects_from_device_list
+        
     @staticmethod
     def convert_port_literals_to_objects(port_literals):
         helper.logging.debug("Called FMCSecurityDevice::convert_port_literals_to_objects().")
@@ -1789,5 +1836,3 @@ class FMCSecurityDevice(SecurityDevice):
         
         helper.logging.debug(f"Finished converting all literals to objects. This is the list with converted literals {network_objects_list}.")
         return network_objects_list
-
-#TODO: static methods for port literals

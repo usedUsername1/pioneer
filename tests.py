@@ -7,12 +7,12 @@ fmc = fireREST.FMC(hostname='10.2.196.131', username='admin', password='2wsx#EDC
 # print(policy)
 
 
-object = fmc.object.portobjectgroup.get(name="EXCHANGE_ports")
-print(object)
+# object = fmc.object.portobjectgroup.get(name="EXCHANGE_ports")
+# print(object)
 
-# ports = fmc.object.port.get()
+ports = fmc.object.port.get(name="obj_icmp_any")
 
-# print(ports)
+print(ports)
 
 
 # source = { 'sourceNetworks' : {'literals': [{'type': 'Host', 'value': '1.1.1.1'}], 'objects': [{'type': 'Host', 'overridable': False, 'id': '005056AB-6282-0ed3-0000-004295037556', 'name': '10.2.39.86'}, {'type': 'Network', 'overridable': False, 'id': '005056AB-6282-0ed3-0000-004295042505', 'name': '100.66.1.0-26'}]}}
