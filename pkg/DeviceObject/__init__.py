@@ -586,7 +586,9 @@ class PortObject(Object):
         helper.logging.debug("Called PortObject::process_object()")
         # Set the values with for the object with the data you got in the object_info variable, which holds the info of the device as extracted from the Security Device
         self.set_name()
-        self.set_object_container_name()        
+        self.set_object_container_name()
+        self.set_port_protocol()
+        self.set_port_number()        
         self.set_description()
         self.set_override_bool()
 

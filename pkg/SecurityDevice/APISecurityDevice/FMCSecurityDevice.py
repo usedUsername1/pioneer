@@ -189,16 +189,21 @@ class FMCNetworkLiteralObject(NetworkObject):
         helper.logging.debug("Called FMCObject::set_object_container_name()")
         container_name = 'virtual_object_container'
         return super().set_object_container_name(container_name)
-#TODO: do the classes
+
 class FMCPortObject(FMCObject, PortObject):
     def __init__(self, object_info) -> None:
         super().__init__(object_info)
     
     def set_port_number(self):
-        port_number = self._object_info['port']
+        try:
+            port_number = self._object_info['port']
+        except KeyError:
+            helper.logging.info(f"<{self._name}> port object does not have a port number defined.")
+            port_number = None
         return super().set_port_number(port_number)
 
-    def set_port_protocol(self, protocol):
+    def set_port_protocol(self):
+        print(self._object_info)
         protocol = self._object_info['protocol']
         return super().set_port_protocol(protocol)
 
@@ -223,7 +228,7 @@ class FMCPortLiteralObject(PortObject):
         port_number = split_name[2]
         return super().set_port_number(port_number)
     
-    def set_port_protocol(self, protocol):
+    def set_port_protocol(self):
         split_name = self._name.split('_')
         protocol = split_name[1]
         return super().set_port_protocol(protocol)
@@ -1813,7 +1818,7 @@ class FMCSecurityDevice(SecurityDevice):
                 continue
 
             # Create the name of the port object
-            port_object_name = f"{gvars.port_literal_prefix}_{literal_protocol_keyword}_{literal_port_nr}"
+            port_object_name = f"{gvars.port_literal_prefix}{literal_protocol_keyword}_{literal_port_nr}"
             port_objects_list.append(port_object_name)
 
         helper.logging.debug(f"Finished converting all literals to objects. This is the list with converted literals {port_objects_list}.")
