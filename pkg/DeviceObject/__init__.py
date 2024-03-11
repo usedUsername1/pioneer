@@ -643,28 +643,84 @@ class PortGroupObject(GroupObject):
         return processed_group_object_info
 
 class ICMPObject(Object):
+    """
+    Class representing an ICMP object in the system, inheriting from the base Object class.
+    """
+
     def __init__(self, object_info) -> None:
+        """
+        Initialize an ICMPObject instance.
+
+        Parameters:
+        - object_info (dict): Information about the ICMP object.
+        """
+        helper.logging.debug("Called ICMPObject::__init__()")
         super().__init__(object_info)
         self._icmp_type = None
         self._icmp_code = None
     
     def get_icmp_type(self):
+        """
+        Get the ICMP type.
+
+        Returns:
+            str: ICMP type.
+        """
+        helper.logging.debug("Called ICMPObject::get_icmp_type()")
         return self._icmp_type
 
     def set_icmp_type(self, icmp_type):
+        """
+        Set the ICMP type.
+
+        Parameters:
+            icmp_type (str): ICMP type.
+        """
+        helper.logging.debug("Called ICMPObject::set_icmp_type()")
         self._icmp_type = icmp_type
 
     def get_icmp_code(self):
+        """
+        Get the ICMP code.
+
+        Returns:
+            str: ICMP code.
+        """
+        helper.logging.debug("Called ICMPObject::get_icmp_code()")
         return self._icmp_code
 
     def set_icmp_code(self, icmp_code):
+        """
+        Set the ICMP code.
+
+        Parameters:
+            icmp_code (str): ICMP code.
+        """
+        helper.logging.debug("Called ICMPObject::set_icmp_code()")
         self._icmp_code = icmp_code
 
     def process_object(self):
+        """
+        Process the ICMP object to gather its information.
+
+        This method sets various attributes of the ICMP object, including name, object container name,
+        ICMP type, ICMP code, description, and override boolean. After setting these attributes, it constructs
+        a dictionary containing the processed information about the ICMP object.
+
+        Returns:
+            dict: A dictionary containing the processed information about the ICMP object.
+                  It includes the following keys:
+                  - "icmp_name": The name of the ICMP object.
+                  - "object_container_name": The name of the object container.
+                  - "icmp_type": The ICMP type.
+                  - "icmp_code": The ICMP code.
+                  - "icmp_description": The description of the ICMP object.
+                  - "overridable_object": A boolean indicating whether the object is overridable.
+        """
         self.set_name()
         self.set_object_container_name()
         self.set_icmp_type()
-        self.set_icmp_code()        
+        self.set_icmp_code()
         self.set_description()
         self.set_override_bool()
 
