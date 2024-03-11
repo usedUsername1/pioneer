@@ -235,24 +235,23 @@ def main():
                 # contains the information (thus the policies) it inherits from all the parents
                 print("Importing the security policy data.")
 
-                # TODO: continue documenting and debugging from this function
                 sec_policy_data = SpecificSecurityDeviceObject.get_policy_info_from_device_conn('security_policy', passed_container_names_list)
                 helper.logging.info("\n################## EXTRACTED INFO FROM THE SECURITY POLICIES, INSERTING IN THE DATABASE. ##################")
                 # at this point, the data from all the security policies is extracted, it is time to insert it into the database
                 SpecificSecurityDeviceObject.insert_into_security_policies_table(sec_policy_data)
 
-                # TODO: this below
                 print("Importing the object container data.")
                 helper.logging.info("\n################## IMPORTING OBJECT CONTAINER DATA. ##################")
                 # import and insert the object container first!
                 object_containers_info = SpecificSecurityDeviceObject.get_containers_info_from_device_conn(security_policy_containers_info, 'object_container')
                 SpecificSecurityDeviceObject.insert_into_object_containers_table(object_containers_info)
 
+                #TODO: the import functinoality must be independent of the policy type. so it should be taken out from here
                 print("Importing network object data.")
                 helper.logging.info("\n################## IMPORTING NETWORK OBJECTS DATA. ##################")
                 # # at this point all the security policy data is imported. it is time to import the object data.
                 network_objects_data = SpecificSecurityDeviceObject.get_object_info_from_device_conn('network_objects')
-                print("Inserting network object data.")
+                print("Inserting network object data in the database.")
                 helper.logging.info("\n################## INSERTING NETWORK OBJECTS DATA. ##################")                
                 SpecificSecurityDeviceObject.insert_into_network_address_objects_table(network_objects_data[0]['network_objects'])
                 SpecificSecurityDeviceObject.insert_into_network_address_object_groups_table(network_objects_data[0]['network_group_objects'])
@@ -261,11 +260,13 @@ def main():
                 print("Importing port object data.")
                 helper.logging.info("\n################## IMPORTING PORT OBJECTS DATA. ##################")
                 port_objects_data = SpecificSecurityDeviceObject.get_object_info_from_device_conn('port_objects')
-                print(port_objects_data)
+                print("Inserting port object data in the database.")
+                SpecificSecurityDeviceObject.insert_into_port_objects_table(port_objects_data[0]['port_objects'])
+                SpecificSecurityDeviceObject.insert_into_icmp_objects_table(port_objects_data[0]['icmp_port_objects'])
+                SpecificSecurityDeviceObject.insert_into_port_object_groups_table(port_objects_data[0]['port_group_objects'])
 
-
-                
-
+                #TODO: finish documenting of port functions, continue importing schedule, users, urls and l7 apps
+                #TODO: create migration process
 
 
 if __name__ == "__main__":

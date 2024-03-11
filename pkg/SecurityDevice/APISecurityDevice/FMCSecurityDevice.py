@@ -1,6 +1,6 @@
 from abc import abstractmethod
 from pkg.Container import SecurityPolicyContainer, ObjectPolicyContainer
-from pkg.DeviceObject import Object, NetworkObject, NetworkGroupObject, GeolocationObject, PortObject, PortGroupObject
+from pkg.DeviceObject import Object, NetworkObject, NetworkGroupObject, GeolocationObject, PortObject, PortGroupObject, ICMPObject
 from pkg.SecurityDevice.APISecurityDevice.APISecurityDeviceConnection import APISecurityDeviceConnection
 from pkg.SecurityDevice import SecurityDevice
 from pkg.Policy import SecurityPolicy
@@ -203,9 +203,64 @@ class FMCPortObject(FMCObject, PortObject):
         return super().set_port_number(port_number)
 
     def set_port_protocol(self):
-        print(self._object_info)
         protocol = self._object_info['protocol']
         return super().set_port_protocol(protocol)
+
+class FMCICMPObject(FMCObject, ICMPObject):
+    def set_icmp_type(self):
+        try:
+            icmp_type = self._object_info['icmpType']
+        except KeyError:
+            icmp_type = 'any'
+
+        return super().set_icmp_type(icmp_type)
+    
+    def set_icmp_code(self):
+        try:
+            icmp_code = self._object_info['code']
+        except:
+            icmp_code = None
+        return super().set_icmp_code(icmp_code)
+    
+class FMCLiteralICMPObject(ICMPObject):
+    def __init__(self, object_info) -> None:
+        super().__init__(object_info)
+    
+    def set_name(self):
+        name = self._object_info
+        return super().set_name(name)
+    
+    def set_description(self):
+        description = gvars.literal_objects_description
+        return super().set_description(description)
+
+    def set_icmp_type(self):
+        split_name = self._name.split('_')
+        icmp_type = split_name[2]
+        return super().set_icmp_type(icmp_type)
+    
+    def set_icmp_code(self):
+        split_name = self._name.split('_')
+        try:
+            icmp_code = split_name[3]
+        except IndexError:
+            icmp_code = None
+        return super().set_icmp_code(icmp_code)
+
+    def set_object_container_name(self):
+        """
+        Set the name of the object container for the FMC object.
+
+        Returns:
+            str: The name of the object container.
+        """
+        helper.logging.debug("Called FMCLiteralICMPObject::set_object_container_name()")
+        container_name = 'virtual_object_container'
+        return super().set_object_container_name(container_name)
+
+    def set_override_bool(self):
+        is_overridable = False
+        return super().set_override_bool(is_overridable)
 
 class FMCPortGroupObject(FMCObject, PortGroupObject):
     def __init__(self, object_info) -> None:
@@ -1764,7 +1819,8 @@ class FMCSecurityDevice(SecurityDevice):
         # Return the list of network objects retrieved from the device
         return network_objects_from_device_list
 
-    #TODO: continue here, create the classes for the ports
+    #TODO: continue here, should there be a different class for ICMP ports?
+    # only the migration of UDP, TCP and ICMP is supported. for everything else, log the object and the policy where it is located
     def return_port_objects(self, object_names):
         # Log a debug message indicating the function call
         helper.logging.debug("Called FMCSecurityDevice::return_port_objects()")
@@ -1775,21 +1831,29 @@ class FMCSecurityDevice(SecurityDevice):
         port_objects_from_device_list = []
         for port_object_name in object_names:
             if port_object_name.startswith(gvars.port_literal_prefix):
-                port_objects_from_device_list.append(FMCPortLiteralObject(port_object_name))
+                if 'ICMP' in port_object_name:
+                    port_objects_from_device_list.append(FMCLiteralICMPObject(port_object_name))
+                else:
+                    port_objects_from_device_list.append(FMCPortLiteralObject(port_object_name))
             elif port_object_name in self._port_objects_info:
-                port_objects_from_device_list.append(FMCPortObject(self._port_objects_info[port_object_name]))
+                # do a check here and see if the current object is an ICMP object or nay. if it is not, then create a PortObject
+                if 'ICMP' in self._port_objects_info[port_object_name]['type']:
+                    port_objects_from_device_list.append(FMCICMPObject(self._port_objects_info[port_object_name]))
+                else:
+                    port_objects_from_device_list.append(FMCPortObject(self._port_objects_info[port_object_name]))
+
             elif port_object_name in self._port_group_objects_info:
                 port_group_object = FMCPortGroupObject(self._port_group_objects_info[port_object_name])
                 self._return_group_object_members_helper(port_group_object, 'port_objects', port_objects_from_device_list)
                 port_objects_from_device_list.append(port_group_object)
         
         return port_objects_from_device_list
-        
+
+    #TODO: add better processing for ICMP literals (that have code and type)
     @staticmethod
     def convert_port_literals_to_objects(port_literals):
-        helper.logging.debug("Called FMCSecurityDevice::convert_port_literals_to_objects().")
         """
-        Convert port literals to objects.
+        Convert port literals to port object names.
 
         Args:
             port_literals (list): List of port literals.
@@ -1801,26 +1865,39 @@ class FMCSecurityDevice(SecurityDevice):
 
         # Process each port literal
         for port_literal in port_literals:
+            # Extract protocol and initialize port number
             literal_protocol = port_literal['protocol']
-
-            # Handle ICMP literals separately
-            if literal_protocol in ["1", "58"]:
-                helper.logging.info(f"I have encountered an ICMP literal: {port_literal['type']}.")
-                literal_port_nr = port_literal['icmpType']
-            else:
-                literal_port_nr = port_literal['port']
-
-            # Convert protocol number to a known IANA keyword
+            literal_port_nr = None
+            
             try:
+                # Convert protocol number to its corresponding keyword
                 literal_protocol_keyword = helper.protocol_number_to_keyword(literal_protocol)
             except PioneerExceptions.UnknownProtocolNumber:
+                # Log error if protocol number cannot be converted
                 helper.logging.error(f"Protocol number: {literal_protocol} cannot be converted to a known IANA keyword.")
-                continue
-
+            
+            # Handle ICMP literals separately
+            if literal_protocol in ["1", "58"]:
+                # Log info for encountered ICMP literals
+                helper.logging.info(f"I have encountered an ICMP literal: {port_literal['type']}.")
+                
+                # Extract ICMP type
+                literal_port_nr = port_literal['icmpType']
+                
+                # Check for ICMP code
+                try:
+                    icmp_code = port_literal['code']
+                    port_object_name = f"{gvars.port_literal_prefix}{literal_protocol_keyword}_{literal_port_nr}_{icmp_code}"
+                    port_objects_list.append(port_object_name)
+                except KeyError:
+                    # If no ICMP code, continue without it
+                    helper.logging.debug(f"No ICMP code for the following port literal: {port_literal['type']}.")
+            
             # Create the name of the port object
             port_object_name = f"{gvars.port_literal_prefix}{literal_protocol_keyword}_{literal_port_nr}"
             port_objects_list.append(port_object_name)
 
+        # Log completion and return port objects list
         helper.logging.debug(f"Finished converting all literals to objects. This is the list with converted literals {port_objects_list}.")
         return port_objects_list
 

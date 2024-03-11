@@ -642,6 +642,42 @@ class PortGroupObject(GroupObject):
 
         return processed_group_object_info
 
+class ICMPObject(Object):
+    def __init__(self, object_info) -> None:
+        super().__init__(object_info)
+        self._icmp_type = None
+        self._icmp_code = None
+    
+    def get_icmp_type(self):
+        return self._icmp_type
+
+    def set_icmp_type(self, icmp_type):
+        self._icmp_type = icmp_type
+
+    def get_icmp_code(self):
+        return self._icmp_code
+
+    def set_icmp_code(self, icmp_code):
+        self._icmp_code = icmp_code
+
+    def process_object(self):
+        self.set_name()
+        self.set_object_container_name()
+        self.set_icmp_type()
+        self.set_icmp_code()        
+        self.set_description()
+        self.set_override_bool()
+
+        processed_object_info = {
+            "icmp_name": self.get_name(),
+            "object_container_name": self.get_object_container_name(),
+            "icmp_type": self.get_icmp_type(),
+            "icmp_code": self.get_icmp_code(),
+            "icmp_description": self.get_description(),
+            "overridable_object": self.get_override_bool()
+        }
+
+        return processed_object_info
 
 # class SecurityZone(Object):
 #     def __init__(self, name, description, is_overridable, object_container_name=None) -> None:

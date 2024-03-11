@@ -2,14 +2,14 @@ import fireREST
 
 fmc = fireREST.FMC(hostname='10.2.196.131', username='admin', password='2wsx#EDC', domain='Global')
 
-# policy = fmc.policy.accesspolicy.accessrule.get(container_name="debug3", name="test-usr")
+# policy = fmc.policy.accesspolicy.accessrule.get(container_name="debug3", name="test-port")
 
 # print(policy)
 
 
 # object = fmc.object.portobjectgroup.get(name="EXCHANGE_ports")
 # print(object)
-
+# ICMP-TEST-TYPE3-CODE3
 ports = fmc.object.port.get(name="obj_icmp_any")
 
 print(ports)

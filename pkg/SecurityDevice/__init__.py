@@ -5,7 +5,7 @@ import utils.helper as helper
 import utils.gvars as gvars
 import json
 import sys
-from pkg.DeviceObject import NetworkObject, NetworkGroupObject, GeolocationObject, PortObject, PortGroupObject
+from pkg.DeviceObject import NetworkObject, NetworkGroupObject, GeolocationObject, PortObject, PortGroupObject, ICMPObject
 # TODO: create all the tables for all the objects
 class SecurityDeviceDatabase(PioneerDatabase):
     """
@@ -92,6 +92,10 @@ class SecurityDeviceDatabase(PioneerDatabase):
         helper.logging.info("Creating table: <port_objects_table>.")
         self.table_factory("port_objects_table")
         helper.logging.info("Created table: <port_objects_table>.")
+
+        helper.logging.info("Creating table: <icmp_objects_table>.")
+        self.table_factory("icmp_objects_table")
+        helper.logging.info("Created table: <icmp_objects_table>.")
 
         helper.logging.info("Creating table: <port_object_groups_table>.")
         self.table_factory("port_object_groups_table")
@@ -297,6 +301,18 @@ class SecurityDeviceDatabase(PioneerDatabase):
                 port_protocol TEXT,
                 port_number TEXT,
                 port_description TEXT,
+                overridable_object BOOLEAN NOT NULL,
+                FOREIGN KEY(object_container_name) REFERENCES object_containers_table(object_container_name)
+                );"""
+
+            case 'icmp_objects_table':
+                command = """CREATE TABLE IF NOT EXISTS icmp_objects_table (
+                icmp_name TEXT PRIMARY KEY,
+                security_device_name TEXT NOT NULL,
+                object_container_name TEXT NOT NULL,
+                icmp_type TEXT,
+                icmp_code TEXT,
+                icmp_description TEXT,
                 overridable_object BOOLEAN NOT NULL,
                 FOREIGN KEY(object_container_name) REFERENCES object_containers_table(object_container_name)
                 );"""
@@ -662,6 +678,7 @@ class SecurityDevice:
                 object_names = self.get_db_objects('port_objects')
                 processed_objects_dict = {
                     "port_objects": [],
+                    "icmp_port_objects": [],
                     "port_group_objects": []
                 }
 
@@ -699,6 +716,8 @@ class SecurityDevice:
                 processed_objects_dict["geolocation_objects"].append(processed_object_info)
             elif isinstance(RetrievedObject, PortObject):
                 processed_objects_dict["port_objects"].append(processed_object_info)
+            elif isinstance(RetrievedObject, ICMPObject):
+                processed_objects_dict["icmp_port_objects"].append(processed_object_info)
             elif isinstance(RetrievedObject, PortGroupObject):
                 processed_objects_dict["port_group_objects"].append(processed_object_info)
 
@@ -1359,13 +1378,13 @@ class SecurityDevice:
         """
         for geo_entry in geolocation_object_data:
             # Extract data from the current geolocation object entry
-            geo_name = geo_entry['geolocation_object_name']
-            container_name = geo_entry['object_container_name']
-            continent_names = geo_entry['continent_member_names']
-            country_names = geo_entry['country_member_names']
-            country_alpha2 = geo_entry['country_member_alpha2_codes']
-            country_alpha3 = geo_entry['country_member_alpha3_codes']
-            country_numeric = geo_entry['country_member_numeric_codes']
+            geo_name = geo_entry.get('geolocation_object_name', None)
+            container_name = geo_entry.get('object_container_name', None)
+            continent_names = [geo_entry.get('continent_member_names', [])]
+            country_names = [geo_entry.get('country_member_names', [])]
+            country_alpha2 = [geo_entry.get('country_member_alpha2_codes', [])]
+            country_alpha3 = [geo_entry.get('country_member_alpha3_codes', [])]
+            country_numeric = [geo_entry.get('country_member_numeric_codes', [])]
 
             # Check for duplicates before insertion
             if self.verify_duplicate('geolocation_objects_table', 'geolocation_object_name', geo_name):
@@ -1426,6 +1445,165 @@ class SecurityDevice:
 
         # Return the result as a boolean
         return is_duplicate[0][0]
+    
+    def insert_into_port_objects_table(self, port_object_data):
+        helper.logging.debug("Called SecurityDevice::insert_into_port_objects_table().")
+        """
+        Insert values into the 'port_objects_table' table.
+
+        Parameters:
+        - port_object_data (list): List of dictionaries containing port object information.
+
+        Returns:
+        None
+        """
+        for port_entry in port_object_data:
+            # Extract data from the current port object entry
+            port_name = port_entry['port_name']
+            object_container_name = port_entry['object_container_name']
+            port_protocol = port_entry.get('port_protocol')
+            port_number = port_entry.get('port_number')
+            port_description = port_entry.get('port_description')
+            overridable_object = port_entry.get('overridable_object')
+
+            # Check for duplicates before insertion
+            if self.verify_duplicate('port_objects_table', 'port_name', port_name):
+                helper.logging.warn(f"Duplicate entry for port object: <{port_name}>. Skipping insertion.")
+                continue
+
+            # SQL command to insert data into the 'port_objects_table'
+            insert_command = """
+                INSERT INTO port_objects_table (
+                    port_name, 
+                    security_device_name, 
+                    object_container_name, 
+                    port_protocol, 
+                    port_number, 
+                    port_description, 
+                    overridable_object
+                ) VALUES (
+                    %s, %s, %s, %s, %s, %s, %s
+                )
+            """
+
+            # Values to be inserted into the table
+            values = (
+                port_name,
+                self._name,
+                object_container_name,
+                port_protocol,
+                port_number,
+                port_description,
+                overridable_object
+            )
+
+            # Execute the insert command with the specified values
+            self._database.insert_table_value('port_objects_table', insert_command, values)
+
+    def insert_into_icmp_objects_table(self, icmp_object_data):
+        helper.logging.debug("Called SecurityDevice::insert_into_icmp_objects_table().")
+        """
+        Insert values into the 'icmp_objects_table' table.
+
+        Parameters:
+        - icmp_object_data (list): List of dictionaries containing ICMP object information.
+
+        Returns:
+        None
+        """
+        for icmp_entry in icmp_object_data:
+            # Extract data from the current ICMP object entry
+            icmp_name = icmp_entry['icmp_name']
+            object_container_name = icmp_entry['object_container_name']
+            icmp_type = icmp_entry.get('icmp_type')
+            icmp_code = icmp_entry.get('icmp_code')
+            icmp_description = icmp_entry.get('icmp_description')
+            overridable_object = icmp_entry.get('overridable_object')
+
+            # Check for duplicates before insertion
+            if self.verify_duplicate('icmp_objects_table', 'icmp_name', icmp_name):
+                helper.logging.warn(f"Duplicate entry for ICMP object: <{icmp_name}>. Skipping insertion.")
+                continue
+
+            # SQL command to insert data into the 'icmp_objects_table'
+            insert_command = """
+                INSERT INTO icmp_objects_table (
+                    icmp_name, 
+                    security_device_name, 
+                    object_container_name, 
+                    icmp_type, 
+                    icmp_code, 
+                    icmp_description, 
+                    overridable_object
+                ) VALUES (
+                    %s, %s, %s, %s, %s, %s, %s
+                )
+            """
+
+            # Values to be inserted into the table
+            values = (
+                icmp_name,
+                self._name,
+                object_container_name,
+                icmp_type,
+                icmp_code,
+                icmp_description,
+                overridable_object
+            )
+
+            # Execute the insert command with the specified values
+            self._database.insert_table_value('icmp_objects_table', insert_command, values)
+
+    def insert_into_port_object_groups_table(self, port_object_group_data):
+        helper.logging.debug("Called SecurityDevice::insert_into_port_object_groups_table().")
+        """
+        Insert values into the 'port_object_groups_table' table.
+
+        Parameters:
+        - port_object_group_data (list): List of dictionaries containing port object group information.
+
+        Returns:
+        None
+        """
+        for group_entry in port_object_group_data:
+            # Extract data from the current port object group entry
+            port_group_name = group_entry['port_group_name']
+            object_container_name = group_entry['object_container_name']
+            port_group_members = group_entry.get('port_group_members')
+            port_group_description = group_entry.get('port_group_description')
+            overridable_object = group_entry.get('overridable_object')
+
+            # Check for duplicates before insertion
+            if self.verify_duplicate('port_object_groups_table', 'port_group_name', port_group_name):
+                helper.logging.warn(f"Duplicate entry for port object group: <{port_group_name}>. Skipping insertion.")
+                continue
+
+            # SQL command to insert data into the 'port_object_groups_table'
+            insert_command = """
+                INSERT INTO port_object_groups_table (
+                    port_group_name, 
+                    security_device_name, 
+                    object_container_name, 
+                    port_group_members, 
+                    port_group_description, 
+                    overridable_object
+                ) VALUES (
+                    %s, %s, %s, %s, %s, %s
+                )
+            """
+
+            # Values to be inserted into the table
+            values = (
+                port_group_name,
+                self._name,
+                object_container_name,
+                port_group_members,
+                port_group_description,
+                overridable_object
+            )
+
+            # Execute the insert command with the specified values
+            self._database.insert_table_value('port_object_groups_table', insert_command, values)
 
     def delete_security_device(self):
         pass
