@@ -265,7 +265,7 @@ def main():
                 SpecificSecurityDeviceObject.insert_into_icmp_objects_table(port_objects_data[0]['icmp_port_objects'])
                 SpecificSecurityDeviceObject.insert_into_port_object_groups_table(port_objects_data[0]['port_group_objects'])
 
-                #TODO: finish documenting of port functions, continue importing schedule, users, urls and l7 apps
+                #TODO: import URLs, log schedules, users, url categories, l7 apps
                 #TODO: create migration process
 
 

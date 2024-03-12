@@ -1,0 +1,975 @@
+import utils.helper as helper
+from pkg.DeviceObject import Object, NetworkObject, NetworkGroupObject, GeolocationObject, PortObject, PortGroupObject, ICMPObject
+import utils.gvars as gvars
+import ipaddress
+import utils.exceptions as PioneerExceptions
+from abc import abstractmethod
+
+class FMCObject(Object):
+    """
+    A class representing a FMC object.
+    """
+
+    def __init__(self, object_info) -> None:
+        """
+        Initialize the FMCObject instance.
+
+        Args:
+            object_info (dict): Information about the FMC object.
+        """
+        helper.logging.debug("Called FMCObject::__init__()")
+        super().__init__(object_info)
+    
+    def set_name(self):
+        """
+        Set the name of the FMC object.
+        
+        Returns:
+            str: The name of the FMC object.
+        """
+        helper.logging.debug("Called FMCObject::set_name()")
+        name = self._object_info['name']
+        return super().set_name(name)
+
+    def set_description(self):
+        """
+        Set the description of the FMC object.
+
+        Returns:
+            str: The description of the FMC object.
+        """
+        helper.logging.debug("Called FMCObject::set_description()")
+        try:
+            description = self._object_info['description']
+        except KeyError:
+            description = None
+        return super().set_description(description)
+
+    def set_object_container_name(self):
+        """
+        Set the name of the object container for the FMC object.
+
+        Returns:
+            str: The name of the object container.
+        """
+        helper.logging.debug("Called FMCObject::set_object_container_name()")
+        container_name = 'virtual_object_container'
+        return super().set_object_container_name(container_name)
+    
+    def set_override_bool(self):
+        """
+        Set the override status of the FMC object.
+
+        Returns:
+            bool: The override status of the FMC object.
+        """
+        helper.logging.debug("Called FMCObject::set_override_bool()")
+        is_overridable = self._object_info['overridable']
+        return super().set_override_bool(is_overridable)
+
+    @staticmethod
+    def convert_port_literals_to_objects(port_literals):
+        """
+        Convert port literals to port object names.
+
+        Args:
+            port_literals (list): List of port literals.
+
+        Returns:
+            list: List of port object names.
+        """
+        port_objects_list = []
+
+        # Process each port literal
+        for port_literal in port_literals:
+            # Extract protocol and initialize port number
+            literal_protocol = port_literal['protocol']
+            literal_port_nr = None
+            
+            try:
+                # Convert protocol number to its corresponding keyword
+                literal_protocol_keyword = helper.protocol_number_to_keyword(literal_protocol)
+            except PioneerExceptions.UnknownProtocolNumber:
+                # Log error if protocol number cannot be converted
+                helper.logging.error(f"Protocol number: {literal_protocol} cannot be converted to a known IANA keyword.")
+            
+            # Handle ICMP literals separately
+            if literal_protocol in ["1", "58"]:
+                # Log info for encountered ICMP literals
+                helper.logging.info(f"I have encountered an ICMP literal: {port_literal['type']}.")
+                
+                # Extract ICMP type
+                literal_port_nr = port_literal['icmpType']
+                
+                # Check for ICMP code
+                try:
+                    icmp_code = port_literal['code']
+                    port_object_name = f"{gvars.port_literal_prefix}{literal_protocol_keyword}_{literal_port_nr}_{icmp_code}"
+                    port_objects_list.append(port_object_name)
+                except KeyError:
+                    # If no ICMP code, continue without it
+                    helper.logging.debug(f"No ICMP code for the following port literal: {port_literal['type']}.")
+            
+            # Create the name of the port object
+            port_object_name = f"{gvars.port_literal_prefix}{literal_protocol_keyword}_{literal_port_nr}"
+            port_objects_list.append(port_object_name)
+
+        # Log completion and return port objects list
+        helper.logging.debug(f"Finished converting all literals to objects. This is the list with converted literals {port_objects_list}.")
+        return port_objects_list
+
+    @staticmethod
+    def convert_network_literals_to_objects(network_literals):
+        helper.logging.debug("Called FMSecurityPolicy::convert_network_literals_to_objects().")
+        """
+        Convert network literals to objects.
+
+        Args:
+            network_literals (list): List of network literals.
+
+        Returns:
+            list: List of network object names.
+        """
+        network_objects_list = []
+
+        # Loop through the network literals.
+        for network_literal in network_literals:
+            helper.logging.debug(f"Converting literal {network_literal} to object.")
+            # Extract the value of the network literal
+            literal_value = network_literal['value']
+
+            # Extract the type of the network literal. Can be either "Host" or "Network"
+            # The name of the converted object will depend on the network literal type
+            literal_type = network_literal['type']
+
+            # The literal type can be either a host or a network
+            if literal_type == 'Network':
+                helper.logging.debug(f"{network_literal} is of type Network.")
+                # Define the CIDR notation IP address
+                ip_cidr = literal_value
+
+                # Create an IPv4 network object
+                network = ipaddress.ip_network(ip_cidr, strict=False)
+
+                # Extract the network address and netmask
+                network_address = network.network_address
+                netmask = str(network.prefixlen)  # Extract the prefix length instead of the full netmask
+
+            elif literal_type == 'Host':
+                helper.logging.debug(f"{network_literal} is of type Host.")
+                netmask = '32'
+                network_address = literal_value  # Assuming literal_value is the host address
+
+            else:
+                helper.logging.debug(f"Cannot determine type of {network_literal}. Presented type is {literal_type}.")
+                continue
+
+            # Create the name of the object (NL_networkaddress_netmask)
+            network_object_name = gvars.network_literal_prefix + str(network_address) + "_" + str(netmask)
+            helper.logging.debug(f"Converted network literal {network_literal} to object {network_object_name}.")
+            network_objects_list.append(network_object_name)
+        
+        helper.logging.debug(f"Finished converting all literals to objects. This is the list with converted literals {network_objects_list}.")
+        return network_objects_list
+
+class FMCNetworkObject(FMCObject, NetworkObject):
+    """
+    A class representing a network object in Firepower Management Center (FMC).
+    """
+
+    def __init__(self, object_info) -> None:
+        """
+        Initialize the FMCNetworkObject instance.
+
+        Args:
+            object_info (dict): Information about the network object.
+        """
+        helper.logging.debug("Called FMCNetworkObject::__init__()")
+        super().__init__(object_info)
+    
+    def set_network_address_value(self):
+        """
+        Set the value of the network address for the network object.
+
+        Returns:
+            str: The value of the network address.
+        """
+        helper.logging.debug("Called FMCNetworkObject::set_network_address_value()")
+        value = self._object_info['value']
+        return super().set_network_address_value(value)
+
+    def set_network_address_type(self):
+        """
+        Set the type of the network address for the network object.
+
+        Returns:
+            str: The type of the network address.
+        """
+        helper.logging.debug("Called FMCNetworkObject::set_network_address_type()")
+        type = self._object_info['type']
+        return super().set_network_address_type(type)
+
+class FMCNetworkLiteralObject(NetworkObject):
+    """
+    Class representing a literal network object in the Firepower Management Center (FMC).
+    Inherits from the NetworkObject class.
+    """
+
+    def __init__(self, object_info) -> None:
+        """
+        Initialize an FMCNetworkLiteralObject instance.
+
+        Parameters:
+        - object_info (dict): Information about the network object.
+        """
+        helper.logging.debug("Called FMCNetworkLiteralObject::__init__()")
+        super().__init__(object_info)
+    
+    def set_name(self):
+        """
+        Set the name of the literal network object.
+
+        Returns:
+            str: The name of the object.
+        """
+        helper.logging.debug("Called FMCNetworkLiteralObject::set_name()")
+        name = self._object_info
+        return super().set_name(name)
+
+    def set_network_address_value(self):
+        """
+        Set the value of the network address for the literal network object.
+
+        Returns:
+            str: The network address value.
+        """
+        helper.logging.debug("Called FMCNetworkLiteralObject::set_network_address_value()")
+        split_name = self._name.split('_')
+        subnet_id = split_name[1]
+        netmask = split_name[2]
+        value = subnet_id + '/' + netmask
+        return super().set_network_address_value(value)
+
+    def set_description(self):
+        """
+        Set the description of the literal network object.
+
+        Returns:
+            str: The description of the object.
+        """
+        helper.logging.debug("Called FMCNetworkLiteralObject::set_description()")
+        description = gvars.literal_objects_description
+        return super().set_description(description)
+
+    def set_object_container_name(self):
+        """
+        Set the name of the object container for the FMC object.
+
+        Returns:
+            str: The name of the object container.
+        """
+        helper.logging.debug("Called FMCNetworkLiteralObject::set_object_container_name()")
+        container_name = 'virtual_object_container'
+        return super().set_object_container_name(container_name)
+
+    def set_network_address_type(self):
+        """
+        Set the type of the network address for the literal network object.
+
+        Returns:
+            str: The type of the network address.
+        """
+        helper.logging.debug("Called FMCNetworkLiteralObject::set_network_address_type()")
+        split_name = self._name.split('_')
+        netmask = split_name[2]
+        type = ''
+
+        if netmask == '32':
+            type = 'Host'
+        else:
+            type = 'Network'
+
+        return super().set_network_address_type(type)
+    
+    def set_override_bool(self):
+        """
+        Set the override boolean for the literal network object.
+
+        Returns:
+            bool: The override boolean value.
+        """
+        helper.logging.debug("Called FMCNetworkLiteralObject::set_override_bool()")
+        is_overridable = False
+        return super().set_override_bool(is_overridable)
+
+class FMCNetworkGroupObject(FMCObject, NetworkGroupObject):
+    def __init__(self, object_info) -> None:
+        """
+        Initializes a new FMCNetworkGroupObject.
+
+        Args:
+            object_info (dict): Information about the network group object.
+        """
+        helper.logging.debug("Called FMCNetworkGroupObject::__init__()")
+        super().__init__(object_info)
+
+    #TODO: this is not actually needed, or is it?    
+    def set_member_names(self, members):
+        """
+        Sets the member names of the network group object.
+
+        Args:
+            members (list): A list of member names.
+        """
+        helper.logging.debug("Called FMCNetworkGroupObject::set_member_names()")
+        return super().set_member_names(members)
+
+class FMCCountryObject(GeolocationObject):
+    """
+    A class representing a FMC country object.
+    """
+
+    def __init__(self, object_info) -> None:
+        """
+        Initialize the FMCCountryObject instance.
+
+        Args:
+            object_info (dict): Information about the country object.
+        """
+        super().__init__(object_info)
+    
+    def set_name(self):
+        """
+        Set the name of the country object.
+
+        Returns:
+            str: The name of the country object.
+        """
+        try:
+            name = self._object_info['name']
+        except KeyError:
+            name = None
+        return super().set_name(name)
+
+    def set_object_container_name(self):
+        """
+        Set the name of the object container for the country object.
+
+        Returns:
+            str: The name of the object container.
+        """
+        object_container_name = 'virtual_object_container'
+        return super().set_object_container_name(object_container_name)
+    
+    def set_continents(self):
+        """
+        Set the continents associated with the country object.
+
+        Returns:
+            None
+        """
+        return super().set_continents(None)
+    
+    def set_countries(self):
+        """
+        Set the countries associated with the country object.
+
+        Returns:
+            None
+        """
+        pass
+
+    def set_member_alpha2_codes(self):
+        """
+        Set the member alpha-2 code of the country object.
+
+        Returns:
+            str: The alpha-2 code of the country.
+        """
+        alpha2_code = self._object_info['iso2']
+        return super().set_member_alpha2_codes(alpha2_code)
+    
+    def set_member_alpha3_codes(self):
+        """
+        Set the member alpha-3 code of the country object.
+
+        Returns:
+            str: The alpha-3 code of the country.
+        """
+        alpha3_code = self._object_info['iso3']
+        return super().set_member_alpha3_codes(alpha3_code)
+    
+    def set_member_numeric_codes(self):
+        """
+        Set the member numeric code of the country object.
+
+        Returns:
+            int: The numeric code of the country.
+        """
+        numeric_code = self._object_info['id']
+        return super().set_member_numeric_codes(numeric_code)
+    
+    def get_member_country_names(self):
+        """
+        Get the name of the country.
+
+        Returns:
+            str: The name of the country.
+        """
+        return self._name
+
+    def get_member_alpha2_codes(self):
+        """
+        Get the alpha-2 code of the country.
+
+        Returns:
+            str: The alpha-2 code of the country.
+        """
+        return self._country_alpha2_codes
+    
+    def get_member_alpha3_codes(self):
+        """
+        Get the alpha-3 code of the country.
+
+        Returns:
+            str: The alpha-3 code of the country.
+        """
+        return self._country_alpha3_codes
+    
+    def get_member_numeric_codes(self):
+        """
+        Get the numeric code of the country.
+
+        Returns:
+            int: The numeric code of the country.
+        """
+        return self._country_numeric_codes
+
+class FMCContinentObject(GeolocationObject):
+    """
+    A class representing an FMC continent object.
+    """
+
+    def __init__(self, object_info) -> None:
+        """
+        Initialize the FMCContinentObject instance.
+
+        Args:
+            object_info (dict): Information about the continent object.
+        """
+        helper.logging.debug("Called FMCContinentObject::__init__()")
+        super().__init__(object_info)
+        
+    def set_name(self):
+        """
+        Set the name of the continent object.
+        
+        Returns:
+            str: The name of the continent object.
+        """
+        helper.logging.debug("Called FMCContinentObject::set_name()")
+        name = self._object_info['name']
+        return super().set_name(name)
+
+    def set_object_container_name(self):
+        """
+        Set the name of the object container for the continent object.
+
+        Returns:
+            str: The name of the object container.
+        """
+        helper.logging.debug("Called FMCContinentObject::set_object_container_name()")
+        object_container_name = 'virtual_object_container'
+        return super().set_object_container_name(object_container_name)
+    
+    def set_continents(self):
+        """
+        Set the continents associated with the continent object.
+
+        Returns:
+            None
+        """
+        helper.logging.debug("Called FMCContinentObject::set_continents()")
+        self._continents = None
+    
+    def get_member_continent_names(self):
+        """
+        Get the name of the continent.
+
+        Returns:
+            str: The name of the continent.
+        """
+        helper.logging.debug("Called FMCContinentObject::get_member_continent_names()")
+        return self._object_info['name']
+    
+    @abstractmethod
+    def set_continents(self):
+        """
+        Abstract method to set the continents associated with the continent object.
+        """
+        pass
+
+    def set_countries(self):
+        """
+        Set the countries associated with the continent object.
+
+        This method retrieves information about the countries associated with the continent from the object's information.
+        It constructs a list of FMCCountryObject instances based on the retrieved country information.
+        If there are no countries associated with the continent, the method sets the countries list to None.
+
+        Returns:
+            None
+        """
+        # Debugging message to indicate that the method is being called
+        helper.logging.debug("Called FMCContinentObject::set_countries()")
+        
+        # Initialize an empty list to store country objects
+        countries_objects_list = []
+        
+        try:
+            # Attempt to retrieve country information from the object's information
+            country_info = self._object_info['countries']
+            
+            # Iterate over each country information entry
+            for country_info_entry in country_info:
+                # Create an FMCCountryObject instance for each country and append it to the list
+                countries_objects_list.append(FMCCountryObject(country_info_entry))
+        
+        except KeyError:
+            # If there is no country information, set the countries list to None
+            countries_objects_list = None
+            
+        # Call the superclass method to set the countries list
+        return super().set_countries(countries_objects_list)
+
+    def set_member_alpha2_codes(self):
+        """
+        Set the member alpha-2 codes of the continent object.
+
+        Returns:
+            None
+        """
+        helper.logging.debug("Called FMCContinentObject::set_member_alpha2_codes()")
+        pass
+
+    def set_member_alpha3_codes(self):
+        """
+        Set the member alpha-3 codes of the continent object.
+
+        Returns:
+            None
+        """
+        helper.logging.debug("Called FMCContinentObject::set_member_alpha3_codes()")
+        pass
+
+    def set_member_numeric_codes(self):
+        """
+        Set the member numeric codes of the continent object.
+
+        Returns:
+            None
+        """
+        helper.logging.debug("Called FMCContinentObject::set_member_numeric_codes()")
+        pass
+
+    #TODO: move this
+    def get_continent_info(self):
+        """
+        Get information about the continent.
+
+        Returns:
+            dict: Information about the continent.
+        """
+        helper.logging.debug("Called FMCContinentObject::get_continent_info()")
+        return self._object_info
+
+class FMCGeolocationObject(GeolocationObject):
+    """
+    A class representing a FMC geolocation object
+    """
+
+    def __init__(self, object_info) -> None:
+        """
+        Initialize the FMCGeolocationObject instance.
+
+        Args:
+            object_info (dict): Information about the geolocation object.
+        """
+        helper.logging.debug(f"Called FMCGeolocationObject::__init__()")
+        super().__init__(object_info)
+
+    def set_name(self):
+        """
+        Set the name of the geolocation object.
+        
+        Returns:
+            str: The name of the geolocation object.
+        """
+        helper.logging.debug("Called FMCGeolocationObject::set_name()")
+        name = self._object_info['name']
+        return super().set_name(name)
+
+    def set_description(self):
+        """
+        Set the description of the geolocation object.
+
+        Returns:
+            None
+        """
+        helper.logging.debug("Called FMCGeolocationObject::set_description()")
+        value = None
+        return super().set_description(value)
+
+    def set_object_container_name(self):
+        """
+        Set the name of the object container for the geolocation object.
+
+        Returns:
+            str: The name of the object container.
+        """
+        helper.logging.debug("Called FMCGeolocationObject::set_object_container_name()")
+        object_container_name = 'virtual_object_container'
+        return super().set_object_container_name(object_container_name)
+
+    def set_continents(self):
+        """
+        Set the continents associated with the geolocation object.
+
+        This method sets the continents associated with the geolocation object by creating instances of
+        FMCContinentObject for each continent retrieved from the object's information.
+        If there are no continents associated with the geolocation object, it sets the continents list to None.
+
+        Returns:
+            list: A list of FMCContinentObject instances representing continents.
+        """
+        # Debugging message to indicate that the method is being called
+        helper.logging.debug("Called FMCGeolocationObject::set_continents()")
+        
+        # Initialize an empty list to store continent objects
+        continent_objects_list = []
+        
+        try:
+            # Attempt to retrieve continent information from the object's information
+            continents_info = self._object_info['continents']
+            
+            # Iterate over each continent information entry
+            for continent_info in continents_info:
+                # Create an FMCContinentObject instance for each continent and append it to the list
+                continent_objects_list.append(FMCContinentObject(continent_info))
+        
+        except KeyError:
+            # If there is no continent information, set the continents list to None
+            continent_objects_list = None
+        
+        # Call the superclass method to set the continents list
+        return super().set_continents(continent_objects_list)
+
+    #TODO: maybe make this method static?
+    def set_countries(self):
+        """
+        Set the countries associated with the geolocation object.
+
+        This method sets the countries associated with the geolocation object by creating instances of
+        FMCCountryObject for each country retrieved from the object's information.
+        It also adds countries of the continents associated with the geolocation object.
+
+        Returns:
+            list: A list of FMCCountryObject instances representing countries.
+        """
+        # Debugging message to indicate that the method is being called
+        helper.logging.debug("Called FMCGeolocationObject::set_countries()")
+        
+        # Initialize an empty list to store country objects
+        countries_objects_list = []
+        
+        # Attempt to retrieve country information from the object's information
+        country_info = self._object_info.get('countries', [])
+        
+        # Iterate over each country information entry
+        for country_entry in country_info:
+            # Create an FMCCountryObject instance for each country and append it to the list
+            countries_objects_list.append(FMCCountryObject(country_entry))
+        
+        # Add countries of the continents associated with the geolocation object
+        for continent in self._continents:
+            for country_info in continent.get_continent_info().get('countries', []):
+                countries_objects_list.append(FMCCountryObject(country_info))
+        
+        # Call the superclass method to set the countries list
+        return super().set_countries(countries_objects_list)
+
+    # Don't delete this. They need to be here, otherwise GeolocationObject::process_policy_info() will throw an error since the method
+    # called in there doesn't have parameters, however, the method definition of the class includes parameters.
+    @abstractmethod
+    def set_member_alpha2_codes(self):
+        """
+        Abstract method to set the member alpha-2 codes.
+        """
+        pass
+
+    @abstractmethod
+    def set_member_alpha3_codes(self):
+        """
+        Abstract method to set the member alpha-3 codes.
+        """
+        pass
+
+    @abstractmethod
+    def set_member_numeric_codes(self):
+        """
+        Abstract method to set the member numeric codes.
+        """
+        pass
+
+class FMCPortObject(FMCObject, PortObject):
+    """
+    Class representing a port object in the Firepower Management Center (FMC).
+    Inherits from both FMCObject and PortObject classes.
+    """
+
+    def __init__(self, object_info) -> None:
+        """
+        Initialize an FMCPortObject instance.
+
+        Parameters:
+        - object_info (dict): Information about the port object.
+        """
+        helper.logging.debug("Called FMCPortObject::__init__()")
+        super().__init__(object_info)
+    
+    def set_port_number(self):
+        """
+        Set the port number for the port object.
+
+        Returns:
+            str: The port number.
+        """
+        try:
+            helper.logging.debug("Called FMCPortObject::set_port_number()")
+            port_number = self._object_info['port']
+        except KeyError:
+            helper.logging.info(f"<{self._name}> port object does not have a port number defined.")
+            port_number = None
+        return super().set_port_number(port_number)
+
+    def set_port_protocol(self):
+        """
+        Set the protocol for the port object.
+
+        Returns:
+            str: The port protocol.
+        """
+        helper.logging.debug("Called FMCPortObject::set_port_protocol()")
+        protocol = self._object_info['protocol']
+        return super().set_port_protocol(protocol)
+
+class FMCPortLiteralObject(PortObject):
+    """
+    Class representing a literal port object in the Firepower Management Center (FMC).
+    Inherits from the PortObject class.
+    """
+
+    def __init__(self, object_info) -> None:
+        """
+        Initialize an FMCPortLiteralObject instance.
+
+        Parameters:
+        - object_info (dict): Information about the port object.
+        """
+        helper.logging.debug("Called FMCPortLiteralObject::__init__()")
+        super().__init__(object_info)
+    
+    def set_name(self):
+        """
+        Set the name of the literal port object.
+
+        Returns:
+            str: The name of the object.
+        """
+        helper.logging.debug("Called FMCPortLiteralObject::set_name()")
+        name = self._object_info
+        return super().set_name(name)
+    
+    def set_description(self):
+        """
+        Set the description of the literal port object.
+
+        Returns:
+            str: The description of the object.
+        """
+        helper.logging.debug("Called FMCPortLiteralObject::set_description()")
+        description = gvars.literal_objects_description
+        return super().set_description(description)
+    
+    def set_port_number(self):
+        """
+        Set the port number for the literal port object.
+
+        Returns:
+            str: The port number.
+        """
+        helper.logging.debug("Called FMCPortLiteralObject::set_port_number()")
+        split_name = self._name.split('_')
+        port_number = split_name[2]
+        return super().set_port_number(port_number)
+    
+    def set_port_protocol(self):
+        """
+        Set the protocol for the literal port object.
+
+        Returns:
+            str: The port protocol.
+        """
+        helper.logging.debug("Called FMCPortLiteralObject::set_port_protocol()")
+        split_name = self._name.split('_')
+        protocol = split_name[1]
+        return super().set_port_protocol(protocol)
+
+    def set_object_container_name(self):
+        """
+        Set the name of the object container for the FMC object.
+
+        Returns:
+            str: The name of the object container.
+        """
+        helper.logging.debug("Called FMCPortLiteralObject::set_object_container_name()")
+        container_name = 'virtual_object_container'
+        return super().set_object_container_name(container_name)
+
+    def set_override_bool(self):
+        """
+        Set the override boolean for the literal port object.
+
+        Returns:
+            bool: The override boolean value.
+        """
+        helper.logging.debug("Called FMCPortLiteralObject::set_override_bool()")
+        is_overridable = False
+        return super().set_override_bool(is_overridable)
+    
+class FMCICMPObject(FMCObject, ICMPObject):
+    """
+    Class representing an ICMP object in the Firepower Management Center (FMC).
+    Inherits from both FMCObject and ICMPObject classes.
+    """
+
+    def set_icmp_type(self):
+        """
+        Set the ICMP type for the ICMP object.
+
+        Returns:
+            str: The ICMP type.
+        """
+        try:
+            helper.logging.debug("Called FMCICMPObject::set_icmp_type()")
+            icmp_type = self._object_info['icmpType']
+        except KeyError:
+            icmp_type = 'any'
+
+        return super().set_icmp_type(icmp_type)
+    
+    def set_icmp_code(self):
+        """
+        Set the ICMP code for the ICMP object.
+
+        Returns:
+            str: The ICMP code.
+        """
+        try:
+            helper.logging.debug("Called FMCICMPObject::set_icmp_code()")
+            icmp_code = self._object_info['code']
+        except KeyError:
+            icmp_code = None
+        return super().set_icmp_code(icmp_code)
+    
+class FMCLiteralICMPObject(ICMPObject):
+    """
+    Class representing a literal ICMP object in the Firepower Management Center (FMC).
+    Inherits from the ICMPObject class.
+    """
+
+    def __init__(self, object_info) -> None:
+        """
+        Initialize an FMCLiteralICMPObject instance.
+
+        Parameters:
+        - object_info (dict): Information about the ICMP object.
+        """
+        helper.logging.debug("Called FMCLiteralICMPObject::__init__()")
+        super().__init__(object_info)
+    
+    def set_name(self):
+        """
+        Set the name of the literal ICMP object.
+
+        Returns:
+            str: The name of the object.
+        """
+        helper.logging.debug("Called FMCLiteralICMPObject::set_name()")
+        name = self._object_info
+        return super().set_name(name)
+    
+    def set_description(self):
+        """
+        Set the description of the literal ICMP object.
+
+        Returns:
+            str: The description of the object.
+        """
+        helper.logging.debug("Called FMCLiteralICMPObject::set_description()")
+        description = gvars.literal_objects_description
+        return super().set_description(description)
+
+    def set_icmp_type(self):
+        """
+        Set the ICMP type for the literal ICMP object.
+
+        Returns:
+            str: The ICMP type.
+        """
+        helper.logging.debug("Called FMCLiteralICMPObject::set_icmp_type()")
+        split_name = self._name.split('_')
+        icmp_type = split_name[2]
+        return super().set_icmp_type(icmp_type)
+    
+    def set_icmp_code(self):
+        """
+        Set the ICMP code for the literal ICMP object.
+
+        Returns:
+            str: The ICMP code.
+        """
+        helper.logging.debug("Called FMCLiteralICMPObject::set_icmp_code()")
+        split_name = self._name.split('_')
+        try:
+            icmp_code = split_name[3]
+        except IndexError:
+            icmp_code = None
+        return super().set_icmp_code(icmp_code)
+
+    def set_object_container_name(self):
+        """
+        Set the name of the object container for the FMC object.
+
+        Returns:
+            str: The name of the object container.
+        """
+        helper.logging.debug("Called FMCLiteralICMPObject::set_object_container_name()")
+        container_name = 'virtual_object_container'
+        return super().set_object_container_name(container_name)
+
+    def set_override_bool(self):
+        """
+        Set the override boolean for the literal ICMP object.
+
+        Returns:
+            bool: The override boolean value.
+        """
+        helper.logging.debug("Called FMCLiteralICMPObject::set_override_bool()")
+        is_overridable = False
+        return super().set_override_bool(is_overridable)
+
+#TODO: is this really needed? 
+class FMCPortGroupObject(FMCObject, PortGroupObject):
+    def __init__(self, object_info) -> None:
+        super().__init__(object_info)
