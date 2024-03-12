@@ -1,6 +1,8 @@
 import utils.helper as helper
 from abc import abstractmethod
 
+general_logger = helper.logging.getLogger('general')
+special_policies_logger = helper.logging.getLogger('special_policies')
 # A problem faced at this step is that we can't create objects with the data we get, as the only thing
 # we can get and process is mainly a list with the objects that are defined on the policy
 # We could, for each object, retrieve all the data about it and process it, however, this would break the modularity
@@ -55,7 +57,7 @@ class Policy:
         Args:
             policy_info (dict): Information about the policy.
         """
-        helper.logging.debug("Called Policy::__init__()")
+        general_logger.debug("Called Policy::__init__()")
         self._policy_info = policy_info
         self._name = None
         self._source_zones = None
@@ -77,7 +79,7 @@ class Policy:
         Returns:
             Any: The policy information stored in the object.
         """
-        helper.logging.debug("Called Policy::get_policy_info()")
+        general_logger.debug("Called Policy::get_policy_info()")
         return self._policy_info
 
     def get_name(self):
@@ -87,7 +89,7 @@ class Policy:
         Returns:
             str: The name of the policy.
         """
-        helper.logging.debug("Called Policy::get_name()")
+        general_logger.debug("Called Policy::get_name()")
         return self._name
 
     def set_name(self, name):
@@ -97,7 +99,7 @@ class Policy:
         Args:
             name (str): The name to set for the policy.
         """
-        helper.logging.debug("Called Policy::set_name()")
+        general_logger.debug("Called Policy::set_name()")
         self._name = name
 
     def set_container_name(self, name):
@@ -107,7 +109,7 @@ class Policy:
         Args:
             name (str): The name of the container.
         """
-        helper.logging.debug("Called Policy::set_container_name()")
+        general_logger.debug("Called Policy::set_container_name()")
         self._container_name = name
 
     def get_container_name(self):
@@ -117,7 +119,7 @@ class Policy:
         Returns:
             str: The name of the container.
         """
-        helper.logging.debug("Called Policy::get_container_name()")
+        general_logger.debug("Called Policy::get_container_name()")
         return self._container_name
 
     def set_container_index(self, index):
@@ -127,7 +129,7 @@ class Policy:
         Args:
             index (int): The index of the container.
         """
-        helper.logging.debug("Called Policy::set_container_index()")
+        general_logger.debug("Called Policy::set_container_index()")
         self._container_index = index
 
     def get_container_index(self):
@@ -137,7 +139,7 @@ class Policy:
         Returns:
             int: The index of the container.
         """
-        helper.logging.debug("Called Policy::get_container_index()")
+        general_logger.debug("Called Policy::get_container_index()")
         return self._container_index
 
     def get_status(self):
@@ -147,7 +149,7 @@ class Policy:
         Returns:
             str: The status of the policy.
         """
-        helper.logging.debug("Called Policy::get_status()")
+        general_logger.debug("Called Policy::get_status()")
         return self._status
 
     def set_status(self, status):
@@ -157,7 +159,7 @@ class Policy:
         Args:
             status (str): The status to set for the policy.
         """
-        helper.logging.debug("Called Policy::set_status()")
+        general_logger.debug("Called Policy::set_status()")
         self._status = status
 
     def get_source_zones(self):
@@ -167,7 +169,7 @@ class Policy:
         Returns:
             list: List of source security zones.
         """
-        helper.logging.debug("Called Policy::get_source_zones()")
+        general_logger.debug("Called Policy::get_source_zones()")
         return self.process_policy_objects('security_zone', 'source')
 
     def set_source_zones(self, source_zones):
@@ -177,7 +179,7 @@ class Policy:
         Args:
             source_zones (list): List of source security zones.
         """
-        helper.logging.debug("Called Policy::set_source_zones()")
+        general_logger.debug("Called Policy::set_source_zones()")
         self._source_zones = source_zones
 
     def get_destination_zones(self):
@@ -187,7 +189,7 @@ class Policy:
         Returns:
             list: List of destination security zones.
         """
-        helper.logging.debug("Called Policy::get_destination_zones()")
+        general_logger.debug("Called Policy::get_destination_zones()")
         return self.process_policy_objects('security_zone', 'destination')
 
     def set_destination_zones(self, destination_zones):
@@ -197,7 +199,7 @@ class Policy:
         Args:
             destination_zones (list): List of destination security zones.
         """
-        helper.logging.debug("Called Policy::set_destination_zones()")
+        general_logger.debug("Called Policy::set_destination_zones()")
         self._destination_zones = destination_zones
 
     def get_description(self):
@@ -207,7 +209,7 @@ class Policy:
         Returns:
             str: The description of the policy.
         """
-        helper.logging.debug("Called Policy::get_description()")
+        general_logger.debug("Called Policy::get_description()")
         return self._description
 
     def set_description(self, description):
@@ -217,7 +219,7 @@ class Policy:
         Args:
             description (str): The description of the policy.
         """
-        helper.logging.debug("Called Policy::set_description()")
+        general_logger.debug("Called Policy::set_description()")
         self._description = description
 
     def get_comments(self):
@@ -227,7 +229,7 @@ class Policy:
         Returns:
             str: The comments associated with the policy.
         """
-        helper.logging.debug("Called Policy::get_comments()")
+        general_logger.debug("Called Policy::get_comments()")
         return self.process_policy_objects('comment', None)
 
     def set_comments(self, comments):
@@ -237,7 +239,7 @@ class Policy:
         Args:
             comments (str): The comments associated with the policy.
         """
-        helper.logging.debug("Called Policy::set_comments()")
+        general_logger.debug("Called Policy::set_comments()")
         self._comments = comments
 
     def get_log_start(self):
@@ -247,7 +249,7 @@ class Policy:
         Returns:
             datetime: The start time for logging.
         """
-        helper.logging.debug("Called Policy::get_log_start()")
+        general_logger.debug("Called Policy::get_log_start()")
         return self._log_start
 
     def set_log_start(self, log_start):
@@ -257,7 +259,7 @@ class Policy:
         Args:
             log_start (datetime): The start time for logging.
         """
-        helper.logging.debug("Called Policy::set_log_start()")
+        general_logger.debug("Called Policy::set_log_start()")
         self._log_start = log_start
 
     def get_log_end(self):
@@ -267,7 +269,7 @@ class Policy:
         Returns:
             datetime: The end time for logging.
         """
-        helper.logging.debug("Called Policy::get_log_end()")
+        general_logger.debug("Called Policy::get_log_end()")
         return self._log_end
 
     def set_log_end(self, log_end):
@@ -277,7 +279,7 @@ class Policy:
         Args:
             log_end (datetime): The end time for logging.
         """
-        helper.logging.debug("Called Policy::set_log_end()")
+        general_logger.debug("Called Policy::set_log_end()")
         self._log_end = log_end
 
     def get_processed_log_settings(self):
@@ -287,7 +289,7 @@ class Policy:
         Returns:
             str: The logging settings for the policy.
         """
-        helper.logging.debug("Called Policy::get_processed_log_settings()")
+        general_logger.debug("Called Policy::get_processed_log_settings()")
         return self._log_settings
 
     def set_log_setting(self, log_settings):
@@ -297,7 +299,7 @@ class Policy:
         Args:
             log_setting (str): The logging settings for the policy.
         """
-        helper.logging.debug("Called Policy::set_log_setting()")
+        general_logger.debug("Called Policy::set_log_setting()")
         self._log_settings = log_settings
     
     # This function is responsible for processing the object info. Based on the object_type and on the flow_direction
@@ -317,10 +319,10 @@ class Policy:
             list: List of processed security objects.
         """
         # Log debug message indicating the function has been called
-        helper.logging.debug("Called Policy::process_policy_objects()")
+        general_logger.debug("Called Policy::process_policy_objects()")
         
         # Log information message indicating the start of processing for the specified object type
-        helper.logging.info(f"################## Processing policy objects info, processing the following objects: <{object_type}> of policy: <{self._name}> ##################.")
+        general_logger.info(f"################## Processing policy objects info, processing the following objects: <{object_type}> of policy: <{self._name}> ##################.")
         
         # Initialize an empty list to store processed security objects
         processed_objects_list = []
@@ -328,7 +330,7 @@ class Policy:
         # Check if a specific flow direction is provided
         if flow_direction is not None:
             # Log information message indicating the direction of flow being processed
-            helper.logging.info(f"I am looking for <{flow_direction}> objects on policy: <{self._name}>.")
+            general_logger.info(f"I am looking for <{flow_direction}> objects on policy: <{self._name}>.")
         
         # Retrieve raw objects information based on the specified object type and flow direction
         raw_object_info = self.get_raw_policy_objects_info(object_type, flow_direction)
@@ -336,25 +338,25 @@ class Policy:
         # Check if the raw_object_info list contains only the 'any' keyword or if the raw_object_info is 'None'
         if raw_object_info == ['any'] or raw_object_info is None:
             # Log information message indicating no explicit object defined, defaulting to 'any'
-            helper.logging.info(f"No explicit <{object_type}> defined for flow <{flow_direction}> policy: <{self._name}>.")
+            general_logger.info(f"No explicit <{object_type}> defined for flow <{flow_direction}> policy: <{self._name}>.")
             # Return a list containing only 'any'
             return ['any'] if raw_object_info == ['any'] else None
         else:
             # Log information message indicating the presence of defined objects for the specified object type and flow direction
-            helper.logging.info(f"Found {object_type} objects defined for flow <{flow_direction}> policy: <{self._name}>.")
+            general_logger.info(f"Found {object_type} objects defined for flow <{flow_direction}> policy: <{self._name}>.")
             # Log debug message displaying the raw objects information
-            helper.logging.debug(f"This is the {object_type} object's info: <{raw_object_info}>.")
+            general_logger.debug(f"This is the {object_type} object's info: <{raw_object_info}>.")
             
         for raw_object_entry in raw_object_info:
             # Log information message indicating the start of processing for the current raw object
-            helper.logging.info(f"Processing raw info object entry: {raw_object_entry}.")
+            general_logger.info(f"Processing raw info object entry: {raw_object_entry}.")
             
             # Extract information from the raw object
             processed_objects_list = self.extract_policy_object_info(raw_object_entry, object_type)
             
             # Log information message indicating the processed object
-            helper.logging.info(f"Finished processing object info for object type <{object_type}>.")
-            helper.logging.debug(f"Processed info entry: <{processed_objects_list}>.")
+            general_logger.info(f"Finished processing object info for object type <{object_type}>.")
+            general_logger.debug(f"Processed info entry: <{processed_objects_list}>.")
         
         # Return the list of processed objects
         return processed_objects_list
@@ -407,7 +409,7 @@ class SecurityPolicy(Policy):
         Args:
             policy_info (dict): Information about the security policy.
         """
-        helper.logging.debug("Called SecurityPolicy::__init__()")
+        general_logger.debug("Called SecurityPolicy::__init__()")
         super().__init__(policy_info)
         self._category = None
         self._container_index = None
@@ -676,7 +678,7 @@ class SecurityPolicy(Policy):
         Returns:
             dict: A dictionary containing information about the security policy.
         """
-        helper.logging.debug("Called SecurityPolicy::process_sec_policy_info()")
+        general_logger.debug("Called SecurityPolicy::process_sec_policy_info()")
         
         # Setters are necessary because the objects' attributes are not set upon their creation. We can only get this data after we construct the object with the data from the security device.
         self.set_name()
@@ -684,8 +686,8 @@ class SecurityPolicy(Policy):
         self.set_container_index()
         
         # Log information about the security policy being processed
-        helper.logging.info(f"\n\n################## PROCESSING SECURITY POLICY: <{self._name}>. CONTAINER: <{self._container_name}>. RULE INDEX: <{self._container_index}>.##################")
-        helper.logging.debug(f"Security policy raw data: {self._policy_info}")
+        general_logger.info(f"\n\n################## PROCESSING SECURITY POLICY: <{self._name}>. CONTAINER: <{self._container_name}>. RULE INDEX: <{self._container_index}>.##################")
+        general_logger.debug(f"Security policy raw data: {self._policy_info}")
 
         self.set_status()
         self.set_category()
@@ -709,10 +711,8 @@ class SecurityPolicy(Policy):
         # if the policy has any of the following parameters: schedule, users, url categories with rep or l7 apps, 
         # create a new log line and put it in the file logging the special policies
         # the extractor functions are called by processor functions which are called by the get functions
-        special_policies_logger = helper.logging.getLogger('special_policies')
-
         if self.get_users() != 'any' or self.get_schedule_objects() != 'any' or self.get_urls() != 'any' or self.get_policy_apps() != 'any':
-            special_policies_logger.info(f"Policy <{self._name}> in container <{self._container_name}>, <{self._container_index}> has parameters that require your attention!")
+            special_policies_logger.info(f"Policy: <{self._name}> in container: <{self._container_name}>, index: <{self._container_index}> has parameters that require your attention!")
 
         # Construct the processed policy entry dictionary
         processed_policy_entry = {
@@ -741,8 +741,8 @@ class SecurityPolicy(Policy):
         }
 
         # Log information about the processed policy entry
-        helper.logging.info(f"Processed security policy: <{self._name}>.")
-        helper.logging.debug(f"Processed security policy data: <{processed_policy_entry}>.")
+        general_logger.info(f"Processed security policy: <{self._name}>.")
+        general_logger.debug(f"Processed security policy data: <{processed_policy_entry}>.")
                             
         return processed_policy_entry
 

@@ -4,6 +4,8 @@ import sys
 from .FMCSecurityDevice import FMCSecurityDevice
 import utils.helper as helper
 
+general_logger = helper.logging.getLogger('general')
+
 class APISecurityDevice(SecurityDevice):
     def __init__(self, user, database, password, host, port):
         """
@@ -16,7 +18,7 @@ class APISecurityDevice(SecurityDevice):
             host (str): The hostname of the security device.
             port (int): The port number for connecting to the security device.
         """
-        helper.logging.debug(f"Called APISecurityDevice::__init__().")
+        general_logger.debug(f"Called APISecurityDevice::__init__().")
         super().__init__(user, database, password, host, port)
 
 
@@ -39,14 +41,14 @@ class APISecurityDeviceFactory:
         Returns:
             SecurityDevice: An instance of the appropriate API security device class.
         """
-        helper.logging.debug(f"Called APISecurityDeviceFactory::build_api_security_device().")
+        general_logger.debug(f"Called APISecurityDeviceFactory::build_api_security_device().")
         match security_device_type:
             case "fmc-api":
-                helper.logging.info(f"Device <{security_device_name}> is a Firepower Management Center.")
+                general_logger.info(f"Device <{security_device_name}> is a Firepower Management Center.")
                 return FMCSecurityDevice(security_device_name, SecurityDeviceDB, security_device_username, security_device_secret, security_device_hostname, security_device_port, domain)
 
             # default case
             case _:
-                helper.logging.critical(f"Device <{security_device_name}>, with type <{security_device_type}>, is an invalid API device.")
+                general_logger.critical(f"Device <{security_device_name}>, with type <{security_device_type}>, is an invalid API device.")
                 sys.exit(1)
 

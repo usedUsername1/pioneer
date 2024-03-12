@@ -1,5 +1,6 @@
 import utils.helper as helper
 from abc import abstractmethod
+general_logger = helper.logging.getLogger('general')
 
 class Object:
     """
@@ -13,7 +14,7 @@ class Object:
         Parameters:
         - object_info (dict): Information about the object.
         """
-        helper.logging.debug("Called Object::__init__()")
+        general_logger.debug("Called Object::__init__()")
         # Store the provided object information
         self._object_info = object_info
         
@@ -29,7 +30,7 @@ class Object:
         Returns:
             str: Name of the object.
         """
-        helper.logging.debug("Called Object::get_name()")
+        general_logger.debug("Called Object::get_name()")
         return self._name
 
     def set_name(self, value):
@@ -39,7 +40,7 @@ class Object:
         Parameters:
             value (str): Name of the object.
         """
-        helper.logging.debug("Called Object::set_name()")
+        general_logger.debug("Called Object::set_name()")
         self._name = value
 
     def get_description(self):
@@ -49,7 +50,7 @@ class Object:
         Returns:
             str: Description of the object.
         """
-        helper.logging.debug("Called Object::get_description()")
+        general_logger.debug("Called Object::get_description()")
         return self._description
 
     def set_description(self, value):
@@ -59,7 +60,7 @@ class Object:
         Parameters:
             value (str): Description of the object.
         """
-        helper.logging.debug("Called Object::set_description()")
+        general_logger.debug("Called Object::set_description()")
         self._description = value
 
     def get_override_bool(self):
@@ -69,7 +70,7 @@ class Object:
         Returns:
             bool: Override status of the object.
         """
-        helper.logging.debug("Called Object::get_override_bool()")
+        general_logger.debug("Called Object::get_override_bool()")
         return self._is_overridable
 
     def set_override_bool(self, value):
@@ -79,7 +80,7 @@ class Object:
         Parameters:
             value (bool): Override status of the object.
         """
-        helper.logging.debug("Called Object::set_override_bool()")
+        general_logger.debug("Called Object::set_override_bool()")
         self._is_overridable = value
 
     def get_object_container_name(self):
@@ -89,7 +90,7 @@ class Object:
         Returns:
             str: Name of the object container.
         """
-        helper.logging.debug("Called Object::get_object_container_name()")
+        general_logger.debug("Called Object::get_object_container_name()")
         return self._object_container
 
     def set_object_container_name(self, value):
@@ -99,7 +100,7 @@ class Object:
         Parameters:
             value (str): Name of the object container.
         """
-        helper.logging.debug("Called Object::set_object_container_name()")
+        general_logger.debug("Called Object::set_object_container_name()")
         self._object_container = value
 
     def get_info(self):
@@ -109,7 +110,7 @@ class Object:
         Returns:
             dict: Information about the object.
         """
-        helper.logging.debug("Called Object::get_object_device_info()")
+        general_logger.debug("Called Object::get_object_device_info()")
         return self._object_info
     
 # regarding processing groups: the object members of the groups have to be processed as well
@@ -158,7 +159,7 @@ class NetworkObject(Object):
         Args:
             object_info (dict): Information about the network object.
         """
-        helper.logging.debug("Called NetworkObject::__init__()")
+        general_logger.debug("Called NetworkObject::__init__()")
         super().__init__(object_info)
         self._network_address_value = None
         self._network_address_type = None
@@ -170,7 +171,7 @@ class NetworkObject(Object):
         Returns:
             str: The network address value.
         """
-        helper.logging.debug("Called NetworkObject::get_network_address_value()")
+        general_logger.debug("Called NetworkObject::get_network_address_value()")
         return self._network_address_value
     
     def set_network_address_value(self, value):
@@ -180,7 +181,7 @@ class NetworkObject(Object):
         Parameters:
             value (str): The network address value.
         """
-        helper.logging.debug("Called NetworkObject::set_network_address_value()")
+        general_logger.debug("Called NetworkObject::set_network_address_value()")
         self._network_address_value = value
 
     def get_network_address_type(self):
@@ -190,7 +191,7 @@ class NetworkObject(Object):
         Returns:
             str: The network address type.
         """
-        helper.logging.debug("Called NetworkObject::get_network_address_type()")
+        general_logger.debug("Called NetworkObject::get_network_address_type()")
         return self._network_address_type
     
     def set_network_address_type(self, value):
@@ -200,7 +201,7 @@ class NetworkObject(Object):
         Parameters:
             value (str): The network address type.
         """
-        helper.logging.debug("Called NetworkObject::set_network_address_type()")
+        general_logger.debug("Called NetworkObject::set_network_address_type()")
         self._network_address_type = value
     
     def process_object(self):
@@ -210,7 +211,7 @@ class NetworkObject(Object):
         Returns:
             dict: Processed information about the network object.
         """
-        helper.logging.debug("Called NetworkObject::process_object()")
+        general_logger.debug("Called NetworkObject::process_object()")
         
         # Set the values with for the object with the data you got in the object_info variable, which holds the info of the device as extracted from the Security Device
         self.set_name()
@@ -291,7 +292,7 @@ class GeolocationObject(Object):
         Args:
             object_info (dict): Information about the geolocation object.
         """
-        helper.logging.debug("Called GeolocationObject::__init__()")
+        general_logger.debug("Called GeolocationObject::__init__()")
         super().__init__(object_info)
         self._continents = None
         self._countries = None
@@ -306,7 +307,7 @@ class GeolocationObject(Object):
         Args:
             value (list): List of continents.
         """
-        helper.logging.debug("Called GeolocationObject::set_continents()")
+        general_logger.debug("Called GeolocationObject::set_continents()")
         self._continents = value
 
     def get_continents(self):
@@ -316,7 +317,7 @@ class GeolocationObject(Object):
         Returns:
             list: List of continents.
         """
-        helper.logging.debug("Called GeolocationObject::get_continents()")
+        general_logger.debug("Called GeolocationObject::get_continents()")
         return self._continents
 
     def set_countries(self, value):
@@ -326,7 +327,7 @@ class GeolocationObject(Object):
         Args:
             value (list): List of countries.
         """
-        helper.logging.debug("Called GeolocationObject::set_countries()")
+        general_logger.debug("Called GeolocationObject::set_countries()")
         self._countries = value
 
     def get_countries(self):
@@ -336,7 +337,7 @@ class GeolocationObject(Object):
         Returns:
             list: List of countries.
         """
-        helper.logging.debug("Called GeolocationObject::get_countries()")
+        general_logger.debug("Called GeolocationObject::get_countries()")
         return self._countries
 
     def set_member_alpha2_codes(self, value):
@@ -346,7 +347,7 @@ class GeolocationObject(Object):
         Args:
             value (list): List of alpha-2 codes.
         """
-        helper.logging.debug("Called GeolocationObject::set_member_alpha2_codes()")
+        general_logger.debug("Called GeolocationObject::set_member_alpha2_codes()")
         self._country_alpha2_codes = value
 
     def get_alpha2_codes(self):
@@ -356,7 +357,7 @@ class GeolocationObject(Object):
         Returns:
             list: List of alpha-2 codes.
         """
-        helper.logging.debug("Called GeolocationObject::get_alpha2_codes()")
+        general_logger.debug("Called GeolocationObject::get_alpha2_codes()")
         return self._country_alpha2_codes
 
     def set_member_alpha3_codes(self, value):
@@ -366,7 +367,7 @@ class GeolocationObject(Object):
         Args:
             value (list): List of alpha-3 codes.
         """
-        helper.logging.debug("Called GeolocationObject::set_member_alpha3_codes()")
+        general_logger.debug("Called GeolocationObject::set_member_alpha3_codes()")
         self._country_alpha3_codes = value
 
     def get_alpha3_codes(self):
@@ -376,7 +377,7 @@ class GeolocationObject(Object):
         Returns:
             list: List of alpha-3 codes.
         """
-        helper.logging.debug("Called GeolocationObject::get_alpha3_codes()")
+        general_logger.debug("Called GeolocationObject::get_alpha3_codes()")
         return self._country_alpha3_codes
 
     def set_member_numeric_codes(self, value):
@@ -386,7 +387,7 @@ class GeolocationObject(Object):
         Args:
             value (list): List of numeric codes.
         """
-        helper.logging.debug("Called GeolocationObject::set_member_numeric_codes()")
+        general_logger.debug("Called GeolocationObject::set_member_numeric_codes()")
         self._country_numeric_codes = value
 
     def get_numeric_codes(self):
@@ -396,7 +397,7 @@ class GeolocationObject(Object):
         Returns:
             list: List of numeric codes.
         """
-        helper.logging.debug("Called GeolocationObject::get_numeric_codes()")
+        general_logger.debug("Called GeolocationObject::get_numeric_codes()")
         return self._country_numeric_codes
 
     def get_member_continent_names(self):
@@ -406,7 +407,7 @@ class GeolocationObject(Object):
         Returns:
             list: List of continent names.
         """
-        helper.logging.debug("Called GeolocationObject::get_member_continent_names()")
+        general_logger.debug("Called GeolocationObject::get_member_continent_names()")
         if self._continents is None:
             return None
         
@@ -424,7 +425,7 @@ class GeolocationObject(Object):
         Returns:
             list: List of country names.
         """
-        helper.logging.debug("Called GeolocationObject::get_member_country_names()")
+        general_logger.debug("Called GeolocationObject::get_member_country_names()")
         if self._countries is None:
             return None
         
@@ -442,7 +443,7 @@ class GeolocationObject(Object):
         Returns:
             list: List of alpha-2 codes.
         """
-        helper.logging.debug("Called GeolocationObject::get_member_alpha2_codes()")
+        general_logger.debug("Called GeolocationObject::get_member_alpha2_codes()")
         if self._countries is None:
             return None
         
@@ -460,7 +461,7 @@ class GeolocationObject(Object):
         Returns:
             list: List of alpha-3 codes.
         """
-        helper.logging.debug("Called GeolocationObject::get_member_alpha3_codes()")
+        general_logger.debug("Called GeolocationObject::get_member_alpha3_codes()")
         if self._countries is None:
             return None
         
@@ -478,7 +479,7 @@ class GeolocationObject(Object):
         Returns:
             list: List of numeric codes.
         """
-        helper.logging.debug("Called GeolocationObject::get_member_numeric_codes()")
+        general_logger.debug("Called GeolocationObject::get_member_numeric_codes()")
         if self._countries is None:
             return None
         
@@ -496,7 +497,7 @@ class GeolocationObject(Object):
         Returns:
             dict: Processed information about the geolocation object.
         """
-        helper.logging.debug("Called GeolocationObject::process_object()")
+        general_logger.debug("Called GeolocationObject::process_object()")
         # Setters are necessary because the objects' attributes are not set upon their creation. We can only get this data after we construct the object with the data from the security device.
 
         self.set_name()
@@ -531,7 +532,7 @@ class PortObject(Object):
         Args:
             object_info (dict): Information about the port object.
         """
-        helper.logging.debug("Called PortObject::__init__()")
+        general_logger.debug("Called PortObject::__init__()")
         super().__init__(object_info)
         self._port_protocol = None
         self._port_number = None
@@ -543,7 +544,7 @@ class PortObject(Object):
         Returns:
             str: The port protocol.
         """
-        helper.logging.debug("Called PortObject::get_port_protocol()")
+        general_logger.debug("Called PortObject::get_port_protocol()")
         return self._port_protocol
     
     def set_port_protocol(self, protocol):
@@ -553,7 +554,7 @@ class PortObject(Object):
         Parameters:
             protocol (str): The port protocol.
         """
-        helper.logging.debug("Called PortObject::set_port_protocol()")
+        general_logger.debug("Called PortObject::set_port_protocol()")
         self._port_protocol = protocol
 
     def get_port_number(self):
@@ -563,7 +564,7 @@ class PortObject(Object):
         Returns:
             int: The port number.
         """
-        helper.logging.debug("Called PortObject::get_port_number()")
+        general_logger.debug("Called PortObject::get_port_number()")
         return self._port_number
     
     def set_port_number(self, number):
@@ -573,7 +574,7 @@ class PortObject(Object):
         Parameters:
             number (int): The port number.
         """
-        helper.logging.debug("Called PortObject::set_port_number()")
+        general_logger.debug("Called PortObject::set_port_number()")
         self._port_number = number
     
     def process_object(self):
@@ -583,7 +584,7 @@ class PortObject(Object):
         Returns:
             dict: Processed information about the port object.
         """
-        helper.logging.debug("Called PortObject::process_object()")
+        general_logger.debug("Called PortObject::process_object()")
         # Set the values with for the object with the data you got in the object_info variable, which holds the info of the device as extracted from the Security Device
         self.set_name()
         self.set_object_container_name()
@@ -654,7 +655,7 @@ class ICMPObject(Object):
         Parameters:
         - object_info (dict): Information about the ICMP object.
         """
-        helper.logging.debug("Called ICMPObject::__init__()")
+        general_logger.debug("Called ICMPObject::__init__()")
         super().__init__(object_info)
         self._icmp_type = None
         self._icmp_code = None
@@ -666,7 +667,7 @@ class ICMPObject(Object):
         Returns:
             str: ICMP type.
         """
-        helper.logging.debug("Called ICMPObject::get_icmp_type()")
+        general_logger.debug("Called ICMPObject::get_icmp_type()")
         return self._icmp_type
 
     def set_icmp_type(self, icmp_type):
@@ -676,7 +677,7 @@ class ICMPObject(Object):
         Parameters:
             icmp_type (str): ICMP type.
         """
-        helper.logging.debug("Called ICMPObject::set_icmp_type()")
+        general_logger.debug("Called ICMPObject::set_icmp_type()")
         self._icmp_type = icmp_type
 
     def get_icmp_code(self):
@@ -686,7 +687,7 @@ class ICMPObject(Object):
         Returns:
             str: ICMP code.
         """
-        helper.logging.debug("Called ICMPObject::get_icmp_code()")
+        general_logger.debug("Called ICMPObject::get_icmp_code()")
         return self._icmp_code
 
     def set_icmp_code(self, icmp_code):
@@ -696,7 +697,7 @@ class ICMPObject(Object):
         Parameters:
             icmp_code (str): ICMP code.
         """
-        helper.logging.debug("Called ICMPObject::set_icmp_code()")
+        general_logger.debug("Called ICMPObject::set_icmp_code()")
         self._icmp_code = icmp_code
 
     def process_object(self):

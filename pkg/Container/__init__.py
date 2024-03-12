@@ -1,5 +1,6 @@
 import utils.helper as helper
 from abc import abstractmethod
+general_logger = helper.logging.getLogger('general')
 
 class Container:
     def __init__(self, container_info) -> None:
@@ -9,7 +10,7 @@ class Container:
         Args:
             container_info: Information related to the container.
         """
-        helper.logging.debug("Called Container::__init__()")
+        general_logger.debug("Called Container::__init__()")
         self._container_info = container_info
         self._name = None
         self._parent = None
@@ -21,7 +22,7 @@ class Container:
         Args:
             name (str): The name of the container.
         """
-        helper.logging.debug("Called Container::set_name()")
+        general_logger.debug("Called Container::set_name()")
         self._name = name
 
     def set_parent(self, parent):
@@ -31,7 +32,7 @@ class Container:
         Args:
             parent (Container): The parent container object.
         """
-        helper.logging.debug("Called Container::set_parent()")
+        general_logger.debug("Called Container::set_parent()")
         self._parent = parent
 
     def get_name(self):
@@ -41,7 +42,7 @@ class Container:
         Returns:
             str: The name of the container.
         """
-        helper.logging.debug("Called Container::get_name()")
+        general_logger.debug("Called Container::get_name()")
         return self._name
 
     def get_parent_name(self):
@@ -51,7 +52,7 @@ class Container:
         Returns:
             str: The name of the parent container.
         """
-        helper.logging.debug("Called Container::get_parent_name()")
+        general_logger.debug("Called Container::get_parent_name()")
         return self._parent.get_name()
 
     def get_security_device_name(self):
@@ -61,7 +62,7 @@ class Container:
         Returns:
             str: The name of the security device.
         """
-        helper.logging.debug("Called Container::get_security_device_name()")
+        general_logger.debug("Called Container::get_security_device_name()")
         return self._security_device_name
 
     @abstractmethod
@@ -88,7 +89,7 @@ class Container:
         Returns:
             Any: Information related to the container.
         """
-        helper.logging.debug("Called Container::get_info()")
+        general_logger.debug("Called Container::get_info()")
         return self._container_info
 
 class SecurityPolicyContainer(Container):
@@ -99,7 +100,7 @@ class SecurityPolicyContainer(Container):
         Args:
             container_info: Information related to the security policy container.
         """
-        helper.logging.debug("Called SecurityPolicyContainer::__init__()")
+        general_logger.debug("Called SecurityPolicyContainer::__init__()")
         super().__init__(container_info)
 
     def process_container_info(self):
@@ -109,7 +110,7 @@ class SecurityPolicyContainer(Container):
         Returns:
             dict: Processed information about the security policy container.
         """
-        helper.logging.debug("Called SecurityPolicyContainer::process_container_info()")
+        general_logger.debug("Called SecurityPolicyContainer::process_container_info()")
         try:
             container_processed_info = {
                 'security_policy_container_name': self.get_name(),
@@ -133,7 +134,7 @@ class ObjectPolicyContainer(Container):
         Args:
             container_info: Information related to the object policy container.
         """
-        helper.logging.debug("Called ObjectPolicyContainer::__init__()")
+        general_logger.debug("Called ObjectPolicyContainer::__init__()")
         super().__init__(container_info)
     
     def process_container_info(self):
@@ -143,7 +144,7 @@ class ObjectPolicyContainer(Container):
         Returns:
             dict: Processed information about the object policy container.
         """
-        helper.logging.debug("Called ObjectPolicyContainer::process_container_info()")
+        general_logger.debug("Called ObjectPolicyContainer::process_container_info()")
         try:
             container_processed_info = {
                 'object_container_name': self.get_name(),

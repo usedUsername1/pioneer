@@ -6,6 +6,8 @@ import utils.gvars as gvars
 import json
 import sys
 from pkg.DeviceObject import NetworkObject, NetworkGroupObject, GeolocationObject, PortObject, PortGroupObject, ICMPObject
+
+general_logger = helper.logging.getLogger('general')
 # TODO: create all the tables for all the objects
 class SecurityDeviceDatabase(PioneerDatabase):
     """
@@ -20,103 +22,103 @@ class SecurityDeviceDatabase(PioneerDatabase):
             cursor: The cursor object for database operations.
         """
         super().__init__(cursor)
-        helper.logging.debug(f"Called SecurityDeviceDatabase::__init__().")
+        general_logger.debug(f"Called SecurityDeviceDatabase::__init__().")
     
     def create_security_device_tables(self):
         """
         Create tables for security device data in the database.
         """
-        helper.logging.debug("Called SecurityDeviceDatabase::create_security_device_tables().")
-        helper.logging.info("Creating table: <general_data_table>.")
+        general_logger.debug("Called SecurityDeviceDatabase::create_security_device_tables().")
+        general_logger.info("Creating table: <general_data_table>.")
         self.table_factory("general_data_table")
-        helper.logging.info("Created table: <general_data_table>.")
-        helper.logging.info("Creating table: <security_policy_containers_table>.")
+        general_logger.info("Created table: <general_data_table>.")
+        general_logger.info("Creating table: <security_policy_containers_table>.")
         self.table_factory("security_policy_containers_table")
-        helper.logging.info("Created table: <security_policy_containers_table>.")
+        general_logger.info("Created table: <security_policy_containers_table>.")
 
-        helper.logging.info("Creating table: <nat_policy_containers_table>.")
+        general_logger.info("Creating table: <nat_policy_containers_table>.")
         self.table_factory("nat_policy_containers_table")
-        helper.logging.info("Created table: <nat_policy_containers_table>.")
+        general_logger.info("Created table: <nat_policy_containers_table>.")
 
-        helper.logging.info("Creating table: <object_containers_table>.")
+        general_logger.info("Creating table: <object_containers_table>.")
         self.table_factory("object_containers_table")
-        helper.logging.info("Created table: <object_containers_table>.")
+        general_logger.info("Created table: <object_containers_table>.")
 
-        helper.logging.info("Creating table: <security_policies_table>.")
+        general_logger.info("Creating table: <security_policies_table>.")
         self.table_factory("security_policies_table")
-        helper.logging.info("Created table: <security_policies_table>.")
+        general_logger.info("Created table: <security_policies_table>.")
 
-        helper.logging.info("Creating table: <policies_hitcount_table>.")
+        general_logger.info("Creating table: <policies_hitcount_table>.")
         self.table_factory("policies_hitcount_table")
-        helper.logging.info("Created table: <policies_hitcount_table>.")
+        general_logger.info("Created table: <policies_hitcount_table>.")
 
         # Uncomment if needed
-        # helper.logging.info("Creating table: <nat_policies_table>.")
+        # general_logger.info("Creating table: <nat_policies_table>.")
         # self.table_factory("nat_policies_table")
-        # helper.logging.info("Created table: <nat_policies_table>.")
+        # general_logger.info("Created table: <nat_policies_table>.")
 
-        # helper.logging.info("Creating table: <user_source_table>.")
+        # general_logger.info("Creating table: <user_source_table>.")
         # self.table_factory("user_source_table")
-        # helper.logging.info("Created table: <user_source_table>.")
+        # general_logger.info("Created table: <user_source_table>.")
 
-        # helper.logging.info("Creating table: <policy_users_table>.")
+        # general_logger.info("Creating table: <policy_users_table>.")
         # self.table_factory("policy_users_table")
-        # helper.logging.info("Created table: <policy_users_table>.")
+        # general_logger.info("Created table: <policy_users_table>.")
 
-        helper.logging.info("Creating table: <security_zones_table>.")
+        general_logger.info("Creating table: <security_zones_table>.")
         self.table_factory("security_zones_table")
-        helper.logging.info("Created table: <security_zones_table>.")
+        general_logger.info("Created table: <security_zones_table>.")
 
-        helper.logging.info("Creating table: <urls_table>.")
+        general_logger.info("Creating table: <urls_table>.")
         self.table_factory("urls_table")
-        helper.logging.info("Created table: <urls_table>.")
+        general_logger.info("Created table: <urls_table>.")
 
         # Uncomment if needed
-        # helper.logging.info("Creating table: <urls_categories_table>.")
+        # general_logger.info("Creating table: <urls_categories_table>.")
         # self.table_factory("urls_categories_table")
-        # helper.logging.info("Created table: <urls_categories_table>.")
+        # general_logger.info("Created table: <urls_categories_table>.")
 
         # Uncomment if needed
-        # helper.logging.info("Creating table: <l7_apps_table>.")
+        # general_logger.info("Creating table: <l7_apps_table>.")
         # self.table_factory("l7_apps_table")
-        # helper.logging.info("Created table: <l7_apps_table>.")
+        # general_logger.info("Created table: <l7_apps_table>.")
 
-        helper.logging.info("Creating table: <network_address_objects_table>.")
+        general_logger.info("Creating table: <network_address_objects_table>.")
         self.table_factory("network_address_objects_table")
-        helper.logging.info("Created table: <network_address_objects_table>.")
+        general_logger.info("Created table: <network_address_objects_table>.")
 
-        helper.logging.info("Creating table: <network_address_object_groups_table>.")
+        general_logger.info("Creating table: <network_address_object_groups_table>.")
         self.table_factory("network_address_object_groups_table")
-        helper.logging.info("Created table: <network_address_object_groups_table>.")
+        general_logger.info("Created table: <network_address_object_groups_table>.")
 
-        helper.logging.info("Creating table: <port_objects_table>.")
+        general_logger.info("Creating table: <port_objects_table>.")
         self.table_factory("port_objects_table")
-        helper.logging.info("Created table: <port_objects_table>.")
+        general_logger.info("Created table: <port_objects_table>.")
 
-        helper.logging.info("Creating table: <icmp_objects_table>.")
+        general_logger.info("Creating table: <icmp_objects_table>.")
         self.table_factory("icmp_objects_table")
-        helper.logging.info("Created table: <icmp_objects_table>.")
+        general_logger.info("Created table: <icmp_objects_table>.")
 
-        helper.logging.info("Creating table: <port_object_groups_table>.")
+        general_logger.info("Creating table: <port_object_groups_table>.")
         self.table_factory("port_object_groups_table")
-        helper.logging.info("Created table: <port_object_groups_table>.")
+        general_logger.info("Created table: <port_object_groups_table>.")
 
-        helper.logging.info("Creating table: <schedule_objects_table>.")
+        general_logger.info("Creating table: <schedule_objects_table>.")
         self.table_factory("schedule_objects_table")
-        helper.logging.info("Created table: <schedule_objects_table>.")
+        general_logger.info("Created table: <schedule_objects_table>.")
 
-        helper.logging.info("Creating table: <managed_devices_table>.")
+        general_logger.info("Creating table: <managed_devices_table>.")
         self.table_factory("managed_devices_table")
-        helper.logging.info("Created table: <managed_devices_table>.")
+        general_logger.info("Created table: <managed_devices_table>.")
 
-        helper.logging.info("Creating table: <geolocation_objects_table>.")
+        general_logger.info("Creating table: <geolocation_objects_table>.")
         self.table_factory("geolocation_objects_table")
-        helper.logging.info("Created table: <geolocation_objects_table>.")
+        general_logger.info("Created table: <geolocation_objects_table>.")
 
         # Uncomment if needed
-        # helper.logging.info("Creating table: <override_objects_table>.")
+        # general_logger.info("Creating table: <override_objects_table>.")
         # self.table_factory("override_objects_table")
-        # helper.logging.info("Created table: <override_objects_table>.")
+        # general_logger.info("Created table: <override_objects_table>.")
 
     #TODO: tables for l7 and ping apps
     #TODO: table for time range objects
@@ -127,7 +129,7 @@ class SecurityDeviceDatabase(PioneerDatabase):
         Args:
             table_name (str): The name of the table to create.
         """
-        helper.logging.debug(f"Called SecurityDeviceDatabase::table_factory().")
+        general_logger.debug(f"Called SecurityDeviceDatabase::table_factory().")
         match table_name:
             case 'general_data_table':
                 # Define the command for creating the general_data_table
@@ -398,7 +400,7 @@ class SecurityDevice:
         - name (str): The name of the security device.
         - sec_device_database (Database): An instance of the database for the security device.
         """
-        helper.logging.debug("Called SecurityDevice::__init__.")
+        general_logger.debug("Called SecurityDevice::__init__.")
         self._name = name
         self._database = sec_device_database
 
@@ -416,8 +418,8 @@ class SecurityDevice:
         Returns:
         - list: List of processed container information.
         """
-        helper.logging.debug(f"Called SecurityDevice::get_containers_info_from_device_conn()")
-        helper.logging.info(f"################## Importing configuration of the device containers. Container type: <{container_type}> ##################")
+        general_logger.debug(f"Called SecurityDevice::get_containers_info_from_device_conn()")
+        general_logger.info(f"################## Importing configuration of the device containers. Container type: <{container_type}> ##################")
         processed_container_list = []
         
         # Define a dictionary to map container types to their corresponding retrieval functions
@@ -434,16 +436,16 @@ class SecurityDevice:
                 if retrieve_container_function is not None:
                     CurrentContainer = retrieve_container_function(container_name)
                 else:
-                    helper.logging.error(f"Invalid container type: <{container_type}>")
+                    general_logger.error(f"Invalid container type: <{container_type}>")
                     continue  # Skip to the next container if the container type is invalid
                     
-                helper.logging.info(f"I am now processing the <{container_type}> container, name: <{CurrentContainer.get_name()}>")
-                helper.logging.debug(f"Raw container info:  <{CurrentContainer.get_info()}>")
+                general_logger.info(f"I am now processing the <{container_type}> container, name: <{CurrentContainer.get_name()}>")
+                general_logger.debug(f"Raw container info:  <{CurrentContainer.get_info()}>")
                 # Check if the current container has parent containers
                 while CurrentContainer.is_child_container():
                     # Retrieve the parent container name
                     parent_container_name = CurrentContainer.get_parent_name()
-                    helper.logging.info(f"<{CurrentContainer.get_name()}> is a CHILD container. Its parent is: <{parent_container_name}>.")
+                    general_logger.info(f"<{CurrentContainer.get_name()}> is a CHILD container. Its parent is: <{parent_container_name}>.")
                     try:
                         # Retrieve the parent container object using the same retrieval function
                         ParentContainer = retrieve_container_function(parent_container_name)
@@ -452,30 +454,30 @@ class SecurityDevice:
                         CurrentContainer.set_parent(ParentContainer)
                         # Process the current container
                         processed_current_container = CurrentContainer.process_container_info()
-                        helper.logging.info(f"Processed container: <{CurrentContainer.get_name()}>")
-                        helper.logging.debug(f"Processed container info is: <{processed_current_container}>.")
+                        general_logger.info(f"Processed container: <{CurrentContainer.get_name()}>")
+                        general_logger.debug(f"Processed container info is: <{processed_current_container}>.")
                         processed_container_list.append(processed_current_container)
 
                         # Set the parent container as the current container for the next iteration
                         CurrentContainer = ParentContainer
                     except Exception as e:
-                        helper.logging.error(f"Error retrieving parent container '{parent_container_name}': {e}")
+                        general_logger.error(f"Error retrieving parent container '{parent_container_name}': {e}")
                         break  # Break out of the loop if there's an error retrieving the parent container
                 
                 # If we break out of the loop, then it means we reached the highest parent in the hierarchy
                 # We also need to get the data for it
                 else:
-                    helper.logging.info(f"Finished processing all children. <{CurrentContainer.get_name()}> is the highest container in the parent-child hierarchy. Sending it for processing.")
+                    general_logger.info(f"Finished processing all children. <{CurrentContainer.get_name()}> is the highest container in the parent-child hierarchy. Sending it for processing.")
                     processed_current_container = CurrentContainer.process_container_info()
-                    helper.logging.info(f"Finished processing container: <{CurrentContainer.get_name()}>.")
-                    helper.logging.debug(f"Processed container info is: <{processed_current_container}>.")
+                    general_logger.info(f"Finished processing container: <{CurrentContainer.get_name()}>.")
+                    general_logger.debug(f"Processed container info is: <{processed_current_container}>.")
                     processed_container_list.append(processed_current_container)
             except Exception as err:
-                helper.logging.error(f"Could not retrieve info regarding the container {container_name}. Reason: {err}.")
+                general_logger.error(f"Could not retrieve info regarding the container {container_name}. Reason: {err}.")
                 print(f"Could not retrieve info regarding the container {container_name}. Reason: {err}.")
                 sys.exit(1)
         
-        helper.logging.info(f"I have finished completely processing <{container_type}> container, name: <{CurrentContainer.get_name()}> ")
+        general_logger.info(f"I have finished completely processing <{container_type}> container, name: <{CurrentContainer.get_name()}> ")
         return processed_container_list
     
     @abstractmethod
@@ -546,20 +548,20 @@ class SecurityDevice:
             str: Version of the device's server.
         """
         # Log a debug message to indicate that the function is called
-        helper.logging.debug("Called SecurityDevice::get_device_version_from_device_conn()")
+        general_logger.debug("Called SecurityDevice::get_device_version_from_device_conn()")
 
         try:
             # Attempt to retrieve the device version using the method get_device_version()
             device_version = self.get_device_version()
             
             # Log an informational message indicating that the device version is retrieved successfully
-            helper.logging.info(f"Got device version: <{device_version}>")
+            general_logger.info(f"Got device version: <{device_version}>")
             
             # Return the retrieved device version
             return device_version
         except Exception as err:
             # Log a critical error message if there is an exception during the retrieval process
-            helper.logging.critical(f'Could not retrieve platform version. Reason: <{err}?')
+            general_logger.critical(f'Could not retrieve platform version. Reason: <{err}?')
             
             # Exit the program with status code 1 indicating a critical error
             sys.exit(1)
@@ -575,7 +577,7 @@ class SecurityDevice:
             list: List of dictionaries containing information about policies.
         """
         # Log a debug message indicating that the function is called
-        helper.logging.debug("Called get_policy_info_from_device_conn().")
+        general_logger.debug("Called get_policy_info_from_device_conn().")
         # Log an informational message indicating that policy info configuration is being imported
 
 
@@ -584,7 +586,7 @@ class SecurityDevice:
             'security_policy': self.return_security_policy_object,
             # 'nat_policy': self.return_object_container_object
         }
-        helper.logging.info(f"################## Importing policy info configuration. Policy type is <{policy_type}>. ##################")
+        general_logger.info(f"################## Importing policy info configuration. Policy type is <{policy_type}>. ##################")
         # Initialize an empty list to store processed policy information
         processed_policy_info = []
         
@@ -592,7 +594,7 @@ class SecurityDevice:
         # Iterate over each policy container name in the provided list
         for sec_policy_container_name in sec_policy_containers_list:
             # Log an informational message indicating the processing of policies for the current container
-            helper.logging.info(f"Processing policies, type <{policy_type}> of the following container: <{sec_policy_container_name}>.")
+            general_logger.info(f"Processing policies, type <{policy_type}> of the following container: <{sec_policy_container_name}>.")
             
             # Retrieve raw policy objects from the specified container
             raw_policy_objects_list = policy_retriever_function(sec_policy_container_name)
@@ -616,16 +618,16 @@ class SecurityDevice:
             list: List of dictionaries containing information about managed devices.
         """
         # Log a debug message indicating that the function is called
-        helper.logging.debug("Called function get_managed_devices_info().")
+        general_logger.debug("Called function get_managed_devices_info().")
         # Log an informational message indicating that managed devices info retrieval is initiated
-        helper.logging.info("################## GETTING MANAGED DEVICES INFO ##################")
+        general_logger.info("################## GETTING MANAGED DEVICES INFO ##################")
         
         try:
             # Attempt to retrieve managed devices info from the security device connection
             managed_devices_info = self.get_managed_devices_info()
         except Exception as err:
             # Log a critical error message if managed devices retrieval fails and exit the program
-            helper.logging.critical(f'Could not retrieve managed devices. Reason: {err}')
+            general_logger.critical(f'Could not retrieve managed devices. Reason: {err}')
             sys.exit(1)
 
         # Initialize an empty list to store processed managed devices
@@ -661,7 +663,7 @@ class SecurityDevice:
             list: List of processed objects.
         """
         # Log a debug message indicating that the function is called
-        helper.logging.debug("Called SecurityDevice::get_object_info_from_device_conn()")
+        general_logger.debug("Called SecurityDevice::get_object_info_from_device_conn()")
         # Define a dictionary mapping object types to functions retrieving objects
         match object_type:
             case 'network_objects':
@@ -700,11 +702,11 @@ class SecurityDevice:
         # Call the function to retrieve objects of the specified type
         retrieved_objects_list = retrieve_function(object_names)
 
-        helper.logging.info(f"################## Importing object configuration. Object type is: <{object_type}>. ##################")        
+        general_logger.info(f"################## Importing object configuration. Object type is: <{object_type}>. ##################")        
         # Process retrieved objects
         for RetrievedObject in retrieved_objects_list:
-            helper.logging.info(f"Processing object: <{RetrievedObject.get_name()}. Object type is: <{object_type}>")
-            helper.logging.debug(f"Raw object info: <{RetrievedObject.get_info()}>")
+            general_logger.info(f"Processing object: <{RetrievedObject.get_name()}. Object type is: <{object_type}>")
+            general_logger.debug(f"Raw object info: <{RetrievedObject.get_info()}>")
             # Process the retrieved object
             processed_object_info = RetrievedObject.process_object()
             # Append the processed object to the corresponding list based on its type
@@ -721,8 +723,8 @@ class SecurityDevice:
             elif isinstance(RetrievedObject, PortGroupObject):
                 processed_objects_dict["port_group_objects"].append(processed_object_info)
 
-            helper.logging.info(f"Processed object: <{RetrievedObject.get_name()}. Object type is: <{object_type}>")
-            helper.logging.debug(f"Processed object info: <{processed_object_info}>")
+            general_logger.info(f"Processed object: <{RetrievedObject.get_name()}. Object type is: <{object_type}>")
+            general_logger.debug(f"Processed object info: <{processed_object_info}>")
             # Print the processed object (for debugging purposes)
         
         # Return the dictionary of processed objects
@@ -793,91 +795,91 @@ class SecurityDevice:
         pass
 
     def get_security_device_type_from_db(self):
-        helper.logging.debug(f"Called SecurityDevice::get_security_device_type().")
-        helper.logging.info(f"Fetching the device type of device: <{self._name}>.")
+        general_logger.debug(f"Called SecurityDevice::get_security_device_type().")
+        general_logger.info(f"Fetching the device type of device: <{self._name}>.")
         """
         Retrieve the security device type.
 
         Returns:
         - str: The security device type.
         """
-        helper.logging.info(f"Got device type: <{self._get_security_device_attribute('security_device_type')}>.")
+        general_logger.info(f"Got device type: <{self._get_security_device_attribute('security_device_type')}>.")
         return self._get_security_device_attribute('security_device_type')
 
     def get_security_device_hostname_from_db(self):
-        helper.logging.debug(f"Called SecurityDevice::get_security_device_hostname_from_db().")
-        helper.logging.info(f"Fetching the hostname of {self._name}.")
+        general_logger.debug(f"Called SecurityDevice::get_security_device_hostname_from_db().")
+        general_logger.info(f"Fetching the hostname of {self._name}.")
         """
         Retrieve the security device hostname.
 
         Returns:
         - str: The security device hostname.
         """
-        helper.logging.info(f"Got device hostname: <{self._get_security_device_attribute('security_device_hostname')}>.")
+        general_logger.info(f"Got device hostname: <{self._get_security_device_attribute('security_device_hostname')}>.")
         return self._get_security_device_attribute('security_device_hostname')
 
     def get_security_device_username_from_db(self):
-        helper.logging.debug(f"Called SecurityDevice::get_security_device_username_from_db().")
-        helper.logging.info(f"Fetching the username of device <{self._name}>.")
+        general_logger.debug(f"Called SecurityDevice::get_security_device_username_from_db().")
+        general_logger.info(f"Fetching the username of device <{self._name}>.")
         """
         Retrieve the security device username.
 
         Returns:
         - str: The security device username.
         """
-        helper.logging.info(f"Got device username: <{self._get_security_device_attribute('security_device_username')}>.")
+        general_logger.info(f"Got device username: <{self._get_security_device_attribute('security_device_username')}>.")
         return self._get_security_device_attribute('security_device_username')
 
     def get_security_device_secret_from_db(self):
-        helper.logging.debug(f"Called get_security_device_secret_from_db().")
-        helper.logging.info(f"Fetching the secret of <{self._name}>.")
+        general_logger.debug(f"Called get_security_device_secret_from_db().")
+        general_logger.info(f"Fetching the secret of <{self._name}>.")
         """
         Retrieve the security device secret.
 
         Returns:
         - str: The security device secret.
         """
-        helper.logging.info(f"Got device secret: ... .")
+        general_logger.info(f"Got device secret: ... .")
         return self._get_security_device_attribute('security_device_secret')
 
     def get_security_device_domain_from_db(self):
-        helper.logging.debug(f"Called SecurityDevice::get_security_device_domain_from_db().")
-        helper.logging.info(f"Fetching the domain of <{self._name}>.")
+        general_logger.debug(f"Called SecurityDevice::get_security_device_domain_from_db().")
+        general_logger.info(f"Fetching the domain of <{self._name}>.")
         """
         Retrieve the security device domain.
 
         Returns:
         - str: The security device domain.
         """
-        helper.logging.info(f"Got device domain: <{self._get_security_device_attribute('security_device_domain')}>.")
+        general_logger.info(f"Got device domain: <{self._get_security_device_attribute('security_device_domain')}>.")
         return self._get_security_device_attribute('security_device_domain')
 
     def get_security_device_port_from_db(self):
-        helper.logging.debug(f"Called SecurityDevice::get_security_device_port_from_db().")
-        helper.logging.info(f"Fetching the port of <{self._name}>.")
+        general_logger.debug(f"Called SecurityDevice::get_security_device_port_from_db().")
+        general_logger.info(f"Fetching the port of <{self._name}>.")
         """
         Retrieve the security device port.
 
         Returns:
         - str: The security device port.
         """
-        helper.logging.info(f"Got device port: <{self._get_security_device_attribute('security_device_port')}>.")
+        general_logger.info(f"Got device port: <{self._get_security_device_attribute('security_device_port')}>.")
         return self._get_security_device_attribute('security_device_port')
 
     def get_security_device_version_from_db(self):
-        helper.logging.debug(f"Called SecurityDevice::get_security_device_version_from_db().")
-        helper.logging.info(f"Fetching the version of <{self._name}>.")
+        general_logger.debug(f"Called SecurityDevice::get_security_device_version_from_db().")
+        general_logger.info(f"Fetching the version of <{self._name}>.")
         """
         Retrieve the security device version.
 
         Returns:
         - str: The security device version.
         """
-        helper.logging.info(f"Got device version: <{self._get_security_device_attribute('security_device_version')}>.")
+        general_logger.info(f"Got device version: <{self._get_security_device_attribute('security_device_version')}>.")
         return self._get_security_device_attribute('security_device_version')
 
     def _get_security_device_attribute(self, attribute):
-        helper.logging.debug(f"Called SecurityDevice::_get_security_device_attribute().")
+        general_logger.debug(f"Called SecurityDevice::_get_security_device_attribute().")
         """
         Retrieve a specific attribute of the security device.
 
@@ -894,7 +896,7 @@ class SecurityDevice:
     # the following functions process the data from the database. all the objects are processed, the unique values
     # are gathered and returned in a list that will be further processed by the program
     def get_db_objects(self, object_type):
-        helper.logging.debug(f"Called SecurityDevice::get_db_objects().")
+        general_logger.debug(f"Called SecurityDevice::get_db_objects().")
         """
         Retrieve and return unique database objects based on the specified type.
 
@@ -939,7 +941,7 @@ class SecurityDevice:
         return unique_objects_list
     
     def insert_into_managed_devices_table(self, managed_device_info):
-        helper.logging.debug(f"Called SecurityDevice::insert_into_managed_devices_table().")
+        general_logger.debug(f"Called SecurityDevice::insert_into_managed_devices_table().")
         """
         Insert managed devices information into the 'managed_devices_table'.
 
@@ -958,7 +960,7 @@ class SecurityDevice:
 
             # Check for duplicates before insertion
             if self.verify_duplicate('managed_devices_table', 'managed_device_name', managed_device_name):
-                helper.logging.warn(f"Duplicate entry for managed device: <{managed_device_name}>. Skipping insertion.")
+                general_logger.warn(f"Duplicate entry for managed device: <{managed_device_name}>. Skipping insertion.")
                 continue
 
             # SQL command to insert data into the 'managed_devices_table'
@@ -980,7 +982,7 @@ class SecurityDevice:
             self._database.insert_table_value('managed_devices_table', insert_command, values)
 
     def insert_into_general_table(self, security_device_username, security_device_secret, security_device_hostname, security_device_type, security_device_port, security_device_version, domain):
-        helper.logging.debug("Called SecurityDevice::insert_into_general_table().")
+        general_logger.debug("Called SecurityDevice::insert_into_general_table().")
         """
         Insert general information into the 'general_data_table'.
 
@@ -998,7 +1000,7 @@ class SecurityDevice:
         """
         # Check for duplicates before insertion
         if self.verify_duplicate('general_data_table', 'security_device_name', self._name):
-            helper.logging.warn(f"Duplicate entry for device name: <{self._name}>. Skipping insertion.")
+            general_logger.warn(f"Duplicate entry for device name: <{self._name}>. Skipping insertion.")
             return
 
         insert_command = """
@@ -1030,7 +1032,7 @@ class SecurityDevice:
         self._database.insert_table_value('general_data_table', insert_command, values)
 
     def insert_into_security_policy_containers_table(self, containers_data):
-        helper.logging.debug("Called SecurityDevice::insert_into_security_policy_containers_table().")
+        general_logger.debug("Called SecurityDevice::insert_into_security_policy_containers_table().")
         """
         Insert values into the 'security_policy_containers_table' table.
 
@@ -1047,7 +1049,7 @@ class SecurityDevice:
 
             # Check for duplicates before insertion
             if self.verify_duplicate('security_policy_containers_table', 'security_policy_container_name', container_name):
-                helper.logging.warn(f"Duplicate entry for container: <{container_name}>. Skipping insertion.")
+                general_logger.warn(f"Duplicate entry for container: <{container_name}>. Skipping insertion.")
                 continue
 
             # SQL command to insert data into the 'security_policy_containers_table'
@@ -1072,7 +1074,7 @@ class SecurityDevice:
             self._database.insert_table_value('security_policy_containers_table', insert_command, values)
 
     def insert_into_security_policies_table(self, sec_policy_data):
-        helper.logging.debug("Called SecurityDevice::insert_into_security_policies_table().")
+        general_logger.debug("Called SecurityDevice::insert_into_security_policies_table().")
         """
         Insert security policy data into the 'security_policies_table'.
 
@@ -1088,7 +1090,7 @@ class SecurityDevice:
             
             # Check for duplicates before insertion
             if self.verify_duplicate('security_policies_table', 'security_policy_name', current_policy_name):
-                helper.logging.warn(f"Duplicate entry for security policy: <{current_policy_name}>. Skipping insertion.")
+                general_logger.warn(f"Duplicate entry for security policy: <{current_policy_name}>. Skipping insertion.")
                 continue
 
             formatted_security_policy_source_zones = "{" + ",".join(current_policy_data["sec_policy_source_zones"]) + "}"
@@ -1174,7 +1176,7 @@ class SecurityDevice:
             self._database.insert_table_value('security_policies_table', insert_command, parameters)
 
     def insert_into_object_containers_table(self, containers_data):
-        helper.logging.debug("Called SecurityDevice::insert_into_object_containers_table().")
+        general_logger.debug("Called SecurityDevice::insert_into_object_containers_table().")
         """
         Insert values into the 'object_containers_table' table.
 
@@ -1191,7 +1193,7 @@ class SecurityDevice:
 
             # Check for duplicates before insertion
             if self.verify_duplicate('object_containers_table', 'object_container_name', container_name):
-                helper.logging.warn(f"Duplicate entry for object container: <{container_name}>. Skipping insertion.")
+                general_logger.warn(f"Duplicate entry for object container: <{container_name}>. Skipping insertion.")
                 continue
 
             # SQL command to insert data into the 'object_containers_table'
@@ -1216,7 +1218,7 @@ class SecurityDevice:
             self._database.insert_table_value('object_containers_table', insert_command, values)
 
     def insert_into_network_address_objects_table(self, network_objects_data):
-        helper.logging.debug("Called SecurityDevice::insert_into_network_address_objects_table().")
+        general_logger.debug("Called SecurityDevice::insert_into_network_address_objects_table().")
         """
         Insert network address objects data into the 'network_address_objects_table'.
 
@@ -1232,7 +1234,7 @@ class SecurityDevice:
 
             # Check for duplicates before insertion
             if self.verify_duplicate('network_address_objects_table', 'network_address_name', network_address_name):
-                helper.logging.warn(f"Duplicate entry for network address object: <{network_address_name}>. Skipping insertion.")
+                general_logger.warn(f"Duplicate entry for network address object: <{network_address_name}>. Skipping insertion.")
                 continue
 
             object_container_name = current_object_entry['object_container_name']
@@ -1271,7 +1273,7 @@ class SecurityDevice:
             self._database.insert_table_value('network_address_objects_table', insert_command, values)
 
     def insert_into_network_address_object_groups_table(self, network_group_objects_data):
-        helper.logging.debug("Called SecurityDevice::insert_into_network_address_object_groups_table().")
+        general_logger.debug("Called SecurityDevice::insert_into_network_address_object_groups_table().")
         """
         Insert network address object groups data into the 'network_address_objects_table'.
 
@@ -1286,7 +1288,7 @@ class SecurityDevice:
             network_address_group_name = current_group_object_entry['network_address_group_name']
             # Check for duplicates before insertion
             if self.verify_duplicate('network_address_object_groups_table', 'network_address_group_name', network_address_group_name):
-                helper.logging.warn(f"Duplicate entry for network address object group: <{network_address_group_name}>. Skipping insertion.")
+                general_logger.warn(f"Duplicate entry for network address object group: <{network_address_group_name}>. Skipping insertion.")
                 continue
             
             object_container_name = current_group_object_entry['object_container_name']
@@ -1323,7 +1325,7 @@ class SecurityDevice:
             self._database.insert_table_value('network_address_object_groups_table', insert_command, values)
 
     def insert_into_security_policy_containers_table(self, containers_data):
-        helper.logging.debug("Called SecurityDevice::insert_into_security_policy_containers_table().")
+        general_logger.debug("Called SecurityDevice::insert_into_security_policy_containers_table().")
         """
         Insert values into the 'security_policy_containers_table' table.
 
@@ -1340,7 +1342,7 @@ class SecurityDevice:
 
             # Check for duplicates before insertion
             if self.verify_duplicate('security_policy_containers_table', 'security_policy_container_name', container_name):
-                helper.logging.warn(f"Duplicate entry for container: <{container_name}>. Skipping insertion.")
+                general_logger.warn(f"Duplicate entry for container: <{container_name}>. Skipping insertion.")
                 continue
 
             # SQL command to insert data into the 'security_policy_containers_table'
@@ -1365,7 +1367,7 @@ class SecurityDevice:
             self._database.insert_table_value('security_policy_containers_table', insert_command, values)
 
     def insert_into_geolocation_table(self, geolocation_object_data):
-        helper.logging.debug("Called SecurityDevice::insert_into_geolocation_table().")
+        general_logger.debug("Called SecurityDevice::insert_into_geolocation_table().")
         """
         Insert values into the 'geolocation_objects_table' table.
 
@@ -1387,7 +1389,7 @@ class SecurityDevice:
 
             # Check for duplicates before insertion
             if self.verify_duplicate('geolocation_objects_table', 'geolocation_object_name', geo_name):
-                helper.logging.warn(f"Duplicate entry for geolocation object: <{geo_name}>. Skipping insertion.")
+                general_logger.warn(f"Duplicate entry for geolocation object: <{geo_name}>. Skipping insertion.")
                 continue
 
             # SQL command to insert data into the 'geolocation_objects_table'
@@ -1422,8 +1424,8 @@ class SecurityDevice:
             self._database.insert_table_value('geolocation_objects_table', insert_command, values)
 
     def verify_duplicate(self, table, column, value):
-        helper.logging.debug("Called verify_duplicate().")
-        helper.logging.info(f"Verifying duplicate in table {table}, column {column}, for value {value}.")
+        general_logger.debug("Called verify_duplicate().")
+        general_logger.info(f"Verifying duplicate in table {table}, column {column}, for value {value}.")
         """
         Verify if a duplicate entry exists in the specified table and column.
 
@@ -1440,13 +1442,13 @@ class SecurityDevice:
 
         # Execute the parameterized query and get the result
         is_duplicate = self._database.get_table_value(table, select_command, (value,))
-        helper.logging.info(f"Verified duplicate in table {table}, column {column}, for value {value}. Result is {is_duplicate}")
+        general_logger.info(f"Verified duplicate in table {table}, column {column}, for value {value}. Result is {is_duplicate}")
 
         # Return the result as a boolean
         return is_duplicate[0][0]
     
     def insert_into_port_objects_table(self, port_object_data):
-        helper.logging.debug("Called SecurityDevice::insert_into_port_objects_table().")
+        general_logger.debug("Called SecurityDevice::insert_into_port_objects_table().")
         """
         Insert values into the 'port_objects_table' table.
 
@@ -1467,7 +1469,7 @@ class SecurityDevice:
 
             # Check for duplicates before insertion
             if self.verify_duplicate('port_objects_table', 'port_name', port_name):
-                helper.logging.warn(f"Duplicate entry for port object: <{port_name}>. Skipping insertion.")
+                general_logger.warn(f"Duplicate entry for port object: <{port_name}>. Skipping insertion.")
                 continue
 
             # SQL command to insert data into the 'port_objects_table'
@@ -1500,7 +1502,7 @@ class SecurityDevice:
             self._database.insert_table_value('port_objects_table', insert_command, values)
 
     def insert_into_icmp_objects_table(self, icmp_object_data):
-        helper.logging.debug("Called SecurityDevice::insert_into_icmp_objects_table().")
+        general_logger.debug("Called SecurityDevice::insert_into_icmp_objects_table().")
         """
         Insert values into the 'icmp_objects_table' table.
 
@@ -1521,7 +1523,7 @@ class SecurityDevice:
 
             # Check for duplicates before insertion
             if self.verify_duplicate('icmp_objects_table', 'icmp_name', icmp_name):
-                helper.logging.warn(f"Duplicate entry for ICMP object: <{icmp_name}>. Skipping insertion.")
+                general_logger.warn(f"Duplicate entry for ICMP object: <{icmp_name}>. Skipping insertion.")
                 continue
 
             # SQL command to insert data into the 'icmp_objects_table'
@@ -1554,7 +1556,7 @@ class SecurityDevice:
             self._database.insert_table_value('icmp_objects_table', insert_command, values)
 
     def insert_into_port_object_groups_table(self, port_object_group_data):
-        helper.logging.debug("Called SecurityDevice::insert_into_port_object_groups_table().")
+        general_logger.debug("Called SecurityDevice::insert_into_port_object_groups_table().")
         """
         Insert values into the 'port_object_groups_table' table.
 
@@ -1574,7 +1576,7 @@ class SecurityDevice:
 
             # Check for duplicates before insertion
             if self.verify_duplicate('port_object_groups_table', 'port_group_name', port_group_name):
-                helper.logging.warn(f"Duplicate entry for port object group: <{port_group_name}>. Skipping insertion.")
+                general_logger.warn(f"Duplicate entry for port object group: <{port_group_name}>. Skipping insertion.")
                 continue
 
             # SQL command to insert data into the 'port_object_groups_table'

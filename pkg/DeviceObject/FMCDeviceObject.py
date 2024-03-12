@@ -4,6 +4,7 @@ import utils.gvars as gvars
 import ipaddress
 import utils.exceptions as PioneerExceptions
 from abc import abstractmethod
+general_logger = helper.logging.getLogger('general')
 
 class FMCObject(Object):
     """
@@ -17,7 +18,7 @@ class FMCObject(Object):
         Args:
             object_info (dict): Information about the FMC object.
         """
-        helper.logging.debug("Called FMCObject::__init__()")
+        general_logger.debug("Called FMCObject::__init__()")
         super().__init__(object_info)
     
     def set_name(self):
@@ -27,7 +28,7 @@ class FMCObject(Object):
         Returns:
             str: The name of the FMC object.
         """
-        helper.logging.debug("Called FMCObject::set_name()")
+        general_logger.debug("Called FMCObject::set_name()")
         name = self._object_info['name']
         return super().set_name(name)
 
@@ -38,7 +39,7 @@ class FMCObject(Object):
         Returns:
             str: The description of the FMC object.
         """
-        helper.logging.debug("Called FMCObject::set_description()")
+        general_logger.debug("Called FMCObject::set_description()")
         try:
             description = self._object_info['description']
         except KeyError:
@@ -52,7 +53,7 @@ class FMCObject(Object):
         Returns:
             str: The name of the object container.
         """
-        helper.logging.debug("Called FMCObject::set_object_container_name()")
+        general_logger.debug("Called FMCObject::set_object_container_name()")
         container_name = 'virtual_object_container'
         return super().set_object_container_name(container_name)
     
@@ -63,7 +64,7 @@ class FMCObject(Object):
         Returns:
             bool: The override status of the FMC object.
         """
-        helper.logging.debug("Called FMCObject::set_override_bool()")
+        general_logger.debug("Called FMCObject::set_override_bool()")
         is_overridable = self._object_info['overridable']
         return super().set_override_bool(is_overridable)
 
@@ -91,12 +92,12 @@ class FMCObject(Object):
                 literal_protocol_keyword = helper.protocol_number_to_keyword(literal_protocol)
             except PioneerExceptions.UnknownProtocolNumber:
                 # Log error if protocol number cannot be converted
-                helper.logging.error(f"Protocol number: {literal_protocol} cannot be converted to a known IANA keyword.")
+                general_logger.error(f"Protocol number: {literal_protocol} cannot be converted to a known IANA keyword.")
             
             # Handle ICMP literals separately
             if literal_protocol in ["1", "58"]:
                 # Log info for encountered ICMP literals
-                helper.logging.info(f"I have encountered an ICMP literal: {port_literal['type']}.")
+                general_logger.info(f"I have encountered an ICMP literal: {port_literal['type']}.")
                 
                 # Extract ICMP type
                 literal_port_nr = port_literal['icmpType']
@@ -108,19 +109,19 @@ class FMCObject(Object):
                     port_objects_list.append(port_object_name)
                 except KeyError:
                     # If no ICMP code, continue without it
-                    helper.logging.debug(f"No ICMP code for the following port literal: {port_literal['type']}.")
+                    general_logger.debug(f"No ICMP code for the following port literal: {port_literal['type']}.")
             
             # Create the name of the port object
             port_object_name = f"{gvars.port_literal_prefix}{literal_protocol_keyword}_{literal_port_nr}"
             port_objects_list.append(port_object_name)
 
         # Log completion and return port objects list
-        helper.logging.debug(f"Finished converting all literals to objects. This is the list with converted literals {port_objects_list}.")
+        general_logger.debug(f"Finished converting all literals to objects. This is the list with converted literals {port_objects_list}.")
         return port_objects_list
 
     @staticmethod
     def convert_network_literals_to_objects(network_literals):
-        helper.logging.debug("Called FMSecurityPolicy::convert_network_literals_to_objects().")
+        general_logger.debug("Called FMSecurityPolicy::convert_network_literals_to_objects().")
         """
         Convert network literals to objects.
 
@@ -134,7 +135,7 @@ class FMCObject(Object):
 
         # Loop through the network literals.
         for network_literal in network_literals:
-            helper.logging.debug(f"Converting literal {network_literal} to object.")
+            general_logger.debug(f"Converting literal {network_literal} to object.")
             # Extract the value of the network literal
             literal_value = network_literal['value']
 
@@ -144,7 +145,7 @@ class FMCObject(Object):
 
             # The literal type can be either a host or a network
             if literal_type == 'Network':
-                helper.logging.debug(f"{network_literal} is of type Network.")
+                general_logger.debug(f"{network_literal} is of type Network.")
                 # Define the CIDR notation IP address
                 ip_cidr = literal_value
 
@@ -156,20 +157,20 @@ class FMCObject(Object):
                 netmask = str(network.prefixlen)  # Extract the prefix length instead of the full netmask
 
             elif literal_type == 'Host':
-                helper.logging.debug(f"{network_literal} is of type Host.")
+                general_logger.debug(f"{network_literal} is of type Host.")
                 netmask = '32'
                 network_address = literal_value  # Assuming literal_value is the host address
 
             else:
-                helper.logging.debug(f"Cannot determine type of {network_literal}. Presented type is {literal_type}.")
+                general_logger.debug(f"Cannot determine type of {network_literal}. Presented type is {literal_type}.")
                 continue
 
             # Create the name of the object (NL_networkaddress_netmask)
             network_object_name = gvars.network_literal_prefix + str(network_address) + "_" + str(netmask)
-            helper.logging.debug(f"Converted network literal {network_literal} to object {network_object_name}.")
+            general_logger.debug(f"Converted network literal {network_literal} to object {network_object_name}.")
             network_objects_list.append(network_object_name)
         
-        helper.logging.debug(f"Finished converting all literals to objects. This is the list with converted literals {network_objects_list}.")
+        general_logger.debug(f"Finished converting all literals to objects. This is the list with converted literals {network_objects_list}.")
         return network_objects_list
 
 class FMCNetworkObject(FMCObject, NetworkObject):
@@ -184,7 +185,7 @@ class FMCNetworkObject(FMCObject, NetworkObject):
         Args:
             object_info (dict): Information about the network object.
         """
-        helper.logging.debug("Called FMCNetworkObject::__init__()")
+        general_logger.debug("Called FMCNetworkObject::__init__()")
         super().__init__(object_info)
     
     def set_network_address_value(self):
@@ -194,7 +195,7 @@ class FMCNetworkObject(FMCObject, NetworkObject):
         Returns:
             str: The value of the network address.
         """
-        helper.logging.debug("Called FMCNetworkObject::set_network_address_value()")
+        general_logger.debug("Called FMCNetworkObject::set_network_address_value()")
         value = self._object_info['value']
         return super().set_network_address_value(value)
 
@@ -205,7 +206,7 @@ class FMCNetworkObject(FMCObject, NetworkObject):
         Returns:
             str: The type of the network address.
         """
-        helper.logging.debug("Called FMCNetworkObject::set_network_address_type()")
+        general_logger.debug("Called FMCNetworkObject::set_network_address_type()")
         type = self._object_info['type']
         return super().set_network_address_type(type)
 
@@ -222,7 +223,7 @@ class FMCNetworkLiteralObject(NetworkObject):
         Parameters:
         - object_info (dict): Information about the network object.
         """
-        helper.logging.debug("Called FMCNetworkLiteralObject::__init__()")
+        general_logger.debug("Called FMCNetworkLiteralObject::__init__()")
         super().__init__(object_info)
     
     def set_name(self):
@@ -232,7 +233,7 @@ class FMCNetworkLiteralObject(NetworkObject):
         Returns:
             str: The name of the object.
         """
-        helper.logging.debug("Called FMCNetworkLiteralObject::set_name()")
+        general_logger.debug("Called FMCNetworkLiteralObject::set_name()")
         name = self._object_info
         return super().set_name(name)
 
@@ -243,7 +244,7 @@ class FMCNetworkLiteralObject(NetworkObject):
         Returns:
             str: The network address value.
         """
-        helper.logging.debug("Called FMCNetworkLiteralObject::set_network_address_value()")
+        general_logger.debug("Called FMCNetworkLiteralObject::set_network_address_value()")
         split_name = self._name.split('_')
         subnet_id = split_name[1]
         netmask = split_name[2]
@@ -257,7 +258,7 @@ class FMCNetworkLiteralObject(NetworkObject):
         Returns:
             str: The description of the object.
         """
-        helper.logging.debug("Called FMCNetworkLiteralObject::set_description()")
+        general_logger.debug("Called FMCNetworkLiteralObject::set_description()")
         description = gvars.literal_objects_description
         return super().set_description(description)
 
@@ -268,7 +269,7 @@ class FMCNetworkLiteralObject(NetworkObject):
         Returns:
             str: The name of the object container.
         """
-        helper.logging.debug("Called FMCNetworkLiteralObject::set_object_container_name()")
+        general_logger.debug("Called FMCNetworkLiteralObject::set_object_container_name()")
         container_name = 'virtual_object_container'
         return super().set_object_container_name(container_name)
 
@@ -279,7 +280,7 @@ class FMCNetworkLiteralObject(NetworkObject):
         Returns:
             str: The type of the network address.
         """
-        helper.logging.debug("Called FMCNetworkLiteralObject::set_network_address_type()")
+        general_logger.debug("Called FMCNetworkLiteralObject::set_network_address_type()")
         split_name = self._name.split('_')
         netmask = split_name[2]
         type = ''
@@ -298,7 +299,7 @@ class FMCNetworkLiteralObject(NetworkObject):
         Returns:
             bool: The override boolean value.
         """
-        helper.logging.debug("Called FMCNetworkLiteralObject::set_override_bool()")
+        general_logger.debug("Called FMCNetworkLiteralObject::set_override_bool()")
         is_overridable = False
         return super().set_override_bool(is_overridable)
 
@@ -310,7 +311,7 @@ class FMCNetworkGroupObject(FMCObject, NetworkGroupObject):
         Args:
             object_info (dict): Information about the network group object.
         """
-        helper.logging.debug("Called FMCNetworkGroupObject::__init__()")
+        general_logger.debug("Called FMCNetworkGroupObject::__init__()")
         super().__init__(object_info)
 
     #TODO: this is not actually needed, or is it?    
@@ -321,7 +322,7 @@ class FMCNetworkGroupObject(FMCObject, NetworkGroupObject):
         Args:
             members (list): A list of member names.
         """
-        helper.logging.debug("Called FMCNetworkGroupObject::set_member_names()")
+        general_logger.debug("Called FMCNetworkGroupObject::set_member_names()")
         return super().set_member_names(members)
 
 class FMCCountryObject(GeolocationObject):
@@ -457,7 +458,7 @@ class FMCContinentObject(GeolocationObject):
         Args:
             object_info (dict): Information about the continent object.
         """
-        helper.logging.debug("Called FMCContinentObject::__init__()")
+        general_logger.debug("Called FMCContinentObject::__init__()")
         super().__init__(object_info)
         
     def set_name(self):
@@ -467,7 +468,7 @@ class FMCContinentObject(GeolocationObject):
         Returns:
             str: The name of the continent object.
         """
-        helper.logging.debug("Called FMCContinentObject::set_name()")
+        general_logger.debug("Called FMCContinentObject::set_name()")
         name = self._object_info['name']
         return super().set_name(name)
 
@@ -478,7 +479,7 @@ class FMCContinentObject(GeolocationObject):
         Returns:
             str: The name of the object container.
         """
-        helper.logging.debug("Called FMCContinentObject::set_object_container_name()")
+        general_logger.debug("Called FMCContinentObject::set_object_container_name()")
         object_container_name = 'virtual_object_container'
         return super().set_object_container_name(object_container_name)
     
@@ -489,7 +490,7 @@ class FMCContinentObject(GeolocationObject):
         Returns:
             None
         """
-        helper.logging.debug("Called FMCContinentObject::set_continents()")
+        general_logger.debug("Called FMCContinentObject::set_continents()")
         self._continents = None
     
     def get_member_continent_names(self):
@@ -499,7 +500,7 @@ class FMCContinentObject(GeolocationObject):
         Returns:
             str: The name of the continent.
         """
-        helper.logging.debug("Called FMCContinentObject::get_member_continent_names()")
+        general_logger.debug("Called FMCContinentObject::get_member_continent_names()")
         return self._object_info['name']
     
     @abstractmethod
@@ -521,7 +522,7 @@ class FMCContinentObject(GeolocationObject):
             None
         """
         # Debugging message to indicate that the method is being called
-        helper.logging.debug("Called FMCContinentObject::set_countries()")
+        general_logger.debug("Called FMCContinentObject::set_countries()")
         
         # Initialize an empty list to store country objects
         countries_objects_list = []
@@ -549,7 +550,7 @@ class FMCContinentObject(GeolocationObject):
         Returns:
             None
         """
-        helper.logging.debug("Called FMCContinentObject::set_member_alpha2_codes()")
+        general_logger.debug("Called FMCContinentObject::set_member_alpha2_codes()")
         pass
 
     def set_member_alpha3_codes(self):
@@ -559,7 +560,7 @@ class FMCContinentObject(GeolocationObject):
         Returns:
             None
         """
-        helper.logging.debug("Called FMCContinentObject::set_member_alpha3_codes()")
+        general_logger.debug("Called FMCContinentObject::set_member_alpha3_codes()")
         pass
 
     def set_member_numeric_codes(self):
@@ -569,7 +570,7 @@ class FMCContinentObject(GeolocationObject):
         Returns:
             None
         """
-        helper.logging.debug("Called FMCContinentObject::set_member_numeric_codes()")
+        general_logger.debug("Called FMCContinentObject::set_member_numeric_codes()")
         pass
 
     #TODO: move this
@@ -580,7 +581,7 @@ class FMCContinentObject(GeolocationObject):
         Returns:
             dict: Information about the continent.
         """
-        helper.logging.debug("Called FMCContinentObject::get_continent_info()")
+        general_logger.debug("Called FMCContinentObject::get_continent_info()")
         return self._object_info
 
 class FMCGeolocationObject(GeolocationObject):
@@ -595,7 +596,7 @@ class FMCGeolocationObject(GeolocationObject):
         Args:
             object_info (dict): Information about the geolocation object.
         """
-        helper.logging.debug(f"Called FMCGeolocationObject::__init__()")
+        general_logger.debug(f"Called FMCGeolocationObject::__init__()")
         super().__init__(object_info)
 
     def set_name(self):
@@ -605,7 +606,7 @@ class FMCGeolocationObject(GeolocationObject):
         Returns:
             str: The name of the geolocation object.
         """
-        helper.logging.debug("Called FMCGeolocationObject::set_name()")
+        general_logger.debug("Called FMCGeolocationObject::set_name()")
         name = self._object_info['name']
         return super().set_name(name)
 
@@ -616,7 +617,7 @@ class FMCGeolocationObject(GeolocationObject):
         Returns:
             None
         """
-        helper.logging.debug("Called FMCGeolocationObject::set_description()")
+        general_logger.debug("Called FMCGeolocationObject::set_description()")
         value = None
         return super().set_description(value)
 
@@ -627,7 +628,7 @@ class FMCGeolocationObject(GeolocationObject):
         Returns:
             str: The name of the object container.
         """
-        helper.logging.debug("Called FMCGeolocationObject::set_object_container_name()")
+        general_logger.debug("Called FMCGeolocationObject::set_object_container_name()")
         object_container_name = 'virtual_object_container'
         return super().set_object_container_name(object_container_name)
 
@@ -643,7 +644,7 @@ class FMCGeolocationObject(GeolocationObject):
             list: A list of FMCContinentObject instances representing continents.
         """
         # Debugging message to indicate that the method is being called
-        helper.logging.debug("Called FMCGeolocationObject::set_continents()")
+        general_logger.debug("Called FMCGeolocationObject::set_continents()")
         
         # Initialize an empty list to store continent objects
         continent_objects_list = []
@@ -677,7 +678,7 @@ class FMCGeolocationObject(GeolocationObject):
             list: A list of FMCCountryObject instances representing countries.
         """
         # Debugging message to indicate that the method is being called
-        helper.logging.debug("Called FMCGeolocationObject::set_countries()")
+        general_logger.debug("Called FMCGeolocationObject::set_countries()")
         
         # Initialize an empty list to store country objects
         countries_objects_list = []
@@ -734,7 +735,7 @@ class FMCPortObject(FMCObject, PortObject):
         Parameters:
         - object_info (dict): Information about the port object.
         """
-        helper.logging.debug("Called FMCPortObject::__init__()")
+        general_logger.debug("Called FMCPortObject::__init__()")
         super().__init__(object_info)
     
     def set_port_number(self):
@@ -745,10 +746,10 @@ class FMCPortObject(FMCObject, PortObject):
             str: The port number.
         """
         try:
-            helper.logging.debug("Called FMCPortObject::set_port_number()")
+            general_logger.debug("Called FMCPortObject::set_port_number()")
             port_number = self._object_info['port']
         except KeyError:
-            helper.logging.info(f"<{self._name}> port object does not have a port number defined.")
+            general_logger.info(f"<{self._name}> port object does not have a port number defined.")
             port_number = None
         return super().set_port_number(port_number)
 
@@ -759,7 +760,7 @@ class FMCPortObject(FMCObject, PortObject):
         Returns:
             str: The port protocol.
         """
-        helper.logging.debug("Called FMCPortObject::set_port_protocol()")
+        general_logger.debug("Called FMCPortObject::set_port_protocol()")
         protocol = self._object_info['protocol']
         return super().set_port_protocol(protocol)
 
@@ -776,7 +777,7 @@ class FMCPortLiteralObject(PortObject):
         Parameters:
         - object_info (dict): Information about the port object.
         """
-        helper.logging.debug("Called FMCPortLiteralObject::__init__()")
+        general_logger.debug("Called FMCPortLiteralObject::__init__()")
         super().__init__(object_info)
     
     def set_name(self):
@@ -786,7 +787,7 @@ class FMCPortLiteralObject(PortObject):
         Returns:
             str: The name of the object.
         """
-        helper.logging.debug("Called FMCPortLiteralObject::set_name()")
+        general_logger.debug("Called FMCPortLiteralObject::set_name()")
         name = self._object_info
         return super().set_name(name)
     
@@ -797,7 +798,7 @@ class FMCPortLiteralObject(PortObject):
         Returns:
             str: The description of the object.
         """
-        helper.logging.debug("Called FMCPortLiteralObject::set_description()")
+        general_logger.debug("Called FMCPortLiteralObject::set_description()")
         description = gvars.literal_objects_description
         return super().set_description(description)
     
@@ -808,7 +809,7 @@ class FMCPortLiteralObject(PortObject):
         Returns:
             str: The port number.
         """
-        helper.logging.debug("Called FMCPortLiteralObject::set_port_number()")
+        general_logger.debug("Called FMCPortLiteralObject::set_port_number()")
         split_name = self._name.split('_')
         port_number = split_name[2]
         return super().set_port_number(port_number)
@@ -820,7 +821,7 @@ class FMCPortLiteralObject(PortObject):
         Returns:
             str: The port protocol.
         """
-        helper.logging.debug("Called FMCPortLiteralObject::set_port_protocol()")
+        general_logger.debug("Called FMCPortLiteralObject::set_port_protocol()")
         split_name = self._name.split('_')
         protocol = split_name[1]
         return super().set_port_protocol(protocol)
@@ -832,7 +833,7 @@ class FMCPortLiteralObject(PortObject):
         Returns:
             str: The name of the object container.
         """
-        helper.logging.debug("Called FMCPortLiteralObject::set_object_container_name()")
+        general_logger.debug("Called FMCPortLiteralObject::set_object_container_name()")
         container_name = 'virtual_object_container'
         return super().set_object_container_name(container_name)
 
@@ -843,7 +844,7 @@ class FMCPortLiteralObject(PortObject):
         Returns:
             bool: The override boolean value.
         """
-        helper.logging.debug("Called FMCPortLiteralObject::set_override_bool()")
+        general_logger.debug("Called FMCPortLiteralObject::set_override_bool()")
         is_overridable = False
         return super().set_override_bool(is_overridable)
     
@@ -861,7 +862,7 @@ class FMCICMPObject(FMCObject, ICMPObject):
             str: The ICMP type.
         """
         try:
-            helper.logging.debug("Called FMCICMPObject::set_icmp_type()")
+            general_logger.debug("Called FMCICMPObject::set_icmp_type()")
             icmp_type = self._object_info['icmpType']
         except KeyError:
             icmp_type = 'any'
@@ -876,7 +877,7 @@ class FMCICMPObject(FMCObject, ICMPObject):
             str: The ICMP code.
         """
         try:
-            helper.logging.debug("Called FMCICMPObject::set_icmp_code()")
+            general_logger.debug("Called FMCICMPObject::set_icmp_code()")
             icmp_code = self._object_info['code']
         except KeyError:
             icmp_code = None
@@ -895,7 +896,7 @@ class FMCLiteralICMPObject(ICMPObject):
         Parameters:
         - object_info (dict): Information about the ICMP object.
         """
-        helper.logging.debug("Called FMCLiteralICMPObject::__init__()")
+        general_logger.debug("Called FMCLiteralICMPObject::__init__()")
         super().__init__(object_info)
     
     def set_name(self):
@@ -905,7 +906,7 @@ class FMCLiteralICMPObject(ICMPObject):
         Returns:
             str: The name of the object.
         """
-        helper.logging.debug("Called FMCLiteralICMPObject::set_name()")
+        general_logger.debug("Called FMCLiteralICMPObject::set_name()")
         name = self._object_info
         return super().set_name(name)
     
@@ -916,7 +917,7 @@ class FMCLiteralICMPObject(ICMPObject):
         Returns:
             str: The description of the object.
         """
-        helper.logging.debug("Called FMCLiteralICMPObject::set_description()")
+        general_logger.debug("Called FMCLiteralICMPObject::set_description()")
         description = gvars.literal_objects_description
         return super().set_description(description)
 
@@ -927,7 +928,7 @@ class FMCLiteralICMPObject(ICMPObject):
         Returns:
             str: The ICMP type.
         """
-        helper.logging.debug("Called FMCLiteralICMPObject::set_icmp_type()")
+        general_logger.debug("Called FMCLiteralICMPObject::set_icmp_type()")
         split_name = self._name.split('_')
         icmp_type = split_name[2]
         return super().set_icmp_type(icmp_type)
@@ -939,7 +940,7 @@ class FMCLiteralICMPObject(ICMPObject):
         Returns:
             str: The ICMP code.
         """
-        helper.logging.debug("Called FMCLiteralICMPObject::set_icmp_code()")
+        general_logger.debug("Called FMCLiteralICMPObject::set_icmp_code()")
         split_name = self._name.split('_')
         try:
             icmp_code = split_name[3]
@@ -954,7 +955,7 @@ class FMCLiteralICMPObject(ICMPObject):
         Returns:
             str: The name of the object container.
         """
-        helper.logging.debug("Called FMCLiteralICMPObject::set_object_container_name()")
+        general_logger.debug("Called FMCLiteralICMPObject::set_object_container_name()")
         container_name = 'virtual_object_container'
         return super().set_object_container_name(container_name)
 
@@ -965,7 +966,7 @@ class FMCLiteralICMPObject(ICMPObject):
         Returns:
             bool: The override boolean value.
         """
-        helper.logging.debug("Called FMCLiteralICMPObject::set_override_bool()")
+        general_logger.debug("Called FMCLiteralICMPObject::set_override_bool()")
         is_overridable = False
         return super().set_override_bool(is_overridable)
 

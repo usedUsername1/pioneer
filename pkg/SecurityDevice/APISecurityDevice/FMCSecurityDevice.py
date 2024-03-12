@@ -11,6 +11,7 @@ import utils.helper as helper
 import fireREST
 import utils.gvars as gvars
 
+general_logger = helper.logging.getLogger('general')
 
 class FMCDeviceConnection(APISecurityDeviceConnection):
     """
@@ -31,7 +32,7 @@ class FMCDeviceConnection(APISecurityDeviceConnection):
         super().__init__(api_username, api_secret, api_hostname, api_port)
         self._domain = domain
         self._device_connection = self.return_security_device_conn_object()  # Initialize _device_connection with FMC object
-        helper.logging.debug(f"Called FMCDeviceConnection __init__ with parameters: username {api_username}, hostname {api_hostname}, port {api_port}, domain {domain}.")
+        general_logger.debug(f"Called FMCDeviceConnection __init__ with parameters: username {api_username}, hostname {api_hostname}, port {api_port}, domain {domain}.")
 
     def connect_to_security_device(self):
         """
@@ -57,7 +58,7 @@ class FMCPolicyContainer(SecurityPolicyContainer):
         Parameters:
             container_info (dict): Information about the policy container.
         """
-        helper.logging.debug("Called FMCPolicyContainer::__init__()")
+        general_logger.debug("Called FMCPolicyContainer::__init__()")
         super().__init__(container_info)
 
     def get_parent_name(self):
@@ -67,7 +68,7 @@ class FMCPolicyContainer(SecurityPolicyContainer):
         Returns:
             str: Name of the parent policy.
         """
-        helper.logging.debug("Called FMCPolicyContainer::get_parent_name()")
+        general_logger.debug("Called FMCPolicyContainer::get_parent_name()")
         try:
             return self._container_info['metadata']['parentPolicy']['name']
         except KeyError:
@@ -80,7 +81,7 @@ class FMCPolicyContainer(SecurityPolicyContainer):
         Returns:
             bool: True if the container is a child container, False otherwise.
         """
-        helper.logging.debug("Called FMCPolicyContainer::is_child_container()")
+        general_logger.debug("Called FMCPolicyContainer::is_child_container()")
         return self._container_info['metadata']['inherit']
 
     def get_name(self):
@@ -90,7 +91,7 @@ class FMCPolicyContainer(SecurityPolicyContainer):
         Returns:
             str: Name of the policy container.
         """
-        helper.logging.debug("Called FMCPolicyContainer::get_name()")
+        general_logger.debug("Called FMCPolicyContainer::get_name()")
         return self._container_info['name']
 
 #TODO: maybe use setters for setting the values in here, and use the getters from the parent class to retrieve the info. just like you do for objects
@@ -106,7 +107,7 @@ class FMCObjectContainer(ObjectPolicyContainer):
         Parameters:
             container_info (dict): Information about the object container.
         """
-        helper.logging.debug("Called FMCObjectContainer::__init__()")
+        general_logger.debug("Called FMCObjectContainer::__init__()")
         super().__init__(container_info)
 
     def is_child_container(self):
@@ -116,7 +117,7 @@ class FMCObjectContainer(ObjectPolicyContainer):
         Returns:
             bool: Always returns False for FMC object containers.
         """
-        helper.logging.debug("Called FMCObjectContainer::is_child_container()")
+        general_logger.debug("Called FMCObjectContainer::is_child_container()")
         return False
 
     def get_parent_name(self):
@@ -126,7 +127,7 @@ class FMCObjectContainer(ObjectPolicyContainer):
         Returns:
             None: Since FMC object containers do not have parent containers, it returns None.
         """
-        helper.logging.debug("Called FMCObjectContainer::get_parent_name()")
+        general_logger.debug("Called FMCObjectContainer::get_parent_name()")
         return None
   
 class FMCSecurityDevice(SecurityDevice):
@@ -159,7 +160,7 @@ class FMCSecurityDevice(SecurityDevice):
             security_device_port (int): The port number for connecting to the security device.
             domain (str): The domain of the security device.
         """
-        helper.logging.debug("Called FMCSecurityDevice::__init__()")
+        general_logger.debug("Called FMCSecurityDevice::__init__()")
         super().__init__(name, sec_device_database)
         # Establish connection to FMC device
         self._sec_device_connection = FMCDeviceConnection(security_device_username, security_device_secret, security_device_hostname, security_device_port, domain).connect_to_security_device()
@@ -172,7 +173,7 @@ class FMCSecurityDevice(SecurityDevice):
         self._port_group_objects_info = None
 
     def return_security_policy_container_object(self, container_name):
-        helper.logging.debug("Called FMCSecurityDevice::return_security_policy_container_object()")
+        general_logger.debug("Called FMCSecurityDevice::return_security_policy_container_object()")
         """
         Returns the security policy container object.
 
@@ -188,7 +189,7 @@ class FMCSecurityDevice(SecurityDevice):
         return FMCPolicyContainer(acp_info)
     
     def return_security_policy_object(self, container_name):
-        helper.logging.debug("Called FMCSecurityDevice::return_security_policy_object()")
+        general_logger.debug("Called FMCSecurityDevice::return_security_policy_object()")
         """
         Returns a list of security policy objects.
 
@@ -214,7 +215,7 @@ class FMCSecurityDevice(SecurityDevice):
 
     # there are no object containers per se in FMC, therefore, only dummy info will be returned
     def return_object_container_object(self, container_name):
-        helper.logging.debug("Called FMCSecurityDevice::return_object_container_object(). There are no actual containers on this type of security device. Will return a virtual one.")
+        general_logger.debug("Called FMCSecurityDevice::return_object_container_object(). There are no actual containers on this type of security device. Will return a virtual one.")
         """
         Returns the object container object.
 
@@ -242,7 +243,7 @@ class FMCSecurityDevice(SecurityDevice):
             tuple: A tuple containing device name, assigned security policy container, device hostname, and device cluster.
         """
         device_name = managed_device['name']
-        helper.logging.info(f"Got the following managed device {device_name}.")
+        general_logger.info(f"Got the following managed device {device_name}.")
         assigned_security_policy_container = managed_device['accessPolicy']['name']
         device_hostname = managed_device['hostName']
         device_cluster = None
@@ -250,9 +251,9 @@ class FMCSecurityDevice(SecurityDevice):
         # Check if the device is part of a cluster
         try:
             device_cluster = managed_device['metadata']['containerDetails']['name']
-            helper.logging.info(f"Managed device {managed_device} is part of a cluster {device_cluster}.")
+            general_logger.info(f"Managed device {managed_device} is part of a cluster {device_cluster}.")
         except KeyError:
-            helper.logging.info(f"Managed device {managed_device} is NOT part of a cluster {device_cluster}.")
+            general_logger.info(f"Managed device {managed_device} is NOT part of a cluster {device_cluster}.")
 
         return device_name, assigned_security_policy_container, device_hostname, device_cluster
 
@@ -263,12 +264,12 @@ class FMCSecurityDevice(SecurityDevice):
         Returns:
             list: List of dictionaries containing information about managed devices.
         """
-        helper.logging.debug("Called function get_managed_devices_info().")
-        helper.logging.info("################## GETTING MANAGED DEVICES INFO ##################")
+        general_logger.debug("Called function get_managed_devices_info().")
+        general_logger.info("################## GETTING MANAGED DEVICES INFO ##################")
 
         # Execute the request to retrieve information about the devices
         managed_devices = self._sec_device_connection.device.devicerecord.get()
-        helper.logging.debug(f"Executed API call to the FMC device, got the following info {managed_devices}.")
+        general_logger.debug(f"Executed API call to the FMC device, got the following info {managed_devices}.")
         return managed_devices
 
     def get_security_policies_info(self, policy_container_name):
@@ -281,8 +282,8 @@ class FMCSecurityDevice(SecurityDevice):
         Returns:
             list: List of dictionaries containing information about security policies.
         """
-        helper.logging.debug("Called function get_security_policies_info().")
-        helper.logging.info("################## GETTING SECURITY POLICIES INFO ##################")
+        general_logger.debug("Called function get_security_policies_info().")
+        general_logger.info("################## GETTING SECURITY POLICIES INFO ##################")
 
         # Execute the request to retrieve information about the security policies
         security_policies_info = self._sec_device_connection.policy.accesspolicy.accessrule.get(container_name=policy_container_name)
@@ -295,7 +296,7 @@ class FMCSecurityDevice(SecurityDevice):
         Returns:
             str: Version of the device's server.
         """
-        helper.logging.debug("Called FMCSecurityDevice::get_device_version()")
+        general_logger.debug("Called FMCSecurityDevice::get_device_version()")
         # Retrieve device system information to get the server version
         device_system_info = self._sec_device_connection.system.info.serverversion.get()
 
@@ -318,7 +319,7 @@ class FMCSecurityDevice(SecurityDevice):
         Returns:
             None
         """
-        helper.logging.debug("Called FMCSecurityDevice::fetch_objects_info()")
+        general_logger.debug("Called FMCSecurityDevice::fetch_objects_info()")
         # Fetch information for network objects
         if object_type == 'network_objects':
             # Fetch network address objects if not already fetched
@@ -387,7 +388,7 @@ class FMCSecurityDevice(SecurityDevice):
             None
         """
         # Log a debug message indicating the function call
-        helper.logging.debug("Called FMCSecurityDevice::_return_group_object_members_helper()")
+        general_logger.debug("Called FMCSecurityDevice::_return_group_object_members_helper()")
 
         # Initialize lists to store member names
         group_member_object_names = []
@@ -403,7 +404,7 @@ class FMCSecurityDevice(SecurityDevice):
             for object_member in object_members:
                 group_member_object_names.append(object_member['name'])
         except KeyError:
-            helper.logging.info("No member objects")
+            general_logger.info("No member objects")
         
         # Try to retrieve literal members from the group object information
         try:
@@ -413,7 +414,7 @@ class FMCSecurityDevice(SecurityDevice):
             for literal_member in group_member_literals_list:
                 group_member_object_names.append(literal_member)
         except KeyError:
-            helper.logging.info("No literal members")
+            general_logger.info("No literal members")
 
         # Set the member names of the group object
         group_object.set_member_names(group_member_object_names)
@@ -438,10 +439,10 @@ class FMCSecurityDevice(SecurityDevice):
             list: A list of Python representations of network objects.
         """
         # Log a debug message indicating the function call
-        helper.logging.debug("Called FMCSecurityDevice::return_network_objects()")
+        general_logger.debug("Called FMCSecurityDevice::return_network_objects()")
         
         # Log an informative message about processing network objects data info
-        helper.logging.info("Processing network objects data info. Retrieving all objects from the database, processing them, and returning their info.")
+        general_logger.info("Processing network objects data info. Retrieving all objects from the database, processing them, and returning their info.")
 
         # Initialize an empty list to store network objects retrieved from the device
         network_objects_from_device_list = []
@@ -486,17 +487,17 @@ class FMCSecurityDevice(SecurityDevice):
                     network_objects_from_device_list.append(FMCContinentObject(self._continents_info[network_object_name]))
                 else:
                     # Log an error message for invalid network objects
-                    helper.logging.error(f"{network_object_name} is an invalid object!")
+                    general_logger.error(f"{network_object_name} is an invalid object!")
         
         # Return the list of network objects retrieved from the device
         return network_objects_from_device_list
 
     def return_port_objects(self, object_names):
         # Log a debug message indicating the function call
-        helper.logging.debug("Called FMCSecurityDevice::return_port_objects()")
+        general_logger.debug("Called FMCSecurityDevice::return_port_objects()")
         
         # Log an informative message about processing network objects data info
-        helper.logging.info("Processing port objects data info. Retrieving all objects from the database, processing them, and returning their info.")
+        general_logger.info("Processing port objects data info. Retrieving all objects from the database, processing them, and returning their info.")
 
         port_objects_from_device_list = []
         for port_object_name in object_names:

@@ -73,10 +73,6 @@ def setup_logging(log_folder, log_files=None):
     # Create log folder if it doesn't exist
     os.makedirs(log_folder, exist_ok=True)
 
-    # If log_files is not provided, use a default filename
-    if log_files is None:
-        log_files = {'general': 'general.log'}
-
     # Get the root logger
     logger = logging.getLogger()
 
@@ -88,15 +84,20 @@ def setup_logging(log_folder, log_files=None):
         def format(self, record):
             # Ensure the message is properly encoded
             record.msg = str(record.msg).encode('utf-8', errors='replace').decode('utf-8')
-            return super(UnicodeFormatter, self).format(record)
+            return super().format(record)
 
     formatter = UnicodeFormatter('%(asctime)s - %(levelname)s - %(message)s')
 
     # Configure logging to write to multiple files
-    for logger_name, log_file in log_files.items():
-        file_handler = logging.FileHandler(os.path.join(log_folder, log_file), mode='a', encoding='utf-8')  # Log to file
-        file_handler.setFormatter(formatter)
-        logger.addHandler(file_handler)
+    if log_files is not None:
+        for logger_name, log_file in log_files.items():
+            # Create a logger for each log file
+            file_logger = logging.getLogger(logger_name)
+            file_logger.setLevel(logging.DEBUG)
+            
+            file_handler = logging.FileHandler(os.path.join(log_folder, log_file), mode='a', encoding='utf-8')  # Log to file
+            file_handler.setFormatter(formatter)
+            file_logger.addHandler(file_handler)
 
 def load_protocol_mapping():
     return {

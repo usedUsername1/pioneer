@@ -4,6 +4,8 @@ import utils.gvars as gvars
 from pkg.DeviceObject.FMCDeviceObject import FMCObject
 
 special_policies_logger = helper.logging.getLogger('special_policies')
+special_policies_logger.info("INITIALIZED IN FMCPOLICY")
+general_logger = helper.logging.getLogger('general')
 
 class FMCSecurityPolicy(SecurityPolicy):
     """
@@ -17,7 +19,7 @@ class FMCSecurityPolicy(SecurityPolicy):
         Parameters:
             policy_info_fmc (dict): Information about the security policy.
         """
-        helper.logging.debug("FMCSecurityPolicy::__init__()")
+        general_logger.debug("FMCSecurityPolicy::__init__()")
         super().__init__(policy_info_fmc)
 
     # Methods for setting various attributes of the security policy
@@ -25,7 +27,7 @@ class FMCSecurityPolicy(SecurityPolicy):
         """
         Set the name of the security policy.
         """
-        helper.logging.debug("Called FMCSecurityPolicy::set_name()")
+        general_logger.debug("Called FMCSecurityPolicy::set_name()")
         name = self._policy_info['name']
         return super().set_name(name)
 
@@ -33,7 +35,7 @@ class FMCSecurityPolicy(SecurityPolicy):
         """
         Set the name of the policy container.
         """
-        helper.logging.debug("Called FMCSecurityPolicy::set_container_name()")
+        general_logger.debug("Called FMCSecurityPolicy::set_container_name()")
         container_name = self._policy_info['metadata']['accessPolicy']['name']
         return super().set_container_name(container_name)
 
@@ -41,7 +43,7 @@ class FMCSecurityPolicy(SecurityPolicy):
         """
         Set the index of the policy container.
         """
-        helper.logging.debug("Called FMCSecurityPolicy::set_container_index()")
+        general_logger.debug("Called FMCSecurityPolicy::set_container_index()")
         index = self._policy_info['metadata']['ruleIndex']
         return super().set_container_index(index)
 
@@ -49,7 +51,7 @@ class FMCSecurityPolicy(SecurityPolicy):
         """
         Set the status of the security policy (enabled or disabled).
         """
-        helper.logging.debug("Called FMCSecurityPolicy::set_status()")
+        general_logger.debug("Called FMCSecurityPolicy::set_status()")
         status = 'enabled' if self._policy_info.get('enabled', False) else 'disabled'
         return super().set_status(status)
 
@@ -57,7 +59,7 @@ class FMCSecurityPolicy(SecurityPolicy):
         """
         Set the category of the security policy.
         """
-        helper.logging.debug("Called FMCSecurityPolicy::set_category()")
+        general_logger.debug("Called FMCSecurityPolicy::set_category()")
         category = self._policy_info['metadata']['category']
         return super().set_category(category)
 
@@ -68,7 +70,7 @@ class FMCSecurityPolicy(SecurityPolicy):
         Returns:
             list: List of source zones.
         """
-        helper.logging.debug("Called FMCSecurityPolicy::set_source_zones()")
+        general_logger.debug("Called FMCSecurityPolicy::set_source_zones()")
         try:
             source_zones = [self._policy_info['sourceZones']]
         except KeyError:
@@ -82,7 +84,7 @@ class FMCSecurityPolicy(SecurityPolicy):
         Returns:
             list: List of destination zones.
         """
-        helper.logging.debug("Called FMCSecurityPolicy::set_destination_zones()")
+        general_logger.debug("Called FMCSecurityPolicy::set_destination_zones()")
         try:
             destination_zones = [self._policy_info['destinationZones']]
         except KeyError:
@@ -93,11 +95,11 @@ class FMCSecurityPolicy(SecurityPolicy):
         """
         Set the source networks for the security policy.
         """
-        helper.logging.debug("Called FMCSecurityPolicy::set_source_networks()")
+        general_logger.debug("Called FMCSecurityPolicy::set_source_networks()")
         try:
             source_networks = [self._policy_info['sourceNetworks']]
         except KeyError:
-            helper.logging.info("It looks like there are no explicit source networks defined on this policy.")
+            general_logger.info("It looks like there are no explicit source networks defined on this policy.")
             source_networks = ['any']
         return super().set_source_networks(source_networks)
 
@@ -105,11 +107,11 @@ class FMCSecurityPolicy(SecurityPolicy):
         """
         Set the destination networks for the security policy.
         """
-        helper.logging.debug("Called FMCSecurityPolicy::set_destination_networks()")
+        general_logger.debug("Called FMCSecurityPolicy::set_destination_networks()")
         try:
             destination_networks = [self._policy_info['destinationNetworks']]
         except KeyError:
-            helper.logging.info("It looks like there are no explicit destination networks defined on this policy.")
+            general_logger.info("It looks like there are no explicit destination networks defined on this policy.")
             destination_networks = ['any']
         return super().set_destination_networks(destination_networks)
 
@@ -117,11 +119,11 @@ class FMCSecurityPolicy(SecurityPolicy):
         """
         Set the source ports for the security policy.
         """
-        helper.logging.debug("Called FMCSecurityPolicy::set_source_ports()")
+        general_logger.debug("Called FMCSecurityPolicy::set_source_ports()")
         try:
             source_ports = [self._policy_info['sourcePorts']]
         except KeyError:
-            helper.logging.info("It looks like there are no explicit source ports defined on this policy.")
+            general_logger.info("It looks like there are no explicit source ports defined on this policy.")
             source_ports = ['any']
         return super().set_source_ports(source_ports)
 
@@ -129,11 +131,11 @@ class FMCSecurityPolicy(SecurityPolicy):
         """
         Set the destination ports for the security policy.
         """
-        helper.logging.debug("Called FMCSecurityPolicy::set_destination_ports()")
+        general_logger.debug("Called FMCSecurityPolicy::set_destination_ports()")
         try:
             destination_ports = [self._policy_info['destinationPorts']]
         except KeyError:
-            helper.logging.info("It looks like there are no explicit destination ports defined on this policy.")
+            general_logger.info("It looks like there are no explicit destination ports defined on this policy.")
             destination_ports = ['any']
         return super().set_destination_ports(destination_ports)
 
@@ -141,11 +143,11 @@ class FMCSecurityPolicy(SecurityPolicy):
         """
         Set the schedule objects for the security policy.
         """
-        helper.logging.debug("Called FMCSecurityPolicy::set_schedule_objects()")
+        general_logger.debug("Called FMCSecurityPolicy::set_schedule_objects()")
         try:
             schedule_objects = [self._policy_info['timeRangeObjects']]
         except KeyError:
-            helper.logging.info("It looks like there are no explicit schedule objects defined on this policy.")
+            general_logger.info("It looks like there are no explicit schedule objects defined on this policy.")
             schedule_objects = ['any']
         return super().set_schedule_objects(schedule_objects)
 
@@ -153,11 +155,11 @@ class FMCSecurityPolicy(SecurityPolicy):
         """
         Set the users for the security policy.
         """
-        helper.logging.debug("Called FMCSecurityPolicy::set_users()")
+        general_logger.debug("Called FMCSecurityPolicy::set_users()")
         try:
             users = [self._policy_info['users']]
         except KeyError:
-            helper.logging.info("It looks like there are no explicit users defined on this policy.")
+            general_logger.info("It looks like there are no explicit users defined on this policy.")
             users = ['any']
         return super().set_users(users)
 
@@ -165,11 +167,11 @@ class FMCSecurityPolicy(SecurityPolicy):
         """
         Set the URLs for the security policy.
         """
-        helper.logging.debug("Called FMCSecurityPolicy::set_urls()")
+        general_logger.debug("Called FMCSecurityPolicy::set_urls()")
         try:
             urls = [self._policy_info['urls']]
         except KeyError:
-            helper.logging.info("It looks like there are no explicit URLs defined on this policy.")
+            general_logger.info("It looks like there are no explicit URLs defined on this policy.")
             urls = ['any']
         return super().set_urls(urls)
 
@@ -177,11 +179,11 @@ class FMCSecurityPolicy(SecurityPolicy):
         """
         Set the applications for the security policy.
         """
-        helper.logging.debug("Called FMCSecurityPolicy::set_policy_apps()")
+        general_logger.debug("Called FMCSecurityPolicy::set_policy_apps()")
         try:
             policy_apps = [self._policy_info['applications']]
         except KeyError:
-            helper.logging.info("It looks like there are no explicit applications defined on this policy.")
+            general_logger.info("It looks like there are no explicit applications defined on this policy.")
             policy_apps = ['any']
         return super().set_policy_apps(policy_apps)
 
@@ -189,11 +191,11 @@ class FMCSecurityPolicy(SecurityPolicy):
         """
         Set the description for the security policy.
         """
-        helper.logging.debug("Called FMCSecurityPolicy::set_description()")
+        general_logger.debug("Called FMCSecurityPolicy::set_description()")
         try:
             description = self._policy_info['description']
         except KeyError:
-            helper.logging.info("It looks like there is no description defined on this policy.")
+            general_logger.info("It looks like there is no description defined on this policy.")
             description = None
         return super().set_description(description)
 
@@ -201,11 +203,11 @@ class FMCSecurityPolicy(SecurityPolicy):
         """
         Set the comments for the security policy.
         """
-        helper.logging.debug("Called FMCSecurityPolicy::set_comments()")
+        general_logger.debug("Called FMCSecurityPolicy::set_comments()")
         try:
             comments = [self._policy_info['commentHistoryList']]
         except KeyError:
-            helper.logging.info("It looks like there are no comments defined on this policy.")
+            general_logger.info("It looks like there are no comments defined on this policy.")
             comments = None
         return super().set_comments(comments)
 
@@ -213,12 +215,12 @@ class FMCSecurityPolicy(SecurityPolicy):
         """
         Set the log settings for the security policy.
         """
-        helper.logging.debug("Called FMCSecurityPolicy::set_log_setting()")
+        general_logger.debug("Called FMCSecurityPolicy::set_log_setting()")
         try:
             log_settings = ['FMC'] if self._policy_info['sendEventsToFMC'] else []
             log_settings += ['Syslog'] if self._policy_info['enableSyslog'] else []
         except KeyError:
-            helper.logging.info("It looks like there are no log settings defined on this policy.")
+            general_logger.info("It looks like there are no log settings defined on this policy.")
             log_settings = None
         return super().set_log_setting(log_settings)
 
@@ -226,7 +228,7 @@ class FMCSecurityPolicy(SecurityPolicy):
         """
         Set the start logging for the security policy.
         """
-        helper.logging.debug("Called FMCSecurityPolicy::set_log_start()")
+        general_logger.debug("Called FMCSecurityPolicy::set_log_start()")
         log_start = self._policy_info['logBegin']
         return super().set_log_start(log_start)
 
@@ -234,7 +236,7 @@ class FMCSecurityPolicy(SecurityPolicy):
         """
         Set the end logging for the security policy.
         """
-        helper.logging.debug("Called FMCSecurityPolicy::set_log_end()")
+        general_logger.debug("Called FMCSecurityPolicy::set_log_end()")
         log_end = self._policy_info['logEnd']
         return super().set_log_end(log_end)
 
@@ -242,7 +244,7 @@ class FMCSecurityPolicy(SecurityPolicy):
         """
         Set the section for the security policy.
         """
-        helper.logging.debug("Called FMCSecurityPolicy::set_section()")
+        general_logger.debug("Called FMCSecurityPolicy::set_section()")
         section = self._policy_info['metadata']['section']
         return super().set_section(section)
 
@@ -250,7 +252,7 @@ class FMCSecurityPolicy(SecurityPolicy):
         """
         Set the action for the security policy.
         """
-        helper.logging.debug("Called FMCSecurityPolicy::set_action()")
+        general_logger.debug("Called FMCSecurityPolicy::set_action()")
         action = self._policy_info['action']
         return super().set_action(action)
 
@@ -266,7 +268,7 @@ class FMCSecurityPolicy(SecurityPolicy):
         Returns:
             dict: Extracted information about the policy object.
         """
-        helper.logging.debug(f"Called FMCSecurityPolicy::extract_policy_object_info().")
+        general_logger.debug(f"Called FMCSecurityPolicy::extract_policy_object_info().")
         match object_type:
             case 'security_zone':
                 return self.extract_security_zone_object_info(raw_object)
@@ -298,7 +300,7 @@ class FMCSecurityPolicy(SecurityPolicy):
             list: A list of security zone names extracted from the provided data structure.
         """
         # Log a debug message indicating the function call
-        helper.logging.debug("Called FMCSecurityPolicy::extract_security_zone_object_info()")
+        general_logger.debug("Called FMCSecurityPolicy::extract_security_zone_object_info()")
         
         # Initialize an empty list to store the extracted security zone names
         extracted_security_zones = []
@@ -324,14 +326,14 @@ class FMCSecurityPolicy(SecurityPolicy):
             list: A list of network address object names extracted from the provided data structure.
         """
         # Log a debug message indicating the function call
-        helper.logging.debug("Called FMCSecurityPolicy::extract_network_address_object_info()")
+        general_logger.debug("Called FMCSecurityPolicy::extract_network_address_object_info()")
 
         # Initialize an empty list to store the extracted network address object names
         extracted_member_network_objects = []
 
         # Extract information from proper network objects
         try:
-            helper.logging.info(f"Found network objects on this policy.")
+            general_logger.info(f"Found network objects on this policy.")
             # Retrieve the list of network objects from the provided data structure
             network_object_info_objects = network_object_info['objects']
             
@@ -348,22 +350,22 @@ class FMCSecurityPolicy(SecurityPolicy):
                 extracted_member_network_objects.append(network_object_name)
         except KeyError:
             # If there are no network objects, log an informational message
-            helper.logging.info(f"It looks like there are no network objects on this policy.")
+            general_logger.info(f"It looks like there are no network objects on this policy.")
 
         # Extract information from network literals
         try:
-            helper.logging.info(f"Found network literals on this policy.")
+            general_logger.info(f"Found network literals on this policy.")
             # Retrieve the list of network literals from the provided data structure
             network_literals = network_object_info['literals']
             # Log an informational message indicating the search for literals
-            helper.logging.info(f"I am looking for literals.")
+            general_logger.info(f"I am looking for literals.")
             # Log debug information about the found literals
-            helper.logging.debug(f"Literals found {network_literals}.")
+            general_logger.debug(f"Literals found {network_literals}.")
             # Convert network literals to network objects and add them to the extracted list
             extracted_member_network_objects += FMCObject.convert_network_literals_to_objects(network_literals)
         except KeyError:
             # If there are no network literals, log an informational message
-            helper.logging.info(f"It looks like there are no network literals on this policy.")
+            general_logger.info(f"It looks like there are no network literals on this policy.")
 
         # Return the list of extracted network address object names
         return extracted_member_network_objects
@@ -381,14 +383,14 @@ class FMCSecurityPolicy(SecurityPolicy):
             list: A list of port object names extracted from the provided data structure.
         """
         # Log a debug message indicating the function call
-        helper.logging.debug("Called FMCSecurityPolicy::extract_port_object_info()")
+        general_logger.debug("Called FMCSecurityPolicy::extract_port_object_info()")
 
         # Initialize an empty list to store the extracted port object names
         port_objects_list = []
 
         # Extract information from proper port objects
         try:
-            helper.logging.info(f"Found port objects on this policy.")
+            general_logger.info(f"Found port objects on this policy.")
             # Retrieve the list of port objects from the provided data structure
             port_object_info_objects = port_object_info['objects']
             
@@ -399,24 +401,24 @@ class FMCSecurityPolicy(SecurityPolicy):
                 port_objects_list.append(port_object_name)
         except KeyError:
             # If there are no port objects, log an informational message
-            helper.logging.info(f"It looks like there are no port objects on this policy.")
+            general_logger.info(f"It looks like there are no port objects on this policy.")
         
         # Extract information from port literals
         try:
-            helper.logging.info(f"Found port literals on this policy.")
+            general_logger.info(f"Found port literals on this policy.")
             # Log an informational message indicating the search for port literals
-            helper.logging.info(f"I am looking for port literals...")
+            general_logger.info(f"I am looking for port literals...")
             # Retrieve the list of port literals from the provided data structure
             port_literals = port_object_info['literals']
             # Log an informational message indicating the found port literals
-            helper.logging.info(f"I have found literals.")
+            general_logger.info(f"I have found literals.")
             # Log debug information about the found port literals
-            helper.logging.info(f"Port literals found: {port_literals}.")
+            general_logger.info(f"Port literals found: {port_literals}.")
             # Process each port literal using the convert_port_literals_to_objects function
             port_objects_list += FMCObject.convert_port_literals_to_objects(port_literals)
         except KeyError:
             # If there are no port literals, log an informational message
-            helper.logging.info(f"It looks like there are no port literals on this policy.")
+            general_logger.info(f"It looks like there are no port literals on this policy.")
         
         # Return the list of extracted port object names
         return port_objects_list
@@ -434,8 +436,8 @@ class FMCSecurityPolicy(SecurityPolicy):
             list: A list of processed user object entries containing user type and name.
         """
         # Log a debug message indicating the function call
-        helper.logging.debug("Called FMCSecurityPolicy::extract_user_object_info()")
-        helper.logging.info(f"Found users on this policy.")
+        general_logger.debug("Called FMCSecurityPolicy::extract_user_object_info()")
+        general_logger.info(f"Found users on this policy.")
         # Initialize an empty list to store the processed user object entries
         extracted_user_objects = []
 
@@ -465,9 +467,9 @@ class FMCSecurityPolicy(SecurityPolicy):
             list: A list of schedule object names extracted from the provided data structure.
         """
         # Log a debug message indicating the function call
-        helper.logging.debug("Called FMCSecurityPolicy::extract_schedule_object_info()")
+        general_logger.debug("Called FMCSecurityPolicy::extract_schedule_object_info()")
         
-        helper.logging.info(f"Found schedule objects on this policy.")
+        general_logger.info(f"Found schedule objects on this policy.")
         # Initialize an empty list to store the extracted schedule object names
         extracted_schedule_objects = []
         
@@ -495,14 +497,14 @@ class FMCSecurityPolicy(SecurityPolicy):
             list: A list of URL objects, including objects, literals, and categories, extracted from the provided data structure.
         """
         # Log a debug message indicating the function call
-        helper.logging.debug("Called FMCSecurityPolicy::extract_url_object_info()")
+        general_logger.debug("Called FMCSecurityPolicy::extract_url_object_info()")
         
         # Initialize an empty list to store the extracted URL objects
         policy_url_objects_list = []
 
         # Extract URL objects
         try:
-            helper.logging.info(f"Found URL objects on this policy.")
+            general_logger.info(f"Found URL objects on this policy.")
             # Retrieve the list of URL objects from the provided data structure
             policy_url_objects = url_object_info['objects']
             # Iterate through each URL object entry
@@ -513,11 +515,11 @@ class FMCSecurityPolicy(SecurityPolicy):
                 policy_url_objects_list.append(policy_url_object_name)
         except KeyError:
             # If there are no URL objects, log an informational message
-            helper.logging.info("It looks like there are no URL objects on this policy.")
+            general_logger.info("It looks like there are no URL objects on this policy.")
 
         # Extract URL literals
         try:
-            helper.logging.info(f"Found URL literals on this policy.")
+            general_logger.info(f"Found URL literals on this policy.")
             # Retrieve the list of URL literals from the provided data structure
             policy_url_literals = url_object_info['literals']
             # Iterate through each URL literal entry
@@ -528,11 +530,11 @@ class FMCSecurityPolicy(SecurityPolicy):
                 policy_url_objects_list.append(policy_url_literal_value)
         except KeyError:
             # If there are no URL literals, log an informational message
-            helper.logging.info("It looks like there are no URL literals on this policy.")
+            general_logger.info("It looks like there are no URL literals on this policy.")
 
         # Extract URL categories with reputation
         try:
-            helper.logging.info(f"Found URL categories with reputation on this policy.")
+            general_logger.info(f"Found URL categories with reputation on this policy.")
             # Retrieve the list of URL categories with reputation from the provided data structure
             policy_url_categories = url_object_info['urlCategoriesWithReputation']
             # Iterate through each URL category entry
@@ -545,7 +547,7 @@ class FMCSecurityPolicy(SecurityPolicy):
                 policy_url_objects_list.append(category_name)
         except KeyError:
             # If there are no URL categories with reputation, log an informational message
-            helper.logging.info("It looks like there are no URL categories on this policy.")
+            general_logger.info("It looks like there are no URL categories on this policy.")
 
         # Return the list of extracted URL objects
         return policy_url_objects_list
@@ -566,11 +568,11 @@ class FMCSecurityPolicy(SecurityPolicy):
         policy_l7_apps_list = []
 
         # Log a debug message indicating the function call
-        helper.logging.debug("Called FMCSecurityPolicy::extract_l7_app_object_info()")
+        general_logger.debug("Called FMCSecurityPolicy::extract_l7_app_object_info()")
         
         # Extract regular Layer 7 applications
         try:
-            helper.logging.info(f"Found L7 applications on this policy.")
+            general_logger.info(f"Found L7 applications on this policy.")
             # Retrieve the list of Layer 7 applications from the provided data structure
             policy_l7_apps = l7_app_object_info['applications']
             # Iterate through each Layer 7 application entry
@@ -581,11 +583,11 @@ class FMCSecurityPolicy(SecurityPolicy):
                 policy_l7_apps_list.append(policy_l7_name)
         except KeyError:
             # If there are no Layer 7 applications, log an informational message
-            helper.logging.info("It looks like there are no Layer 7 apps on this policy.")
+            general_logger.info("It looks like there are no Layer 7 apps on this policy.")
 
         # Extract Layer 7 application filters
         try:
-            helper.logging.info(f"Found L7 application filters on this policy.")
+            general_logger.info(f"Found L7 application filters on this policy.")
             # Retrieve the list of Layer 7 application filters from the provided data structure
             policy_l7_app_filters = l7_app_object_info['applicationFilters']
             # Iterate through each Layer 7 application filter entry
@@ -596,11 +598,11 @@ class FMCSecurityPolicy(SecurityPolicy):
                 policy_l7_apps_list.append(policy_l7_app_filter_name)
         except KeyError:
             # If there are no Layer 7 application filters, log an informational message
-            helper.logging.info("It looks like there are no Layer 7 application filters on this policy.")
+            general_logger.info("It looks like there are no Layer 7 application filters on this policy.")
 
         # Extract inline Layer 7 application filters
         try:
-            helper.logging.info(f"Found L7 inline application filters on this policy.")
+            general_logger.info(f"Found L7 inline application filters on this policy.")
             # Retrieve the list of inline Layer 7 application filters from the provided data structure
             policy_inline_l7_app_filters = l7_app_object_info['inlineApplicationFilters']
             # Iterate through each entry in the list of inline Layer 7 application filters
@@ -615,7 +617,7 @@ class FMCSecurityPolicy(SecurityPolicy):
                             policy_l7_apps_list.append(filter_name)
         except KeyError:
             # If there are no inline Layer 7 application filters, log an informational message
-            helper.logging.info("It looks like there are no Inline Layer 7 application filters on this policy.")
+            general_logger.info("It looks like there are no Inline Layer 7 application filters on this policy.")
 
         # Return the list of extracted Layer 7 application information
         return policy_l7_apps_list
@@ -633,8 +635,8 @@ class FMCSecurityPolicy(SecurityPolicy):
             list: A list of dictionaries containing user and comment content extracted from the provided data structure.
         """
         # Log a debug message indicating the function call
-        helper.logging.debug("Called FMCSecurityPolicu::extract_comments()")
-        helper.logging.info(f"Found comments on this policy.")
+        general_logger.debug("Called FMCSecurityPolicu::extract_comments()")
+        general_logger.info(f"Found comments on this policy.")
         # Initialize an empty list to store the processed comments
         processed_comment_list = []
 
@@ -647,7 +649,7 @@ class FMCSecurityPolicy(SecurityPolicy):
             processed_comment_list.append({'user': comment_user, 'content': comment_content})
 
         # Log a debug message indicating the completion of comment processing
-        helper.logging.debug(f"Finished processing comments. This is the list: {processed_comment_list}.")
+        general_logger.debug(f"Finished processing comments. This is the list: {processed_comment_list}.")
         
         # Return the list of processed comments
         return processed_comment_list
