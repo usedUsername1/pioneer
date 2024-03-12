@@ -3,6 +3,8 @@ import utils.helper as helper
 import utils.gvars as gvars
 from pkg.DeviceObject.FMCDeviceObject import FMCObject
 
+special_policies_logger = helper.logging.getLogger('special_policies')
+
 class FMCSecurityPolicy(SecurityPolicy):
     """
     Represents a security policy specific to the Firepower Management Center (FMC).
@@ -441,6 +443,7 @@ class FMCSecurityPolicy(SecurityPolicy):
         for user_object_entry in user_object_info['objects']:
             # Extract the name of the user object
             user_object_name = user_object_entry['name']
+            special_policies_logger.info(f"User object name: <{user_object_name}>, user object type: <{user_object_entry['type']}>")
             # Construct the processed user object entry containing user type and name
             user_object_processed_entry = user_object_entry['type'] + gvars.separator_character + user_object_name
             # Append the processed user object entry to the list
@@ -472,6 +475,7 @@ class FMCSecurityPolicy(SecurityPolicy):
         for schedule_object_entry in schedule_object_info:
             # Extract the name of the schedule object and append it to the list
             schedule_object_name = schedule_object_entry['name']
+            special_policies_logger.info(f"Schedule object name: <{schedule_object_name}>.")
             extracted_schedule_objects.append(schedule_object_name)
         
         # Return the list of extracted schedule object names
@@ -505,6 +509,7 @@ class FMCSecurityPolicy(SecurityPolicy):
             for policy_url_object in policy_url_objects:
                 # Extract the name of the URL object and append it to the list
                 policy_url_object_name = policy_url_object['name']
+                special_policies_logger.info(f"URL object name: <{policy_url_object_name}>.")
                 policy_url_objects_list.append(policy_url_object_name)
         except KeyError:
             # If there are no URL objects, log an informational message
@@ -519,6 +524,7 @@ class FMCSecurityPolicy(SecurityPolicy):
             for policy_url_literal in policy_url_literals:
                 # Extract the URL literal value and append it to the list
                 policy_url_literal_value = policy_url_literal['url']
+                special_policies_logger.info(f"URL literal: <{policy_url_literal_value}>.")
                 policy_url_objects_list.append(policy_url_literal_value)
         except KeyError:
             # If there are no URL literals, log an informational message
@@ -534,6 +540,7 @@ class FMCSecurityPolicy(SecurityPolicy):
                 # Extract the category name and reputation, then construct a formatted name and append it to the list
                 category_name = policy_url_category['category']['name']
                 category_reputation = policy_url_category['reputation']
+                special_policies_logger.info(f"URL category name: <{category_name}>, with reputation <{category_reputation}>.")
                 category_name = f"URL_CATEGORY{gvars.separator_character}{category_name}{gvars.separator_character}{category_reputation}"
                 policy_url_objects_list.append(category_name)
         except KeyError:
@@ -568,6 +575,7 @@ class FMCSecurityPolicy(SecurityPolicy):
             policy_l7_apps = l7_app_object_info['applications']
             # Iterate through each Layer 7 application entry
             for policy_l7_app in policy_l7_apps:
+                special_policies_logger.info(f"L7 application name: <{policy_l7_app['name']}>.")
                 # Construct the name of the Layer 7 application and append it to the list
                 policy_l7_name = 'APP' + gvars.separator_character + policy_l7_app['name']
                 policy_l7_apps_list.append(policy_l7_name)
@@ -582,6 +590,7 @@ class FMCSecurityPolicy(SecurityPolicy):
             policy_l7_app_filters = l7_app_object_info['applicationFilters']
             # Iterate through each Layer 7 application filter entry
             for policy_l7_app_filter in policy_l7_app_filters:
+                special_policies_logger.info(f"L7 application filter name: <{policy_l7_app_filter['name']}>.")
                 # Construct the name of the Layer 7 application filter and append it to the list
                 policy_l7_app_filter_name = 'APP_FILTER' + gvars.separator_character + policy_l7_app_filter['name']
                 policy_l7_apps_list.append(policy_l7_app_filter_name)
@@ -601,6 +610,7 @@ class FMCSecurityPolicy(SecurityPolicy):
                         # Iterate through each element in the inline Layer 7 application filter entry
                         for element in elements:
                             # Construct the name of the inline Layer 7 application filter and append it to the list
+                            special_policies_logger.info(f"L7 inline application filter: <{key}>, name: <{element['name']}>.")
                             filter_name = f"inlineApplicationFilters{gvars.separator_character}{key}{gvars.separator_character}{element['name']}"
                             policy_l7_apps_list.append(filter_name)
         except KeyError:

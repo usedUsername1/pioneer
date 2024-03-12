@@ -706,6 +706,13 @@ class SecurityPolicy(Policy):
         self.set_log_end()
         self.set_section()
         self.set_action()
+        # if the policy has any of the following parameters: schedule, users, url categories with rep or l7 apps, 
+        # create a new log line and put it in the file logging the special policies
+        # the extractor functions are called by processor functions which are called by the get functions
+        special_policies_logger = helper.logging.getLogger('special_policies')
+
+        if self.get_users() != 'any' or self.get_schedule_objects() != 'any' or self.get_urls() != 'any' or self.get_policy_apps() != 'any':
+            special_policies_logger.info(f"Policy <{self._name}> in container <{self._container_name}>, <{self._container_index}> has parameters that require your attention!")
 
         # Construct the processed policy entry dictionary
         processed_policy_entry = {

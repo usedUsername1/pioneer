@@ -55,16 +55,17 @@ import os
 import logging
 
 
-def setup_logging(log_folder, log_file=None):
+def setup_logging(log_folder, log_files=None):
     """
     Set up logging configuration.
 
     This function creates a log folder if it doesn't exist and configures logging to write both to the console
-    and to a file in the specified log folder.
+    and to the specified log files in the specified log folder.
 
     Parameters:
         log_folder (str): Path to the log folder where log files will be stored.
-        log_file (str, optional): Name of the log file. If not provided, a default filename ('logfile.log') will be used.
+        log_files (dict, optional): Dictionary containing logger names as keys and corresponding log file names as values. 
+                                    If not provided, a default filename ('logfile.log') will be used.
 
     Returns:
         None
@@ -72,8 +73,9 @@ def setup_logging(log_folder, log_file=None):
     # Create log folder if it doesn't exist
     os.makedirs(log_folder, exist_ok=True)
 
-    # Determine log file name
-    log_file_name = log_file if log_file else 'logfile.log'
+    # If log_files is not provided, use a default filename
+    if log_files is None:
+        log_files = {'general': 'general.log'}
 
     # Get the root logger
     logger = logging.getLogger()
@@ -90,16 +92,11 @@ def setup_logging(log_folder, log_file=None):
 
     formatter = UnicodeFormatter('%(asctime)s - %(levelname)s - %(message)s')
 
-    # Configure logging to write to both console and file
-    # console_handler = logging.StreamHandler()  # Log to console
-    # console_handler.setFormatter(formatter)
-    # logger.addHandler(console_handler)
-
-    file_handler = logging.FileHandler(os.path.join(log_folder, log_file_name), mode='a', encoding='utf-8')  # Log to file
-    file_handler.setFormatter(formatter)
-    logger.addHandler(file_handler)
-
-
+    # Configure logging to write to multiple files
+    for logger_name, log_file in log_files.items():
+        file_handler = logging.FileHandler(os.path.join(log_folder, log_file), mode='a', encoding='utf-8')  # Log to file
+        file_handler.setFormatter(formatter)
+        logger.addHandler(file_handler)
 
 def load_protocol_mapping():
     return {

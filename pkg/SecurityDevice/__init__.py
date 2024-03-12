@@ -681,13 +681,13 @@ class SecurityDevice:
                     "icmp_port_objects": [],
                     "port_group_objects": []
                 }
-
+        #TODO: proper support for schedule objects, users and l7 apps
         object_type_mapping = {
             'network_objects': self.return_network_objects,
             'port_objects': self.return_port_objects,
             # 'schedule_objects': self.return_schedule_objects(),
             # 'policy_users': self.return_policy_users(),
-            # 'url_objects': self.return_url_objects(),
+            'url_objects': self.return_url_objects(),
             # 'app_objects': self.return_app_objects()
         }
 
@@ -727,8 +727,7 @@ class SecurityDevice:
         
         # Return the dictionary of processed objects
         return [processed_objects_dict]
-
-    
+  
     @abstractmethod
     def fetch_objects_info(self, object_type):
         pass

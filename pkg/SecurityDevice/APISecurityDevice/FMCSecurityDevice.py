@@ -4,12 +4,13 @@ from pkg.SecurityDevice.APISecurityDevice.APISecurityDeviceConnection import API
 from pkg.DeviceObject.FMCDeviceObject import FMCObject, FMCNetworkGroupObject, FMCNetworkObject, FMCNetworkLiteralObject, \
 FMCPortObject, FMCICMPObject, FMCLiteralICMPObject, FMCPortGroupObject, FMCPortLiteralObject, FMCGeolocationObject, \
 FMCContinentObject, FMCCountryObject
-from pkg.DevicePolicy.FMCPolicy import FMCSecurityPolicy
+from pkg.Policy.FMCPolicy import FMCSecurityPolicy
 from pkg.SecurityDevice import SecurityDevice
 
 import utils.helper as helper
 import fireREST
 import utils.gvars as gvars
+
 
 class FMCDeviceConnection(APISecurityDeviceConnection):
     """
@@ -130,7 +131,7 @@ class FMCObjectContainer(ObjectPolicyContainer):
   
 class FMCSecurityDevice(SecurityDevice):
     """
-    Represents a security device connected to Cisco Firepower Management Center (FMC).
+    Represents a Cisco Firepower Management Center (FMC) security device.
 
     Args:
         name (str): The name of the security device.

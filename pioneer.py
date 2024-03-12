@@ -76,8 +76,8 @@ def main():
         
         # define the logging settings
         log_folder = helper.os.path.join('log', f'device_{security_device_name}')
-        log_file = 'general.log'
-        helper.setup_logging(log_folder, log_file)
+        helper.setup_logging(log_folder, {'general': 'general.log', 'special_policies': 'special_policies.log'})
+        general_logger = helper.logging.getLogger('general')
 
         helper.logging.info(f"################## CREATING A NEW DEVICE: <{security_device_name}> ##################")
 
@@ -153,11 +153,16 @@ def main():
         
         # define the logging settings
         log_folder = helper.os.path.join('log', f'device_{security_device_name}')
-        log_file = 'general.log'
-        helper.setup_logging(log_folder, log_file)
-        general_logger = helper.logging.getLogger('general') 
+        helper.setup_logging(log_folder, {'general': 'general.log', 'special_policies': 'special_policies.log'})
+        general_logger = helper.logging.getLogger('general')
+        special_policies_logger = helper.logging.getLogger('special_policies') 
 
         general_logger.info("################## Security device data processing ##################")
+        
+        # Log a message to special_policies.log
+        special_policies_logger.info("This is a test message for special policies logging.")
+
+        return
         general_logger.info(f"I am now processing security device <{security_device_name}>.")
         security_device_db_name = security_device_name + "_db"
         security_device_db_conn = DBConnection(db_user, security_device_db_name, db_password, db_host, db_port)
@@ -265,8 +270,16 @@ def main():
                 SpecificSecurityDeviceObject.insert_into_icmp_objects_table(port_objects_data[0]['icmp_port_objects'])
                 SpecificSecurityDeviceObject.insert_into_port_object_groups_table(port_objects_data[0]['port_group_objects'])
 
-                #TODO: import URLs, log schedules, users, url categories, l7 apps
+                print("Skipping importing of schedule, users, URL categories and L7 apps since this is not yet supported!")
+                print("Importing URL object data.")
+                helper.logging.info("\n################## IMPORTING URL OBJECTS DATA. ##################")
+                url_objects_data = SpecificSecurityDeviceObject.get_object_info_from_device_conn('url_objects')
+                #TODO: log schedules, users, url categories, l7 apps. these objects should be logged in the implementation
+                # of the security device class, in the extractor functions. how should logging be done?
+                # probably the easiest way of doing it is to have all these incompatible attributes listed under the policy
+                # they could be stored in a file called: nonmigratory_elements.log
                 #TODO: create migration process
+
 
 
 if __name__ == "__main__":
