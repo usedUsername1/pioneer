@@ -511,7 +511,7 @@ class FMCSecurityPolicy(SecurityPolicy):
             for policy_url_object in policy_url_objects:
                 # Extract the name of the URL object and append it to the list
                 policy_url_object_name = policy_url_object['name']
-                special_policies_logger.info(f"URL object name: <{policy_url_object_name}>.")
+                special_policies_logger.info(f"URL object name: <{policy_url_object_name}>. URL type <{policy_url_object['type']}>")
                 policy_url_objects_list.append(policy_url_object_name)
         except KeyError:
             # If there are no URL objects, log an informational message
@@ -526,7 +526,7 @@ class FMCSecurityPolicy(SecurityPolicy):
             for policy_url_literal in policy_url_literals:
                 # Extract the URL literal value and append it to the list
                 policy_url_literal_value = policy_url_literal['url']
-                special_policies_logger.info(f"URL literal: <{policy_url_literal_value}>.")
+                special_policies_logger.info(f"URL literal: <{policy_url_literal_value}>. URL type: <{policy_url_object['type']}")
                 policy_url_objects_list.append(policy_url_literal_value)
         except KeyError:
             # If there are no URL literals, log an informational message
@@ -541,12 +541,18 @@ class FMCSecurityPolicy(SecurityPolicy):
             for policy_url_category in policy_url_categories:
                 # Extract the category name and reputation, then construct a formatted name and append it to the list
                 category_name = policy_url_category['category']['name']
-                category_reputation = policy_url_category['reputation']
+                try:
+                    category_reputation = policy_url_category['reputation']
+                except KeyError:
+                    general_logger.debug("No category reputation present for this URL category")
+                    category_reputation = 'None'
+                    
                 special_policies_logger.info(f"URL category name: <{category_name}>, with reputation <{category_reputation}>.")
                 category_name = f"URL_CATEGORY{gvars.separator_character}{category_name}{gvars.separator_character}{category_reputation}"
+                print(category_name)
                 policy_url_objects_list.append(category_name)
         except KeyError:
-            # If there are no URL categories with reputation, log an informational message
+        # If there are no URL categories with reputation, log an informational message
             general_logger.info("It looks like there are no URL categories on this policy.")
 
         # Return the list of extracted URL objects

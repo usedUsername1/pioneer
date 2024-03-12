@@ -69,7 +69,7 @@ def main():
     # the "--create-security-device" argument must be used with the "--type" argument
     # create a security device with the name and the type specified by the user
     # create folder where logs for the security device will be stored
-
+    # TODO: modify this so that the database is created ONLY if the connection to the device is ok
     if pioneer_args["create_security_device [name]"] and pioneer_args["device_type [type]"] and pioneer_args["hostname [hostname]"] and pioneer_args["username [username]"] and pioneer_args["secret [secret]"]:
         # extract the device name and the device type from the argv namespace
         security_device_name = pioneer_args["create_security_device [name]"]
@@ -160,7 +160,6 @@ def main():
         # Define the logging settings for special policies logging
         special_log_folder = helper.os.path.join('log', f'device_{security_device_name}')
         helper.setup_logging(special_log_folder, {'special_policies': 'special_policies.log'})
-        special_policies_logger = helper.logging.getLogger('special_policies')
 
         general_logger.info(f"I am now processing security device <{security_device_name}>.")
         security_device_db_name = security_device_name + "_db"

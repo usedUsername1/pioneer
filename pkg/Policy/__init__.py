@@ -712,7 +712,7 @@ class SecurityPolicy(Policy):
         # create a new log line and put it in the file logging the special policies
         # the extractor functions are called by processor functions which are called by the get functions
         if self.get_users() != 'any' or self.get_schedule_objects() != 'any' or self.get_urls() != 'any' or self.get_policy_apps() != 'any':
-            special_policies_logger.info(f"Policy: <{self._name}> in container: <{self._container_name}>, index: <{self._container_index}> has parameters that require your attention!")
+            special_policies_logger.info(f"\nPolicy: <{self._name}> in container: <{self._container_name}>, index: <{self._container_index}> has parameters that require your attention!")
 
         # Construct the processed policy entry dictionary
         processed_policy_entry = {
