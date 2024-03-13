@@ -1,10 +1,12 @@
 import utils.helper as helper
-from pkg.DeviceObject import Object, NetworkObject, NetworkGroupObject, GeolocationObject, PortObject, PortGroupObject, ICMPObject
+from pkg.DeviceObject import Object, NetworkObject, NetworkGroupObject, GeolocationObject, PortObject, PortGroupObject, ICMPObject, URLObject, URLGroupObject
 import utils.gvars as gvars
 import ipaddress
 import utils.exceptions as PioneerExceptions
 from abc import abstractmethod
 general_logger = helper.logging.getLogger('general')
+
+#TODO: are class specific group classes needed?, eg FMCPortGroupObject
 
 class FMCObject(Object):
     """
@@ -173,6 +175,54 @@ class FMCObject(Object):
         general_logger.debug(f"Finished converting all literals to objects. This is the list with converted literals {network_objects_list}.")
         return network_objects_list
 
+class FMCLiteral(Object):
+    def __init__(self, object_info) -> None:
+        super().__init__(object_info)
+
+    def set_name(self):
+        """
+        Set the name of the literal network object.
+
+        Returns:
+            str: The name of the object.
+        """
+        general_logger.debug("Called FMCNetworkLiteralObject::set_name()")
+        name = self._object_info
+        return super().set_name(name)
+
+    def set_description(self):
+        """
+        Set the description of the literal network object.
+
+        Returns:
+            str: The description of the object.
+        """
+        general_logger.debug("Called FMCNetworkLiteralObject::set_description()")
+        description = gvars.literal_objects_description
+        return super().set_description(description)
+
+    def set_object_container_name(self):
+        """
+        Set the name of the object container for the FMC object.
+
+        Returns:
+            str: The name of the object container.
+        """
+        general_logger.debug("Called FMCNetworkLiteralObject::set_object_container_name()")
+        container_name = 'virtual_object_container'
+        return super().set_object_container_name(container_name)
+
+    def set_override_bool(self):
+        """
+        Set the override boolean for the literal network object.
+
+        Returns:
+            bool: The override boolean value.
+        """
+        general_logger.debug("Called FMCNetworkLiteralObject::set_override_bool()")
+        is_overridable = False
+        return super().set_override_bool(is_overridable)
+
 class FMCNetworkObject(FMCObject, NetworkObject):
     """
     A class representing a network object in Firepower Management Center (FMC).
@@ -210,7 +260,7 @@ class FMCNetworkObject(FMCObject, NetworkObject):
         type = self._object_info['type']
         return super().set_network_address_type(type)
 
-class FMCNetworkLiteralObject(NetworkObject):
+class FMCNetworkLiteralObject(FMCLiteral, NetworkObject):
     """
     Class representing a literal network object in the Firepower Management Center (FMC).
     Inherits from the NetworkObject class.
@@ -225,17 +275,6 @@ class FMCNetworkLiteralObject(NetworkObject):
         """
         general_logger.debug("Called FMCNetworkLiteralObject::__init__()")
         super().__init__(object_info)
-    
-    def set_name(self):
-        """
-        Set the name of the literal network object.
-
-        Returns:
-            str: The name of the object.
-        """
-        general_logger.debug("Called FMCNetworkLiteralObject::set_name()")
-        name = self._object_info
-        return super().set_name(name)
 
     def set_network_address_value(self):
         """
@@ -250,28 +289,6 @@ class FMCNetworkLiteralObject(NetworkObject):
         netmask = split_name[2]
         value = subnet_id + '/' + netmask
         return super().set_network_address_value(value)
-
-    def set_description(self):
-        """
-        Set the description of the literal network object.
-
-        Returns:
-            str: The description of the object.
-        """
-        general_logger.debug("Called FMCNetworkLiteralObject::set_description()")
-        description = gvars.literal_objects_description
-        return super().set_description(description)
-
-    def set_object_container_name(self):
-        """
-        Set the name of the object container for the FMC object.
-
-        Returns:
-            str: The name of the object container.
-        """
-        general_logger.debug("Called FMCNetworkLiteralObject::set_object_container_name()")
-        container_name = 'virtual_object_container'
-        return super().set_object_container_name(container_name)
 
     def set_network_address_type(self):
         """
@@ -291,17 +308,6 @@ class FMCNetworkLiteralObject(NetworkObject):
             type = 'Network'
 
         return super().set_network_address_type(type)
-    
-    def set_override_bool(self):
-        """
-        Set the override boolean for the literal network object.
-
-        Returns:
-            bool: The override boolean value.
-        """
-        general_logger.debug("Called FMCNetworkLiteralObject::set_override_bool()")
-        is_overridable = False
-        return super().set_override_bool(is_overridable)
 
 class FMCNetworkGroupObject(FMCObject, NetworkGroupObject):
     def __init__(self, object_info) -> None:
@@ -764,7 +770,7 @@ class FMCPortObject(FMCObject, PortObject):
         protocol = self._object_info['protocol']
         return super().set_port_protocol(protocol)
 
-class FMCPortLiteralObject(PortObject):
+class FMCPortLiteralObject(FMCLiteral, PortObject):
     """
     Class representing a literal port object in the Firepower Management Center (FMC).
     Inherits from the PortObject class.
@@ -779,28 +785,6 @@ class FMCPortLiteralObject(PortObject):
         """
         general_logger.debug("Called FMCPortLiteralObject::__init__()")
         super().__init__(object_info)
-    
-    def set_name(self):
-        """
-        Set the name of the literal port object.
-
-        Returns:
-            str: The name of the object.
-        """
-        general_logger.debug("Called FMCPortLiteralObject::set_name()")
-        name = self._object_info
-        return super().set_name(name)
-    
-    def set_description(self):
-        """
-        Set the description of the literal port object.
-
-        Returns:
-            str: The description of the object.
-        """
-        general_logger.debug("Called FMCPortLiteralObject::set_description()")
-        description = gvars.literal_objects_description
-        return super().set_description(description)
     
     def set_port_number(self):
         """
@@ -825,28 +809,6 @@ class FMCPortLiteralObject(PortObject):
         split_name = self._name.split('_')
         protocol = split_name[1]
         return super().set_port_protocol(protocol)
-
-    def set_object_container_name(self):
-        """
-        Set the name of the object container for the FMC object.
-
-        Returns:
-            str: The name of the object container.
-        """
-        general_logger.debug("Called FMCPortLiteralObject::set_object_container_name()")
-        container_name = 'virtual_object_container'
-        return super().set_object_container_name(container_name)
-
-    def set_override_bool(self):
-        """
-        Set the override boolean for the literal port object.
-
-        Returns:
-            bool: The override boolean value.
-        """
-        general_logger.debug("Called FMCPortLiteralObject::set_override_bool()")
-        is_overridable = False
-        return super().set_override_bool(is_overridable)
     
 class FMCICMPObject(FMCObject, ICMPObject):
     """
@@ -970,7 +932,25 @@ class FMCLiteralICMPObject(ICMPObject):
         is_overridable = False
         return super().set_override_bool(is_overridable)
 
-#TODO: is this really needed? 
 class FMCPortGroupObject(FMCObject, PortGroupObject):
+    def __init__(self, object_info) -> None:
+        super().__init__(object_info)
+
+#TODO: implement the classes and process URL objects
+class FMCURLObject(FMCObject, URLObject):
+    def __init__(self, object_info) -> None:
+        super().__init__(object_info)
+    
+    def set_url_value(self, url_value):
+        return super().set_url_value(url_value)
+
+class FMCURLLiteral(FMCLiteral, URLObject):
+    def __init__(self, object_info) -> None:
+        super().__init__(object_info)
+    
+    def set_url_value(self, url_value):
+        return super().set_url_value(url_value)
+
+class FMCURLGroupObject(FMCURLObject, URLGroupObject):
     def __init__(self, object_info) -> None:
         super().__init__(object_info)

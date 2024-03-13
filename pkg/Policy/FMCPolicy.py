@@ -526,8 +526,9 @@ class FMCSecurityPolicy(SecurityPolicy):
             for policy_url_literal in policy_url_literals:
                 # Extract the URL literal value and append it to the list
                 policy_url_literal_value = policy_url_literal['url']
-                special_policies_logger.info(f"URL literal: <{policy_url_literal_value}>. URL type: <{policy_url_object['type']}")
-                policy_url_objects_list.append(policy_url_literal_value)
+                literal_url_name = gvars.url_literal_prefix + policy_url_literal_value
+                special_policies_logger.info(f"URL literal: <{policy_url_literal_value}>.")
+                policy_url_objects_list.append(literal_url_name)
         except KeyError:
             # If there are no URL literals, log an informational message
             general_logger.info("It looks like there are no URL literals on this policy.")
@@ -549,7 +550,6 @@ class FMCSecurityPolicy(SecurityPolicy):
                     
                 special_policies_logger.info(f"URL category name: <{category_name}>, with reputation <{category_reputation}>.")
                 category_name = f"URL_CATEGORY{gvars.separator_character}{category_name}{gvars.separator_character}{category_reputation}"
-                print(category_name)
                 policy_url_objects_list.append(category_name)
         except KeyError:
         # If there are no URL categories with reputation, log an informational message

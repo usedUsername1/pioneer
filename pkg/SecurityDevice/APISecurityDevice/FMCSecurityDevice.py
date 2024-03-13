@@ -3,7 +3,7 @@ from pkg.Container import SecurityPolicyContainer, ObjectPolicyContainer
 from pkg.SecurityDevice.APISecurityDevice.APISecurityDeviceConnection import APISecurityDeviceConnection
 from pkg.DeviceObject.FMCDeviceObject import FMCObject, FMCNetworkGroupObject, FMCNetworkObject, FMCNetworkLiteralObject, \
 FMCPortObject, FMCICMPObject, FMCLiteralICMPObject, FMCPortGroupObject, FMCPortLiteralObject, FMCGeolocationObject, \
-FMCContinentObject, FMCCountryObject
+FMCContinentObject, FMCCountryObject, FMCURLObject, FMCURLLiteral, FMCURLGroupObject
 from pkg.Policy.FMCPolicy import FMCSecurityPolicy
 from pkg.SecurityDevice import SecurityDevice
 
@@ -171,6 +171,8 @@ class FMCSecurityDevice(SecurityDevice):
         self._continents_info = None
         self._port_objects_info = None
         self._port_group_objects_info = None
+        self._url_objects_info = None
+        self._url_object_groups_info = None
 
     def return_security_policy_container_object(self, container_name):
         general_logger.debug("Called FMCSecurityDevice::return_security_policy_container_object()")
@@ -367,6 +369,17 @@ class FMCSecurityDevice(SecurityDevice):
                 self._port_group_objects_info = self._sec_device_connection.object.portobjectgroup.get()
                 port_groups_dict = {entry['name']: entry for entry in self._port_group_objects_info if 'name' in entry}
                 self._port_group_objects_info = port_groups_dict
+        
+        if object_type == 'url_objects':
+            if not self._url_objects_info:
+                self._url_objects_info = self._sec_device_connection.object.url.get()
+                url_objects_dict = {entry['name']: entry for entry in self._url_objects_info if 'name' in entry}
+                self._url_objects_info = url_objects_dict
+            
+            if not self._url_object_groups_info:
+                self._url_object_groups_info = self._sec_device_connection.object.urlgroup.get()
+                url_group_objects_dict = {entry['name']: entry for entry in self._url_object_groups_info if 'name' in entry}
+                self._url_object_groups_info = url_group_objects_dict
 
     # this function is responsible for retrieving all the member objects
     # it also sets the members of a group objects to be the objects retrieved
@@ -519,3 +532,25 @@ class FMCSecurityDevice(SecurityDevice):
                 port_objects_from_device_list.append(port_group_object)
         
         return port_objects_from_device_list
+
+    def return_url_objects(self, object_names):
+        # Log a debug message indicating the function call
+        general_logger.debug("Called FMCSecurityDevice::return_url_objects()")
+        
+        # Log an informative message about processing network objects data info
+        general_logger.info("Processing url objects data info. Retrieving all objects from the database, processing them, and returning their info.")
+
+        url_objects_from_device_list = []
+        for url_object_name in object_names:
+            if url_object_name.startswith(gvars.url_literal_prefix):
+                url_objects_from_device_list.append(FMCURLLiteral(url_object_name))
+
+            elif url_object_name in self._url_objects_info:
+                url_objects_from_device_list.append(FMCURLObject(self._url_objects_info[url_object_name]))
+
+            elif url_object_name in self._url_object_groups_info:
+                url_group_object = FMCURLGroupObject(self._url_object_groups_info[url_object_name])
+                self._return_group_object_members_helper(url_group_object, 'url_objects', url_objects_from_device_list)
+                url_objects_from_device_list.append(url_group_object)
+        
+        return url_objects_from_device_list

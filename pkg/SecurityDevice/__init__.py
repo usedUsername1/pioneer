@@ -69,9 +69,9 @@ class SecurityDeviceDatabase(PioneerDatabase):
         self.table_factory("security_zones_table")
         general_logger.info("Created table: <security_zones_table>.")
 
-        general_logger.info("Creating table: <urls_table>.")
-        self.table_factory("urls_table")
-        general_logger.info("Created table: <urls_table>.")
+        general_logger.info("Creating table: <url_objects_table>.")
+        self.table_factory("url_objects_table")
+        general_logger.info("Created table: <url_objects_table>.")
 
         # Uncomment if needed
         # general_logger.info("Creating table: <urls_categories_table>.")
@@ -244,13 +244,23 @@ class SecurityDeviceDatabase(PioneerDatabase):
                 FOREIGN KEY(object_container_name) REFERENCES object_containers_table(object_container_name)
                 );"""
 
-            case 'urls_table':
+            case 'url_objects_table':
                 command = """CREATE TABLE IF NOT EXISTS url_objects_table (
                 url_object_name TEXT PRIMARY KEY,
                 security_device_name TEXT NOT NULL,
                 object_container_name TEXT NOT NULL,
-                url_object_members TEXT[],
+                url_value TEXT[],
                 url_object_description TEXT,
+                FOREIGN KEY(object_container_name) REFERENCES object_containers_table(object_container_name)
+                );"""
+
+            case 'url_object_groups_table':
+                command = """CREATE TABLE IF NOT EXISTS url_object_groups_table (
+                url_object_group_name TEXT PRIMARY KEY,
+                security_device_name TEXT NOT NULL,
+                object_container_name TEXT NOT NULL,
+                url_members TEXT[],
+                url_group_object_description TEXT,
                 FOREIGN KEY(object_container_name) REFERENCES object_containers_table(object_container_name)
                 );"""
 
@@ -725,7 +735,6 @@ class SecurityDevice:
 
             general_logger.info(f"Processed object: <{RetrievedObject.get_name()}. Object type is: <{object_type}>")
             general_logger.debug(f"Processed object info: <{processed_object_info}>")
-            # Print the processed object (for debugging purposes)
         
         # Return the dictionary of processed objects
         return [processed_objects_dict]
@@ -1606,5 +1615,102 @@ class SecurityDevice:
             # Execute the insert command with the specified values
             self._database.insert_table_value('port_object_groups_table', insert_command, values)
 
-    def delete_security_device(self):
-        pass
+    def insert_into_url_objects_table(self, url_objects_data):
+        general_logger.debug("Called SecurityDevice::insert_into_url_objects_table().")
+        """
+        Insert values into the 'url_object_groups_table' table.
+
+        Parameters:
+        - url_object_group_data (list): List of dictionaries containing URL object group information.
+
+        Returns:
+        None
+        """
+        for group_entry in url_objects_data:
+            # Extract data from the current URL object group entry
+            url_group_name = group_entry['url_group_name']
+            object_container_name = group_entry['object_container_name']
+            url_group_values = group_entry['url_group_values']
+            url_group_description = group_entry['url_group_description']
+
+            # Check for duplicates before insertion
+            if self.verify_duplicate('url_objects_table', 'url_group_name', url_group_name):
+                general_logger.warn(f"Duplicate entry for URL object group: <{url_group_name}>. Skipping insertion.")
+                continue
+
+            # SQL command to insert data into the 'url_objects_table'
+            insert_command = """
+                INSERT INTO url_objects_table (
+                    url_object_name, 
+                    security_device_name, 
+                    object_container_name, 
+                    url_value, 
+                    url_object_description
+                ) VALUES (
+                    %s, %s, %s, %s, %s
+                )
+            """
+
+            # Values to be inserted into the table
+            values = (
+                url_group_name,
+                self._name,
+                object_container_name,
+                url_group_values,
+                url_group_description
+            )
+
+            # Execute the insert command with the specified values
+            self._database.insert_table_value('url_objects_table', insert_command, values)
+
+    def insert_into_url_object_groups_table(self, url_object_group_data):
+        general_logger.debug("Called SecurityDevice::insert_into_url_object_groups_table().")
+        """
+        Insert values into the 'url_object_groups_table' table.
+
+        Parameters:
+        - url_object_group_data (list): List of dictionaries containing URL object group information.
+
+        Returns:
+        None
+        """
+        for group_entry in url_object_group_data:
+            # Extract data from the current URL object group entry
+            url_object_name = group_entry['url_object_name']
+            object_container_name = group_entry['object_container_name']
+            url_object_members = group_entry['url_object_members']
+            url_object_description = group_entry['url_object_description']
+
+            # Check for duplicates before insertion
+            if self.verify_duplicate('url_object_groups_table', 'url_object_name', url_object_name):
+                general_logger.warn(f"Duplicate entry for URL object group: <{url_object_name}>. Skipping insertion.")
+                continue
+
+            # SQL command to insert data into the 'url_object_groups_table'
+            insert_command = """
+                INSERT INTO url_object_groups_table (
+                    url_object_group_name, 
+                    security_device_name, 
+                    object_container_name, 
+                    url_object_members, 
+                    url_group_object_description
+                ) VALUES (
+                    %s, %s, %s, %s, %s
+                )
+            """
+
+            # Values to be inserted into the table
+            values = (
+                url_object_name,
+                self._name,
+                object_container_name,
+                url_object_members,
+                url_object_description
+            )
+
+            # Execute the insert command with the specified values
+            self._database.insert_table_value('url_object_groups_table', insert_command, values)
+
+        def delete_security_device(self):
+            pass
+        

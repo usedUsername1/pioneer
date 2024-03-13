@@ -736,6 +736,54 @@ class ICMPObject(Object):
 
         return processed_object_info
 
+class URLObject(Object):
+    def __init__(self, object_info) -> None:
+        super().__init__(object_info)
+        self._url_value = None
+    
+    def get_url_value(self):
+        return self._url_value
+
+    def set_url_value(self, url_value):
+        self._url_value = url_value
+    
+    def process_object(self):
+        self.set_name()
+        self.set_object_container_name()
+        self.set_url_value()
+        self.set_description()
+        self.set_override_bool()
+
+        processed_object_info = {
+            "url_object_name": self.get_name(),
+            "object_container_name": self.get_object_container_name(),
+            "url_value": self.get_url_value(),
+            "url_object_description": self.get_description()          
+        }
+
+        return processed_object_info
+
+class URLGroupObject(GroupObject):
+    def __init__(self, object_info) -> None:
+        super().__init__(object_info)
+    
+    def process_object(self):
+        self.set_name()
+        self.set_object_container_name()
+        self.set_description()
+        self.set_override_bool()
+
+        processed_object_info = {
+            "url_object_group_name": self.get_name(),
+            "object_container_name": self.get_object_container_name(),
+            "url_object_members": self.get_member_names(),
+            "url_group_object_description": self.get_description()
+        }
+
+        return processed_object_info
+
+
+
 # class SecurityZone(Object):
 #     def __init__(self, name, description, is_overridable, object_container_name=None) -> None:
 #         super().__init__(name, description, is_overridable, object_container_name)
