@@ -423,7 +423,10 @@ class FMCSecurityDevice(SecurityDevice):
         try:
             literal_members = group_object_info['literals']
             # Convert literal members to objects and append to the list
-            group_member_literals_list += FMCObject.convert_network_literals_to_objects(literal_members)
+            if object_type == 'network_objects':
+                group_member_literals_list += FMCObject.convert_network_literals_to_objects(literal_members)
+            if object_type == 'url_objects':
+                group_member_literals_list += FMCObject.convert_url_literals_to_objects(literal_members)
             for literal_member in group_member_literals_list:
                 group_member_object_names.append(literal_member)
         except KeyError:
@@ -438,6 +441,8 @@ class FMCSecurityDevice(SecurityDevice):
             group_member_objects.extend(self.return_network_objects(group_member_object_names))
         elif object_type == 'port_objects':
             group_member_objects.extend(self.return_port_objects(group_member_object_names))
+        elif object_type == 'url_objects':
+            group_member_objects.extend(self.return_url_objects(group_member_object_names))
 
     def return_network_objects(self, object_names):
         """
@@ -506,51 +511,93 @@ class FMCSecurityDevice(SecurityDevice):
         return network_objects_from_device_list
 
     def return_port_objects(self, object_names):
+        """
+        Retrieve port objects based on the given object names.
+
+        Parameters:
+        - object_names (list): List of port object names to retrieve.
+
+        Returns:
+        - port_objects_from_device_list (list): List of port objects retrieved.
+        """
         # Log a debug message indicating the function call
         general_logger.debug("Called FMCSecurityDevice::return_port_objects()")
         
         # Log an informative message about processing network objects data info
         general_logger.info("Processing port objects data info. Retrieving all objects from the database, processing them, and returning their info.")
 
+        # Initialize an empty list to store port objects retrieved from the device
         port_objects_from_device_list = []
+
+        # Iterate over each port object name in the provided list
         for port_object_name in object_names:
+            # Check if the port object name starts with the defined port literal prefix
             if port_object_name.startswith(gvars.port_literal_prefix):
+                # Check if the port object name contains 'ICMP'
                 if 'ICMP' in port_object_name:
+                    # Create and append an ICMP object to the list
                     port_objects_from_device_list.append(FMCLiteralICMPObject(port_object_name))
                 else:
+                    # Create and append a Port Literal object to the list
                     port_objects_from_device_list.append(FMCPortLiteralObject(port_object_name))
+            # Check if the port object name exists in the port objects info dictionary
             elif port_object_name in self._port_objects_info:
-                # do a check here and see if the current object is an ICMP object or nay. if it is not, then create a PortObject
+                # Check if the object type contains 'ICMP'
                 if 'ICMP' in self._port_objects_info[port_object_name]['type']:
+                    # Create and append an ICMP object to the list
                     port_objects_from_device_list.append(FMCICMPObject(self._port_objects_info[port_object_name]))
                 else:
+                    # Create and append a Port object to the list
                     port_objects_from_device_list.append(FMCPortObject(self._port_objects_info[port_object_name]))
-
+            # Check if the port object name exists in the port group objects info dictionary
             elif port_object_name in self._port_group_objects_info:
+                # Create a Port Group object
                 port_group_object = FMCPortGroupObject(self._port_group_objects_info[port_object_name])
+                # Helper function to retrieve members of port group object
                 self._return_group_object_members_helper(port_group_object, 'port_objects', port_objects_from_device_list)
+                # Append the port group object to the list
                 port_objects_from_device_list.append(port_group_object)
         
+        # Return the list of port objects retrieved from the device
         return port_objects_from_device_list
 
     def return_url_objects(self, object_names):
+        """
+        Retrieve URL objects based on the given object names.
+
+        Parameters:
+        - object_names (list): List of URL object names to retrieve.
+
+        Returns:
+        - url_objects_from_device_list (list): List of URL objects retrieved.
+        """
         # Log a debug message indicating the function call
         general_logger.debug("Called FMCSecurityDevice::return_url_objects()")
         
-        # Log an informative message about processing network objects data info
-        general_logger.info("Processing url objects data info. Retrieving all objects from the database, processing them, and returning their info.")
+        # Log an informative message about processing URL objects data info
+        general_logger.info("Processing URL objects data info. Retrieving all objects from the database, processing them, and returning their info.")
 
+        # Initialize an empty list to store URL objects retrieved from the device
         url_objects_from_device_list = []
+
+        # Iterate over each URL object name in the provided list
         for url_object_name in object_names:
+            # Check if the URL object name starts with the defined URL literal prefix
             if url_object_name.startswith(gvars.url_literal_prefix):
+                # Create and append a URL Literal object to the list
                 url_objects_from_device_list.append(FMCURLLiteral(url_object_name))
-
+            # Check if the URL object name exists in the URL objects info dictionary
             elif url_object_name in self._url_objects_info:
+                # Create and append a URL object to the list
                 url_objects_from_device_list.append(FMCURLObject(self._url_objects_info[url_object_name]))
-
+            # Check if the URL object name exists in the URL object groups info dictionary
             elif url_object_name in self._url_object_groups_info:
+                # Create a URL Group object
                 url_group_object = FMCURLGroupObject(self._url_object_groups_info[url_object_name])
+                # Helper function to retrieve members of URL group object
                 self._return_group_object_members_helper(url_group_object, 'url_objects', url_objects_from_device_list)
+                # Append the URL group object to the list
                 url_objects_from_device_list.append(url_group_object)
         
+        # Return the list of URL objects retrieved from the device
         return url_objects_from_device_list

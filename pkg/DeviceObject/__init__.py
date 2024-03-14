@@ -738,22 +738,54 @@ class ICMPObject(Object):
 
 class URLObject(Object):
     def __init__(self, object_info) -> None:
+        """
+        Initialize a URL Object.
+
+        Parameters:
+        - object_info (dict): Information about the URL object.
+
+        Returns:
+        None
+        """
         super().__init__(object_info)
         self._url_value = None
     
     def get_url_value(self):
+        """
+        Get the URL value.
+
+        Returns:
+        str: The URL value.
+        """
         return self._url_value
 
     def set_url_value(self, url_value):
+        """
+        Set the URL value.
+
+        Parameters:
+        - url_value (str): The URL value to set.
+
+        Returns:
+        None
+        """
         self._url_value = url_value
     
     def process_object(self):
+        """
+        Process the URL object.
+
+        Returns:
+        dict: Processed information about the URL object.
+        """
+        # Set object attributes
         self.set_name()
         self.set_object_container_name()
         self.set_url_value()
         self.set_description()
         self.set_override_bool()
 
+        # Create processed object info dictionary
         processed_object_info = {
             "url_object_name": self.get_name(),
             "object_container_name": self.get_object_container_name(),
@@ -763,16 +795,34 @@ class URLObject(Object):
 
         return processed_object_info
 
+
 class URLGroupObject(GroupObject):
     def __init__(self, object_info) -> None:
+        """
+        Initialize a URL Group Object.
+
+        Parameters:
+        - object_info (dict): Information about the URL group object.
+
+        Returns:
+        None
+        """
         super().__init__(object_info)
     
     def process_object(self):
+        """
+        Process the URL group object.
+
+        Returns:
+        dict: Processed information about the URL group object.
+        """
+        # Set object attributes
         self.set_name()
         self.set_object_container_name()
         self.set_description()
         self.set_override_bool()
 
+        # Create processed object info dictionary
         processed_object_info = {
             "url_object_group_name": self.get_name(),
             "object_container_name": self.get_object_container_name(),

@@ -272,6 +272,9 @@ def main():
                 print("Importing URL object data.")
                 general_logger.info("\n################## IMPORTING URL OBJECTS DATA. ##################")
                 url_objects_data = SpecificSecurityDeviceObject.get_object_info_from_device_conn('url_objects')
+                print("Inserting url object data in the database.")
+                SpecificSecurityDeviceObject.insert_into_url_objects_table(url_objects_data[0]['url_objects'])
+                SpecificSecurityDeviceObject.insert_into_url_object_groups_table(url_objects_data[0]['url_group_objects'])
                 #TODO: log schedules, users, url categories, l7 apps. these objects should be logged in the implementation
                 # of the security device class, in the extractor functions. how should logging be done?
                 # probably the easiest way of doing it is to have all these incompatible attributes listed under the policy

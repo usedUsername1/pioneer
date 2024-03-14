@@ -2,7 +2,7 @@ import fireREST
 
 fmc = fireREST.FMC(hostname='10.2.196.131', username='admin', password='2wsx#EDC', domain='Global')
 
-policy = fmc.policy.accesspolicy.accessrule.get(container_name="debug3", name="test-url")
+policy = fmc.object.urlgroup.get(name="test-url-inline")
 
 print(policy)
 

@@ -175,6 +175,16 @@ class FMCObject(Object):
         general_logger.debug(f"Finished converting all literals to objects. This is the list with converted literals {network_objects_list}.")
         return network_objects_list
 
+    @staticmethod
+    def convert_url_literals_to_objects(url_literals):
+        url_objects_list = []
+
+        for url_literal in url_literals:
+            url_object_name = gvars.url_literal_prefix + url_literal['url']
+            url_objects_list.append(url_object_name)
+        
+        return url_objects_list
+
 class FMCLiteral(Object):
     def __init__(self, object_info) -> None:
         super().__init__(object_info)
@@ -934,23 +944,75 @@ class FMCLiteralICMPObject(ICMPObject):
 
 class FMCPortGroupObject(FMCObject, PortGroupObject):
     def __init__(self, object_info) -> None:
+        """
+        Initialize an FMC Port Group Object.
+
+        Parameters:
+        - object_info (dict): Information about the port group object.
+
+        Returns:
+        None
+        """
         super().__init__(object_info)
+
 
 #TODO: implement the classes and process URL objects
 class FMCURLObject(FMCObject, URLObject):
     def __init__(self, object_info) -> None:
+        """
+        Initialize an FMC URL Object.
+
+        Parameters:
+        - object_info (dict): Information about the URL object.
+
+        Returns:
+        None
+        """
         super().__init__(object_info)
     
-    def set_url_value(self, url_value):
+    def set_url_value(self):
+        """
+        Set the URL value for the FMC URL Object.
+
+        Returns:
+        None
+        """
+        url_value = self._object_info['url']
         return super().set_url_value(url_value)
 
 class FMCURLLiteral(FMCLiteral, URLObject):
     def __init__(self, object_info) -> None:
+        """
+        Initialize an FMC URL Literal Object.
+
+        Parameters:
+        - object_info (dict): Information about the URL literal object.
+
+        Returns:
+        None
+        """
         super().__init__(object_info)
     
-    def set_url_value(self, url_value):
+    def set_url_value(self):
+        """
+        Set the URL value for the FMC URL Literal Object.
+
+        Returns:
+        None
+        """
+        split_info = self._object_info.split('_')
+        url_value = split_info[1]
         return super().set_url_value(url_value)
 
-class FMCURLGroupObject(FMCURLObject, URLGroupObject):
+class FMCURLGroupObject(FMCObject, URLGroupObject):
     def __init__(self, object_info) -> None:
+        """
+        Initialize an FMC URL Group Object.
+
+        Parameters:
+        - object_info (dict): Information about the URL group object.
+
+        Returns:
+        None
+        """
         super().__init__(object_info)

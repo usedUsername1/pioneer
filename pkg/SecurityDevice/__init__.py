@@ -5,7 +5,7 @@ import utils.helper as helper
 import utils.gvars as gvars
 import json
 import sys
-from pkg.DeviceObject import NetworkObject, NetworkGroupObject, GeolocationObject, PortObject, PortGroupObject, ICMPObject
+from pkg.DeviceObject import NetworkObject, NetworkGroupObject, GeolocationObject, PortObject, PortGroupObject, ICMPObject, URLObject, URLGroupObject
 
 general_logger = helper.logging.getLogger('general')
 # TODO: create all the tables for all the objects
@@ -72,6 +72,10 @@ class SecurityDeviceDatabase(PioneerDatabase):
         general_logger.info("Creating table: <url_objects_table>.")
         self.table_factory("url_objects_table")
         general_logger.info("Created table: <url_objects_table>.")
+
+        general_logger.info("Creating table: <url_object_groups_table>.")
+        self.table_factory("url_object_groups_table")
+        general_logger.info("Created table: <url_object_groups_table>.")
 
         # Uncomment if needed
         # general_logger.info("Creating table: <urls_categories_table>.")
@@ -249,7 +253,7 @@ class SecurityDeviceDatabase(PioneerDatabase):
                 url_object_name TEXT PRIMARY KEY,
                 security_device_name TEXT NOT NULL,
                 object_container_name TEXT NOT NULL,
-                url_value TEXT[],
+                url_value TEXT,
                 url_object_description TEXT,
                 FOREIGN KEY(object_container_name) REFERENCES object_containers_table(object_container_name)
                 );"""
@@ -259,7 +263,7 @@ class SecurityDeviceDatabase(PioneerDatabase):
                 url_object_group_name TEXT PRIMARY KEY,
                 security_device_name TEXT NOT NULL,
                 object_container_name TEXT NOT NULL,
-                url_members TEXT[],
+                url_object_members TEXT[],
                 url_group_object_description TEXT,
                 FOREIGN KEY(object_container_name) REFERENCES object_containers_table(object_container_name)
                 );"""
@@ -693,13 +697,21 @@ class SecurityDevice:
                     "icmp_port_objects": [],
                     "port_group_objects": []
                 }
+            
+            case 'url_objects':
+                self.fetch_objects_info('url_objects')
+                object_names = self.get_db_objects('url_objects')
+                processed_objects_dict = {
+                    "url_objects": [],
+                    "url_group_objects": []
+                }                
         #TODO: proper support for schedule objects, users and l7 apps
         object_type_mapping = {
             'network_objects': self.return_network_objects,
             'port_objects': self.return_port_objects,
             # 'schedule_objects': self.return_schedule_objects(),
             # 'policy_users': self.return_policy_users(),
-            'url_objects': self.return_url_objects(),
+            'url_objects': self.return_url_objects,
             # 'app_objects': self.return_app_objects()
         }
 
@@ -732,6 +744,10 @@ class SecurityDevice:
                 processed_objects_dict["icmp_port_objects"].append(processed_object_info)
             elif isinstance(RetrievedObject, PortGroupObject):
                 processed_objects_dict["port_group_objects"].append(processed_object_info)
+            elif isinstance(RetrievedObject, URLObject):
+                processed_objects_dict["url_objects"].append(processed_object_info)
+            elif isinstance(RetrievedObject, URLGroupObject):
+                processed_objects_dict["url_group_objects"].append(processed_object_info)
 
             general_logger.info(f"Processed object: <{RetrievedObject.get_name()}. Object type is: <{object_type}>")
             general_logger.debug(f"Processed object info: <{processed_object_info}>")
@@ -1628,14 +1644,14 @@ class SecurityDevice:
         """
         for group_entry in url_objects_data:
             # Extract data from the current URL object group entry
-            url_group_name = group_entry['url_group_name']
+            url_object_name = group_entry['url_object_name']
             object_container_name = group_entry['object_container_name']
-            url_group_values = group_entry['url_group_values']
-            url_group_description = group_entry['url_group_description']
+            url_object_value = group_entry.get('url_value')  # Assuming it's a single value, not a list
+            url_group_description = group_entry['url_object_description']
 
             # Check for duplicates before insertion
-            if self.verify_duplicate('url_objects_table', 'url_group_name', url_group_name):
-                general_logger.warn(f"Duplicate entry for URL object group: <{url_group_name}>. Skipping insertion.")
+            if self.verify_duplicate('url_objects_table', 'url_object_name', url_object_name):
+                general_logger.warn(f"Duplicate entry for URL object: <{url_object_name}>. Skipping insertion.")
                 continue
 
             # SQL command to insert data into the 'url_objects_table'
@@ -1653,10 +1669,10 @@ class SecurityDevice:
 
             # Values to be inserted into the table
             values = (
-                url_group_name,
+                url_object_name,
                 self._name,
                 object_container_name,
-                url_group_values,
+                url_object_value,
                 url_group_description
             )
 
@@ -1676,14 +1692,14 @@ class SecurityDevice:
         """
         for group_entry in url_object_group_data:
             # Extract data from the current URL object group entry
-            url_object_name = group_entry['url_object_name']
+            url_object_group_name = group_entry['url_object_group_name']
             object_container_name = group_entry['object_container_name']
             url_object_members = group_entry['url_object_members']
-            url_object_description = group_entry['url_object_description']
+            url_object_description = group_entry['url_group_object_description']
 
             # Check for duplicates before insertion
-            if self.verify_duplicate('url_object_groups_table', 'url_object_name', url_object_name):
-                general_logger.warn(f"Duplicate entry for URL object group: <{url_object_name}>. Skipping insertion.")
+            if self.verify_duplicate('url_object_groups_table', 'url_object_group_name', url_object_group_name):
+                general_logger.warn(f"Duplicate entry for URL object group: <{url_object_group_name}>. Skipping insertion.")
                 continue
 
             # SQL command to insert data into the 'url_object_groups_table'
@@ -1701,7 +1717,7 @@ class SecurityDevice:
 
             # Values to be inserted into the table
             values = (
-                url_object_name,
+                url_object_group_name,
                 self._name,
                 object_container_name,
                 url_object_members,
