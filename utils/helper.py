@@ -47,20 +47,12 @@ def create_parser():
 
     return parser
 
-
-import os
-import logging
-
-import os
-import logging
-
-
 def setup_logging(log_folder, log_files=None):
     """
     Set up logging configuration.
 
-    This function creates a log folder if it doesn't exist and configures logging to write both to the console
-    and to the specified log files in the specified log folder.
+    This function creates a log folder if it doesn't exist and configures logging to write errors and above to the console
+    and all levels of logs to the specified log files in the specified log folder.
 
     Parameters:
         log_folder (str): Path to the log folder where log files will be stored.
@@ -87,6 +79,12 @@ def setup_logging(log_folder, log_files=None):
             return super().format(record)
 
     formatter = UnicodeFormatter('%(asctime)s - %(levelname)s - %(message)s')
+
+    # Configure logging to write to console
+    console_handler = logging.StreamHandler()
+    console_handler.setLevel(logging.ERROR)  # Log only errors and above to the console
+    console_handler.setFormatter(formatter)
+    logger.addHandler(console_handler)
 
     # Configure logging to write to multiple files
     if log_files is not None:

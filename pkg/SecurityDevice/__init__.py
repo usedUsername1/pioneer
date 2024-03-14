@@ -417,6 +417,9 @@ class SecurityDevice:
         general_logger.debug("Called SecurityDevice::__init__.")
         self._name = name
         self._database = sec_device_database
+    
+    def set_database(self, database):
+        self._database = database
 
     def get_containers_info_from_device_conn(self, containers_list, container_type):
         """
@@ -983,10 +986,10 @@ class SecurityDevice:
             hostname = managed_device_entry["hostname"]
             cluster = managed_device_entry['cluster']
 
-            # Check for duplicates before insertion
-            if self.verify_duplicate('managed_devices_table', 'managed_device_name', managed_device_name):
-                general_logger.warn(f"Duplicate entry for managed device: <{managed_device_name}>. Skipping insertion.")
-                continue
+            # # Check for duplicates before insertion
+            # if self.verify_duplicate('managed_devices_table', 'managed_device_name', managed_device_name):
+            #     general_logger.warn(f"Duplicate entry for managed device: <{managed_device_name}>. Skipping insertion.")
+            #     continue
 
             # SQL command to insert data into the 'managed_devices_table'
             insert_command = """
@@ -1024,9 +1027,9 @@ class SecurityDevice:
         None
         """
         # Check for duplicates before insertion
-        if self.verify_duplicate('general_data_table', 'security_device_name', self._name):
-            general_logger.warn(f"Duplicate entry for device name: <{self._name}>. Skipping insertion.")
-            return
+        # if self.verify_duplicate('general_data_table', 'security_device_name', self._name):
+        #     general_logger.warn(f"Duplicate entry for device name: <{self._name}>. Skipping insertion.")
+        #     return
 
         insert_command = """
             INSERT INTO general_data_table (

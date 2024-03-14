@@ -71,79 +71,85 @@ def main():
     # create folder where logs for the security device will be stored
     # TODO: modify this so that the database is created ONLY if the connection to the device is ok
     if pioneer_args["create_security_device [name]"] and pioneer_args["device_type [type]"] and pioneer_args["hostname [hostname]"] and pioneer_args["username [username]"] and pioneer_args["secret [secret]"]:
-        # extract the device name and the device type from the argv namespace
+        # Extract information about the security device from pioneer_args
         security_device_name = pioneer_args["create_security_device [name]"]
-        
-        # define the logging settings
-        log_folder = helper.os.path.join('log', f'device_{security_device_name}')
-        helper.setup_logging(log_folder, {'general': 'general.log', 'special_policies': 'special_policies.log'})
-        general_logger = helper.logging.getLogger('general')
-
-        general_logger.info(f"################## CREATING A NEW DEVICE: <{security_device_name}> ##################")
-
         security_device_type = pioneer_args["device_type [type]"]
         security_device_hostname = pioneer_args["hostname [hostname]"]
         security_device_username = pioneer_args["username [username]"]
         security_device_secret = pioneer_args["secret [secret]"]
         security_device_port = pioneer_args["port [port]"]
         domain = pioneer_args["domain [fmc_domain]"]
+
+        # Setup logging
+        log_folder = helper.os.path.join('log', f'device_{security_device_name}')
+        helper.setup_logging(log_folder, {'general': 'general.log', 'special_policies': 'special_policies.log'})
+        general_logger = helper.logging.getLogger('general')
+
+        # Log creation of new device
+        general_logger.info(f"################## CREATING A NEW DEVICE: <{security_device_name}> ##################")
         general_logger.debug(f"Got the following info about device from user, security device name: <{security_device_name}>, type <{security_device_type}>, hostname <{security_device_hostname}, username <{security_device_username}>, secret <>, port: <{security_device_port}>, domain <{domain}>.")
 
-        # connect to the postgres, create cursor and security device database
-        security_device_db_name = security_device_name + "_db"
-        database_conn = DBConnection(db_user, landing_database , db_password, db_host, db_port)
-        db_cursor = database_conn.create_cursor()
-        PioneerProjectsDB = PioneerDatabase(db_cursor)
+        # Connect to the landing device database
+        landing_db_conn = DBConnection(db_user, landing_database, db_password, db_host, db_port)
+        general_logger.info(f"Connecting to device database: <{landing_database}>.")
+        landing_cursor = landing_db_conn.create_cursor()
 
-        general_logger.info(f"Creating device database: <{security_device_db_name}>.")
-        general_logger.debug(f"Connecting to the Postgres using, user: <{db_user}>, password ..., host: <{db_host}>, port: <{db_port}>, landing database: <{landing_database}>.")
-        PioneerProjectsDB.create_database(security_device_db_name)
-        
-        # in order to succesfully create a security device, it needs to have valid data
-        # security device data can be validated if the user can succsefully connect to the device and retrieve the version
-        # connect to the device database and get a cursor for the database connection
-        security_device_db_conn = DBConnection(db_user, security_device_db_name, db_password, db_host, db_port)
-        
-        general_logger.info(f"Connecting to device database: <{security_device_db_name}>.")
-        security_device_cursor = security_device_db_conn.create_cursor()
+        # Create the security device database object using the landing database
+        SecurityDeviceDB = SecurityDeviceDatabase(landing_cursor)
 
-        # note: the reason a device connection can't be created here is because the connection is relying on the device type
-        # a connection object cannot be created before the security device type is established
+        # Try connecting to the security device and retrieving the version
+        try:
+            general_logger.info(f"Connecting to the security device...")
+            print("Connecting to the security device...")
+            # Attempt to create the security device object based on the device type
+            if '-api' in security_device_type:
+                general_logger.info(f"The device {security_device_name} is an API device. Its API will be used for interacting with it.")
+                SecurityDeviceObject = APISecurityDeviceFactory.build_api_security_device(security_device_name, security_device_type, SecurityDeviceDB, security_device_hostname, security_device_username, security_device_secret, security_device_port, domain)
+            else:
+                general_logger.critical(f"Provided device type <{security_device_type}> is invalid.")
+                sys.exit(1)
+            
+            # Get the version of the security device
+            general_logger.info(f"################## Getting the device version for device: <{security_device_name}>. ##################")
+            security_device_version = SecurityDeviceObject.get_device_version_from_device_conn()
+            
+            # If version retrieval is successful, proceed with database creation and data insertion
+            if security_device_version:
+                
+                # Create the database
+                security_device_db_name = security_device_name + '_db'
+                general_logger.info(f"Creating device database: <{security_device_db_name}>.")
+                general_logger.debug(f"Connecting to the Postgres using, user: <{db_user}>, password ..., host: <{db_host}>, port: <{db_port}>, landing database: <{landing_database}>.")
+                SecurityDeviceDB.create_database(security_device_db_name)
 
-        # create the security device database object
-        SecurityDeviceDB = SecurityDeviceDatabase(security_device_cursor)
-        
+                # Connect to the newly created security device database
+                security_device_db_conn = DBConnection(db_user, security_device_db_name, db_password, db_host, db_port)
+                security_device_cursor = security_device_db_conn.create_cursor()
+                SecurityDeviceDB = SecurityDeviceDatabase(security_device_cursor)
+                SecurityDeviceObject.set_database(SecurityDeviceDB)
 
-        # and create the specific tables of the security device
-        general_logger.info(f"Creating the tables in device database: <{security_device_db_name}>.")
-        SecurityDeviceDB.create_security_device_tables()
+                # Create the tables in the device database
+                general_logger.info(f"Creating the tables in device database: <{security_device_db_name}>.")
+                SecurityDeviceDB.create_security_device_tables()
+                print("Created device database.")
 
-        # based on the device type, generate a security device object
-        if('-api' in security_device_type):
-            general_logger.info(f"The device {security_device_name} is an API device. Its API will be used for interacting with it.")
-            SecurityDeviceObject = APISecurityDeviceFactory.build_api_security_device(security_device_name, security_device_type, SecurityDeviceDB, security_device_hostname, security_device_username, security_device_secret, security_device_port, domain)
+                # Insert general device info into the database
+                general_logger.info(f"Inserting general device info in the database.")
+                SecurityDeviceObject.insert_into_general_table(security_device_username, security_device_secret, security_device_hostname, security_device_type, security_device_port, security_device_version, domain)
 
-        # elif('-config' in security_device_type):
-        #     SecurityDeviceObject = ConfigSecurityDeviceFactory.build_config_security_device()
+                # Retrieve information about the managed devices
+                general_logger.info(f"################## Getting the managed devices of device: <{security_device_name}>. ##################")
+                managed_devices_info = SecurityDeviceObject.get_managed_devices_info_from_device_conn()
 
-        else:
-            general_logger.critical(f"Provided device type <{security_device_type}> is invalid.")
+                # Insert managed device info into the database
+                general_logger.info(f"Inserting managed device info in the database.")
+                SecurityDeviceObject.insert_into_managed_devices_table(managed_devices_info)
+            else:
+                general_logger.error(f"Failed to retrieve version of the security device. Exiting...")
+                sys.exit(1)
+        except Exception as e:
+            general_logger.error(f"Failed to connect to the security device or encountered an error: {e}")
             sys.exit(1)
-        
-        # get version of the security device
-        general_logger.info(f"################## Getting the device version for device: <{security_device_name}>. ##################")
-        security_device_version = SecurityDeviceObject.get_device_version_from_device_conn()
-        # insert the device name, username, secret, hostname, type and version into the general_data table
-        general_logger.info(f"Inserting general device info in the database.")
-        SecurityDeviceObject.insert_into_general_table(security_device_username, security_device_secret, security_device_hostname, security_device_type, security_device_port, security_device_version, domain)
-
-        # retrive the information about the managed devices. if the device is a standalone device, the managed device will be the standalone device
-        general_logger.info(f"################## Getting the managed devices of device: <{security_device_name}>. ##################")
-        managed_devices_info = SecurityDeviceObject.get_managed_devices_info_from_device_conn()
-
-        # insert it into the table
-        general_logger.info(f"Inserting managed device info in the database.")
-        SecurityDeviceObject.insert_into_managed_devices_table(managed_devices_info)
 
 
     # at this point, the backbone of the device is created, importing of data can start
@@ -275,10 +281,6 @@ def main():
                 print("Inserting url object data in the database.")
                 SpecificSecurityDeviceObject.insert_into_url_objects_table(url_objects_data[0]['url_objects'])
                 SpecificSecurityDeviceObject.insert_into_url_object_groups_table(url_objects_data[0]['url_group_objects'])
-                #TODO: log schedules, users, url categories, l7 apps. these objects should be logged in the implementation
-                # of the security device class, in the extractor functions. how should logging be done?
-                # probably the easiest way of doing it is to have all these incompatible attributes listed under the policy
-                # they could be stored in a file called: nonmigratory_elements.log
                 #TODO: create migration process
 
 
