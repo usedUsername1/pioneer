@@ -1,13 +1,17 @@
-import fireREST
+# import fireREST
 
-fmc = fireREST.FMC(hostname='10.2.196.131', username='admin', password='2wsx#EDC', domain='Global')
+# fmc = fireREST.FMC(hostname='10.2.196.131', username='admin', password='2wsx#EDC', domain='Global')
 
-policy = fmc.object.urlgroup.get(name="test-url-inline")
+# policy = fmc.object.urlgroup.get(name="test-url-inline")
 
-print(policy)
+# print(policy)
 
+from panos.panorama import Panorama
+pano  = Panorama("10.2.196.196", "admin", "2wsx#EDC")
+print(pano.refresh_system_info().version)
 
-# object = fmc.object.portobjectgroup.get(name="EXCHANGE_ports")
+# print("Panorama Version:", panorama_version)
+# object = fmc.object.portobjectgroup.get(name="EXCHANGE_ports")2
 # print(object)
 # ICMP-TEST-TYPE3-CODE3
 # ports = fmc.object.port.get(name="obj_icmp_any")
