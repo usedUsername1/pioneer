@@ -137,13 +137,14 @@ def main():
                 general_logger.info(f"Inserting general device info in the database.")
                 SecurityDeviceObject.insert_into_general_table(security_device_username, security_device_secret, security_device_hostname, security_device_type, security_device_port, security_device_version, domain)
 
-                # Retrieve information about the managed devices
-                general_logger.info(f"################## Getting the managed devices of device: <{security_device_name}>. ##################")
-                managed_devices_info = SecurityDeviceObject.get_managed_devices_info_from_device_conn()
+                #TODO: this must be moved when the ManagedDevices class is created
+                # # Retrieve information about the managed devices
+                # general_logger.info(f"################## Getting the managed devices of device: <{security_device_name}>. ##################")
+                # managed_devices_info = SecurityDeviceObject.get_managed_devices_info_from_device_conn()
 
-                # Insert managed device info into the database
-                general_logger.info(f"Inserting managed device info in the database.")
-                SecurityDeviceObject.insert_into_managed_devices_table(managed_devices_info)
+                # # Insert managed device info into the database
+                # general_logger.info(f"Inserting managed device info in the database.")
+                # SecurityDeviceObject.insert_into_managed_devices_table(managed_devices_info)
             else:
                 general_logger.error(f"Failed to retrieve version of the security device. Exiting...")
                 sys.exit(1)
@@ -281,7 +282,12 @@ def main():
                 print("Inserting url object data in the database.")
                 SpecificSecurityDeviceObject.insert_into_url_objects_table(url_objects_data[0]['url_objects'])
                 SpecificSecurityDeviceObject.insert_into_url_object_groups_table(url_objects_data[0]['url_group_objects'])
-                #TODO: create migration process
+                #TODO: create migration process. a temporary migration process will be created
+                # in the temp migration process, the script will look into the database of the source device, extract the info, apply
+                # all the naming and object definition restrictions and add the data to the database of the palo alto device
+                # after that, make the necessary API calls to create all the info. there are some limitations: duplicate objects will be created,
+                # as i cannot enforce the check of the duplicates efficiently.
+                # in the final migration process, all the data from the device must be imported as well and added to a migration project 
 
 
 

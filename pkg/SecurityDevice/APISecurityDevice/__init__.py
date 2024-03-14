@@ -2,6 +2,7 @@ from abc import abstractmethod
 from pkg.SecurityDevice import SecurityDevice
 import sys
 from .FMCSecurityDevice import FMCSecurityDevice
+from .PANMCSecurityDevice import PANMCSecurityDevice
 import utils.helper as helper
 
 general_logger = helper.logging.getLogger('general')
@@ -47,6 +48,10 @@ class APISecurityDeviceFactory:
                 general_logger.info(f"Device <{security_device_name}> is a Firepower Management Center.")
                 return FMCSecurityDevice(security_device_name, SecurityDeviceDB, security_device_username, security_device_secret, security_device_hostname, security_device_port, domain)
 
+            case "panmc-api":
+                general_logger.info(f"Device <{security_device_name}> is a Panorama Management Center.")
+                return PANMCSecurityDevice(security_device_name, SecurityDeviceDB, security_device_username, security_device_secret, security_device_hostname, security_device_port, domain)
+            
             # default case
             case _:
                 general_logger.critical(f"Device <{security_device_name}>, with type <{security_device_type}>, is an invalid API device.")
