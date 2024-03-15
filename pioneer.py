@@ -239,6 +239,8 @@ def main():
                 # insert them in the database
 
                 security_policy_containers_info = SpecificSecurityDeviceObject.get_containers_info_from_device_conn(passed_container_names_list, 'security_policies_container')
+                print(security_policy_containers_info)
+                return
                 SpecificSecurityDeviceObject.insert_into_security_policy_containers_table(security_policy_containers_info)
 
                 # import the security policies (data) that are part of the imported security policy containers

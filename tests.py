@@ -6,21 +6,53 @@
 
 # print(policy)
 
-from panos.panorama import Panorama
-pano  = Panorama("10.2.196.196", "admin", "2wsx#EDC")
+# from panos.panorama import Panorama
+# pano  = Panorama("10.2.196.196", "admin", "2wsx#EDC")
+# test = pano.refresh_devices(devices=["Parking"])
+
+# print(test)
 # Access the OPSTATES attribute to get the hierarchy class
-hierarchy_class = pano.OPSTATES['dg_hierarchy']
+# hierarchy_class = pano.OPSTATES['dg_hierarchy']
 
-# Create an instance of PanoramaDeviceGroupHierarchy
-hierarchy_instance = hierarchy_class(pano)
+# # Create an instance of PanoramaDeviceGroupHierarchy
+# hierarchy_instance = hierarchy_class(pano)
 
-# Call the fetch method on the instance
-hierarchy_data = hierarchy_instance.fetch()
+# # Call the fetch method on the instance
+# hierarchy_data = hierarchy_instance.fetch()
 
-# Print the fetched hierarchy data
-# print(hierarchy_data)
-for key, value in hierarchy_data.items():
-    print("PARENT:", value, "CHILD:",key)
+# # Print the fetched hierarchy data
+# # print(hierarchy_data)
+# for key, value in hierarchy_data.items():
+#     print("PARENT:", value, "CHILD:",key)
+
+
+from panos.panorama import Panorama
+
+# Create a Panorama object
+pano = Panorama("10.2.196.196", "admin", "2wsx#EDC")
+
+# Refresh devices
+device_groups = pano.refresh_devices()
+
+# Specify the name of the device group you want to retrieve information for
+desired_device_group_name = "Parking"
+
+# Find the device group with the desired name
+desired_device_group = None
+for device_group in device_groups:
+    if device_group.name == desired_device_group_name:
+        desired_device_group = device_group
+        break
+
+# Check if the desired device group was found
+if desired_device_group is not None:
+    hierarchy_state = desired_device_group.OPSTATES['dg_hierarchy'](desired_device_group)
+    hierarchy_state.refresh()  # Call refresh on an instance
+    parent_device_group = hierarchy_state.parent
+    print("Parent Device Group:", parent_device_group, "Child device group:", desired_device_group.name)
+else:
+    print("Device group not found.")
+
 # print(pano.refresh_system_info().version)
 # Refresh devices
 # device_groups = pano.refresh_devices(include_device_groups=True)

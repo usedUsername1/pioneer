@@ -489,7 +489,6 @@ class SecurityDevice:
                     processed_container_list.append(processed_current_container)
             except Exception as err:
                 general_logger.error(f"Could not retrieve info regarding the container {container_name}. Reason: {err}.")
-                print(f"Could not retrieve info regarding the container {container_name}. Reason: {err}.")
                 sys.exit(1)
         
         general_logger.info(f"I have finished completely processing <{container_type}> container, name: <{CurrentContainer.get_name()}> ")
