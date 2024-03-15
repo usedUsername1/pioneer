@@ -12,14 +12,14 @@ class APISecurityDeviceConnection(SecurityDeviceConnection):
         self._api_port = api_port
     
     def return_security_device_conn_object(self):
-        general_logger.debug(f"Called connect_to_security_device with parameters: username {self._api_username}, hostname {self._api_hostname}, port {self._api_port}, domain {self._domain}.")
+        general_logger.debug(f"Called connect_to_security_device with parameters: username {self._api_username}, hostname {self._api_hostname}, port {self._api_port}.")
         try:
-            general_logger.info(f"I am trying to connect to the FMC device using username {self._api_username}, hostname {self._api_hostname}, port {self._api_port}, domain {self._domain}.")
+            general_logger.info(f"I am trying to connect to the Security Device using username {self._api_username}, hostname {self._api_hostname}, port {self._api_port}.")
             device_conn = self.connect_to_security_device()
             general_logger.info(f"I have successfully connected to the device. {device_conn}")
             return device_conn
         except Exception as err:
-            general_logger.critical(f"Could not connect to FMC device. Reason: {err}")
+            general_logger.critical(f"Could not connect to Security Device. Reason: {err}")
             sys.exit(1)
 
     def connect_to_security_device(self):

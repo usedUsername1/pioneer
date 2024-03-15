@@ -8,8 +8,24 @@
 
 from panos.panorama import Panorama
 pano  = Panorama("10.2.196.196", "admin", "2wsx#EDC")
-print(pano.refresh_system_info().version)
+# Access the OPSTATES attribute to get the hierarchy class
+hierarchy_class = pano.OPSTATES['dg_hierarchy']
 
+# Create an instance of PanoramaDeviceGroupHierarchy
+hierarchy_instance = hierarchy_class(pano)
+
+# Call the fetch method on the instance
+hierarchy_data = hierarchy_instance.fetch()
+
+# Print the fetched hierarchy data
+# print(hierarchy_data)
+for key, value in hierarchy_data.items():
+    print("PARENT:", value, "CHILD:",key)
+# print(pano.refresh_system_info().version)
+# Refresh devices
+# device_groups = pano.refresh_devices(include_device_groups=True)
+# for dg in device_groups:
+#     print(dg.children)
 # print("Panorama Version:", panorama_version)
 # object = fmc.object.portobjectgroup.get(name="EXCHANGE_ports")2
 # print(object)

@@ -69,7 +69,6 @@ def main():
     # the "--create-security-device" argument must be used with the "--type" argument
     # create a security device with the name and the type specified by the user
     # create folder where logs for the security device will be stored
-    # TODO: modify this so that the database is created ONLY if the connection to the device is ok
     if pioneer_args["create_security_device [name]"] and pioneer_args["device_type [type]"] and pioneer_args["hostname [hostname]"] and pioneer_args["username [username]"] and pioneer_args["secret [secret]"]:
         # Extract information about the security device from pioneer_args
         security_device_name = pioneer_args["create_security_device [name]"]
@@ -115,7 +114,6 @@ def main():
             
             # If version retrieval is successful, proceed with database creation and data insertion
             if security_device_version:
-                
                 # Create the database
                 security_device_db_name = security_device_name + '_db'
                 general_logger.info(f"Creating device database: <{security_device_db_name}>.")
@@ -151,7 +149,10 @@ def main():
         except Exception as e:
             general_logger.error(f"Failed to connect to the security device or encountered an error: {e}")
             sys.exit(1)
-
+        
+        # close the cursors used to connect to the database
+        landing_cursor.close()
+        security_device_cursor.close()
 
     # at this point, the backbone of the device is created, importing of data can start
     # the user used the --device option
@@ -282,6 +283,9 @@ def main():
                 print("Inserting url object data in the database.")
                 SpecificSecurityDeviceObject.insert_into_url_objects_table(url_objects_data[0]['url_objects'])
                 SpecificSecurityDeviceObject.insert_into_url_object_groups_table(url_objects_data[0]['url_group_objects'])
+
+                # close the cursor used to connect to the
+                security_device_cursor.close()
                 #TODO: create migration process. a temporary migration process will be created
                 # in the temp migration process, the script will look into the database of the source device, extract the info, apply
                 # all the naming and object definition restrictions and add the data to the database of the palo alto device

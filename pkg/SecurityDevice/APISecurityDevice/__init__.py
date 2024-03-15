@@ -50,7 +50,7 @@ class APISecurityDeviceFactory:
 
             case "panmc-api":
                 general_logger.info(f"Device <{security_device_name}> is a Panorama Management Center.")
-                return PANMCSecurityDevice(security_device_name, SecurityDeviceDB, security_device_username, security_device_secret, security_device_hostname, security_device_port, domain)
+                return PANMCSecurityDevice(security_device_name, SecurityDeviceDB, security_device_username, security_device_secret, security_device_hostname, security_device_port)
             
             # default case
             case _:
