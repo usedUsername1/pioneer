@@ -46,30 +46,41 @@ class PANMCSecurityDevice(SecurityDevice):
             if device_group.name == container_name:
                 desired_device_group = device_group
                 break
-        
+            
         if desired_device_group is not None:
             hierarchy_state = desired_device_group.OPSTATES['dg_hierarchy'](desired_device_group)
             hierarchy_state.refresh()  # Call refresh on an instance
             parent_device_group = hierarchy_state.parent
-            dg_info = {"parent_device_group":parent_device_group, "child_device_group":desired_device_group.name}
+            if parent_device_group is None:
+                parent_device_group = 'Shared'
+            dg_info = {"parent_device_group":parent_device_group, "device_group_name":desired_device_group.name}
         else:
             raise InexistentContainer
         
-        print(dg_info)
         return PANMCPolicyContainer(dg_info)
+
+    def return_security_policy_object(self, container_name):
+       print("Processing of security policies is not yet supported for Panorama!")
+       return []
+    
+    # i know it's shit, but it works, and techincally speaking, there is no distinction on Panorama between
+    # device groups and containers :(
+    def return_object_container_object(self, container_name):
+        return self.return_security_policy_container_object(container_name)
 
 class PANMCPolicyContainer(SecurityPolicyContainer):
     def __init__(self, container_info) -> None:
         super().__init__(container_info)
 
     def get_parent_name(self):
-        return super().get_parent_name()
+        return self._container_info['parent_device_group']
     
     def is_child_container(self):
-        pass
+        is_child = True
+        if self._container_info['parent_device_group'] == 'Shared':
+            is_child = False
+        
+        return is_child
 
     def get_name(self):
-        return super().get_name()
-
-class PANMCObjectContainer(ObjectPolicyContainer):
-    pass
+        return self._container_info['device_group_name']

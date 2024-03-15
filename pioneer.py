@@ -237,12 +237,8 @@ def main():
                 
                 # retrieve the security policy containers along with the parents
                 # insert them in the database
-
                 security_policy_containers_info = SpecificSecurityDeviceObject.get_containers_info_from_device_conn(passed_container_names_list, 'security_policies_container')
-                print(security_policy_containers_info)
-                return
                 SpecificSecurityDeviceObject.insert_into_security_policy_containers_table(security_policy_containers_info)
-
                 # import the security policies (data) that are part of the imported security policy containers
                 # the policy container info extracted earlier can be used here. we can use the child container entry since the child container
                 # contains the information (thus the policies) it inherits from all the parents
@@ -256,10 +252,10 @@ def main():
                 print("Importing the object container data.")
                 general_logger.info("\n################## IMPORTING OBJECT CONTAINER DATA. ##################")
                 # import and insert the object container first!
-                object_containers_info = SpecificSecurityDeviceObject.get_containers_info_from_device_conn(security_policy_containers_info, 'object_container')
+                object_containers_info = SpecificSecurityDeviceObject.get_containers_info_from_device_conn(passed_container_names_list, 'object_container')
                 SpecificSecurityDeviceObject.insert_into_object_containers_table(object_containers_info)
 
-                #TODO: the import functinoality must be independent of the policy type. so it should be taken out from here
+                #TODO: the import functinoality must be independent of the policy type. so this part of the code should be taken out from here and put outside the import config if statement
                 print("Importing network object data.")
                 general_logger.info("\n################## IMPORTING NETWORK OBJECTS DATA. ##################")
                 # # at this point all the security policy data is imported. it is time to import the object data.

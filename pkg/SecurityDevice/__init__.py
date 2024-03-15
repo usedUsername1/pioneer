@@ -444,7 +444,7 @@ class SecurityDevice:
         }
 
         for container_name in containers_list:
-            try:
+            # try:
                 CurrentContainer = ''
                 # Use the container_type_mapping dictionary to retrieve the appropriate retrieval function
                 retrieve_container_function = container_type_mapping.get(container_type)
@@ -487,9 +487,9 @@ class SecurityDevice:
                     general_logger.info(f"Finished processing container: <{CurrentContainer.get_name()}>.")
                     general_logger.debug(f"Processed container info is: <{processed_current_container}>.")
                     processed_container_list.append(processed_current_container)
-            except Exception as err:
-                general_logger.error(f"Could not retrieve info regarding the container {container_name}. Reason: {err}.")
-                sys.exit(1)
+            # except Exception as err:
+            #     general_logger.error(f"Could not retrieve info regarding the container {container_name}. Reason: {err}.")
+            #     sys.exit(1)
         
         general_logger.info(f"I have finished completely processing <{container_type}> container, name: <{CurrentContainer.get_name()}> ")
         return processed_container_list
