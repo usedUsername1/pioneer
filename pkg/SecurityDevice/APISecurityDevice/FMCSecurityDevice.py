@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from pkg.Container import SecurityPolicyContainer, ObjectPolicyContainer
+from pkg.Container import SecurityPolicyContainer, ObjectContainer
 from pkg.SecurityDevice.APISecurityDevice.APISecurityDeviceConnection import APISecurityDeviceConnection
 from pkg.DeviceObject.FMCDeviceObject import FMCObject, FMCNetworkGroupObject, FMCNetworkObject, FMCNetworkLiteralObject, \
 FMCPortObject, FMCICMPObject, FMCLiteralICMPObject, FMCPortGroupObject, FMCPortLiteralObject, FMCGeolocationObject, \
@@ -95,7 +95,7 @@ class FMCPolicyContainer(SecurityPolicyContainer):
         return self._container_info['name']
 
 #TODO: maybe use setters for setting the values in here, and use the getters from the parent class to retrieve the info. just like you do for objects
-class FMCObjectContainer(ObjectPolicyContainer):
+class FMCObjectContainer(ObjectContainer):
     """
     Represents an object container specific to the Firepower Management Center (FMC).
     """

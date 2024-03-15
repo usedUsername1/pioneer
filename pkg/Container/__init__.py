@@ -126,7 +126,7 @@ class SecurityPolicyContainer(Container):
 
         return container_processed_info
 
-class ObjectPolicyContainer(Container):
+class ObjectContainer(Container):
     def __init__(self, container_info) -> None:
         """
         Initializes an ObjectPolicyContainer object.

@@ -253,6 +253,8 @@ def main():
                 general_logger.info("\n################## IMPORTING OBJECT CONTAINER DATA. ##################")
                 # import and insert the object container first!
                 object_containers_info = SpecificSecurityDeviceObject.get_containers_info_from_device_conn(passed_container_names_list, 'object_container')
+                print(object_containers_info)
+                return
                 SpecificSecurityDeviceObject.insert_into_object_containers_table(object_containers_info)
 
                 #TODO: the import functinoality must be independent of the policy type. so this part of the code should be taken out from here and put outside the import config if statement

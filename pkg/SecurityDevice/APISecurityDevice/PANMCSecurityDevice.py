@@ -3,7 +3,7 @@ from pkg.SecurityDevice import SecurityDevice
 from panos.panorama import Panorama
 import utils.helper as helper
 from utils.exceptions import InexistentContainer
-from pkg.Container import SecurityPolicyContainer, ObjectPolicyContainer
+from pkg.Container import SecurityPolicyContainer, ObjectContainer
 
 general_logger = helper.logging.getLogger('general')
 
@@ -66,7 +66,26 @@ class PANMCSecurityDevice(SecurityDevice):
     # i know it's shit, but it works, and techincally speaking, there is no distinction on Panorama between
     # device groups and containers :(
     def return_object_container_object(self, container_name):
-        return self.return_security_policy_container_object(container_name)
+        # Refresh devices
+        device_groups = self._sec_device_connection.refresh_devices()
+        # Find the device group with the desired name
+        desired_device_group = None
+        for device_group in device_groups:
+            if device_group.name == container_name:
+                desired_device_group = device_group
+                break
+            
+        if desired_device_group is not None:
+            hierarchy_state = desired_device_group.OPSTATES['dg_hierarchy'](desired_device_group)
+            hierarchy_state.refresh()  # Call refresh on an instance
+            parent_device_group = hierarchy_state.parent
+            if parent_device_group is None:
+                parent_device_group = 'Shared'
+            dg_info = {"parent_device_group":parent_device_group, "device_group_name":desired_device_group.name}
+        else:
+            raise InexistentContainer
+        
+        return PANMCObjectContainer(dg_info)
 
 class PANMCPolicyContainer(SecurityPolicyContainer):
     def __init__(self, container_info) -> None:
@@ -84,3 +103,7 @@ class PANMCPolicyContainer(SecurityPolicyContainer):
 
     def get_name(self):
         return self._container_info['device_group_name']
+
+class PANMCObjectContainer(ObjectContainer, SecurityPolicyContainer):
+    def __init__(self, container_info) -> None:
+        super().__init__(container_info)
