@@ -27,17 +27,7 @@ class PANMCSecurityDevice(SecurityDevice):
         general_logger.debug("Called PANMCSecurityDevice::get_device_version()")
         return self._sec_device_connection.refresh_system_info().version
 
-    def return_security_policy_container_object(self, container_name):
-        general_logger.debug("Called PANMCSecurityDevice::return_security_policy_container_object()")
-        """
-        Returns the security policy container object.
-
-        Args:
-            container_name (str): The name of the container.
-
-        Returns:
-            PANMCPolicyContainer: The security policy container object.
-        """
+    def return_container_object(self, container_name, container_type):
         # Refresh devices
         device_groups = self._sec_device_connection.refresh_devices()
         # Find the device group with the desired name
@@ -57,7 +47,11 @@ class PANMCSecurityDevice(SecurityDevice):
         else:
             raise InexistentContainer
         
-        return PANMCPolicyContainer(dg_info)
+        match container_type:
+            case 'security_policies_container':
+                return PANMCPolicyContainer(dg_info)
+            case 'object_container':
+                return PANMCObjectContainer(dg_info)
 
     def return_security_policy_object(self, container_name):
        print("Processing of security policies is not yet supported for Panorama!")
@@ -104,6 +98,6 @@ class PANMCPolicyContainer(SecurityPolicyContainer):
     def get_name(self):
         return self._container_info['device_group_name']
 
-class PANMCObjectContainer(ObjectContainer, SecurityPolicyContainer):
+class PANMCObjectContainer(ObjectContainer, PANMCPolicyContainer):
     def __init__(self, container_info) -> None:
         super().__init__(container_info)

@@ -174,22 +174,20 @@ class FMCSecurityDevice(SecurityDevice):
         self._url_objects_info = None
         self._url_object_groups_info = None
 
-    def return_security_policy_container_object(self, container_name):
-        general_logger.debug("Called FMCSecurityDevice::return_security_policy_container_object()")
-        """
-        Returns the security policy container object.
-
-        Args:
-            container_name (str): The name of the container.
-
-        Returns:
-            FMCPolicyContainer: The security policy container object.
-        """
-        # Retrieve ACP information from FMC device
-        acp_info = self._sec_device_connection.policy.accesspolicy.get(name=container_name)
-        # Initialize and return FMCPolicyContainer object
-        return FMCPolicyContainer(acp_info)
-    
+    def return_container_object(self, container_name, container_type):
+        match container_type:
+            case 'security_policies_container':
+                # Retrieve ACP information from FMC device
+                acp_info = self._sec_device_connection.policy.accesspolicy.get(name=container_name)
+                # Initialize and return FMCPolicyContainer object
+                return FMCPolicyContainer(acp_info)
+            case 'object_container':
+                container_info = 'DUMMY_CONTAINER'
+                dummy_container = FMCObjectContainer(container_info)
+                dummy_container.set_name("virtual_object_container")
+                dummy_container.set_parent(None)
+                return dummy_container
+            
     def return_security_policy_object(self, container_name):
         general_logger.debug("Called FMCSecurityDevice::return_security_policy_object()")
         """
@@ -214,24 +212,6 @@ class FMCSecurityDevice(SecurityDevice):
         
         # Return the list of FMCSecurityPolicy objects
         return security_policy_objects
-
-    # there are no object containers per se in FMC, therefore, only dummy info will be returned
-    def return_object_container_object(self, container_name):
-        general_logger.debug("Called FMCSecurityDevice::return_object_container_object(). There are no actual containers on this type of security device. Will return a virtual one.")
-        """
-        Returns the object container object.
-
-        Args:
-            container_name (str): The name of the container.
-
-        Returns:
-            FMCObjectContainer: The object container object.
-        """
-        container_info = 'DUMMY_CONTAINER'
-        dummy_container = FMCObjectContainer(container_info)
-        dummy_container.set_name("virtual_object_container")
-        dummy_container.set_parent(None)
-        return dummy_container
 
     #TODO: move this managed devices functions
     def process_managed_device(self, managed_device):

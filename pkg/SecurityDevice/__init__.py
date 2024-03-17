@@ -419,6 +419,7 @@ class SecurityDevice:
     def set_database(self, database):
         self._database = database
 
+    #TODO: redocument this function
     def get_containers_info_from_device_conn(self, containers_list, container_type):
         """
         Retrieve information about containers from the security device.
@@ -436,24 +437,11 @@ class SecurityDevice:
         general_logger.debug(f"Called SecurityDevice::get_containers_info_from_device_conn()")
         general_logger.info(f"################## Importing configuration of the device containers. Container type: <{container_type}> ##################")
         processed_container_list = []
-        
-        # Define a dictionary to map container types to their corresponding retrieval functions
-        container_type_mapping = {
-            'security_policies_container': self.return_security_policy_container_object,
-            'object_container': self.return_object_container_object
-        }
 
         for container_name in containers_list:
             try:
-                CurrentContainer = ''
-                # Use the container_type_mapping dictionary to retrieve the appropriate retrieval function
-                retrieve_container_function = container_type_mapping.get(container_type)
-                if retrieve_container_function is not None:
-                    CurrentContainer = retrieve_container_function(container_name)
-                else:
-                    general_logger.error(f"Invalid container type: <{container_type}>")
-                    continue  # Skip to the next container if the container type is invalid
-                    
+                CurrentContainer = self.return_container_object(container_name, container_type)
+
                 general_logger.info(f"I am now processing the <{container_type}> container, name: <{CurrentContainer.get_name()}>")
                 general_logger.debug(f"Raw container info:  <{CurrentContainer.get_info()}>")
                 # Check if the current container has parent containers
@@ -463,7 +451,7 @@ class SecurityDevice:
                     general_logger.info(f"<{CurrentContainer.get_name()}> is a CHILD container. Its parent is: <{parent_container_name}>.")
                     try:
                         # Retrieve the parent container object using the same retrieval function
-                        ParentContainer = retrieve_container_function(parent_container_name)
+                        ParentContainer = self.return_container_object(parent_container_name, container_type)
 
                         # set the current's container parent
                         CurrentContainer.set_parent(ParentContainer)
@@ -521,9 +509,10 @@ class SecurityDevice:
             Object: A device-specifc security policy object.
         """
         pass
-
+    
+    #TODO: document this again
     @abstractmethod
-    def return_object_container_object(self, container_name):
+    def return_container_object(self, container_name, container_type):
         """
         Abstract method to return an object container object. This method is overridden by the implementation of a child SecurityDevice class.
 
