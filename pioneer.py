@@ -253,8 +253,6 @@ def main():
                 general_logger.info("\n################## IMPORTING OBJECT CONTAINER DATA. ##################")
                 # import and insert the object container first!
                 object_containers_info = SpecificSecurityDeviceObject.get_containers_info_from_device_conn(passed_container_names_list, 'object_container')
-                print(object_containers_info)
-                return
                 SpecificSecurityDeviceObject.insert_into_object_containers_table(object_containers_info)
 
                 #TODO: the import functinoality must be independent of the policy type. so this part of the code should be taken out from here and put outside the import config if statement
@@ -262,7 +260,7 @@ def main():
                 general_logger.info("\n################## IMPORTING NETWORK OBJECTS DATA. ##################")
                 # # at this point all the security policy data is imported. it is time to import the object data.
                 network_objects_data = SpecificSecurityDeviceObject.get_object_info_from_device_conn('network_objects')
-                print("Inserting network object data in the database.")
+
                 general_logger.info("\n################## INSERTING NETWORK OBJECTS DATA. ##################")                
                 SpecificSecurityDeviceObject.insert_into_network_address_objects_table(network_objects_data[0]['network_objects'])
                 SpecificSecurityDeviceObject.insert_into_network_address_object_groups_table(network_objects_data[0]['network_group_objects'])
@@ -280,18 +278,46 @@ def main():
                 print("Importing URL object data.")
                 general_logger.info("\n################## IMPORTING URL OBJECTS DATA. ##################")
                 url_objects_data = SpecificSecurityDeviceObject.get_object_info_from_device_conn('url_objects')
-                print("Inserting url object data in the database.")
+
                 SpecificSecurityDeviceObject.insert_into_url_objects_table(url_objects_data[0]['url_objects'])
                 SpecificSecurityDeviceObject.insert_into_url_object_groups_table(url_objects_data[0]['url_group_objects'])
-
-                # close the cursor used to connect to the
+                general_logger.info("\n################## IMPORTING OF DATA FINISHED. ##################")
+                print("Succesfully finished the import of the security device's data.")
+                # close the cursor used to connect to the device's database
                 security_device_cursor.close()
-                #TODO: create migration process. a temporary migration process will be created
-                # in the temp migration process, the script will look into the database of the source device, extract the info, apply
-                # all the naming and object definition restrictions and add the data to the database of the palo alto device
-                # after that, make the necessary API calls to create all the info. there are some limitations: duplicate objects will be created,
-                # as i cannot enforce the check of the duplicates efficiently.
-                # in the final migration process, all the data from the device must be imported as well and added to a migration project 
+        
+        if pioneer_args["migrate_config"]:
+            # get the source and target device
+
+            # identify the type of migration and print out a list with the compatibilites issues and how they will be fixed
+
+            # make the user map the security policies container to its counter part in the target device. map only the child container and let the
+            # program map all the other containers based on the hierarchy. a new table is needed for this
+
+            # for now, create all the objects in the highest object container in the hierarchy, that is not Shared.
+                # must map the virtual_container to the highest parent in the hierarchy
+
+            # migration process will start by checking all the objects and see if they follow PA's standards. it will enforce compatibility
+            # and after compatibilty is enforced, it will move all this data in the target's device's database
+
+            # same with the security policies
+            # all these checks and changes will be tracked
+
+            # at this point, all the data is correctly inserted into the target's device database
+            
+            # now the migration can start with the import of the objects, object groups and creation of PA tags
+                # migration of ICMP objects will be skipped and log messages will be generated for this
+            
+            # at this point, all the objects are created on the target device, it is time to start migration of the security policies
+
+            # each source policy will be checked for ICMP objects. if ICMP objects are present (includig in the port object groups)
+            # they will be removed from wherever they are and two policies will be imported in the target's device's database:
+                # 1. the original policy, containing the destination ports. name unchanged
+                # 2. a ping policy, containing only the application ping. name with _PING suffix.
+                # 3. if the policy has only ping objects, the policy will not be split, name will still be modified, port objects removed and ping app added
+                # to the policy
+            
+
 
 
 

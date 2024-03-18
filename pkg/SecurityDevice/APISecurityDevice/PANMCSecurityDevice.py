@@ -54,32 +54,21 @@ class PANMCSecurityDevice(SecurityDevice):
                 return PANMCObjectContainer(dg_info)
 
     def return_security_policy_object(self, container_name):
-       print("Processing of security policies is not yet supported for Panorama!")
+       print("Processing and importing of security policies is not yet supported for Panorama! Skipping this...")
+       return []
+
+    def return_network_objects(self, dummy):
+       print("Processing and importing of network objects is not yet supported for Panorama! Skipping this...")
+       return []
+
+    def return_port_objects(self, dummy):
+       print("Processing and importing of port objects is not yet supported for Panorama! Skipping this...")
        return []
     
-    # i know it's shit, but it works, and techincally speaking, there is no distinction on Panorama between
-    # device groups and containers :(
-    def return_object_container_object(self, container_name):
-        # Refresh devices
-        device_groups = self._sec_device_connection.refresh_devices()
-        # Find the device group with the desired name
-        desired_device_group = None
-        for device_group in device_groups:
-            if device_group.name == container_name:
-                desired_device_group = device_group
-                break
-            
-        if desired_device_group is not None:
-            hierarchy_state = desired_device_group.OPSTATES['dg_hierarchy'](desired_device_group)
-            hierarchy_state.refresh()  # Call refresh on an instance
-            parent_device_group = hierarchy_state.parent
-            if parent_device_group is None:
-                parent_device_group = 'Shared'
-            dg_info = {"parent_device_group":parent_device_group, "device_group_name":desired_device_group.name}
-        else:
-            raise InexistentContainer
-        
-        return PANMCObjectContainer(dg_info)
+    def return_url_objects(self, dummy):
+       print("Processing and importing of URL objects is not yet supported for Panorama! Skipping this...")
+       return []
+    
 
 class PANMCPolicyContainer(SecurityPolicyContainer):
     def __init__(self, container_info) -> None:
