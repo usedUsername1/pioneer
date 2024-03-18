@@ -809,6 +809,15 @@ class SecurityDevice:
         """
         pass
 
+    #TODO: doc this
+    @abstractmethod
+    def print_compatibility_issues(self):
+        pass
+    
+    @abstractmethod
+    def map_containers(self):
+        pass
+
     def get_security_device_type_from_db(self):
         general_logger.debug(f"Called SecurityDevice::get_security_device_type().")
         general_logger.info(f"Fetching the device type of device: <{self._name}>.")
@@ -905,6 +914,7 @@ class SecurityDevice:
         - str: The value of the specified attribute for the security device.
         """
         select_command = f"SELECT {attribute} FROM general_data_table WHERE security_device_name = %s"
+        
         result = self._database.get_table_value('general_data_table', select_command, (self._name,))
         return result[0][0] if result else None
 

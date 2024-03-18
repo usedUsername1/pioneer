@@ -33,6 +33,9 @@ def create_parser():
     parser.add_argument("--domain [fmc_domain]", default='Global', help="Only for FMC devices. Specify the administration domain")
 
     parser.add_argument("--device-name [device_name]", help="Specify the security device where you make the changes.")
+    parser.add_argument("--migrate-config", nargs='?', const=True, default=False, help="Specify the security device where you make the changes.")
+    parser.add_argument("--target-device [target_device_name]", help="Specify the security device where you make the changes.")
+
     parser.add_argument("--import-config", nargs='?', const=True, default=False, help="Flag to import configuration. Imports the configuration from the target device.")
     parser.add_argument("--security-policy-container [container_name]", help="Imports a security policy container.")
 

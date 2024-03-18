@@ -68,7 +68,50 @@ class PANMCSecurityDevice(SecurityDevice):
     def return_url_objects(self, dummy):
        print("Processing and importing of URL objects is not yet supported for Panorama! Skipping this...")
        return []
+
+    def print_compatibility_issues(self):
+        print("""You are migrating to a Panorama Management Center device. The following is a list with compatibility issues and how they will be fixed:
+Object names:
+Policy names:
+Port objects:
+URL objects:
+Security Policies restricting ping access: """)
     
+    #TODO: only for temp migration, modify later
+    # def map_containers_todo(self, SourceSecurityDevice):
+        # print("In order to continue, you are required to map the device groups you want to migrate to the ACP from the source device. All its parents will be automatically mapped.")
+        # source_container = input("Please specify the name of the ACP you imported from FMC: ")
+        # target_container = input("Please specify the target device group on PANMC: ")
+        
+        # # retrieve the containers info from the db for the source device
+        # source_device_container_hierarchy = SourceSecurityDevice.get_security_policies_container_info_from_db()
+
+        # # retrieve the containers info form the db of the target device
+        # destination_device_container_hierarhcy = self.get_security_policies_container_info_from_db()
+
+        # # loop through the source_device_container_hierarchy and match every element with the current destination_device_container_hierarhcy
+        # for i in len(source_device_container_hierarchy):
+        #     container_mapping = {source_device_container_hierarchy[i]:destination_device_container_hierarhcy[i]}
+        
+        # container_mapping = ''
+        # highest_target_container = ''
+
+        # print("All the objects will be imported into the highest device group parent in the hierarchy.")
+        
+
+        # return highest_target_container, container_mapping
+    #TODO: only for temp migration, modify later
+    def map_containers(self):
+        dg_mapping = {'Azure: DEV EUN Internet Access Policy': 'Azure DEV - Internet',
+                       'Azure: DEV EUN VPN Access Policy': 'Azure DEV - VPN',
+                       'Azure: Global VPN Policy': 'Global VPN',
+                       'Global Internet Access Policy': 'Global Internet'}
+        
+        dg_mapping = {'debug3':'Debug'}
+
+        object_container = 'Global Internet'
+
+        return object_container, dg_mapping
 
 class PANMCPolicyContainer(SecurityPolicyContainer):
     def __init__(self, container_info) -> None:

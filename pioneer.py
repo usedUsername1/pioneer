@@ -184,6 +184,7 @@ def main():
         security_device_type = GenericSecurityDevice.get_security_device_type_from_db()
         general_logger.info(f"Got device type <{security_device_type}>.")
 
+        # TODO: put this into a function
         if '-api' in security_device_type:
             general_logger.info(f"<{security_device_name}> is an API device. Type: <{security_device_type}>")
             # get the security device hostname
@@ -286,51 +287,92 @@ def main():
                 # close the cursor used to connect to the device's database
                 security_device_cursor.close()
         
+        # no need to retrieve the source device, as it is already specified in the parameter
+        # how the command should look like:
+                # python3 pioneer.py --device-name 'sfmc_test' --migrate-config --target_device 'panmc_test'
+        # TODO: logging of migration should be done on the target device
+        # TODO: everything below this is shit and it's just supposed to work. need to re-do it
         if pioneer_args["migrate_config"]:
-            # get the source and target device
-            source_security_device = pioneer_args["source_device [source_device_name]"]
-            target_security_device = pioneer_args["target_device [target_device_name]"]
+            try:
+                # get the target security device's name
+                target_security_device_name = pioneer_args["target_device [target_device_name]"]
+                target_security_device_db = target_security_device_name + '_db'
 
-            # connect to the databases of these devices
-            source_security_device_db = ''
-            target_security_device_db = ''
+                # connect to the database of the target device
+                target_security_device_conn = DBConnection(db_user, target_security_device_db, db_password, db_host, db_port)
+
+                target_security_device_cursor = target_security_device_conn.create_cursor()
+                TargetSecurityDeviceDB = SecurityDeviceDatabase(target_security_device_cursor)
+                
+                GenericTargetSecurityDevice = SecurityDevice(target_security_device_name, TargetSecurityDeviceDB)
+                # get the security device type
+                security_device_type = GenericTargetSecurityDevice.get_security_device_type_from_db()
+                # instantiate the target device specific object
+                if '-api' in security_device_type:
+                    general_logger.info(f"<{security_device_name}> is an API device. Type: <{security_device_type}>")
+                    # get the security device hostname
+
+                    security_device_hostname = GenericSecurityDevice.get_security_device_hostname_from_db()
+
+                    # get the security device username
+                    security_device_username = GenericSecurityDevice.get_security_device_username_from_db()
+
+                    # get the security device secret
+                    security_device_secret = GenericSecurityDevice.get_security_device_secret_from_db()
+
+                    # get the security device port
+                    security_device_port = GenericSecurityDevice.get_security_device_port_from_db()
+
+                    # get the security device domain
+                    security_device_domain = GenericSecurityDevice.get_security_device_domain_from_db()
+
+                    # create the API security object based on the device type
+                    SpecificTargetSecurityDeviceObject = APISecurityDeviceFactory.build_api_security_device(security_device_name, security_device_type, TargetSecurityDeviceDB, security_device_hostname, security_device_username, security_device_secret, security_device_port, security_device_domain)
+
+                elif '-config' in security_device_type:
+                    general_logger.info(f"{security_device_name} is an device that does not use API. Only its config file will be processed.")
+
+                else:
+                    general_logger.critical(f"{security_device_name} is an invalid API device! Type: {security_device_type}")
+                    sys.exit(1)
+
+            except Exception as err:
+                print(f"Could not access target device. Reason {err}")
+                sys.exit(1)
             
-            # instantiate the generic objects and instantiate the specific target
-            
-            # identify the type of migration and print out a list with the compatibilites issues and how they will be fixed
-            # get the type of the source device
-            GenericSourceSecurityDeviceDB = ''
-            SpecificTargetSecurityDevice = ''
-            SpecificTargetSecurityDevice.print_compatibility_issues()
+            # print the compatibility issues
+            SpecificTargetSecurityDeviceObject.print_compatibility_issues()
 
             # ask the user to : map the security policies container to its counter part in the target device
                 # map only the child container and let the
                 # program map all the other containers based on the hierarchy. a new table is needed for this
-
-            # for now, create all the objects in the highest object container in the hierarchy that is not Shared.
-                # must map the virtual_container to the highest parent in the hierarchy
+                # all containers will be mapped in the map_containers_function
+                # mapping will be saved in the database table of the target device
+            object_container, container_hierarchy_map = SpecificTargetSecurityDeviceObject.map_containers()
 
             # migration process will start by checking all the objects and see if they follow PA's standards. it will enforce compatibility
             # and after compatibilty is enforced, it will move all this data in the target's device's database
+            # the adapt_config function will:
+                # track all the below changes
+                # check all the objects and see if they follow the target's device standards of definition and change the definition to follow the standards
+                # check all the security policies and see if they follow the target's device standards of definition and change the definition to follow the standards
+                    # check all the security policies with ICMP objects defined on them and apply the standards. for example in PA:
+                    # if ICMP objects are present (includig in the port object groups)
+                        # they will be removed from wherever they are and two policies will be imported in the target's device's database:
+                            # 1. the original policy, containing the destination ports. name unchanged
+                            # 2. a ping policy, containing only the application ping. name with _PING suffix.
+                            # 3. if the policy has only ping objects, the policy will not be split, name will still be modified, port objects removed and ping app added
+                            # to the policy
+                # adapt_config will also change the containers of the objects before adding them to the target's device database
+            #TODO: CONTINUE FROM HERE
+            SpecificTargetSecurityDeviceObject.adapt_config(object_container, container_hierarchy_map)
 
-            # same with the security policies
-            # all these checks and changes will be tracked
+            # at this point, all the adapted data has been retrieved, it is time to insert it into the databae
+            # SpecificTargetSecurityDeviceObject.insert_network_objects_data(..)
+            # ...
 
-            # at this point, all the data is correctly inserted into the target's device database
-            
-            # now the migration can start with the import of the objects, object groups and creation of PA tags
-                # migration of ICMP objects will be skipped and log messages will be generated for this
-            
-            # at this point, all the objects are created on the target device, it is time to start migration of the security policies
-
-            # each source policy will be checked for ICMP objects. if ICMP objects are present (includig in the port object groups)
-            # they will be removed from wherever they are and two policies will be imported in the target's device's database:
-                # 1. the original policy, containing the destination ports. name unchanged
-                # 2. a ping policy, containing only the application ping. name with _PING suffix.
-                # 3. if the policy has only ping objects, the policy will not be split, name will still be modified, port objects removed and ping app added
-                # to the policy
-            
-
+            # all the data is inserted into the database, the migration can begin
+            SpecificTargetSecurityDeviceObject.migrate_config()
 
 
 
