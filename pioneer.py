@@ -288,13 +288,26 @@ def main():
         
         if pioneer_args["migrate_config"]:
             # get the source and target device
+            source_security_device = pioneer_args["source_device [source_device_name]"]
+            target_security_device = pioneer_args["target_device [target_device_name]"]
 
+            # connect to the databases of these devices
+            source_security_device_db = ''
+            target_security_device_db = ''
+            
+            # instantiate the generic objects and instantiate the specific target
+            
             # identify the type of migration and print out a list with the compatibilites issues and how they will be fixed
+            # get the type of the source device
+            GenericSourceSecurityDeviceDB = ''
+            SpecificTargetSecurityDevice = ''
+            SpecificTargetSecurityDevice.print_compatibility_issues()
 
-            # make the user map the security policies container to its counter part in the target device. map only the child container and let the
-            # program map all the other containers based on the hierarchy. a new table is needed for this
+            # ask the user to : map the security policies container to its counter part in the target device
+                # map only the child container and let the
+                # program map all the other containers based on the hierarchy. a new table is needed for this
 
-            # for now, create all the objects in the highest object container in the hierarchy, that is not Shared.
+            # for now, create all the objects in the highest object container in the hierarchy that is not Shared.
                 # must map the virtual_container to the highest parent in the hierarchy
 
             # migration process will start by checking all the objects and see if they follow PA's standards. it will enforce compatibility
