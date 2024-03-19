@@ -175,10 +175,10 @@ class PioneerDatabase():
     def update_table_value(self, table_name, update_command):
         try:
             self._cursor.execute(update_command)
-            print(f"Inserted values into: {table_name}.")
+            # print(f"Updated values into: {table_name}.")
         
         except psycopg2.Error as err:
-            print(f"Failed to insert values into: {table_name}. Reason: {err}")
+            print(f"Failed to update values for: {table_name}. Reason: {err}")
             sys.exit(1)
 
 
@@ -193,7 +193,6 @@ class PioneerDatabase():
         # Return the list with unique values
         general_logger.info(f"Flattened the query result.")
         return unique_values_list
-
 
 
 # Example usage

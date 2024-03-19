@@ -7,6 +7,8 @@ from pkg.SecurityDevice.APISecurityDevice import APISecurityDeviceFactory
 import sys
 from datetime import datetime, timezone
 
+import subprocess
+
 # Disable logging for the 'fireREST' logger
 helper.logging.getLogger('fireREST').setLevel(helper.logging.CRITICAL)
 
@@ -292,6 +294,7 @@ def main():
                 # python3 pioneer.py --device-name 'sfmc_test' --migrate-config --target_device 'panmc_test'
         # TODO: logging of migration should be done on the target device
         # TODO: everything below this is shit and it's just supposed to work. need to re-do it
+        # import the containers from the target device to the source device
         if pioneer_args["migrate_config"]:
             try:
                 # get the target security device's name
@@ -341,7 +344,7 @@ def main():
                 sys.exit(1)
             
             # print the compatibility issues
-            SpecificTargetSecurityDeviceObject.print_compatibility_issues()
+            # SpecificTargetSecurityDeviceObject.print_compatibility_issues()
 
             # ask the user to : map the security policies container to its counter part in the target device
                 # map only the child container and let the
@@ -350,6 +353,7 @@ def main():
                 # mapping will be saved in the database table of the target device
             object_container, container_hierarchy_map = SpecificTargetSecurityDeviceObject.map_containers()
 
+            interface_map = SpecificTargetSecurityDeviceObject.map_zones()
             # migration process will start by checking all the objects and see if they follow PA's standards. it will enforce compatibility
             # and after compatibilty is enforced, it will move all this data in the target's device's database
             # the adapt_config function will:
@@ -365,7 +369,12 @@ def main():
                             # to the policy
                 # adapt_config will also change the containers of the objects before adding them to the target's device database
             #TODO: CONTINUE FROM HERE
-            SpecificTargetSecurityDeviceObject.adapt_config(object_container, container_hierarchy_map)
+            
+            SpecificTargetSecurityDeviceObject.adapt_config(object_container, container_hierarchy_map, interface_map, SpecificSecurityDeviceObject)
+            return
+            adapted_port_objects = SpecificTargetSecurityDeviceObject.adapt_config('port_objects', object_container, SpecificSecurityDeviceObject)
+            adapted_url_objects = SpecificTargetSecurityDeviceObject.adapt_config('url_objects', object_container, SpecificSecurityDeviceObject)
+            adapted_security_policies = SpecificTargetSecurityDeviceObject.adapt_config('security_policies', container_hierarchy_map, SpecificSecurityDeviceObject)
 
             # at this point, all the adapted data has been retrieved, it is time to insert it into the databae
             # SpecificTargetSecurityDeviceObject.insert_network_objects_data(..)

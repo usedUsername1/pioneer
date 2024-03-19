@@ -744,7 +744,11 @@ class SecurityDevice:
         
         # Return the dictionary of processed objects
         return [processed_objects_dict]
-  
+
+    # call the implementations of create_network_objects, create_port_objects, create_url_objects    
+    def migrate_config(self, config_type):
+        pass
+
     @abstractmethod
     def fetch_objects_info(self, object_type):
         pass
@@ -921,7 +925,7 @@ class SecurityDevice:
     # the following functions process the data from the database. all the objects are processed, the unique values
     # are gathered and returned in a list that will be further processed by the program
     def get_db_objects(self, object_type):
-        general_logger.debug(f"Called SecurityDevice::get_db_objects().")
+        general_logger.debug(f"Called SecurityDevice::get_policy_db_objects().")
         """
         Retrieve and return unique database objects based on the specified type.
 
@@ -964,7 +968,42 @@ class SecurityDevice:
             unique_objects_list.remove(element_to_remove)
 
         return unique_objects_list
-    
+
+    def get_db_objects_from_table(self, column, table):
+        select_command = f"SELECT {column} FROM {table};"
+        
+        # Execute the SQL query and fetch the results
+        query_result = self._database.get_table_value(table, select_command)
+
+        # Extract elements from tuples and flatten the list
+        flattened_list = [item[0] for item in query_result]
+
+        # Remove the 'any' element of the list, if it exists. It is not an object that can be imported
+        if 'any' in flattened_list:
+            flattened_list.remove('any')
+
+        return flattened_list
+
+    # def update_db_value(self, table, column, old_value, new_value)
+    def update_db_value(self, table, column, old_value, new_value):
+        
+        update_query = f"""
+            UPDATE {table}
+            SET {column} = '{new_value}'
+            WHERE {column} = '{old_value}';
+        """
+
+        self._database.update_table_value(table, update_query)
+
+    def update_array_value(self, table, column_name, old_value, new_value):
+        update_query = f"""
+            UPDATE {table}
+            SET {column_name} = array_replace({column_name}, {old_value}, {new_value})
+            WHERE %s = ANY({column_name})
+        """
+
+        self._database.update_table_value(table, update_query)
+
     def insert_into_managed_devices_table(self, managed_device_info):
         general_logger.debug(f"Called SecurityDevice::insert_into_managed_devices_table().")
         """

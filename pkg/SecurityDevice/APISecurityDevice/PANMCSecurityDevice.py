@@ -2,8 +2,11 @@ from pkg.SecurityDevice.APISecurityDevice.APISecurityDeviceConnection import API
 from pkg.SecurityDevice import SecurityDevice
 from panos.panorama import Panorama
 import utils.helper as helper
+import utils.gvars as gvars
 from utils.exceptions import InexistentContainer
 from pkg.Container import SecurityPolicyContainer, ObjectContainer
+import random
+import re
 
 general_logger = helper.logging.getLogger('general')
 
@@ -71,11 +74,10 @@ class PANMCSecurityDevice(SecurityDevice):
 
     def print_compatibility_issues(self):
         print("""You are migrating to a Panorama Management Center device. The following is a list with compatibility issues and how they will be fixed:
-Object names:
-Policy names:
-Port objects:
-URL objects:
-Security Policies restricting ping access: """)
+Object/Policy/Port/URL object names: All names will be cut to have less than 63 characters. In case a name is longer than 63 characters, only the first 60 characters will be kept and
+a random suffix will be generated in order to avoid duplicates. All special characters will be removed and replaced with "_".
+Security Policies restricting ping access: All policies that control ping access will be split in two. The original policy and the ping policy. This is needed because 
+PA treats ping as an application. The second rule will keep the exact same source and destinations, but will have all port objects removed and application set to ping.""" + '\n')
     
     #TODO: only for temp migration, modify later
     # def map_containers_todo(self, SourceSecurityDevice):
@@ -102,16 +104,150 @@ Security Policies restricting ping access: """)
         # return highest_target_container, container_mapping
     #TODO: only for temp migration, modify later
     def map_containers(self):
-        dg_mapping = {'Azure: DEV EUN Internet Access Policy': 'Azure DEV - Internet',
-                       'Azure: DEV EUN VPN Access Policy': 'Azure DEV - VPN',
-                       'Azure: Global VPN Policy': 'Global VPN',
-                       'Global Internet Access Policy': 'Global Internet'}
-        
+        #TODO: uncomment in prod
+        # dg_mapping = {'Azure: DEV EUN Internet Access Policy': 'Azure DEV - Internet',
+        #                'Azure: DEV EUN VPN Access Policy': 'Azure DEV - VPN',
+        #                'Azure: Global VPN Policy': 'Global VPN',
+        #                'Global Internet Access Policy': 'Global Internet'}
+                
         dg_mapping = {'debug3':'Debug'}
 
         object_container = 'Global Internet'
 
         return object_container, dg_mapping
+    
+    def map_zones(self):
+        return {'FTD-INSIDE':'ZONE-LAN', 'FTD-OUTSIDE':'ZONE-WAN'}
+
+    #TODO: throwaway code
+    # modify the source database info
+
+    # def update_db_value(self, table, column, old_value, new_value)
+
+    def adapt_config(self, object_container, container_hierarchy_map, interface_map, SourceSecurityDeviceObject):
+        # insert the target object containers inth the source device database
+        object_container_data = [{'object_container_name':object_container,
+                                  'object_container_parent':None}]
+        
+        SourceSecurityDeviceObject.insert_into_object_containers_table(object_container_data)
+
+        # now loop through container_hierarchy_map, and, based on the key, insert the value
+        #TODO: uncomment when in prod
+        # sec_pol_container_data = [{'security_policy_container_name': 'Azure DEV - Internet',
+        #                            'security_policy_parent':'Azure DEV - VPN'},
+                                   
+        #                            {'security_policy_container_name':'Azure DEV - VPN',
+        #                             'security_policy_parent':'Global VPN'},
+
+        #                             {'security_policy_container_name':'Global VPN',
+        #                             'security_policy_parent':'Global Internet'},
+
+        #                             {'security_policy_container_name':'Global Internet',
+        #                             'security_policy_parent':'Shared'}
+        #                             ]
+
+        sec_pol_container_data = [{'security_policy_container_name': 'Debug',
+                                   'security_policy_parent': None}]
+        
+        SourceSecurityDeviceObject.insert_into_security_policy_containers_table(sec_pol_container_data)
+
+        # insert the target security policy containers into the source device database
+        security_policy_container_data = []
+        # modify the network/port group/objects table, change the original object container to object_container
+        SourceSecurityDeviceObject.update_db_value('network_address_objects_table', 'object_container_name', 'virtual_object_container', object_container)
+        SourceSecurityDeviceObject.update_db_value('network_address_object_groups_table', 'object_container_name', 'virtual_object_container', object_container)
+        SourceSecurityDeviceObject.update_db_value('port_objects_table', 'object_container_name', 'virtual_object_container', object_container)
+        SourceSecurityDeviceObject.update_db_value('port_object_groups_table', 'object_container_name', 'virtual_object_container', object_container)
+        SourceSecurityDeviceObject.update_db_value('url_objects_table', 'object_container_name', 'virtual_object_container', object_container)
+        SourceSecurityDeviceObject.update_db_value('url_object_groups_table', 'object_container_name', 'virtual_object_container', object_container)
+        
+        # change the security policies data, modify the containers and the names of the policies
+        # loop through the container_hierarchy_map and replace old_Value (key) with new_value (value) for all security policies
+        for key, value in container_hierarchy_map.items():
+            SourceSecurityDeviceObject.update_db_value('security_policies_table', 'security_policy_container_name', key, value)
+
+        #TODO: fix this as it doesnt work
+        # change the interface map
+        # for key, value in interface_map:
+        #     SourceSecurityDeviceObject.update_db_value('security_policies_table', 'security_policy_source_zones', key, value)
+        #     SourceSecurityDeviceObject.update_db_value('security_policies_table', 'security_policy_destination_zones', key, value)
+
+        # finally, change the names of the objects both from the object tables and in the security policies table
+            # retrieve all the object names. upon updating the name, make sure you update the name in the array of security_policies_table
+        network_address_object_names = SourceSecurityDeviceObject.get_db_objects_from_table('network_address_name', 'network_address_objects_table')
+        network_address_group_objects_names = SourceSecurityDeviceObject.get_db_objects_from_table('network_address_group_name', 'network_address_object_groups_table')
+        port_object_names = SourceSecurityDeviceObject.get_db_objects_from_table('port_name', 'port_objects_table')
+        port_object_group_names = SourceSecurityDeviceObject.get_db_objects_from_table('port_group_name', 'port_object_groups_table')
+        
+        # remove all url names containig interbangs
+        url_object_names = SourceSecurityDeviceObject.get_db_objects_from_table('url_object_name', 'url_objects_table')
+
+        url_object_groups_names = SourceSecurityDeviceObject.get_db_objects_from_table('url_object_group_name', 'url_object_groups_table')
+        security_policy_names = SourceSecurityDeviceObject.get_db_objects_from_table('security_policy_name', 'security_policies_table')
+
+        # loop through all the names and for each name, call the apply_name_constraints and after applying constraints, change the value of the name in the database
+        for name in network_address_object_names:
+            new_name = PANMCSecurityDevice.apply_name_constraints(name)
+            # replace the name in the database
+            #table, column_name, old_value, new_value
+            SourceSecurityDeviceObject.update_db_value('network_address_objects_table', 'network_address_name', name, new_name)
+            SourceSecurityDeviceObject.update_array_value('security_policies_table', 'security_policy_source_networks', name, new_name)
+            SourceSecurityDeviceObject.update_array_value('security_policies_table', 'security_policy_destination_networks', name, new_name)
+            # and update the array value in the security policies table
+
+        for name in network_address_group_objects_names:
+            new_name = PANMCSecurityDevice.apply_name_constraints(name)
+            SourceSecurityDeviceObject.update_db_value('network_address_object_groups_table', 'network_address_group_name', name, new_name)
+            SourceSecurityDeviceObject.update_array_value('security_policies_table', 'security_policy_source_networks', name, new_name)
+            SourceSecurityDeviceObject.update_array_value('security_policies_table', 'security_policy_destination_networks', name, new_name)
+            
+        for name in port_object_names:
+            new_name = PANMCSecurityDevice.apply_name_constraints(name)
+            SourceSecurityDeviceObject.update_db_value('port_objects_table', 'network_address_name', name, new_name)
+            SourceSecurityDeviceObject.update_array_value('security_policies_table', 'security_policy_source_ports', name, new_name)
+            SourceSecurityDeviceObject.update_array_value('security_policies_table', 'security_policy_destination_ports', name, new_name)
+
+        for name in port_object_group_names:
+            new_name = PANMCSecurityDevice.apply_name_constraints(name)
+            SourceSecurityDeviceObject.update_db_value('port_object_groups_table', 'network_address_name', name, new_name)
+            SourceSecurityDeviceObject.update_array_value('security_policies_table', 'security_policy_source_ports', name, new_name)
+            SourceSecurityDeviceObject.update_array_value('security_policies_table', 'security_policy_destination_ports', name, new_name)
+
+        for name in url_object_names:
+            # remove all the names containing special characters
+            new_name = PANMCSecurityDevice.apply_name_constraints(name)
+            SourceSecurityDeviceObject.update_db_value('url_objects_table', 'url_object_name', name, new_name)
+
+        for name in url_object_groups_names:
+            new_name = PANMCSecurityDevice.apply_name_constraints(name)
+            SourceSecurityDeviceObject.update_db_value('url_object_groups_table', 'url_object_group_name', name, new_name)
+
+        for name in security_policy_names:
+            new_name = PANMCSecurityDevice.apply_name_constraints(name)
+            SourceSecurityDeviceObject.update_db_value('security_policies_table', 'security_policy_name', name, new_name)
+
+    @staticmethod
+    def apply_name_constraints(name):
+        # Replace all characters that are not alphanumeric, '-', or '_' with '_'
+        name = re.sub(r'[^a-zA-Z0-9-_.]', '_', name)  # Include '.' in the character set
+
+        if len(name) > 63:
+            truncated_name = name[:60]
+            suffix = f"_random_{random.randint(100, 999)}_id"
+            truncated_name += suffix
+            return truncated_name
+        else:
+            return name
+
+    
+    @staticmethod
+    def apply_url_constraints(name):
+        pass
+
+    @staticmethod
+    def remove_interbang_elements(list):
+        pass
+
 
 class PANMCPolicyContainer(SecurityPolicyContainer):
     def __init__(self, container_info) -> None:
