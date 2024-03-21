@@ -166,11 +166,10 @@ PA treats ping as an application. The second rule will keep the exact same sourc
         for key, value in container_hierarchy_map.items():
             SourceSecurityDeviceObject.update_db_value('security_policies_table', 'security_policy_container_name', key, value)
 
-        #TODO: fix this as it doesnt work
         # change the interface map
-        # for key, value in interface_map:
-        #     SourceSecurityDeviceObject.update_db_value('security_policies_table', 'security_policy_source_zones', key, value)
-        #     SourceSecurityDeviceObject.update_db_value('security_policies_table', 'security_policy_destination_zones', key, value)
+        for key, value in interface_map.items():
+            SourceSecurityDeviceObject.update_array_value('security_policies_table', 'security_policy_source_zones', key, value)
+            SourceSecurityDeviceObject.update_array_value('security_policies_table', 'security_policy_destination_zones', key, value)
 
         # finally, change the names of the objects both from the object tables and in the security policies table
             # retrieve all the object names. upon updating the name, make sure you update the name in the array of security_policies_table
@@ -179,12 +178,14 @@ PA treats ping as an application. The second rule will keep the exact same sourc
         port_object_names = SourceSecurityDeviceObject.get_db_objects_from_table('port_name', 'port_objects_table')
         port_object_group_names = SourceSecurityDeviceObject.get_db_objects_from_table('port_group_name', 'port_object_groups_table')
         
-        # remove all url names containig interbangs
         url_object_names = SourceSecurityDeviceObject.get_db_objects_from_table('url_object_name', 'url_objects_table')
+        url_object_values = SourceSecurityDeviceObject.get_db_objects_from_table('url_value', 'url_objects_table')
 
         url_object_groups_names = SourceSecurityDeviceObject.get_db_objects_from_table('url_object_group_name', 'url_object_groups_table')
         security_policy_names = SourceSecurityDeviceObject.get_db_objects_from_table('security_policy_name', 'security_policies_table')
-
+        security_policy_urls = SourceSecurityDeviceObject.get_db_objects_from_table('security_policy_urls', 'security_policies_table')
+        security_policy_destination_ports = SourceSecurityDeviceObject.get_db_objects_from_table('security_policy_destination_ports', 'security_policies_table')
+        icmp_objects = SourceSecurityDeviceObject.get_db_objects_from_table('icmp_name', 'icmp_objects_table')
         # loop through all the names and for each name, call the apply_name_constraints and after applying constraints, change the value of the name in the database
         for name in network_address_object_names:
             new_name = PANMCSecurityDevice.apply_name_constraints(name)
@@ -203,13 +204,13 @@ PA treats ping as an application. The second rule will keep the exact same sourc
             
         for name in port_object_names:
             new_name = PANMCSecurityDevice.apply_name_constraints(name)
-            SourceSecurityDeviceObject.update_db_value('port_objects_table', 'network_address_name', name, new_name)
+            SourceSecurityDeviceObject.update_db_value('port_objects_table', 'port_name', name, new_name)
             SourceSecurityDeviceObject.update_array_value('security_policies_table', 'security_policy_source_ports', name, new_name)
             SourceSecurityDeviceObject.update_array_value('security_policies_table', 'security_policy_destination_ports', name, new_name)
 
         for name in port_object_group_names:
             new_name = PANMCSecurityDevice.apply_name_constraints(name)
-            SourceSecurityDeviceObject.update_db_value('port_object_groups_table', 'network_address_name', name, new_name)
+            SourceSecurityDeviceObject.update_db_value('port_object_groups_table', 'port_group_name', name, new_name)
             SourceSecurityDeviceObject.update_array_value('security_policies_table', 'security_policy_source_ports', name, new_name)
             SourceSecurityDeviceObject.update_array_value('security_policies_table', 'security_policy_destination_ports', name, new_name)
 
@@ -217,23 +218,72 @@ PA treats ping as an application. The second rule will keep the exact same sourc
             # remove all the names containing special characters
             new_name = PANMCSecurityDevice.apply_name_constraints(name)
             SourceSecurityDeviceObject.update_db_value('url_objects_table', 'url_object_name', name, new_name)
+            SourceSecurityDeviceObject.update_array_value('security_policies_table', 'security_policy_urls', name, new_name)
+        
+        # reformat URLs in order to match PA's standards
+        for old_url_value in url_object_values:
+            new_url_value = PANMCSecurityDevice.apply_url_constraints(old_url_value)
+            SourceSecurityDeviceObject.update_db_value('url_objects_table', 'url_value', old_url_value, new_url_value)
 
         for name in url_object_groups_names:
             new_name = PANMCSecurityDevice.apply_name_constraints(name)
             SourceSecurityDeviceObject.update_db_value('url_object_groups_table', 'url_object_group_name', name, new_name)
+            SourceSecurityDeviceObject.update_array_value('security_policies_table', 'security_policy_urls', name, new_name)
 
         for name in security_policy_names:
             new_name = PANMCSecurityDevice.apply_name_constraints(name)
             SourceSecurityDeviceObject.update_db_value('security_policies_table', 'security_policy_name', name, new_name)
+        
+        # remove URL categories from the policy
+        for url_name_list in security_policy_urls:
+            for url_name in url_name_list:
+                if gvars.separator_character in url_name:
+                    SourceSecurityDeviceObject.remove_array_value('security_policies_table', 'security_policy_urls', url_name)
+
+        # remove icmp objects from the policy (and from the port objects that contain ping objects)
+        # bool to see if policy is ping policy
+        for port_object_list in security_policy_destination_ports:
+            is_ping_policy = False
+            for port_object in port_object_list:
+                if port_object is 'any':
+                    continue
+                
+                # check if the current port_object is an icmp object, if it is, remove it from the policy
+                if PANMCSecurityDevice.is_icmp_object(port_object, icmp_objects):
+                    SourceSecurityDeviceObject.remove_array_value('security_policies_table', 'security_policy_destination_ports', port_object)
+
+                    # change is_ping_policy to True
+                    is_ping_policy = True
+                
+                # if it is not an icmp object, check if it is a port group.
+                elif PANMCSecurityDevice.is_port_group(port_object, port_object_group_names):
+                    pass
+                    # if it is a port group, get its members
+                    port_group_members = SourceSecurityDeviceObject.get_port_group_members(port_object)
+                    # look through its members
+                    for member_port in port_group_members:    
+                        # if you encounter an imcp object
+                        if PANMCSecurityDevice.is_icmp_object(member_port, icmp_objects):
+                            # remove it from the member list
+                            SourceSecurityDeviceObject.remove_array_value('port_object_groups_table', 'port_group_members', port_object)
+                            # change is_ping_policy to True
+                            is_ping_policy = True
+            
+            if is_ping_policy:
+                #TODO: how to clone and insert policy right where i need it?
+                # duplicate the policy
+                # remove all the ports
+                # put "ping" in the applications
+                pass
 
     @staticmethod
     def apply_name_constraints(name):
-        # Replace all characters that are not alphanumeric, '-', or '_' with '_'
-        name = re.sub(r'[^a-zA-Z0-9-_.]', '_', name)  # Include '.' in the character set
+        # Replace all characters that are not space, '-', or '.' with '_'
+        name = re.sub(r'[^a-zA-Z0-9\s_.-]', '_', name)
 
         if len(name) > 63:
             truncated_name = name[:60]
-            suffix = f"_random_{random.randint(100, 999)}_id"
+            suffix = f"_{random.randint(100, 999)}"
             truncated_name += suffix
             return truncated_name
         else:
@@ -241,11 +291,31 @@ PA treats ping as an application. The second rule will keep the exact same sourc
 
     
     @staticmethod
-    def apply_url_constraints(name):
-        pass
+    def apply_url_constraints(url_value):
+        # If ".*" is found, change it to "*."
+        url_value = re.sub(r'\.\*', '*.', url_value)
+
+        # If a single wildcard character is found and not followed by a dot, add a dot after it
+        url_value = re.sub(r'(?<!\*)\*(?!\.)', '*.', url_value)
+
+        return url_value
+    
+    @staticmethod
+    def is_icmp_object(port_object, icmp_objects):
+        if port_object in icmp_objects:
+            return True
+        else:
+            return False
+    
+    @staticmethod
+    def is_port_group(port_object, port_group_objects):
+        if port_object in port_group_objects:
+            return True
+        else:
+            return False
 
     @staticmethod
-    def remove_interbang_elements(list):
+    def create_ping_policy(policy):
         pass
 
 

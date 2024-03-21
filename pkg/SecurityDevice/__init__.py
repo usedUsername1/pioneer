@@ -996,14 +996,38 @@ class SecurityDevice:
         self._database.update_table_value(table, update_query)
 
     def update_array_value(self, table, column_name, old_value, new_value):
+
         update_query = f"""
             UPDATE {table}
-            SET {column_name} = array_replace({column_name}, {old_value}, {new_value})
-            WHERE %s = ANY({column_name})
+            SET {column_name} = array_replace({column_name}, '{old_value}', '{new_value}')
+            WHERE '{old_value}' = ANY({column_name})
         """
-
         self._database.update_table_value(table, update_query)
 
+    def remove_array_value(self, table, column_name, value_to_remove):
+        update_query = f"""
+            UPDATE {table}
+            SET {column_name} = array_remove({column_name}, '{value_to_remove}')
+            WHERE '{value_to_remove}' = ANY({column_name})
+        """
+        self._database.update_table_value(table, update_query)
+    
+    # QUERY: select port_group_members from port_object_groups_table where port_group_name = '{}'
+    def get_port_group_members(self, table, name):
+        select_command = f"SELECT port_group_members FROM port_object_groups_table WHERE port_group_name = {name};"
+        
+        # Execute the SQL query and fetch the results
+        query_result = self._database.get_table_value(table, select_command)
+
+        # Extract elements from tuples and flatten the list
+        flattened_list = [item[0] for item in query_result]
+
+        # Remove the 'any' element of the list, if it exists. It is not an object that can be imported
+        if 'any' in flattened_list:
+            flattened_list.remove('any')
+
+        return flattened_list
+    
     def insert_into_managed_devices_table(self, managed_device_info):
         general_logger.debug(f"Called SecurityDevice::insert_into_managed_devices_table().")
         """
