@@ -995,6 +995,24 @@ class SecurityDevice:
 
         self._database.update_table_value(table, update_query)
 
+    def set_policy_param(self, table, security_policy_name, column_name, new_value):
+        update_query = f"""
+            UPDATE {table}
+            SET {column_name} = '{new_value}'
+            WHERE security_policy_name = '{security_policy_name}';
+        """
+
+        self._database.update_table_value(table, update_query)
+
+    def set_port_members(self, table, security_policy_name, column_name, new_value):
+        update_query = f"""
+            UPDATE {table}
+            SET {column_name} = '{new_value}'
+            WHERE port_group_name = '{security_policy_name}';
+        """
+
+        self._database.update_table_value(table, update_query)
+
     def update_array_value(self, table, column_name, old_value, new_value):
 
         update_query = f"""
@@ -1004,6 +1022,21 @@ class SecurityDevice:
         """
         self._database.update_table_value(table, update_query)
 
+    def get_policy_param(self, policy_name, param_column):
+        select_query = f"select {param_column} from security_policies_table where security_policy_name = '{policy_name}'"
+        # Execute the SQL query and fetch the results
+        query_result = self._database.get_table_value('security_policies_table', select_query)
+
+        # Extract elements from tuples and flatten the list
+        flattened_list = [item[0] for item in query_result]
+
+        # Remove the 'any' element of the list, if it exists. It is not an object that can be imported
+        if 'any' in flattened_list:
+            flattened_list.remove('any')
+
+        return flattened_list
+        
+
     def remove_array_value(self, table, column_name, value_to_remove):
         update_query = f"""
             UPDATE {table}
@@ -1011,11 +1044,58 @@ class SecurityDevice:
             WHERE '{value_to_remove}' = ANY({column_name})
         """
         self._database.update_table_value(table, update_query)
+
+    def delete_referenced_objects(self, port_group_name):
+        # Check if the specified port group exists in the array
+        select_query = f"""
+            SELECT security_policy_destination_ports 
+            FROM security_policies_table 
+            WHERE '{port_group_name}' = ANY(security_policy_destination_ports);
+        """
+        row = self._database.get_table_value('security_policies_table', select_query)
+
+        if row is None:
+            print(f"No references found for {port_group_name}.")
+            return
+        
+        destination_ports = row[0]
+        print("PRINT ME", destination_ports)
+        
+        if len(destination_ports) > 1:
+            # Construct the SQL query to remove the specified element from the array
+            delete_query = f"""
+                UPDATE security_policies_table 
+                SET security_policy_destination_ports = array_remove(security_policy_destination_ports, %s)
+                WHERE '{port_group_name}' = ANY(security_policy_destination_ports);
+            """
+            # Execute the query with parameters
+            self._database.update_table_value('security_policies_table', delete_query)
+            
+        elif len(destination_ports) == 1:
+            # If there's only one element, replace it with {any}
+            uopdate_value = '{any}'
+            update_query = f"""
+                UPDATE security_policies_table 
+                SET security_policy_destination_ports = '{uopdate_value}'
+                WHERE '{port_group_name}' = ANY(security_policy_destination_ports);
+            """
+            print("I AM IN GOOD FUNCTION", update_query)
+            # Execute the query with parameters
+            self._database.update_table_value('security_policies_table', update_query)
+        
+        print(f"Reference to {port_group_name} deleted successfully.")
+
+    def remove_port_group(self, port_group_name):
+
+        delete_query = f""" delete from  port_object_groups_table where port_group_name = '{port_group_name}';"""
+
+        self._database.update_table_value('port_object_groups_table', delete_query)
+        print(f"deleting referenced object: {port_group_name}")
     
     # QUERY: select port_group_members from port_object_groups_table where port_group_name = '{}'
     def get_port_group_members(self, table, name):
-        select_command = f"SELECT port_group_members FROM port_object_groups_table WHERE port_group_name = {name};"
-        
+        select_command = f"SELECT port_group_members FROM port_object_groups_table WHERE port_group_name = '{name}';"
+
         # Execute the SQL query and fetch the results
         query_result = self._database.get_table_value(table, select_command)
 

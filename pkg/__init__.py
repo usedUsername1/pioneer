@@ -175,12 +175,13 @@ class PioneerDatabase():
     def update_table_value(self, table_name, update_command):
         try:
             self._cursor.execute(update_command)
+            # message = self._cursor.statusmessage
+            # print("Status message:", message)
             # print(f"Updated values into: {table_name}.")
         
         except psycopg2.Error as err:
             print(f"Failed to update values for: {table_name}. Reason: {err}")
             sys.exit(1)
-
 
     def flatten_query_result(self, query_result):
         general_logger.debug(f"Called PioneerDatabase::flatten_query_result().")

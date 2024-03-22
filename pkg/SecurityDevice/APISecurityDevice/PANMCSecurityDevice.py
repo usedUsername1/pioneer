@@ -183,10 +183,15 @@ PA treats ping as an application. The second rule will keep the exact same sourc
 
         url_object_groups_names = SourceSecurityDeviceObject.get_db_objects_from_table('url_object_group_name', 'url_object_groups_table')
         security_policy_names = SourceSecurityDeviceObject.get_db_objects_from_table('security_policy_name', 'security_policies_table')
-        security_policy_urls = SourceSecurityDeviceObject.get_db_objects_from_table('security_policy_urls', 'security_policies_table')
-        security_policy_destination_ports = SourceSecurityDeviceObject.get_db_objects_from_table('security_policy_destination_ports', 'security_policies_table')
         icmp_objects = SourceSecurityDeviceObject.get_db_objects_from_table('icmp_name', 'icmp_objects_table')
         # loop through all the names and for each name, call the apply_name_constraints and after applying constraints, change the value of the name in the database
+        # remove icmp objects from the policy (and from the port objects that contain ping objects)
+        ping_policy_list = self.remove_ping_url_from_policy_and_return_ping_policies_list(security_policy_names, SourceSecurityDeviceObject, icmp_objects, port_object_group_names)
+
+        for name in security_policy_names:
+            new_name = PANMCSecurityDevice.apply_name_constraints(name)
+            SourceSecurityDeviceObject.update_db_value('security_policies_table', 'security_policy_name', name, new_name)
+
         for name in network_address_object_names:
             new_name = PANMCSecurityDevice.apply_name_constraints(name)
             # replace the name in the database
@@ -225,56 +230,172 @@ PA treats ping as an application. The second rule will keep the exact same sourc
             new_url_value = PANMCSecurityDevice.apply_url_constraints(old_url_value)
             SourceSecurityDeviceObject.update_db_value('url_objects_table', 'url_value', old_url_value, new_url_value)
 
+        # reformat URLs in order to match PA's standards
+        for old_url_value in url_object_values:
+            new_url_value = PANMCSecurityDevice.apply_url_constraints(old_url_value)
+            SourceSecurityDeviceObject.update_db_value('url_objects_table', 'url_value', old_url_value, new_url_value)
+
         for name in url_object_groups_names:
             new_name = PANMCSecurityDevice.apply_name_constraints(name)
             SourceSecurityDeviceObject.update_db_value('url_object_groups_table', 'url_object_group_name', name, new_name)
             SourceSecurityDeviceObject.update_array_value('security_policies_table', 'security_policy_urls', name, new_name)
-
-        for name in security_policy_names:
-            new_name = PANMCSecurityDevice.apply_name_constraints(name)
-            SourceSecurityDeviceObject.update_db_value('security_policies_table', 'security_policy_name', name, new_name)
         
-        # remove URL categories from the policy
-        for url_name_list in security_policy_urls:
-            for url_name in url_name_list:
-                if gvars.separator_character in url_name:
-                    SourceSecurityDeviceObject.remove_array_value('security_policies_table', 'security_policy_urls', url_name)
+        # now create the ping policies
+        self.create_ping_policy(ping_policy_list, SourceSecurityDeviceObject)
 
-        # remove icmp objects from the policy (and from the port objects that contain ping objects)
-        # bool to see if policy is ping policy
-        for port_object_list in security_policy_destination_ports:
+
+    
+    # EXPECTED RESULT: test-only-icmp-members should have security_policy_destination_ports set to {any} - works
+    # test-icmp-object-group, TEST-DEBUG-ICMP should have only DNS_over_TCP member - works
+    # icmp-inception1 should be completely gone from the port groups table - yes; and from the policy test-only-icmp-group - nope
+    
+    # remove the URL categories here as well
+    def remove_ping_url_from_policy_and_return_ping_policies_list(self, security_policy_names, SourceSecurityDeviceObject, icmp_objects, port_object_group_names):
+        ping_policy_list = []
+        for security_policy_name in security_policy_names:
             is_ping_policy = False
-            for port_object in port_object_list:
-                if port_object is 'any':
-                    continue
-                
-                # check if the current port_object is an icmp object, if it is, remove it from the policy
-                if PANMCSecurityDevice.is_icmp_object(port_object, icmp_objects):
-                    SourceSecurityDeviceObject.remove_array_value('security_policies_table', 'security_policy_destination_ports', port_object)
+            security_policy_destination_ports = SourceSecurityDeviceObject.get_policy_param(security_policy_name, 'security_policy_destination_ports')
+            security_policy_urls = SourceSecurityDeviceObject.get_policy_param(security_policy_name, 'security_policy_urls')
 
-                    # change is_ping_policy to True
-                    is_ping_policy = True
+            for url_name_list in security_policy_urls:
+                # Make a copy of the url_name_list
+                copied_url_name_list = url_name_list.copy()
+                # print(security_policy_name, copied_url_name_list)
                 
-                # if it is not an icmp object, check if it is a port group.
-                elif PANMCSecurityDevice.is_port_group(port_object, port_object_group_names):
-                    pass
-                    # if it is a port group, get its members
-                    port_group_members = SourceSecurityDeviceObject.get_port_group_members(port_object)
-                    # look through its members
-                    for member_port in port_group_members:    
-                        # if you encounter an imcp object
-                        if PANMCSecurityDevice.is_icmp_object(member_port, icmp_objects):
-                            # remove it from the member list
-                            SourceSecurityDeviceObject.remove_array_value('port_object_groups_table', 'port_group_members', port_object)
-                            # change is_ping_policy to True
-                            is_ping_policy = True
-            
-            if is_ping_policy:
-                #TODO: how to clone and insert policy right where i need it?
-                # duplicate the policy
-                # remove all the ports
-                # put "ping" in the applications
-                pass
+                for url_name in url_name_list:
+                    if url_name == 'any':
+                        continue
+
+                    if gvars.separator_character in url_name:
+                        SourceSecurityDeviceObject.remove_array_value('security_policies_table', 'security_policy_urls', url_name)
+                        copied_url_name_list.remove(url_name)
+
+                        if len(copied_url_name_list) == 0:
+                            SourceSecurityDeviceObject.set_policy_param('security_policies_table', security_policy_name, 'security_policy_urls', "{any}")
+
+            for port_object_list in security_policy_destination_ports:
+               # print("SP:", security_policy_name, ", Dports:", port_object_list)
+                ports_to_remove = []  # List to store ports to be removed
+                for port_object in port_object_list:
+                #    print(f"Checking port object: {port_object}")
+                    if port_object == 'any':
+                        continue
+                    
+                    # check if the current port_object is an icmp object
+                    if PANMCSecurityDevice.is_icmp_object(port_object, icmp_objects):
+                 #       print(f"{port_object} is ICMP")
+                        ports_to_remove.append(port_object)
+                        is_ping_policy = True
+                    
+                    # if it is not an icmp object, check if it is a port group.
+                    elif PANMCSecurityDevice.is_port_group(port_object, port_object_group_names):
+                  #      print(f"{port_object} is a port group. Looking for members")
+                        # if it is a port group, get its members
+                        port_group_members = SourceSecurityDeviceObject.get_port_group_members('port_object_groups_table', port_object)
+                        # look through its members
+                        for member_port_list in port_group_members:
+                   #         print(f"members are {member_port_list}")
+                            for member_port in member_port_list:
+                    #            print(f"checking member: {member_port}")
+                                if PANMCSecurityDevice.is_icmp_object(member_port, icmp_objects):
+                                    ports_to_remove.append(member_port)
+                                    is_ping_policy = True
+                    
+                # Remove the ICMP ports after iteration to avoid modifying the list while iterating
+                # Remove ICMP members from port groups
+                # Create copies of the lists
+                copied_port_object_list = port_object_list.copy()
+                copied_ports_to_remove = ports_to_remove.copy()
+
+                for port_group in port_object_list:
+                    if PANMCSecurityDevice.is_port_group(port_group, port_object_group_names):
+                        port_group_members = SourceSecurityDeviceObject.get_port_group_members('port_object_groups_table', port_group)
+                        copied_port_group_members = port_group_members.copy()
+                        
+                        for member_port_list in port_group_members:
+                            copied_member_port_list = member_port_list.copy()
+                            
+                            for member_port in member_port_list:
+                                if PANMCSecurityDevice.is_icmp_object(member_port, icmp_objects):
+                                    copied_member_port_list.remove(member_port)
+                                    
+                            # Update the copied port group members
+                            copied_port_group_members[copied_port_group_members.index(member_port_list)] = copied_member_port_list
+                            
+                        # Update the port group in the copied port object list
+                        if not any(copied_port_group_members):
+                            copied_port_object_list.remove(port_group)
+                            SourceSecurityDeviceObject.delete_referenced_objects(port_group)
+                            SourceSecurityDeviceObject.remove_port_group(port_group)
+                        else:
+                            # Convert the member lists to string format
+                            formatted_members = ', '.join([f"{port}" for port_list in copied_port_group_members for port in port_list])
+                            formatted_members = f"{{{formatted_members}}}"
+                            # Update the port group members in the port_object_groups_table
+                            SourceSecurityDeviceObject.set_port_members('port_object_groups_table', port_group, 'port_group_members', formatted_members)
+                                
+                # Remove ports from the copied port object list
+                for port_to_remove in copied_ports_to_remove:
+                    if port_to_remove in copied_port_object_list:
+                        copied_port_object_list.remove(port_to_remove)
+                        
+                if not copied_port_object_list:
+                    SourceSecurityDeviceObject.set_policy_param('security_policies_table', security_policy_name, 'security_policy_destination_ports', "{any}")
+                else:
+                    # Format the modified destination ports array as a set
+                    formatted_ports = ', '.join([f"{port}" for port in copied_port_object_list])
+                    formatted_ports = f"{{{formatted_ports}}}"
+                    # Update the security policy with the modified destination ports array
+                    SourceSecurityDeviceObject.set_policy_param('security_policies_table', security_policy_name, 'security_policy_destination_ports', formatted_ports)
+
+                # Add the policy to the ping_policy_list if ICMP object was removed
+                # TODO: the ping polivcy must be created here
+                # get the record in the database of the ping policy
+                if is_ping_policy:
+                    ping_policy_list.append(security_policy_name)
+
+        # Return the list of policies affected by ICMP object removal after iterating through all security policy names
+        return ping_policy_list
+    
+    # TODO: instead of modifying the database, just create the ping policy on the go and don't store it in the database!
+    # TODO: create new insert_record_between function. this function will get the policy index of the current record
+    def create_ping_policy(self, ping_policy_name, SourceSecurityDeviceObject):
+        # loop through the policies
+            # loop through the policies
+                # if the current ping policy has destination ports set to 'any', don't duplicate it
+                security_policy_destination_ports = SourceSecurityDeviceObject.get_policy_param(ping_policy_name, 'security_policy_destination_ports')
+                print(security_policy_destination_ports)
+                if security_policy_destination_ports == ['any']:
+                    # add ping to the apps
+                    security_policy_destination_ports = SourceSecurityDeviceObject.set_policy_param('security_policies_table', ping_policy_name, 'security_policy_l7_apps', "{ping}")
+                else:
+                    # construct the new policy
+                    sec_policy_data = [{"sec_policy_name": SourceSecurityDeviceObject.get_policy_param(ping_policy_name, 'security_policy_name'),
+            "sec_policy_container_name": self.get_container_name(),
+            "security_policy_index": self.get_container_index(),
+            "sec_policy_category": self.get_category(),
+            "sec_policy_status": self.get_status(),
+            "sec_policy_source_zones": self.get_source_zones(),
+            "sec_policy_destination_zones": self.get_destination_zones(),
+            "sec_policy_source_networks": self.get_source_networks(),
+            "sec_policy_destination_networks": self.get_destination_networks(),
+            "sec_policy_source_ports": self.get_source_ports(),
+            "sec_policy_destination_ports": self.get_destination_ports(),
+            "sec_policy_schedules": self.get_schedule_objects(),
+            "sec_policy_users": self.get_users(),
+            "sec_policy_urls": self.get_urls(),
+            "sec_policy_apps": self.get_policy_apps(),
+            "sec_policy_description": self.get_description(),
+            "sec_policy_comments": self.get_comments(),
+            "sec_policy_log_settings": self.get_processed_log_settings(),
+            "sec_policy_log_start": self.get_log_start(),
+            "sec_policy_log_end": self.get_log_end(),
+            "sec_policy_section": self.get_section(),
+            "sec_policy_action": self.get_action(),}]
+                # duplicate the policy and insert it right after the current policy in the database
+                # remove all the ports on the duplicated policy
+                # put "ping" in the applications of the duplicated policy
+            pass
 
     @staticmethod
     def apply_name_constraints(name):
@@ -313,10 +434,6 @@ PA treats ping as an application. The second rule will keep the exact same sourc
             return True
         else:
             return False
-
-    @staticmethod
-    def create_ping_policy(policy):
-        pass
 
 
 class PANMCPolicyContainer(SecurityPolicyContainer):
