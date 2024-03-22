@@ -357,46 +357,8 @@ PA treats ping as an application. The second rule will keep the exact same sourc
         # Return the list of policies affected by ICMP object removal after iterating through all security policy names
         return ping_policy_list
     
-    # TODO: instead of modifying the database, just create the ping policy on the go and don't store it in the database!
-    # TODO: create new insert_record_between function. this function will get the policy index of the current record
-    def create_ping_policy(self, ping_policy_name, SourceSecurityDeviceObject):
-        # loop through the policies
-            # loop through the policies
-                # if the current ping policy has destination ports set to 'any', don't duplicate it
-                security_policy_destination_ports = SourceSecurityDeviceObject.get_policy_param(ping_policy_name, 'security_policy_destination_ports')
-                print(security_policy_destination_ports)
-                if security_policy_destination_ports == ['any']:
-                    # add ping to the apps
-                    security_policy_destination_ports = SourceSecurityDeviceObject.set_policy_param('security_policies_table', ping_policy_name, 'security_policy_l7_apps', "{ping}")
-                else:
-                    # construct the new policy
-                    sec_policy_data = [{"sec_policy_name": SourceSecurityDeviceObject.get_policy_param(ping_policy_name, 'security_policy_name'),
-            "sec_policy_container_name": self.get_container_name(),
-            "security_policy_index": self.get_container_index(),
-            "sec_policy_category": self.get_category(),
-            "sec_policy_status": self.get_status(),
-            "sec_policy_source_zones": self.get_source_zones(),
-            "sec_policy_destination_zones": self.get_destination_zones(),
-            "sec_policy_source_networks": self.get_source_networks(),
-            "sec_policy_destination_networks": self.get_destination_networks(),
-            "sec_policy_source_ports": self.get_source_ports(),
-            "sec_policy_destination_ports": self.get_destination_ports(),
-            "sec_policy_schedules": self.get_schedule_objects(),
-            "sec_policy_users": self.get_users(),
-            "sec_policy_urls": self.get_urls(),
-            "sec_policy_apps": self.get_policy_apps(),
-            "sec_policy_description": self.get_description(),
-            "sec_policy_comments": self.get_comments(),
-            "sec_policy_log_settings": self.get_processed_log_settings(),
-            "sec_policy_log_start": self.get_log_start(),
-            "sec_policy_log_end": self.get_log_end(),
-            "sec_policy_section": self.get_section(),
-            "sec_policy_action": self.get_action(),}]
-                # duplicate the policy and insert it right after the current policy in the database
-                # remove all the ports on the duplicated policy
-                # put "ping" in the applications of the duplicated policy
-            pass
-
+    # TODO: ADD PING TO THE APPLICATIONS WHENEVER YOU IDTENFITY A PING POLICY. LET THE create_security_policy_function() that will be implemented
+    # take care of duplicating the policy
     @staticmethod
     def apply_name_constraints(name):
         # Replace all characters that are not space, '-', or '.' with '_'
