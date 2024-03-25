@@ -315,19 +315,19 @@ def main():
                     general_logger.info(f"<{security_device_name}> is an API device. Type: <{security_device_type}>")
                     # get the security device hostname
 
-                    security_device_hostname = GenericSecurityDevice.get_security_device_hostname_from_db()
+                    security_device_hostname = GenericTargetSecurityDevice.get_security_device_hostname_from_db()
 
                     # get the security device username
-                    security_device_username = GenericSecurityDevice.get_security_device_username_from_db()
+                    security_device_username = GenericTargetSecurityDevice.get_security_device_username_from_db()
 
                     # get the security device secret
-                    security_device_secret = GenericSecurityDevice.get_security_device_secret_from_db()
+                    security_device_secret = GenericTargetSecurityDevice.get_security_device_secret_from_db()
 
                     # get the security device port
-                    security_device_port = GenericSecurityDevice.get_security_device_port_from_db()
+                    security_device_port = GenericTargetSecurityDevice.get_security_device_port_from_db()
 
                     # get the security device domain
-                    security_device_domain = GenericSecurityDevice.get_security_device_domain_from_db()
+                    security_device_domain = GenericTargetSecurityDevice.get_security_device_domain_from_db()
 
                     # create the API security object based on the device type
                     SpecificTargetSecurityDeviceObject = APISecurityDeviceFactory.build_api_security_device(security_device_name, security_device_type, TargetSecurityDeviceDB, security_device_hostname, security_device_username, security_device_secret, security_device_port, security_device_domain)
@@ -370,18 +370,8 @@ def main():
                 # adapt_config will also change the containers of the objects before adding them to the target's device database
             #TODO: CONTINUE FROM HERE
             
-            SpecificTargetSecurityDeviceObject.adapt_config(object_container, container_hierarchy_map, interface_map, SpecificSecurityDeviceObject)
-            return
-            adapted_port_objects = SpecificTargetSecurityDeviceObject.adapt_config('port_objects', object_container, SpecificSecurityDeviceObject)
-            adapted_url_objects = SpecificTargetSecurityDeviceObject.adapt_config('url_objects', object_container, SpecificSecurityDeviceObject)
-            adapted_security_policies = SpecificTargetSecurityDeviceObject.adapt_config('security_policies', container_hierarchy_map, SpecificSecurityDeviceObject)
-
-            # at this point, all the adapted data has been retrieved, it is time to insert it into the databae
-            # SpecificTargetSecurityDeviceObject.insert_network_objects_data(..)
-            # ...
-
-            # all the data is inserted into the database, the migration can begin
-            SpecificTargetSecurityDeviceObject.migrate_config()
+            # SpecificTargetSecurityDeviceObject.adapt_config(object_container, container_hierarchy_map, interface_map, SpecificSecurityDeviceObject)
+            SpecificTargetSecurityDeviceObject.migrate_config(SpecificSecurityDeviceObject)
 
 
 

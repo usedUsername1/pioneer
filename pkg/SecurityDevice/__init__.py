@@ -745,9 +745,61 @@ class SecurityDevice:
         # Return the dictionary of processed objects
         return [processed_objects_dict]
 
-    # call the implementations of create_network_objects, create_port_objects, create_url_objects    
-    def migrate_config(self, config_type):
-        pass
+    # call the implementations of create_network_objects, create_port_objects, create_url_objects
+    def migrate_config(self, SourceDevice):
+        print("called migrate config")
+        # create the network objects
+        network_object_names = SourceDevice.get_db_objects_from_table('network_address_name', 'network_address_objects_table')
+        
+        # loop through the object names and for each object, get the data from the database
+        for network_object_name in network_object_names:
+            network_object_container = 'Global Internet'
+            network_address_value = SourceDevice.get_db_col_by_val('network_address_value', 'network_address_objects_table', 'network_address_name', network_object_name)
+            network_address_type = SourceDevice.get_db_col_by_val('network_address_type', 'network_address_objects_table', 'network_address_name', network_object_name)
+            network_address_description = SourceDevice.get_db_col_by_val('network_address_description', 'network_address_objects_table', 'network_address_name', network_object_name)
+            # print(network_object_name, network_address_value, network_address_type, network_address_description)
+            
+            # with the data retrieved from the database, create the object in the target security device
+            self.migrate_network_objects(network_object_name, network_object_container, network_address_value, network_address_type, network_address_description)
+
+        # create the network group objects
+        #TODO: continue from here
+        network_group_objects = ''
+        self.migrate_network_group_objects(network_group_objects)
+
+        # create the port objects
+        port_objects = ''
+        self.migrate_port_objects(port_objects)
+
+        # create the port group objects
+        port_group_objects = ''
+        self.migrate_port_group_objects(port_group_objects)
+
+        # create the url objects
+        url_objects = ''
+        self.migrate_url_objects(url_objects)
+
+        # create the url group objects
+        url_group_objects = ''
+        self.migrate_url_group_objects(url_group_objects)
+
+        # create the policies
+        security_policies = ''
+        self.migrate_security_policies(security_policies)
+    
+    def get_db_col_by_val(self, col, table, name_col, val):
+        select_query = f"select {col} from {table} where {name_col} = '{val}'"
+        # Execute the SQL query and fetch the results
+        query_result = self._database.get_table_value('security_policies_table', select_query)
+
+        # Extract elements from tuples and flatten the list
+        flattened_list = [item[0] for item in query_result]
+
+        # Remove the 'any' element of the list, if it exists. It is not an object that can be imported
+
+
+        return flattened_list[0]
+
 
     @abstractmethod
     def fetch_objects_info(self, object_type):
@@ -971,6 +1023,7 @@ class SecurityDevice:
 
     def get_db_objects_from_table(self, column, table):
         select_command = f"SELECT {column} FROM {table};"
+        print(select_command)
         
         # Execute the SQL query and fetch the results
         query_result = self._database.get_table_value(table, select_command)
@@ -1059,7 +1112,6 @@ class SecurityDevice:
             return
         
         destination_ports = row[0]
-        print("PRINT ME", destination_ports)
         
         if len(destination_ports) > 1:
             # Construct the SQL query to remove the specified element from the array
@@ -1079,18 +1131,16 @@ class SecurityDevice:
                 SET security_policy_destination_ports = '{uopdate_value}'
                 WHERE '{port_group_name}' = ANY(security_policy_destination_ports);
             """
-            print("I AM IN GOOD FUNCTION", update_query)
             # Execute the query with parameters
             self._database.update_table_value('security_policies_table', update_query)
         
-        print(f"Reference to {port_group_name} deleted successfully.")
+        # print(f"Reference to {port_group_name} deleted successfully.")
 
     def remove_port_group(self, port_group_name):
 
         delete_query = f""" delete from  port_object_groups_table where port_group_name = '{port_group_name}';"""
 
         self._database.update_table_value('port_object_groups_table', delete_query)
-        print(f"deleting referenced object: {port_group_name}")
     
     # QUERY: select port_group_members from port_object_groups_table where port_group_name = '{}'
     def get_port_group_members(self, table, name):

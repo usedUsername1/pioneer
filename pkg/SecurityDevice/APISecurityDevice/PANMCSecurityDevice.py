@@ -1,6 +1,7 @@
 from pkg.SecurityDevice.APISecurityDevice.APISecurityDeviceConnection import APISecurityDeviceConnection
 from pkg.SecurityDevice import SecurityDevice
-from panos.panorama import Panorama
+from panos.panorama import Panorama, DeviceGroup
+from panos.objects import AddressObject, AddressGroup, ServiceObject, ServiceGroup, CustomUrlCategory, ScheduleObject
 import utils.helper as helper
 import utils.gvars as gvars
 from utils.exceptions import InexistentContainer
@@ -230,24 +231,11 @@ PA treats ping as an application. The second rule will keep the exact same sourc
             new_url_value = PANMCSecurityDevice.apply_url_constraints(old_url_value)
             SourceSecurityDeviceObject.update_db_value('url_objects_table', 'url_value', old_url_value, new_url_value)
 
-        # reformat URLs in order to match PA's standards
-        for old_url_value in url_object_values:
-            new_url_value = PANMCSecurityDevice.apply_url_constraints(old_url_value)
-            SourceSecurityDeviceObject.update_db_value('url_objects_table', 'url_value', old_url_value, new_url_value)
-
+        #TODO: not entirely sure this works. test it
         for name in url_object_groups_names:
             new_name = PANMCSecurityDevice.apply_name_constraints(name)
             SourceSecurityDeviceObject.update_db_value('url_object_groups_table', 'url_object_group_name', name, new_name)
             SourceSecurityDeviceObject.update_array_value('security_policies_table', 'security_policy_urls', name, new_name)
-        
-        # now create the ping policies
-        self.create_ping_policy(ping_policy_list, SourceSecurityDeviceObject)
-
-
-    
-    # EXPECTED RESULT: test-only-icmp-members should have security_policy_destination_ports set to {any} - works
-    # test-icmp-object-group, TEST-DEBUG-ICMP should have only DNS_over_TCP member - works
-    # icmp-inception1 should be completely gone from the port groups table - yes; and from the policy test-only-icmp-group - nope
     
     # remove the URL categories here as well
     def remove_ping_url_from_policy_and_return_ping_policies_list(self, security_policy_names, SourceSecurityDeviceObject, icmp_objects, port_object_group_names):
@@ -348,16 +336,55 @@ PA treats ping as an application. The second rule will keep the exact same sourc
                     # Update the security policy with the modified destination ports array
                     SourceSecurityDeviceObject.set_policy_param('security_policies_table', security_policy_name, 'security_policy_destination_ports', formatted_ports)
 
-                # Add the policy to the ping_policy_list if ICMP object was removed
-                # TODO: the ping polivcy must be created here
-                # get the record in the database of the ping policy
+                # if the current policy has been identified to contain ping elements, change the application to 'ping'
                 if is_ping_policy:
+                    SourceSecurityDeviceObject.set_policy_param('security_policies_table', security_policy_name, 'security_policy_l7_apps', "{ping}")
                     ping_policy_list.append(security_policy_name)
 
         # Return the list of policies affected by ICMP object removal after iterating through all security policy names
         return ping_policy_list
     
-    # TODO: ADD PING TO THE APPLICATIONS WHENEVER YOU IDTENFITY A PING POLICY. LET THE create_security_policy_function() that will be implemented
+    def migrate_network_objects(self, network_object_name, network_object_container, network_address_value, network_address_type, network_address_description):
+        if network_address_type == 'Host' or network_address_type == 'Network':
+            network_address_type = 'ip-netmask'
+        
+        if network_address_type == 'Range':
+            network_address_type = 'ip-range'
+        
+        print("creating object ", network_object_name)
+        network_object = AddressObject(network_object_name, network_address_value, network_address_type.lower() , network_address_description)
+        dg_object = DeviceGroup('Global Internet')
+        
+        # set the device group for the panorama instance
+        self._sec_device_connection.add(dg_object)
+        
+        # add the network object to the device group
+        dg_object.add(network_object)
+
+        # create the device group
+        try:
+            network_object.create()
+        except Exception as e:
+            print("error occured when creating: ", network_object_name, ". Reason: ", e)
+
+    def migrate_network_group_objects(self, network_group_object_names):
+        pass
+
+    def migrate_port_objects(self, port_objects):
+        pass
+
+    def migrate_port_group_objects(self, port_group_object_names):
+        pass
+
+    def migrate_url_objects(self, url_object_names):
+        pass
+
+    def migrate_url_group_objects(self, url_group_object_names):
+        pass
+
+    def migrate_security_policies(self, security_policy_names):
+        pass
+
     # take care of duplicating the policy
     @staticmethod
     def apply_name_constraints(name):
@@ -365,7 +392,7 @@ PA treats ping as an application. The second rule will keep the exact same sourc
         name = re.sub(r'[^a-zA-Z0-9\s_.-]', '_', name)
 
         if len(name) > 63:
-            truncated_name = name[:60]
+            truncated_name = name[:58]
             suffix = f"_{random.randint(100, 999)}"
             truncated_name += suffix
             return truncated_name
