@@ -746,51 +746,134 @@ class SecurityDevice:
         return [processed_objects_dict]
 
     # call the implementations of create_network_objects, create_port_objects, create_url_objects
+    #TODO: uncomment all when done testing
     def migrate_config(self, SourceDevice):
         print("called migrate config")
-        # create the network objects
-        network_object_names = SourceDevice.get_db_objects_from_table('network_address_name', 'network_address_objects_table')
-        
-        # loop through the object names and for each object, get the data from the database
-        for network_object_name in network_object_names:
-            network_object_container = 'Global Internet'
-            network_address_value = SourceDevice.get_db_col_by_val('network_address_value', 'network_address_objects_table', 'network_address_name', network_object_name)
-            network_address_type = SourceDevice.get_db_col_by_val('network_address_type', 'network_address_objects_table', 'network_address_name', network_object_name)
-            network_address_description = SourceDevice.get_db_col_by_val('network_address_description', 'network_address_objects_table', 'network_address_name', network_object_name)
-            # print(network_object_name, network_address_value, network_address_type, network_address_description)
+        # # create the network objects
+        # network_object_names = SourceDevice.get_db_objects_from_table('network_address_name', 'network_address_objects_table')
+        # # loop through the object names and for each object, get the data from the database
+        # for network_object_name in network_object_names:
+        #     network_object_container = 'Global Internet'
+        #     network_address_value = SourceDevice.get_db_col_by_val('network_address_value', 'network_address_objects_table', 'network_address_name', network_object_name)
+        #     network_address_type = SourceDevice.get_db_col_by_val('network_address_type', 'network_address_objects_table', 'network_address_name', network_object_name)
+        #     network_address_description = SourceDevice.get_db_col_by_val('network_address_description', 'network_address_objects_table', 'network_address_name', network_object_name)
+        #     # print(network_object_name, network_address_value, network_address_type, network_address_description)
             
-            # with the data retrieved from the database, create the object in the target security device
-            self.migrate_network_objects(network_object_name, network_object_container, network_address_value, network_address_type, network_address_description)
+        #     # with the data retrieved from the database, create the object in the target security device
+        #     self.migrate_network_objects(network_object_name, network_object_container, network_address_value, network_address_type, network_address_description)
 
         # create the network group objects
-        #TODO: continue from here
-        network_group_objects = ''
-        self.migrate_network_group_objects(network_group_objects)
+        # network_group_object_names = SourceDevice.get_db_objects_from_table('network_address_group_name', 'network_address_object_groups_table')
+        # for network_group_object_name in network_group_object_names:
+        #     network_object_container = 'Global Internet'
+        #     network_group_members = SourceDevice.get_db_col_by_val('network_address_group_members', 'network_address_object_groups_table', 'network_address_group_name', network_group_object_name)
+        #     network_group_description = SourceDevice.get_db_col_by_val('network_address_group_description', 'network_address_object_groups_table', 'network_address_group_name', network_group_object_name)
+        #     self.migrate_network_group_objects(network_group_object_name, network_object_container, network_group_members, network_group_description)
 
         # create the port objects
-        port_objects = ''
-        self.migrate_port_objects(port_objects)
+        # port_object_names = SourceDevice.get_db_objects_from_table('port_name', 'port_objects_table')
+        # for port_object_name in port_object_names:
+        #     port_object_container = 'Global Internet'
+        #     port_protocol = SourceDevice.get_db_col_by_val('port_protocol', 'port_objects_table', 'port_name', port_object_name)
+        #     port_number = SourceDevice.get_db_col_by_val('port_number', 'port_objects_table', 'port_name', port_object_name)
+        #     port_description = SourceDevice.get_db_col_by_val('port_description', 'port_objects_table', 'port_name', port_object_name)
+        #     self.migrate_port_objects(port_object_name, port_object_container, port_protocol, port_number, port_description)
 
         # create the port group objects
-        port_group_objects = ''
-        self.migrate_port_group_objects(port_group_objects)
+        # port_group_object_names = SourceDevice.get_db_objects_from_table('port_group_name', 'port_object_groups_table')
+        # for port_group_name in port_group_object_names:
+        #     port_object_container = 'Global Internet'
+        #     port_group_members = SourceDevice.get_db_col_by_val('port_group_members', 'port_object_groups_table', 'port_group_name', port_group_name)
+        #     port_group_description = SourceDevice.get_db_col_by_val('port_group_description', 'port_object_groups_table', 'port_group_name', port_group_name)
+        #     self.migrate_port_group_objects(port_group_name, port_object_container, port_group_members, port_group_description)
 
-        # create the url objects
-        url_objects = ''
-        self.migrate_url_objects(url_objects)
+        # # create the url objects
+        # url_object_names = SourceDevice.get_db_objects_from_table('url_object_name', 'url_objects_table')
+        # for url_object_name in url_object_names:
+        #     url_object_container = 'Global Internet'
+        #     url_object_value = SourceDevice.get_db_col_by_val('url_value', 'url_objects_table', 'url_object_name', url_object_name)
+        #     url_object_description = SourceDevice.get_db_col_by_val('url_object_description', 'url_objects_table', 'url_object_name', url_object_name)
+        #     self.migrate_url_objects(url_object_name, url_object_container, url_object_value, url_object_description)
 
-        # create the url group objects
-        url_group_objects = ''
-        self.migrate_url_group_objects(url_group_objects)
+        # # create the url group objects
+        # url_group_object_names = SourceDevice.get_db_objects_from_table('url_object_group_name', 'url_object_groups_table')
+        # for url_object_group_name in url_group_object_names:
+        #     url_object_group_container = 'Global Internet'
+        #     url_object_members = SourceDevice.get_db_col_by_val('url_object_members', 'url_object_groups_table', 'url_object_group_name', url_object_group_name)
+        #     url_object_description = SourceDevice.get_db_col_by_val('url_group_object_description', 'url_object_groups_table', 'url_object_group_name', url_object_group_name)
+            
+        #     self.migrate_url_objects(url_object_group_name, url_object_group_container, url_object_members, url_object_description)
 
+        # # create the PA tags corresponding to the policy category
+        # categories = set(SourceDevice.get_db_objects_from_table('security_policy_category', 'security_policies_table'))
+        # for category_name in categories:
+        #     self.migrate_tags(category_name)
+        
         # create the policies
-        security_policies = ''
-        self.migrate_security_policies(security_policies)
-    
+        # retrieve the policies and order them by their security_policy_index
+        security_policy_names = SourceDevice.get_db_objects_from_table_order_by('security_policy_name', 'security_policies_table', 'security_policy_index')
+        for security_policy_name in security_policy_names:
+            # for each of the names, get all the details needed in order to create the policy
+            
+            # get the container name
+            security_policy_container = SourceDevice.get_db_col_by_val('security_policy_container_name', 'security_policies_table', 'security_policy_name', security_policy_name)
+
+            # get the security category
+            security_policy_category = SourceDevice.get_db_col_by_val('security_policy_category', 'security_policies_table', 'security_policy_name', security_policy_name)
+
+            # get the policy status
+            security_policy_status = SourceDevice.get_db_col_by_val('security_policy_status', 'security_policies_table', 'security_policy_name', security_policy_name)
+
+            # get the security zones
+            security_policy_source_zones = SourceDevice.get_db_col_by_val('security_policy_source_zones', 'security_policies_table', 'security_policy_name', security_policy_name)
+            security_policy_destination_zones = SourceDevice.get_db_col_by_val('security_policy_destination_zones', 'security_policies_table', 'security_policy_name', security_policy_name)
+
+            # get the networks
+            security_policy_source_networks = SourceDevice.get_db_col_by_val('security_policy_source_networks', 'security_policies_table', 'security_policy_name', security_policy_name)
+            security_policy_destination_networks = SourceDevice.get_db_col_by_val('security_policy_destination_networks', 'security_policies_table', 'security_policy_name', security_policy_name)
+            
+            # get the destination ports
+            security_policy_destination_ports = SourceDevice.get_db_col_by_val('security_policy_destination_ports', 'security_policies_table', 'security_policy_name', security_policy_name)
+            
+            # get the urls
+            security_policy_urls = SourceDevice.get_db_col_by_val('security_policy_urls', 'security_policies_table', 'security_policy_name', security_policy_name)
+            
+            # get the apps
+            security_policy_apps = SourceDevice.get_db_col_by_val('security_policy_l7_apps', 'security_policies_table', 'security_policy_name', security_policy_name)
+
+            # get the description
+            security_policy_description = SourceDevice.get_db_col_by_val('security_policy_description', 'security_policies_table', 'security_policy_name', security_policy_name)
+            
+            # get the comments
+            security_policy_description = SourceDevice.get_db_col_by_val('security_policy_comments', 'security_policies_table', 'security_policy_name', security_policy_name) 
+
+            # set log forwarding to panorama
+            log_forwarding = 'Panorama'
+
+            # set to log at the end
+            log_end = True
+            
+            # get the section of the polcy
+            policy_section = SourceDevice.get_db_col_by_val('security_policy_section', 'security_policies_table', 'security_policy_name', security_policy_name)
+            
+            # get the action and make sure it maps to the proper PA action
+            policy_action = SourceDevice.get_db_col_by_val('security_policy_action', 'security_policies_table', 'security_policy_name', security_policy_name)
+
+            #TODO: before passing all the data to the migrate function, make sure that
+                # you set the right section (pre/post)
+                # you set the right policy action
+                # split the policy if there are both ping and destination ports
+                # create ping policy if ping is present in the apps and destination ports is any
+            
+
+            # self.migrate_security_policies(security_policies)
+
+
     def get_db_col_by_val(self, col, table, name_col, val):
-        select_query = f"select {col} from {table} where {name_col} = '{val}'"
+
+        select_query = f"select {col} from {table} where {name_col} = '{val}';"
         # Execute the SQL query and fetch the results
-        query_result = self._database.get_table_value('security_policies_table', select_query)
+        query_result = self._database.get_table_value(table, select_query)
 
         # Extract elements from tuples and flatten the list
         flattened_list = [item[0] for item in query_result]
@@ -800,6 +883,20 @@ class SecurityDevice:
 
         return flattened_list[0]
 
+    def get_db_objects_from_table_order_by(self, column, table, order_param):
+        select_command = f"SELECT {column} FROM {table} ORDER BY {order_param};"
+        print(select_command)
+        # Execute the SQL query and fetch the results
+        query_result = self._database.get_table_value(table, select_command)
+
+        # Extract elements from tuples and flatten the list
+        flattened_list = [item[0] for item in query_result]
+
+        # Remove the 'any' element of the list, if it exists. It is not an object that can be imported
+        if 'any' in flattened_list:
+            flattened_list.remove('any')
+
+        return flattened_list
 
     @abstractmethod
     def fetch_objects_info(self, object_type):
@@ -998,6 +1095,7 @@ class SecurityDevice:
             'policy_users': ['security_policy_users'],
             'url_objects': ['security_policy_urls'],
             'app_objects': ['security_policy_l7_apps'],
+            'categories': ['security_policy_category']
         }
 
         # Validate the provided object type
@@ -1023,7 +1121,6 @@ class SecurityDevice:
 
     def get_db_objects_from_table(self, column, table):
         select_command = f"SELECT {column} FROM {table};"
-        print(select_command)
         
         # Execute the SQL query and fetch the results
         query_result = self._database.get_table_value(table, select_command)
@@ -1057,14 +1154,23 @@ class SecurityDevice:
 
         self._database.update_table_value(table, update_query)
 
-    def set_port_members(self, table, security_policy_name, column_name, new_value):
+    def set_port_members(self, table, port_group_name, column_name, new_value):
         update_query = f"""
             UPDATE {table}
             SET {column_name} = '{new_value}'
-            WHERE port_group_name = '{security_policy_name}';
+            WHERE port_group_name = '{port_group_name}';
         """
 
         self._database.update_table_value(table, update_query)
+
+    def set_url_group_members(self, url_members, url_group_name):
+        update_query = f"""
+            UPDATE url_object_groups_table
+            SET url_object_members = '{url_members}'
+            WHERE url_object_group_name = '{url_group_name}';
+        """
+        print(update_query)
+        self._database.update_table_value('url_object_groups_table', update_query)
 
     def update_array_value(self, table, column_name, old_value, new_value):
 

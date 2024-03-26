@@ -1,13 +1,16 @@
 from pkg.SecurityDevice.APISecurityDevice.APISecurityDeviceConnection import APISecurityDeviceConnection
 from pkg.SecurityDevice import SecurityDevice
 from panos.panorama import Panorama, DeviceGroup
-from panos.objects import AddressObject, AddressGroup, ServiceObject, ServiceGroup, CustomUrlCategory, ScheduleObject
+from panos.objects import AddressObject, AddressGroup, ServiceObject, ServiceGroup, CustomUrlCategory, Tag
 import utils.helper as helper
 import utils.gvars as gvars
 from utils.exceptions import InexistentContainer
 from pkg.Container import SecurityPolicyContainer, ObjectContainer
 import random
 import re
+
+#TODO: failed objects creation file text
+#TODO: failed created policies file text
 
 general_logger = helper.logging.getLogger('general')
 
@@ -225,17 +228,31 @@ PA treats ping as an application. The second rule will keep the exact same sourc
             new_name = PANMCSecurityDevice.apply_name_constraints(name)
             SourceSecurityDeviceObject.update_db_value('url_objects_table', 'url_object_name', name, new_name)
             SourceSecurityDeviceObject.update_array_value('security_policies_table', 'security_policy_urls', name, new_name)
+            # update also the url group array
+            SourceSecurityDeviceObject.update_array_value('url_object_groups_table', 'url_object_members', name, new_name)
         
         # reformat URLs in order to match PA's standards
         for old_url_value in url_object_values:
             new_url_value = PANMCSecurityDevice.apply_url_constraints(old_url_value)
             SourceSecurityDeviceObject.update_db_value('url_objects_table', 'url_value', old_url_value, new_url_value)
 
-        #TODO: not entirely sure this works. test it
-        for name in url_object_groups_names:
-            new_name = PANMCSecurityDevice.apply_name_constraints(name)
-            SourceSecurityDeviceObject.update_db_value('url_object_groups_table', 'url_object_group_name', name, new_name)
-            SourceSecurityDeviceObject.update_array_value('security_policies_table', 'security_policy_urls', name, new_name)
+        # PA does not support URL groups. Therefore, we need to create an URL object, which will contain all the values of the member objects of a URL group object from the other platform
+        # loop through the URL groups
+        for url_group_name in url_object_groups_names:
+            new_member_list = []
+            url_group_members = SourceSecurityDeviceObject.get_db_col_by_val('url_object_members', 'url_object_groups_table', 'url_object_group_name', url_group_name)
+            
+            # for each of the members, find its value in the url objects table and add it to the new list
+            for member_name in url_group_members:
+                member_value = SourceSecurityDeviceObject.get_db_col_by_val('url_value', 'url_objects_table', 'url_object_name', member_name)
+                new_member_list.append(member_value)
+            
+            # Construct the string representation of the list
+            formatted_list = "{" + ",".join(new_member_list) + "}"
+
+            # now update the members of the group with the new list
+            SourceSecurityDeviceObject.set_url_group_members(formatted_list, url_group_name)
+            
     
     # remove the URL categories here as well
     def remove_ping_url_from_policy_and_return_ping_policies_list(self, security_policy_names, SourceSecurityDeviceObject, icmp_objects, port_object_group_names):
@@ -351,9 +368,9 @@ PA treats ping as an application. The second rule will keep the exact same sourc
         if network_address_type == 'Range':
             network_address_type = 'ip-range'
         
-        print("creating object ", network_object_name)
+        print("creating address object ", network_object_name)
         network_object = AddressObject(network_object_name, network_address_value, network_address_type.lower() , network_address_description)
-        dg_object = DeviceGroup('Global Internet')
+        dg_object = DeviceGroup(network_object_container)
         
         # set the device group for the panorama instance
         self._sec_device_connection.add(dg_object)
@@ -361,26 +378,85 @@ PA treats ping as an application. The second rule will keep the exact same sourc
         # add the network object to the device group
         dg_object.add(network_object)
 
-        # create the device group
+        # create the object
         try:
             network_object.create()
         except Exception as e:
-            print("error occured when creating: ", network_object_name, ". Reason: ", e)
+            print("error occured when creating address: ", network_object_name, ". Reason: ", e)
 
-    def migrate_network_group_objects(self, network_group_object_names):
-        pass
+    def migrate_network_group_objects(self, network_group_object_name, network_object_container, network_group_members, network_group_description):
+        print("creating network group object ", network_group_object_name)
+        network_group_object = AddressGroup(network_group_object_name, network_group_members, network_group_description)
+        dg_object = DeviceGroup(network_object_container)
 
-    def migrate_port_objects(self, port_objects):
-        pass
+        # set the device group for the panorama instance
+        self._sec_device_connection.add(dg_object)
 
-    def migrate_port_group_objects(self, port_group_object_names):
-        pass
+        # add the network object to the device group
+        dg_object.add(network_group_object)
 
-    def migrate_url_objects(self, url_object_names):
-        pass
+        try:
+            network_group_object.create()
+        except Exception as e:
+            print("error occured when creating address group: ", network_group_object_name, ". Reason: ", e)
 
-    def migrate_url_group_objects(self, url_group_object_names):
-        pass
+    def migrate_port_objects(self, port_object_name, port_object_container, port_protocol, port_number, port_description):
+        print("creating port object ", port_object_name)
+        port_object = ServiceObject(port_object_name, protocol=port_protocol.lower(), destination_port=port_number, description=port_description)
+        dg_object = DeviceGroup(port_object_container)
+
+        # set the device group for the panorama instance
+        self._sec_device_connection.add(dg_object)
+          
+        # add the network object to the device group
+        dg_object.add(port_object)
+
+        try:
+            port_object.create()
+        except Exception as e:
+            print("error occured when creating port: ", port_object_name, ". Reason: ", e)
+
+    def migrate_port_group_objects(self, port_group, port_object_container, port_group_members, port_group_description):
+        print("creating port group object ", port_group)
+        network_group_object = ServiceGroup(port_group, port_group_members, port_group_description)
+        dg_object = DeviceGroup(port_object_container)
+
+        # set the device group for the panorama instance
+        self._sec_device_connection.add(dg_object)
+
+        # add the network object to the device group
+        dg_object.add(network_group_object)
+
+        try:
+            network_group_object.create()
+        except Exception as e:
+            print("error occured when creating port group: ", port_group, ". Reason: ", e)
+
+    def migrate_url_objects(self, url_object_name, url_object_container, url_object_value, url_object_description):
+        url_object = CustomUrlCategory(name=url_object_name, url_value=url_object_value, description=url_object_description, type='URL List')
+        dg_object = DeviceGroup(url_object_container)
+        
+        # set the device group for the panorama instance
+        self._sec_device_connection.add(dg_object)
+        
+        # add the network object to the device group
+        dg_object.add(url_object)
+
+        # create the object
+        try:
+            url_object.create()
+        except Exception as e:
+            print("error occured when creating url object: ", url_object_name, ". Reason: ", e)
+    
+    def migrate_tags(self, tag_name):
+        tag_object = Tag(tag_name)
+
+        self._sec_device_connection.add(tag_object)
+        # create the object
+        try:
+            tag_object.create()
+        except Exception as e:
+            print("error occured when creating tag: ", tag_name, ". Reason: ", e)
 
     def migrate_security_policies(self, security_policy_names):
         pass
