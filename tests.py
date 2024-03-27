@@ -26,23 +26,20 @@
 #     print("PARENT:", value, "CHILD:",key)
 
 
-from panos.panorama import Panorama, DeviceGroup
+from panos.panorama import Panorama
 from panos.objects import AddressObject
 
 # Create a Panorama object
 pano = Panorama("10.2.196.196", "admin", "2wsx#EDC")
 
-dg_object = DeviceGroup('Global Internet')
-pano.add(dg_object)
+network_object = AddressObject('test-panos20', '1.1.1.1', 'ip-netmask', 'test-desc' )
+network_object2 = AddressObject('test-panos30', '1.1.1.1', 'ip-netmaska', 'test-desc' )
+pano.add(network_object)
+pano.add(network_object2)
 
-network_object = AddressObject('test-panos6', '1.1.1.1', 'ip-netmask', None)
 
-try:
-    dg_object.add(network_object)
-    network_object.create()
-except:
-    print("pl")
 
+print(pano.find('test-panos20'))#.create_similar()
 
 # # Refresh devices
 # device_groups = pano.refresh_devices()

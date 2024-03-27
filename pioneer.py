@@ -370,7 +370,7 @@ def main():
                 # adapt_config will also change the containers of the objects before adding them to the target's device database
             #TODO: CONTINUE FROM HERE
             
-            # SpecificTargetSecurityDeviceObject.adapt_config(object_container, container_hierarchy_map, interface_map, SpecificSecurityDeviceObject)
+            SpecificTargetSecurityDeviceObject.adapt_config(object_container, container_hierarchy_map, interface_map, SpecificSecurityDeviceObject)
             SpecificTargetSecurityDeviceObject.migrate_config(SpecificSecurityDeviceObject)
 
 
