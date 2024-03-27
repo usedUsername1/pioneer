@@ -26,20 +26,53 @@
 #     print("PARENT:", value, "CHILD:",key)
 
 
-from panos.panorama import Panorama
+from panos.panorama import Panorama, DeviceGroup
+from panos.policies import PreRulebase, PostRulebase, SecurityRule
 from panos.objects import AddressObject
 
 # Create a Panorama object
 pano = Panorama("10.2.196.196", "admin", "2wsx#EDC")
 
-network_object = AddressObject('test-panos20', '1.1.1.1', 'ip-netmask', 'test-desc' )
-network_object2 = AddressObject('test-panos30', '1.1.1.1', 'ip-netmaska', 'test-desc' )
-pano.add(network_object)
-pano.add(network_object2)
+# Create a DeviceGroup object for 'Debug'
+dg = DeviceGroup('Debug')
 
+# Add the device group to Panorama
+pano.add(dg)
 
+# Get the PreRulebase of the 'Debug' device group
+rules_object = dg.add(PreRulebase())
 
-print(pano.find('test-panos20'))#.create_similar()
+# Create SecurityRule objects
+new_rule_object = SecurityRule(
+    name='Allow DNS - test',
+    fromzone=['any'],
+    tozone=['any'],
+    source=['any'],
+    destination=['8.8.8.8'],
+    application=['dns'],
+    service=['application-default'],
+    action='allow'
+)
+
+new_rule_object2 = SecurityRule(
+    name='Allow DNS - test2',
+    fromzone=['any'],
+    tozone=['any'],
+    source=['any'],
+    destination=['8.8.8.8'],
+    application=['dns'],
+    service=['application-default'],
+    action='allow'
+)
+
+# Add the rules to the PreRulebase of the 'Debug' device group
+rules_object.add(new_rule_object)
+rules_object.add(new_rule_object2)
+
+print(type(rules_object))
+
+# Find the rule by name and create a similar rule
+rules_object.find('Allow DNS - test').create_similar()
 
 # # Refresh devices
 # device_groups = pano.refresh_devices()
@@ -82,3 +115,17 @@ print(pano.find('test-panos20'))#.create_similar()
 
 # object = fmc.object.networkaddress.get(name="acb-valdns-01.luxoft.coma")
 # print(object)
+
+
+
+
+
+
+
+
+
+
+            # print('name:', security_policy_name, 'tag:', security_policy_category, 'group_tag:', security_policy_category, 'disabled:', is_enabled,
+            #     'fromzone:', security_policy_source_zones, 'tozone:', security_policy_destination_zones, 'source:', security_policy_source_networks,
+            #     'destination:', security_policy_destination_networks, 'service:', security_policy_destination_ports, 'category:', security_policy_urls, 'application:', security_policy_apps,
+            #     'description:', security_policy_description, 'log_setting:', log_forwarding, 'log_end:', log_end, 'action:', policy_action)

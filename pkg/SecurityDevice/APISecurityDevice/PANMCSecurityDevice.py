@@ -369,7 +369,7 @@ PA treats ping as an application. The second rule will keep the exact same sourc
     def migrate_network_objects(self, network_object_names, SourceDevice):
         print("migrating network objects")
         for network_object_name in network_object_names:
-            network_object_container = 'Global Internet'
+            network_object_container = 'Debug'
             network_address_value = SourceDevice.get_db_col_by_val('network_address_value', 'network_address_objects_table', 'network_address_name', network_object_name)
             network_address_type = SourceDevice.get_db_col_by_val('network_address_type', 'network_address_objects_table', 'network_address_name', network_object_name)
             network_address_description = SourceDevice.get_db_col_by_val('network_address_description', 'network_address_objects_table', 'network_address_name', network_object_name)
@@ -396,7 +396,7 @@ PA treats ping as an application. The second rule will keep the exact same sourc
     def migrate_network_group_objects(self, network_group_object_names, SourceDevice):
         print("migrating network group objects")
         for network_group_object_name in network_group_object_names:
-            network_object_container = 'Global Internet'
+            network_object_container = 'Debug'
             network_group_members = SourceDevice.get_db_col_by_val('network_address_group_members', 'network_address_object_groups_table', 'network_address_group_name', network_group_object_name)
             network_group_description = SourceDevice.get_db_col_by_val('network_address_group_description', 'network_address_object_groups_table', 'network_address_group_name', network_group_object_name)
 
@@ -417,7 +417,7 @@ PA treats ping as an application. The second rule will keep the exact same sourc
     def migrate_port_objects(self, port_object_names, SourceDevice):
         print("migrating port objects")
         for port_object_name in port_object_names:
-            port_object_container = 'Global Internet'
+            port_object_container = 'Debug'
             port_protocol = SourceDevice.get_db_col_by_val('port_protocol', 'port_objects_table', 'port_name', port_object_name)
             port_number = SourceDevice.get_db_col_by_val('port_number', 'port_objects_table', 'port_name', port_object_name)
             port_description = SourceDevice.get_db_col_by_val('port_description', 'port_objects_table', 'port_name', port_object_name)
@@ -439,7 +439,7 @@ PA treats ping as an application. The second rule will keep the exact same sourc
     def migrate_port_group_objects(self, port_group_object_names, SourceDevice):
         print("migrating port group objects")
         for port_group_name in port_group_object_names:
-            port_object_container = 'Global Internet'
+            port_object_container = 'Debug'
             port_group_members = SourceDevice.get_db_col_by_val('port_group_members', 'port_object_groups_table', 'port_group_name', port_group_name)
             port_group_description = SourceDevice.get_db_col_by_val('port_group_description', 'port_object_groups_table', 'port_group_name', port_group_name)
 
@@ -461,7 +461,7 @@ PA treats ping as an application. The second rule will keep the exact same sourc
         if type == 'url_object':
             print("migrating url objects")
             for url_object_name in url_object_names:
-                url_object_container = 'Global Internet'
+                url_object_container = 'Debug'
                 url_object_value = SourceDevice.get_db_col_by_val('url_value', 'url_objects_table', 'url_object_name', url_object_name)
                 url_object_description = SourceDevice.get_db_col_by_val('url_object_description', 'url_objects_table', 'url_object_name', url_object_name)
                 url_object = CustomUrlCategory(name=url_object_name, url_value=url_object_value, description=url_object_description, type='URL List')
@@ -476,7 +476,7 @@ PA treats ping as an application. The second rule will keep the exact same sourc
         elif type == 'url_group':
             print("migrating url group objects")
             for url_object_name in url_object_names:
-                url_object_container = 'Global Internet'
+                url_object_container = 'Debug'
                 url_members = SourceDevice.get_db_col_by_val('url_object_members', 'url_object_groups_table', 'url_object_group_name', url_object_name)
                 url_object_description = SourceDevice.get_db_col_by_val('url_group_object_description', 'url_object_groups_table', 'url_object_group_name', url_object_name)
 
@@ -508,6 +508,8 @@ PA treats ping as an application. The second rule will keep the exact same sourc
 
     # create the files that will keep track of all the failed objects/policies
     # keep a count of: all objects of all types that will be created, all theo bjects created. do the same with the policies
+    
+    # TODO: ensure that if you have policies with regions, they do not get migrated yet!
     def migrate_security_policies(self, security_policy_names, SourceDevice):
         print("migrating security policies")
         for security_policy_name in security_policy_names:
@@ -522,9 +524,9 @@ PA treats ping as an application. The second rule will keep the exact same sourc
             # get the policy status
             security_policy_status = SourceDevice.get_db_col_by_val('security_policy_status', 'security_policies_table', 'security_policy_name', security_policy_name)
             
-            is_enabled = True
+            is_disabled = False
             if security_policy_status != 'enabled':
-                is_enabled = False
+                is_disabled = True
 
             # get the security zones
             security_policy_source_zones = SourceDevice.get_db_col_by_val('security_policy_source_zones', 'security_policies_table', 'security_policy_name', security_policy_name)
@@ -573,53 +575,57 @@ PA treats ping as an application. The second rule will keep the exact same sourc
                 case 'BLOCK_RESET':
                     policy_action = 'reset-client'
 
-            if policy_section == 'Mandatory':
-                rulebase = self._sec_device_connection.add(PreRulebase())
-            else:
-                rulebase = self._sec_device_connection.add(PostRulebase())
-
             dg_object = DeviceGroup(security_policy_container)
         
             # set the device group for the panorama instance
             self._sec_device_connection.add(dg_object)
 
-            # set the rulebase
-            self._sec_device_connection.add(rulebase)
+            if policy_section == 'Mandatory':
+                rulebase_with_dg = dg_object.add(PreRulebase())
+            else:
+                rulebase_with_dg = dg_object.add(PostRulebase())
 
-            if security_policy_apps == ['ping'] and security_policy_destination_ports != ['any']:
-                security_policy_destination_ports = ['any']
+
+            # the security_policy_apps must be any all the time, if they are not ping
+            if security_policy_apps != ['ping']:
+                security_policy_apps = ['any']
+
+                # TODO: set the security group
+                policy_object = SecurityRule(name=security_policy_name, tag=[security_policy_category], group_tag=security_policy_category, disabled=is_disabled, \
+                                            fromzone = security_policy_source_zones, tozone=security_policy_destination_zones, source=security_policy_source_networks, \
+                                            destination=security_policy_destination_networks, service=security_policy_destination_ports, category=security_policy_urls, application=security_policy_apps, \
+                                            description=security_policy_description, log_setting=log_forwarding, log_end=log_end, action=policy_action)
                 
-                # slice the name to be up to 58 characters and add "_PING"
+                # add the policy object to the device group
+                rulebase_with_dg.add(policy_object)
+
+
+            # TWO CASES HERE FFS, one in which there is ping and destination ports and one in which there is only ping
+            elif security_policy_apps == ['ping']:
+                # if there are destination ports and ping objects, create two policies
+                # else create only the ping policy
+                if security_policy_destination_ports != ['any']:
+                    security_policy_apps = ['any']
+                    policy_object = SecurityRule(name=security_policy_name, tag=[security_policy_category], group_tag=security_policy_category, disabled=is_disabled, \
+                                                fromzone = security_policy_source_zones, tozone=security_policy_destination_zones, source=security_policy_source_networks, \
+                                                destination=security_policy_destination_networks, service=security_policy_destination_ports, category=security_policy_urls, application=security_policy_apps, \
+                                                description=security_policy_description, log_setting=log_forwarding, log_end=log_end, action=policy_action)
+                    
+                    rulebase_with_dg.add(policy_object)
+
                 security_policy_name = security_policy_name[:58] + '_PING'
-                policy_object = SecurityRule(name=security_policy_name, tag=[security_policy_category], group_tag=security_policy_category, disabled=is_enabled, \
+                security_policy_apps = ['ping']
+
+                policy_object = SecurityRule(name=security_policy_name, tag=[security_policy_category], group_tag=security_policy_category, disabled=is_disabled, \
                                             fromzone = security_policy_source_zones, tozone=security_policy_destination_zones, source=security_policy_source_networks, \
                                             destination=security_policy_destination_networks, service=security_policy_destination_ports, category=security_policy_urls, application=security_policy_apps, \
                                             description=security_policy_description, log_setting=log_forwarding, log_end=log_end, action=policy_action)
 
-            # print('PING_POL... ','name:', security_policy_name, 'tag:', security_policy_category, 'group_tag:', security_policy_category, 'disabled:', is_enabled,
-            #     'fromzone:', security_policy_source_zones, 'tozone:', security_policy_destination_zones, 'source:', security_policy_source_networks,
-            #     'destination:', security_policy_destination_networks, 'service:', security_policy_destination_ports, 'category:', security_policy_urls, 'application:', security_policy_apps,
-            #     'description:', security_policy_description, 'log_setting:', log_forwarding, 'log_end:', log_end, 'action:', policy_action)
-            
-            # the security_policy_apps must be any all the time, except for when it should be ping (Already covered)
-            security_policy_apps = ['any']
-
-            # TODO: set the security group
-            policy_object = SecurityRule(name=security_policy_name, tag=[security_policy_category], group_tag=security_policy_category, disabled=is_enabled, \
-                                        fromzone = security_policy_source_zones, tozone=security_policy_destination_zones, source=security_policy_source_networks, \
-                                        destination=security_policy_destination_networks, service=security_policy_destination_ports, category=security_policy_urls, application=security_policy_apps, \
-                                        description=security_policy_description, log_setting=log_forwarding, log_end=log_end, action=policy_action)
-            
-            # add the policy object to the device group
-            dg_object.add(policy_object)
-            
-            # print('name:', security_policy_name, 'tag:', security_policy_category, 'group_tag:', security_policy_category, 'disabled:', is_enabled,
-            #     'fromzone:', security_policy_source_zones, 'tozone:', security_policy_destination_zones, 'source:', security_policy_source_networks,
-            #     'destination:', security_policy_destination_networks, 'service:', security_policy_destination_ports, 'category:', security_policy_urls, 'application:', security_policy_apps,
-            #     'description:', security_policy_description, 'log_setting:', log_forwarding, 'log_end:', log_end, 'action:', policy_action)
+                rulebase_with_dg.add(policy_object)
+        
         # create the object
         try:
-            self._sec_device_connection.find(security_policy_name).create_similar()
+            print(rulebase_with_dg.find(security_policy_name).create_similar())
         except Exception as e:
             print("error occured when creating policy object. More details: ", e)
 
