@@ -110,12 +110,12 @@ PA treats ping as an application. The second rule will keep the exact same sourc
     #TODO: only for temp migration, modify later
     def map_containers(self):
         #TODO: uncomment in prod
-        # dg_mapping = {'Azure: DEV EUN Internet Access Policy': 'Azure DEV - Internet',
-        #                'Azure: DEV EUN VPN Access Policy': 'Azure DEV - VPN',
-        #                'Azure: Global VPN Policy': 'Global VPN',
-        #                'Global Internet Access Policy': 'Global Internet'}
+        dg_mapping = {'Azure: DEV EUN Internet Access Policy': 'Azure DEV - Internet',
+                       'Azure: DEV EUN VPN Access Policy': 'Azure DEV - VPN',
+                       'Azure: Global VPN Policy': 'Global VPN',
+                       'Global Internet Access Policy': 'Global Internet'}
                 
-        dg_mapping = {'debug3':'Debug'}
+        # dg_mapping = {'debug3':'Debug'}
 
         object_container = 'Global Internet'
 
@@ -139,21 +139,21 @@ PA treats ping as an application. The second rule will keep the exact same sourc
 
         # now loop through container_hierarchy_map, and, based on the key, insert the value
         #TODO: uncomment when in prod
-        # sec_pol_container_data = [{'security_policy_container_name': 'Azure DEV - Internet',
-        #                            'security_policy_parent':'Azure DEV - VPN'},
+        sec_pol_container_data = [{'security_policy_container_name': 'Azure DEV - Internet',
+                                   'security_policy_parent':'Azure DEV - VPN'},
                                    
-        #                            {'security_policy_container_name':'Azure DEV - VPN',
-        #                             'security_policy_parent':'Global VPN'},
+                                   {'security_policy_container_name':'Azure DEV - VPN',
+                                    'security_policy_parent':'Global VPN'},
 
-        #                             {'security_policy_container_name':'Global VPN',
-        #                             'security_policy_parent':'Global Internet'},
+                                    {'security_policy_container_name':'Global VPN',
+                                    'security_policy_parent':'Global Internet'},
 
-        #                             {'security_policy_container_name':'Global Internet',
-        #                             'security_policy_parent':'Shared'}
-        #                             ]
+                                    {'security_policy_container_name':'Global Internet',
+                                    'security_policy_parent':'Shared'}
+                                    ]
 
-        sec_pol_container_data = [{'security_policy_container_name': 'Debug',
-                                   'security_policy_parent': None}]
+        # sec_pol_container_data = [{'security_policy_container_name': 'Debug',
+        #                            'security_policy_parent': None}]
         
         SourceSecurityDeviceObject.insert_into_security_policy_containers_table(sec_pol_container_data)
 
@@ -257,7 +257,12 @@ PA treats ping as an application. The second rule will keep the exact same sourc
 
             # now update the members of the group with the new list
             SourceSecurityDeviceObject.set_url_group_members(formatted_list, url_group_name)
-            
+
+        for name in url_object_groups_names:
+            # remove all the names containing special characters
+            new_name = PANMCSecurityDevice.apply_url_name_constraints(name)
+            SourceSecurityDeviceObject.update_db_value('url_object_groups_table', 'url_object_group_name', name, new_name)
+            SourceSecurityDeviceObject.update_array_value('security_policies_table', 'security_policy_urls', name, new_name)
     
     # remove the URL categories here as well
     def remove_ping_url_from_policy_and_return_ping_policies_list(self, security_policy_names, SourceSecurityDeviceObject, icmp_objects, port_object_group_names):
@@ -369,7 +374,7 @@ PA treats ping as an application. The second rule will keep the exact same sourc
     def migrate_network_objects(self, network_object_names, SourceDevice):
         print("migrating network objects")
         for network_object_name in network_object_names:
-            network_object_container = 'Debug'
+            network_object_container = 'Global Internet'
             network_address_value = SourceDevice.get_db_col_by_val('network_address_value', 'network_address_objects_table', 'network_address_name', network_object_name)
             network_address_type = SourceDevice.get_db_col_by_val('network_address_type', 'network_address_objects_table', 'network_address_name', network_object_name)
             network_address_description = SourceDevice.get_db_col_by_val('network_address_description', 'network_address_objects_table', 'network_address_name', network_object_name)
@@ -396,11 +401,11 @@ PA treats ping as an application. The second rule will keep the exact same sourc
     def migrate_network_group_objects(self, network_group_object_names, SourceDevice):
         print("migrating network group objects")
         for network_group_object_name in network_group_object_names:
-            network_object_container = 'Debug'
+            network_object_container = 'Global Internet'
             network_group_members = SourceDevice.get_db_col_by_val('network_address_group_members', 'network_address_object_groups_table', 'network_address_group_name', network_group_object_name)
             network_group_description = SourceDevice.get_db_col_by_val('network_address_group_description', 'network_address_object_groups_table', 'network_address_group_name', network_group_object_name)
 
-            network_group_object = AddressGroup(network_group_object_name, network_group_members, network_group_description)
+            network_group_object = AddressGroup(network_group_object_name, network_group_members, network_group_description, dynamic_value='dynamic')
             dg_object = DeviceGroup(network_object_container)
 
             # set the device group for the panorama instance
@@ -417,15 +422,17 @@ PA treats ping as an application. The second rule will keep the exact same sourc
     def migrate_port_objects(self, port_object_names, SourceDevice):
         print("migrating port objects")
         for port_object_name in port_object_names:
-            port_object_container = 'Debug'
+            port_object_container = 'Global Internet'
             port_protocol = SourceDevice.get_db_col_by_val('port_protocol', 'port_objects_table', 'port_name', port_object_name)
             port_number = SourceDevice.get_db_col_by_val('port_number', 'port_objects_table', 'port_name', port_object_name)
             port_description = SourceDevice.get_db_col_by_val('port_description', 'port_objects_table', 'port_name', port_object_name)
 
-            port_object = ServiceObject(port_object_name, protocol=port_protocol.lower(), destination_port=port_number, description=port_description)
+            port_object = ServiceObject(name=port_object_name, protocol=port_protocol.lower(), destination_port=port_number, description=port_description, tag=None)
             dg_object = DeviceGroup(port_object_container)
 
             # set the device group for the panorama instance
+            if 'None' in port_object_name:
+                continue
             self._sec_device_connection.add(dg_object)
             
             # add the network object to the device group
@@ -439,11 +446,11 @@ PA treats ping as an application. The second rule will keep the exact same sourc
     def migrate_port_group_objects(self, port_group_object_names, SourceDevice):
         print("migrating port group objects")
         for port_group_name in port_group_object_names:
-            port_object_container = 'Debug'
+            port_object_container = 'Global Internet'
             port_group_members = SourceDevice.get_db_col_by_val('port_group_members', 'port_object_groups_table', 'port_group_name', port_group_name)
             port_group_description = SourceDevice.get_db_col_by_val('port_group_description', 'port_object_groups_table', 'port_group_name', port_group_name)
 
-            network_group_object = ServiceGroup(port_group_name, port_group_members, port_group_description)
+            network_group_object = ServiceGroup(port_group_name, port_group_members)
             dg_object = DeviceGroup(port_object_container)
 
             # set the device group for the panorama instance
@@ -461,7 +468,7 @@ PA treats ping as an application. The second rule will keep the exact same sourc
         if type == 'url_object':
             print("migrating url objects")
             for url_object_name in url_object_names:
-                url_object_container = 'Debug'
+                url_object_container = 'Global Internet'
                 url_object_value = SourceDevice.get_db_col_by_val('url_value', 'url_objects_table', 'url_object_name', url_object_name)
                 url_object_description = SourceDevice.get_db_col_by_val('url_object_description', 'url_objects_table', 'url_object_name', url_object_name)
                 url_object = CustomUrlCategory(name=url_object_name, url_value=url_object_value, description=url_object_description, type='URL List')
@@ -476,7 +483,7 @@ PA treats ping as an application. The second rule will keep the exact same sourc
         elif type == 'url_group':
             print("migrating url group objects")
             for url_object_name in url_object_names:
-                url_object_container = 'Debug'
+                url_object_container = 'Global Internet'
                 url_members = SourceDevice.get_db_col_by_val('url_object_members', 'url_object_groups_table', 'url_object_group_name', url_object_name)
                 url_object_description = SourceDevice.get_db_col_by_val('url_group_object_description', 'url_object_groups_table', 'url_object_group_name', url_object_name)
 
@@ -510,9 +517,13 @@ PA treats ping as an application. The second rule will keep the exact same sourc
     # keep a count of: all objects of all types that will be created, all theo bjects created. do the same with the policies
     
     # TODO: ensure that if you have policies with regions, they do not get migrated yet!
+            # ensure that you combine the description and the comments into a single string, which will be the description of the palo alto policy
     def migrate_security_policies(self, security_policy_names, SourceDevice):
         print("migrating security policies")
         for security_policy_name in security_policy_names:
+            if 'Embargoed' in security_policy_name:
+                continue
+
             # for each of the names, get all the details needed in order to create the policy
             
             # get the container name
@@ -535,7 +546,7 @@ PA treats ping as an application. The second rule will keep the exact same sourc
             # get the networks
             security_policy_source_networks = SourceDevice.get_db_col_by_val('security_policy_source_networks', 'security_policies_table', 'security_policy_name', security_policy_name)
             security_policy_destination_networks = SourceDevice.get_db_col_by_val('security_policy_destination_networks', 'security_policies_table', 'security_policy_name', security_policy_name)
-            
+
             # get the destination ports
             security_policy_destination_ports = SourceDevice.get_db_col_by_val('security_policy_destination_ports', 'security_policies_table', 'security_policy_name', security_policy_name)
             
@@ -579,10 +590,15 @@ PA treats ping as an application. The second rule will keep the exact same sourc
         
             # set the device group for the panorama instance
             self._sec_device_connection.add(dg_object)
+            print("using device group: ", dg_object)
+
+            print("creating policy: ", security_policy_name)
 
             if policy_section == 'Mandatory':
+                rulebase = 'pre'
                 rulebase_with_dg = dg_object.add(PreRulebase())
-            else:
+            elif policy_section == 'Default':
+                rulebase = 'post'
                 rulebase_with_dg = dg_object.add(PostRulebase())
 
 
@@ -597,8 +613,9 @@ PA treats ping as an application. The second rule will keep the exact same sourc
                                             description=security_policy_description, log_setting=log_forwarding, log_end=log_end, action=policy_action)
                 
                 # add the policy object to the device group
+                
                 rulebase_with_dg.add(policy_object)
-
+                print(f"adding policy {security_policy_name}, container {security_policy_container} to rulebase {rulebase}")
 
             # TWO CASES HERE FFS, one in which there is ping and destination ports and one in which there is only ping
             elif security_policy_apps == ['ping']:
@@ -612,22 +629,24 @@ PA treats ping as an application. The second rule will keep the exact same sourc
                                                 description=security_policy_description, log_setting=log_forwarding, log_end=log_end, action=policy_action)
                     
                     rulebase_with_dg.add(policy_object)
+                    print(f"adding policy {security_policy_name}, container {security_policy_container} to rulebase {rulebase}")
 
                 security_policy_name = security_policy_name[:58] + '_PING'
                 security_policy_apps = ['ping']
-
+                security_policy_destination_ports = ['any']
                 policy_object = SecurityRule(name=security_policy_name, tag=[security_policy_category], group_tag=security_policy_category, disabled=is_disabled, \
                                             fromzone = security_policy_source_zones, tozone=security_policy_destination_zones, source=security_policy_source_networks, \
                                             destination=security_policy_destination_networks, service=security_policy_destination_ports, category=security_policy_urls, application=security_policy_apps, \
                                             description=security_policy_description, log_setting=log_forwarding, log_end=log_end, action=policy_action)
 
                 rulebase_with_dg.add(policy_object)
-        
-        # create the object
-        try:
-            print(rulebase_with_dg.find(security_policy_name).create_similar())
-        except Exception as e:
-            print("error occured when creating policy object. More details: ", e)
+                print(f"adding policy {security_policy_name}, container {security_policy_container} to rulebase {rulebase}")
+
+            # create the object
+            try:
+                rulebase_with_dg.find(security_policy_name).create_similar()
+            except Exception as e:
+                print("error occured when creating policy object. More details: ", e)
 
     @staticmethod
     def apply_name_constraints(name):
@@ -645,12 +664,14 @@ PA treats ping as an application. The second rule will keep the exact same sourc
     @staticmethod
     # make sure it does not start with digit
     def apply_url_name_constraints(name):
-        # Replace all characters that are not space, '-', or '.' with '_'
+        # Replace all occurrences of '-' with '_'
+        name = name.replace('-', '_')
+        # Replace all characters that are not space, '_', '.', or '-' with '_'
         name = re.sub(r'[^a-zA-Z0-9\s_.-]', '_', name)
 
         if not name[0].isalpha():
             name = 'a' + name
-        
+            
         if len(name) > 31:
             truncated_name = name[:27]
             suffix = f"_{random.randint(100, 999)}"

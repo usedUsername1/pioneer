@@ -750,35 +750,35 @@ class SecurityDevice:
     def migrate_config(self, SourceDevice):
         print("called migrate config")
         # create the network objects
-        network_object_names = SourceDevice.get_db_objects_from_table('network_address_name', 'network_address_objects_table')
-        self.migrate_network_objects(network_object_names, SourceDevice)
+        # network_object_names = SourceDevice.get_db_objects_from_table('network_address_name', 'network_address_objects_table')
+        # self.migrate_network_objects(network_object_names, SourceDevice)
 
-        # create the network group objects
-        network_group_object_names = SourceDevice.get_db_objects_from_table('network_address_group_name', 'network_address_object_groups_table')
-        self.migrate_network_group_objects(network_group_object_names, SourceDevice)
+        # # # create the network group objects
+        # network_group_object_names = SourceDevice.get_db_objects_from_table('network_address_group_name', 'network_address_object_groups_table')
+        # self.migrate_network_group_objects(network_group_object_names, SourceDevice)
 
         # create the port objects
-        port_object_names = SourceDevice.get_db_objects_from_table('port_name', 'port_objects_table')
-        self.migrate_port_objects(port_object_names, SourceDevice)
+        # port_object_names = SourceDevice.get_db_objects_from_table('port_name', 'port_objects_table')
+        # self.migrate_port_objects(port_object_names, SourceDevice)
 
-        # create the port group objects
-        port_group_object_names = SourceDevice.get_db_objects_from_table('port_group_name', 'port_object_groups_table')
-        self.migrate_port_group_objects(port_group_object_names, SourceDevice)
+        # # # create the port group objects
+        # port_group_object_names = SourceDevice.get_db_objects_from_table('port_group_name', 'port_object_groups_table')
+        # self.migrate_port_group_objects(port_group_object_names, SourceDevice)
 
         # # create the url objects
-        url_object_names = SourceDevice.get_db_objects_from_table('url_object_name', 'url_objects_table')
-        self.migrate_url_objects(url_object_names, SourceDevice, 'url_object')
+        # url_object_names = SourceDevice.get_db_objects_from_table('url_object_name', 'url_objects_table')
+        # self.migrate_url_objects(url_object_names, SourceDevice, 'url_object')
 
-        # # create the url group objects
-        url_group_object_names = SourceDevice.get_db_objects_from_table('url_object_group_name', 'url_object_groups_table')
-        self.migrate_url_objects(url_group_object_names, SourceDevice, 'url_group')
+        # # # # create the url group objects
+        # url_group_object_names = SourceDevice.get_db_objects_from_table('url_object_group_name', 'url_object_groups_table')
+        # self.migrate_url_objects(url_group_object_names, SourceDevice, 'url_group')
 
-        # # create the PA tags corresponding to the policy category
-        categories = set(SourceDevice.get_db_objects_from_table('security_policy_category', 'security_policies_table'))
-        self.migrate_tags(categories)
+        # # # # create the PA tags corresponding to the policy category
+        # # categories = set(SourceDevice.get_db_objects_from_table('security_policy_category', 'security_policies_table'))
+        # # self.migrate_tags(categories)
         
-        # create the policies
-        # retrieve the policies and order them by their security_policy_index
+        # # create the policies
+        # # retrieve the policies and order them by their security_policy_index
         security_policy_names = SourceDevice.get_db_objects_from_table_order_by('security_policy_name', 'security_policies_table', 'security_policy_index')
         self.migrate_security_policies(security_policy_names, SourceDevice)
 

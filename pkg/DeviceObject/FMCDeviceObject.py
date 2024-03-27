@@ -87,7 +87,7 @@ class FMCObject(Object):
         for port_literal in port_literals:
             # Extract protocol and initialize port number
             literal_protocol = port_literal['protocol']
-            literal_port_nr = None
+            literal_port_nr = port_literal['port']
             
             try:
                 # Convert protocol number to its corresponding keyword

@@ -352,7 +352,6 @@ def main():
                 # all containers will be mapped in the map_containers_function
                 # mapping will be saved in the database table of the target device
             object_container, container_hierarchy_map = SpecificTargetSecurityDeviceObject.map_containers()
-
             interface_map = SpecificTargetSecurityDeviceObject.map_zones()
             # migration process will start by checking all the objects and see if they follow PA's standards. it will enforce compatibility
             # and after compatibilty is enforced, it will move all this data in the target's device's database
