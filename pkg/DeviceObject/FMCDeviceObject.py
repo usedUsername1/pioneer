@@ -87,7 +87,10 @@ class FMCObject(Object):
         for port_literal in port_literals:
             # Extract protocol and initialize port number
             literal_protocol = port_literal['protocol']
-            literal_port_nr = port_literal['port']
+            try:
+                literal_port_nr = port_literal['port']
+            except:
+                literal_port_nr = "1-65535"
             
             try:
                 # Convert protocol number to its corresponding keyword
@@ -766,7 +769,7 @@ class FMCPortObject(FMCObject, PortObject):
             port_number = self._object_info['port']
         except KeyError:
             general_logger.info(f"<{self._name}> port object does not have a port number defined.")
-            port_number = None
+            port_number = "1-65535"
         return super().set_port_number(port_number)
 
     def set_port_protocol(self):

@@ -773,9 +773,9 @@ class SecurityDevice:
         url_group_object_names = SourceDevice.get_db_objects_from_table('url_object_group_name', 'url_object_groups_table')
         self.migrate_url_objects(url_group_object_names, SourceDevice, 'url_group')
 
-        # # # create the PA tags corresponding to the policy category
-        # categories = set(SourceDevice.get_db_objects_from_table('security_policy_category', 'security_policies_table'))
-        # self.migrate_tags(categories)
+        # # create the PA tags corresponding to the policy category
+        categories = set(SourceDevice.get_db_objects_from_table('security_policy_category', 'security_policies_table'))
+        self.migrate_tags(categories)
         
         # # create the policies
         # # retrieve the policies and order them by their security_policy_index
