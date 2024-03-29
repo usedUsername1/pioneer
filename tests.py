@@ -27,8 +27,7 @@
 
 
 from panos.panorama import Panorama, DeviceGroup
-from panos.policies import PreRulebase, PostRulebase, SecurityRule
-from panos.objects import AddressObject
+from panos.objects import ServiceObject
 
 # Create a Panorama object
 pano = Panorama("10.2.196.196", "admin", "2wsx#EDC")
@@ -39,15 +38,24 @@ dg = DeviceGroup('Global Internet')
 # Add the device group to Panorama
 pano.add(dg)
 
-objects = pano.find(class_type=AddressObject)
-print(objects)
-# dg.remove(objects)
+# Create the service object
+testobj = ServiceObject(name='TEST_SCRIPT', protocol='tcp', destination_port='1-65535', description='k', tag=None)
 
-# # Refresh devices
-# device_groups = pano.refresh_devices()
+# Add the service object to the device group
+dg.add(testobj)
 
-# # Specify the name of the device group you want to retrieve information for
-# desired_device_group_name = "Parking"
+# Find the service object within the device group
+found_obj = dg.find(testobj)
+
+# Check if the object was found
+if found_obj is not None:
+    # If found, create a similar object
+    similar_obj = found_obj.create_similar()
+    print("Similar object created successfully.")
+else:
+    print("Object not found.")
+
+# dg.find(testobj).create_similar()
 
 # # Find the device group with the desired name
 # desired_device_group = None

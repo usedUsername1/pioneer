@@ -749,7 +749,7 @@ class SecurityDevice:
     #TODO: uncomment all when done testing
     def migrate_config(self, SourceDevice):
         print("called migrate config")
-        # create the network objects
+        # # create the network objects
         network_object_names = SourceDevice.get_db_objects_from_table('network_address_name', 'network_address_objects_table')
         self.migrate_network_objects(network_object_names, SourceDevice)
 
@@ -793,9 +793,8 @@ class SecurityDevice:
         flattened_list = [item[0] for item in query_result]
 
         # Remove the 'any' element of the list, if it exists. It is not an object that can be imported
-
-
         return flattened_list[0]
+
 
     def get_db_objects_from_table_order_by(self, column, table, order_param):
         select_command = f"SELECT {column} FROM {table} ORDER BY {order_param};"

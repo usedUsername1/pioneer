@@ -405,7 +405,7 @@ PA treats ping as an application. The second rule will keep the exact same sourc
             network_group_members = SourceDevice.get_db_col_by_val('network_address_group_members', 'network_address_object_groups_table', 'network_address_group_name', network_group_object_name)
             network_group_description = SourceDevice.get_db_col_by_val('network_address_group_description', 'network_address_object_groups_table', 'network_address_group_name', network_group_object_name)
 
-            network_group_object = AddressGroup(network_group_object_name, network_group_members, network_group_description, dynamic_value='dynamic')
+            network_group_object = AddressGroup(name=network_group_object_name, static_value=network_group_members,description=network_group_description)
             dg_object = DeviceGroup(network_object_container)
 
             # set the device group for the panorama instance
@@ -423,6 +423,7 @@ PA treats ping as an application. The second rule will keep the exact same sourc
         print("migrating port objects")
         for port_object_name in port_object_names:
             port_object_container = 'Global Internet'
+
             port_protocol = SourceDevice.get_db_col_by_val('port_protocol', 'port_objects_table', 'port_name', port_object_name)
             port_number = SourceDevice.get_db_col_by_val('port_number', 'port_objects_table', 'port_name', port_object_name)
             port_description = SourceDevice.get_db_col_by_val('port_description', 'port_objects_table', 'port_name', port_object_name)
@@ -520,6 +521,8 @@ PA treats ping as an application. The second rule will keep the exact same sourc
             # ensure that you combine the description and the comments into a single string, which will be the description of the palo alto policy
     def migrate_security_policies(self, security_policy_names, SourceDevice):
         print("migrating security policies")
+        error_file = open("failed_policies.log", "w")
+
         for security_policy_name in security_policy_names:
             if 'Embargoed' in security_policy_name:
                 continue
@@ -609,7 +612,7 @@ PA treats ping as an application. The second rule will keep the exact same sourc
                 policy_object = SecurityRule(name=security_policy_name, tag=[security_policy_category], group_tag=security_policy_category, disabled=is_disabled, \
                                             fromzone = security_policy_source_zones, tozone=security_policy_destination_zones, source=security_policy_source_networks, \
                                             destination=security_policy_destination_networks, service=security_policy_destination_ports, category=security_policy_urls, application=security_policy_apps, \
-                                            description=security_policy_description, log_setting=log_forwarding, log_end=log_end, action=policy_action)
+                                            description=security_policy_comments, log_setting=log_forwarding, log_end=log_end, action=policy_action, group="DUMMY_SPG")
                 
                 # add the policy object to the device group
                 
@@ -625,7 +628,7 @@ PA treats ping as an application. The second rule will keep the exact same sourc
                     policy_object = SecurityRule(name=security_policy_name, tag=[security_policy_category], group_tag=security_policy_category, disabled=is_disabled, \
                                                 fromzone = security_policy_source_zones, tozone=security_policy_destination_zones, source=security_policy_source_networks, \
                                                 destination=security_policy_destination_networks, service=security_policy_destination_ports, category=security_policy_urls, application=security_policy_apps, \
-                                                description=security_policy_description, log_setting=log_forwarding, log_end=log_end, action=policy_action)
+                                                description=security_policy_comments, log_setting=log_forwarding, log_end=log_end, action=policy_action, group="DUMMY_SPG")
                     
                     rulebase_with_dg.add(policy_object)
                     print(f"adding policy {security_policy_name}, container {security_policy_container} to rulebase {rulebase}")
@@ -636,7 +639,7 @@ PA treats ping as an application. The second rule will keep the exact same sourc
                 policy_object = SecurityRule(name=security_policy_name, tag=[security_policy_category], group_tag=security_policy_category, disabled=is_disabled, \
                                             fromzone = security_policy_source_zones, tozone=security_policy_destination_zones, source=security_policy_source_networks, \
                                             destination=security_policy_destination_networks, service=security_policy_destination_ports, category=security_policy_urls, application=security_policy_apps, \
-                                            description=security_policy_description, log_setting=log_forwarding, log_end=log_end, action=policy_action)
+                                            description=security_policy_description, log_setting=log_forwarding, log_end=log_end, action=policy_action, group="DUMMY_SPG")
 
                 rulebase_with_dg.add(policy_object)
                 print(f"adding policy {security_policy_name}, container {security_policy_container} to rulebase {rulebase}")
@@ -646,6 +649,7 @@ PA treats ping as an application. The second rule will keep the exact same sourc
                 rulebase_with_dg.find(security_policy_name).create_similar()
             except Exception as e:
                 print("error occured when creating policy object. More details: ", e)
+                error_file.write(f"Failed to create policy {security_policy_name}. Reason: {e}.\n")
 
     @staticmethod
     def apply_name_constraints(name):
