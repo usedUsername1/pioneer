@@ -587,7 +587,6 @@ PA treats ping as an application. The second rule will keep the exact same sourc
                     policy_action = 'reset-client'
 
             dg_object = DeviceGroup(security_policy_container)
-        
             # set the device group for the panorama instance
             self._sec_device_connection.add(dg_object)
             print("using device group: ", dg_object)
