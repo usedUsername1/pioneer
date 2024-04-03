@@ -3,6 +3,7 @@ from pkg import PioneerDatabase
 import utils.helper as helper
 import json
 import sys
+import utils.gvars as gvars
 from pkg.DeviceObject import NetworkObject, NetworkGroupObject, GeolocationObject, PortObject, PortGroupObject, ICMPObject, URLObject, URLGroupObject
 
 general_logger = helper.logging.getLogger('general')
@@ -27,9 +28,11 @@ class SecurityDeviceDatabase(PioneerDatabase):
         Create tables for security device data in the database.
         """
         general_logger.debug("Called SecurityDeviceDatabase::create_security_device_tables().")
-        general_logger.info("Creating table: <general_data_table>.")
-        self.table_factory("general_data_table")
-        general_logger.info("Created table: <general_data_table>.")
+        
+        general_logger.info(f"Creating table: <{gvars.general_data_table_name}>.")
+        self.table_factory(gvars.general_data_table_name)
+        general_logger.info(f"Created table: <{gvars.general_data_table_name}>.")
+        
         general_logger.info("Creating table: <security_policy_containers_table>.")
         self.table_factory("security_policy_containers_table")
         general_logger.info("Created table: <security_policy_containers_table>.")
@@ -133,7 +136,7 @@ class SecurityDeviceDatabase(PioneerDatabase):
         """
         general_logger.debug(f"Called SecurityDeviceDatabase::table_factory().")
         match table_name:
-            case 'general_data_table':
+            case gvars.general_data_table_name:
                 # Define the command for creating the general_data_table
                 command = """CREATE TABLE IF NOT EXISTS general_data_table (
                 security_device_name TEXT PRIMARY KEY,

@@ -1,5 +1,6 @@
 # git ls-files | xargs wc -l
 import utils.helper as helper
+import utils.gvars as gvars
 import pkg.MigrationProject as MigrationProject
 from pkg import DBConnection, PioneerDatabase
 from pkg.SecurityDevice import SecurityDevice, SecurityDeviceDatabase
@@ -13,11 +14,11 @@ import subprocess
 helper.logging.getLogger('fireREST').setLevel(helper.logging.CRITICAL)
 
 def main():
-    db_user = "pioneer_admin"
-    db_password = "2wsx#EDC"
-    landing_database = "pioneer_projects"
-    db_host = '127.0.0.1'
-    db_port = 5432
+    db_user = gvars.pioneer_db_user
+    db_password = gvars.pioneer_db_user_pass
+    landing_database = gvars.landing_db
+    db_host = gvars.db_host
+    db_port = gvars.db_port
 
     # create the parser for the pioneer utilty
     pioneer_parser = helper.create_parser()
@@ -31,42 +32,42 @@ def main():
     # if the create_project argument is used, then create a project database with the name supplied by the user
     # when a project is created, a database for it gets created. the projects_metadata table also gets updated with the new info
 
-    if pioneer_args['create_project [name]']:
+    # if pioneer_args['create_project [name]']:
         
-        # extract the name from argv
-        project_name = pioneer_args['create_project [name]']
+    #     # extract the name from argv
+    #     project_name = pioneer_args['create_project [name]']
 
-        # open a connection to the database
-        database_conn = DBConnection(db_user, landing_database, db_password, db_host, db_port)
+    #     # open a connection to the database
+    #     database_conn = DBConnection(db_user, landing_database, db_password, db_host, db_port)
 
-        # create a database cursor
-        database_cursor = database_conn.create_cursor()
+    #     # create a database cursor
+    #     database_cursor = database_conn.create_cursor()
 
-        # set the database name
-        project_database_name = project_name + "_db"
+    #     # set the database name
+    #     project_database_name = project_name + "_db"
 
-        # create the project database
-        PioneerProjectsDB = PioneerDatabase(database_cursor)
-        PioneerProjectsDB.create_database(project_database_name)
-        creation_timestamp = datetime.now()
-        # print(f"Created project {project_name}.")
+    #     # create the project database
+    #     PioneerProjectsDB = PioneerDatabase(database_cursor)
+    #     PioneerProjectsDB.create_database(project_database_name)
+    #     creation_timestamp = datetime.now()
+    #     # print(f"Created project {project_name}.")
 
-        # in the project_metadata table of the pioneer_projects database, insert the name of the project, the current devices names, the creation timestamp and the description
-        # PioneerProjectsDB.insert_into_projects_metadata(project_name, project_devices, project_description, creation_timestamp)
+    #     # in the project_metadata table of the pioneer_projects database, insert the name of the project, the current devices names, the creation timestamp and the description
+    #     # PioneerProjectsDB.insert_into_projects_metadata(project_name, project_devices, project_description, creation_timestamp)
 
-        # close the cursor
-        database_cursor.close()
+    #     # close the cursor
+    #     database_cursor.close()
 
-    # if the delete_project argument is used, then delete the project the user wants to delete
-    # when a project is deleted, its database gets deleted and the projects_metadata table gets updated
-    if pioneer_args['delete_project [name]']:
-        project_name = pioneer_args['delete_project [name]']
-        database_conn = DBConnection(db_user, landing_database, db_password, db_host, db_port)
-        database_cursor = database_conn.create_cursor()
-        project_database_name = project_name + "_db"
-        PioneerProjectsDB = PioneerDatabase(database_cursor)
-        PioneerProjectsDB.delete_database(project_database_name)
-        # print(f"Deleted project {project_name}.")
+    # # if the delete_project argument is used, then delete the project the user wants to delete
+    # # when a project is deleted, its database gets deleted and the projects_metadata table gets updated
+    # if pioneer_args['delete_project [name]']:
+    #     project_name = pioneer_args['delete_project [name]']
+    #     database_conn = DBConnection(db_user, landing_database, db_password, db_host, db_port)
+    #     database_cursor = database_conn.create_cursor()
+    #     project_database_name = project_name + "_db"
+    #     PioneerProjectsDB = PioneerDatabase(database_cursor)
+    #     PioneerProjectsDB.delete_database(project_database_name)
+    #     # print(f"Deleted project {project_name}.")
 
     # the "--create-security-device" argument must be used with the "--type" argument
     # create a security device with the name and the type specified by the user
@@ -83,8 +84,10 @@ def main():
 
         # Setup logging
         log_folder = helper.os.path.join('log', f'device_{security_device_name}')
-        helper.setup_logging(log_folder, {'general': 'general.log', 'special_policies': 'special_policies.log'})
-        general_logger = helper.logging.getLogger('general')
+        helper.setup_logging(log_folder, {gvars.general_logger: gvars.general_log_file,
+                                          gvars.special_policies_logger: gvars.special_policies_logger_file})
+        
+        general_logger = helper.logging.getLogger(gvars.general_logger)
 
         # Log creation of new device
         general_logger.info(f"################## CREATING A NEW DEVICE: <{security_device_name}> ##################")
@@ -130,8 +133,8 @@ def main():
 
                 # Create the tables in the device database
                 general_logger.info(f"Creating the tables in device database: <{security_device_db_name}>.")
+                #TODO: when you call this function, maybe create table objects and assign them to the security device class?
                 SecurityDeviceDB.create_security_device_tables()
-                print("Created device database.")
 
                 # Insert general device info into the database
                 general_logger.info(f"Inserting general device info in the database.")

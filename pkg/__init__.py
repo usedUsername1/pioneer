@@ -62,10 +62,6 @@ class PioneerDatabase():
     def __init__(self, cursor):
         self._cursor = cursor
         general_logger.debug(f"Called PioneerDatabase::__init__().")
-    
-    @abstractmethod
-    def create_specific_tables(self):
-        pass
 
     @abstractmethod
     def table_factory(self):
@@ -195,13 +191,43 @@ class PioneerDatabase():
         general_logger.info(f"Flattened the query result.")
         return unique_values_list
 
+    # TODO: implement this class
+    class PioneerTable():
+        def __init__(self, database):
+            general_logger.debug(f"Called PioneerTable::__init__().")
+            self._database = database
+        
+        def create_schema(table_schema):
+            pass
 
-# Example usage
-# query_result = [[['value1']], [['value2']], [['value3']], ...]
-# result = flatten_query_result(query_result)
-# print(result) # Output: ['value1', 'value2', 'value3', ...]
+        # move the insert_into_table code here
+        def insert_row():
+            pass
+        
+        # move the get_table_value code here
+        def get_value():
+            pass
+    
+    class GeneralDataTable(PioneerTable):
+        def __init__(self, database):
+            super().__init__(database)
+            self._database = database
+            self._name = "general_data"
+        
+        table_creation_command = """CREATE TABLE IF NOT EXISTS general_data_table (
+                security_device_name TEXT PRIMARY KEY,
+                security_device_username TEXT NOT NULL,
+                security_device_secret TEXT NOT NULL,
+                security_device_hostname TEXT NOT NULL,
+                security_device_type TEXT NOT NULL,
+                security_device_port TEXT NOT NULL,
+                security_device_version TEXT NOT NULL,
+                security_device_domain TEXT NOT NULL
+                );"""
 
-
+        # call insert_row to insert stuff
+        def insert():
+            pass
     
     # # this function inserts the metadata regarding the pioneer projects. will be overridden with "pass" by sub-classes in order to "stop" it from being inherited
     # def insert_into_projects_metadata(self, project_name, project_devices, project_description, creation_timestamp):
