@@ -23,7 +23,7 @@ class DBConnection():
         self._password = password,
         self._host = host,
         self._port = port,
-        general_logger.debug(f"Called DBConnection::__init__()")
+        general_logger.debug(f"Called DBConnection.__init__()")
     
     def create_cursor(self):
         """
@@ -32,7 +32,7 @@ class DBConnection():
         Returns:
             cursor: The database cursor.
         """
-        general_logger.debug(f"Called DBConnection::create_cursor().")
+        general_logger.debug(f"Called DBConnection.create_cursor().")
         # self parameters are returned as a tuple, they need to be extracted
         try:
             postgres_conn = psycopg2.connect(
@@ -61,7 +61,7 @@ class DBConnection():
 class PioneerDatabase():
     def __init__(self, cursor):
         self._cursor = cursor
-        general_logger.debug(f"Called PioneerDatabase::__init__().")
+        general_logger.debug(f"Called PioneerDatabase.__init__().")
 
     @abstractmethod
     def table_factory(self):
@@ -70,7 +70,7 @@ class PioneerDatabase():
     def create_database(self, name):
         # execute the request to create the database for the project. no need to specify the owner
         # as the owner will be the creator of the database.
-        general_logger.debug(f"Called PioneerDatabase::create_database().")
+        general_logger.debug(f"Called PioneerDatabase.create_database().")
         try:
             # execute the query to create the database
             query = """CREATE DATABASE {};""".format(name)
@@ -78,7 +78,6 @@ class PioneerDatabase():
             self._cursor.execute(query)
 
             # inform the user that the execution succeeded
-            # print(f"Created database {name}.")
             general_logger.info(f"Succesfully created database: {name}")
 
         # catch the error and exit the program if database creation fails
@@ -88,7 +87,7 @@ class PioneerDatabase():
 
     
     def delete_database(self, name):
-        general_logger.debug(f"Called PioneerDatabase::delete_database().")
+        general_logger.debug(f"Called PioneerDatabase.delete_database().")
         try:
             query = """DROP DATABASE {};""".format(name)
             general_logger.debug(f"Executing the following query: {query}.")
@@ -99,22 +98,21 @@ class PioneerDatabase():
         except psycopg2.Error as err:
             general_logger.critical(f"Error deleting database: {name}. Reason: {err}")
             sys.exit(1)  
-    
 
-    def create_table(self, table_name, table_command):
-        general_logger.debug(f"Called PioneerDatabase::create_table().")
+    def create_table(self, table_name, table_schema):
+        general_logger.debug(f"Called PioneerDatabase.create_table(table_name, table_schema). With parameters: <table_name>: <{table_name}>, <table_schema>: <{table_schema}>.")
+        command = f"""CREATE TABLE IF NOT EXISTS {table_name} ({table_schema});"""
+        
         try:
-            self._cursor.execute(table_command)
-            general_logger.info(f"Succesfully created table {table_name}")
+            general_logger.info(f"Creating table: <{table_name}>.")
+            self._cursor.execute(command)
         
         except psycopg2.Error as err:
-            general_logger.critical(f"Error creating table: {table_name}. Reason: {err}")
-            print(f"Failed to create table: {table_name}. Reason: {err}")
+            general_logger.critical(f"Error creating table: <{table_name}>. Reason: <{err}>.")
             sys.exit(1)
     
-
     def get_table_value(self, table_name, select_command, parameters=None):
-        general_logger.debug(f"Called PioneerDatabase::get_table_value().")
+        general_logger.debug(f"Called PioneerDatabase.get_table_value().")
         """
         Retrieve values from the specified table using the given SQL select command.
 
@@ -154,7 +152,7 @@ class PioneerDatabase():
         Returns:
         None
         """
-        general_logger.debug(f"Called PioneerDatabase::insert_table_value().")
+        general_logger.debug(f"Called PioneerDatabase.insert_table_value().")
         try:
             if values is not None:
                 self._cursor.execute(insert_command, values)
@@ -171,16 +169,13 @@ class PioneerDatabase():
     def update_table_value(self, table_name, update_command):
         try:
             self._cursor.execute(update_command)
-            # message = self._cursor.statusmessage
-            # print("Status message:", message)
-            # print(f"Updated values into: {table_name}.")
-        
+
         except psycopg2.Error as err:
-            print(f"Failed to update values for: {table_name}. Reason: {err}")
+            general_logger.error(f"Failed to update values for: <{table_name}>. Reason: <{err}>")
             sys.exit(1)
 
     def flatten_query_result(self, query_result):
-        general_logger.debug(f"Called PioneerDatabase::flatten_query_result().")
+        general_logger.debug(f"Called PioneerDatabase.flatten_query_result().")
         # Flatten both lists within each tuple and handle any number of sublists
         flattened_list = [item for tuple_item in query_result for sublist_part in tuple_item for item in sublist_part]
 
@@ -191,271 +186,273 @@ class PioneerDatabase():
         general_logger.info(f"Flattened the query result.")
         return unique_values_list
 
-    # TODO: implement this class
-    # each child of this object should be associated with a firewall object.
-    # for example. if i get the data of a firewall object, i want to do something like object.insert(), and the
-    # implementation of insert() for that object should be called
-    class PioneerTable():
-        def __init__(self, database):
-            general_logger.debug(f"Called PioneerTable::__init__().")
-            self._database = database
-        
-        def create_schema(table_name, table_schema):
-            f"""CREATE TABLE IF NOT EXISTS {table_name} (
-            {table_schema});"""
+# TODO: implement this class
+# each child of this object should be associated with a firewall object.
+# for example. if i get the data of a firewall object, i want to do something like object.insert(), and the
+# implementation of insert() for that object should be called
+class PioneerTable():
+    def __init__(self, database):
+        general_logger.debug(f"Called PioneerTable.__init__().")
+        self._name = None
+        self._table_schema = None
+        self._database = database
 
-        # move the insert_into_table code here
-        def insert_row():
-            pass
-        
-        # move the get_table_value code here. the code must be rewritten in such a way
-        # to permit multiple select queries
-        # this function doesn't need an override
-        def select_value():
-            pass
+    # overriden function
+    def create(self):
+        self._database.create_table(self._name, self._table_schema)
 
-        def update_value():
-            pass
+    # move the insert_into_table code here
+    def insert_row():
+        pass
+    
+    # move the get_table_value code here. the code must be rewritten in such a way
+    # to permit multiple select queries
+    # this function doesn't need an override
+    def select_value():
+        pass
+
+    def update_value():
+        pass
 
 # the following are not supported, no need to create tables: policies_hitcount_table, nat_policies_table, user_source_table, policy_users_table
 # security_zones_table, urls_categories_table, l7_apps_table, schedule_objects_table
-    class GeneralDataTable(PioneerTable):
-        def __init__(self, database):
-            super().__init__(database)
-            self._name = "general_data"
-            self._table_schema = """security_device_name TEXT PRIMARY KEY,
-                    security_device_username TEXT NOT NULL,
-                    security_device_secret TEXT NOT NULL,
-                    security_device_hostname TEXT NOT NULL,
-                    security_device_type TEXT NOT NULL,
-                    security_device_port TEXT NOT NULL,
-                    security_device_version TEXT NOT NULL,
-                    security_device_domain TEXT NOT NULL"""
+class GeneralDataTable(PioneerTable):
+    def __init__(self, database):
+        super().__init__(database)
+        self._name = "general_data"
+        self._table_schema = """security_device_name TEXT PRIMARY KEY,
+                security_device_username TEXT NOT NULL,
+                security_device_secret TEXT NOT NULL,
+                security_device_hostname TEXT NOT NULL,
+                security_device_type TEXT NOT NULL,
+                security_device_port TEXT NOT NULL,
+                security_device_version TEXT NOT NULL,
+                security_device_domain TEXT NOT NULL"""
 
-        # call insert_row to insert stuff
-        # should this insert() be a function defined on the Object/Policy classes?
-        def insert():
-            pass
-    
-    class SecurityPolicyContainersTable(PioneerTable):
-        def __init__(self, database):
-            super().__init__(database)
-            self._name = "security_policy_containers"
-            self._table_schema = """security_device_name TEXT NOT NULL,
-                security_policy_container_name TEXT PRIMARY KEY,
-                security_policy_container_parent TEXT,
-                FOREIGN KEY(security_device_name) REFERENCES general_data(security_device_name)"""
+    # call insert_row to insert stuff
+    # should this insert() be a function defined on the Object/Policy classes?
+    def insert():
+        pass
 
-        def insert():
-            pass
-    
-    class NATPolicyContainersTable(PioneerTable):
-        def __init__(self, database):
-            super().__init__(database)
-            self._name = "nat_policy_containers"
-            self._table_schema = """security_device_name TEXT NOT NULL,
-                nat_policy_container_name TEXT PRIMARY KEY,
-                nat_policy_container_parent TEXT,
-                FOREIGN KEY(security_device_name) REFERENCES general_data(security_device_name)"""
-            
-    class ObjectContainersTable(PioneerTable):
-        def __init__(self, database):
-            super().__init__(database)
-            self._name = "object_containers"
-            self._table_schema = """security_device_name TEXT NOT NULL,
-                object_container_name TEXT PRIMARY KEY,
-                object_container_parent TEXT,
-                FOREIGN KEY(security_device_name) REFERENCES general_data(security_device_name)"""
+class SecurityPolicyContainersTable(PioneerTable):
+    def __init__(self, database):
+        super().__init__(database)
+        self._name = "security_policy_containers"
+        self._table_schema = """security_device_name TEXT NOT NULL,
+            security_policy_container_name TEXT PRIMARY KEY,
+            security_policy_container_parent TEXT,
+            FOREIGN KEY(security_device_name) REFERENCES general_data(security_device_name)"""
 
-    class SecurityPoliciesTable(PioneerTable):
-        def __init__(self, database):
-            super().__init__(database)
-            self._name = "security_policies"
-            self._table_schema = """ security_device_name TEXT NOT NULL,
-                security_policy_name TEXT NOT NULL,
-                security_policy_container_name TEXT NOT NULL,
-                security_policy_index INT,
-                security_policy_category TEXT,
-                security_policy_status TEXT NOT NULL,
-                security_policy_source_zones TEXT[] NOT NULL,
-                security_policy_destination_zones TEXT[] NOT NULL,
-                security_policy_source_networks TEXT[] NOT NULL,
-                security_policy_destination_networks TEXT[] NOT NULL,
-                security_policy_source_ports TEXT[] NOT NULL,
-                security_policy_destination_ports TEXT[] NOT NULL,
-                security_policy_schedules TEXT[] NOT NULL,
-                security_policy_users TEXT[] NOT NULL,
-                security_policy_urls TEXT[] NOT NULL,
-                security_policy_l7_apps TEXT[] NOT NULL,
-                security_policy_description TEXT,
-                security_policy_comments TEXT[],
-                security_policy_log_setting TEXT[],
-                security_policy_log_start BOOLEAN NOT NULL,
-                security_policy_log_end BOOLEAN NOT NULL,
-                security_policy_section TEXT,
-                security_policy_action TEXT,
-                FOREIGN KEY(security_policy_container_name) REFERENCES security_policy_containers_table(security_policy_container_name) """
-    
-    class PoliciesHitcountTable(PioneerTable):
-        def __init__(self, database):
-            super().__init__(database)
-            self._name = "policies_hitcount"
-            self._table_schema = """security_device_name TEXT NOT NULL,
-                security_policy_name TEXT NOT NULL,
-                security_policy_container_name TEXT NOT NULL,
-                security_policy_hitcount INTEGER,
-                security_policy_last_hit TIMESTAMP,
-                nat_policy_name TEXT NOT NULL,
-                nat_policy_container_name TEXT NOT NULL,
-                nat_policy_hitcount INTEGER,
-                nat_policy_last_hit TIMESTAMP,
-                assigned_device_name TEXT NOT NULL,
-                FOREIGN KEY(security_policy_container_name) REFERENCES security_policy_containers_table(security_policy_container_name),
-                FOREIGN KEY(nat_policy_container_name) REFERENCES security_policy_containers_table(security_policy_container_name)"""
+    def insert():
+        pass
 
-    class SecurityZonesTable(PioneerTable):
-        def __init__(self, database):
-            super().__init__(database)
-            self._name = "security_zones"
-            self._table_schema = """security_zone_name TEXT PRIMARY KEY,
-                security_device_name TEXT NOT NULL,
-                object_container_name TEXT NOT NULL,
-                security_zone_assigned_device TEXT,
-                security_zone_mapped_interfaces TEXT[],
-                security_zone_description TEXT,
-                FOREIGN KEY(object_container_name) REFERENCES object_containers_table(object_container_name)"""
+class NATPolicyContainersTable(PioneerTable):
+    def __init__(self, database):
+        super().__init__(database)
+        self._name = "nat_policy_containers"
+        self._table_schema = """security_device_name TEXT NOT NULL,
+            nat_policy_container_name TEXT PRIMARY KEY,
+            nat_policy_container_parent TEXT,
+            FOREIGN KEY(security_device_name) REFERENCES general_data(security_device_name)"""
+        
+class ObjectContainersTable(PioneerTable):
+    def __init__(self, database):
+        super().__init__(database)
+        self._name = "object_containers"
+        self._table_schema = """security_device_name TEXT NOT NULL,
+            object_container_name TEXT PRIMARY KEY,
+            object_container_parent TEXT,
+            FOREIGN KEY(security_device_name) REFERENCES general_data(security_device_name)"""
 
-    class URLObjectsTable(PioneerTable):
-        def __init__(self, database):
-            super().__init__(database)
-            self._name = "url_objects"
-            self._table_schema = """url_object_name TEXT PRIMARY KEY,
-                security_device_name TEXT NOT NULL,
-                object_container_name TEXT NOT NULL,
-                url_value TEXT,
-                url_object_description TEXT,
-                FOREIGN KEY(object_container_name) REFERENCES object_containers_table(object_container_name)"""
+class SecurityPoliciesTable(PioneerTable):
+    def __init__(self, database):
+        super().__init__(database)
+        self._name = "security_policies"
+        self._table_schema = """ security_device_name TEXT NOT NULL,
+            security_policy_name TEXT NOT NULL,
+            security_policy_container_name TEXT NOT NULL,
+            security_policy_index INT,
+            security_policy_category TEXT,
+            security_policy_status TEXT NOT NULL,
+            security_policy_source_zones TEXT[] NOT NULL,
+            security_policy_destination_zones TEXT[] NOT NULL,
+            security_policy_source_networks TEXT[] NOT NULL,
+            security_policy_destination_networks TEXT[] NOT NULL,
+            security_policy_source_ports TEXT[] NOT NULL,
+            security_policy_destination_ports TEXT[] NOT NULL,
+            security_policy_schedules TEXT[] NOT NULL,
+            security_policy_users TEXT[] NOT NULL,
+            security_policy_urls TEXT[] NOT NULL,
+            security_policy_l7_apps TEXT[] NOT NULL,
+            security_policy_description TEXT,
+            security_policy_comments TEXT[],
+            security_policy_log_setting TEXT[],
+            security_policy_log_start BOOLEAN NOT NULL,
+            security_policy_log_end BOOLEAN NOT NULL,
+            security_policy_section TEXT,
+            security_policy_action TEXT,
+            FOREIGN KEY(security_policy_container_name) REFERENCES security_policy_containers_table(security_policy_container_name) """
 
-    class URLObjectGroupsTable(PioneerTable):
-        def __init__(self, database):
-            super().__init__(database)
-            self._name = "url_object_groups"
-            self._table_schema = """url_object_group_name TEXT PRIMARY KEY,
-                security_device_name TEXT NOT NULL,
-                object_container_name TEXT NOT NULL,
-                url_object_members TEXT[],
-                url_group_object_description TEXT,
-                FOREIGN KEY(object_container_name) REFERENCES object_containers_table(object_container_name)"""
+class PoliciesHitcountTable(PioneerTable):
+    def __init__(self, database):
+        super().__init__(database)
+        self._name = "policies_hitcount"
+        self._table_schema = """security_device_name TEXT NOT NULL,
+            security_policy_name TEXT NOT NULL,
+            security_policy_container_name TEXT NOT NULL,
+            security_policy_hitcount INTEGER,
+            security_policy_last_hit TIMESTAMP,
+            nat_policy_name TEXT NOT NULL,
+            nat_policy_container_name TEXT NOT NULL,
+            nat_policy_hitcount INTEGER,
+            nat_policy_last_hit TIMESTAMP,
+            assigned_device_name TEXT NOT NULL,
+            FOREIGN KEY(security_policy_container_name) REFERENCES security_policy_containers_table(security_policy_container_name),
+            FOREIGN KEY(nat_policy_container_name) REFERENCES security_policy_containers_table(security_policy_container_name)"""
 
-    class NetworkAddressObjectsTable(PioneerTable):
-        def __init__(self, database):
-            super().__init__(database)
-            self._name = "network_address_objects"
-            self._table_schema = """network_address_name TEXT PRIMARY KEY,
-                security_device_name TEXT NOT NULL,
-                object_container_name TEXT NOT NULL,
-                network_address_value TEXT,
-                network_address_description TEXT,
-                network_address_type TEXT,
-                overridable_object BOOLEAN NOT NULL,
-                FOREIGN KEY(object_container_name) REFERENCES object_containers_table(object_container_name)"""
+class SecurityZonesTable(PioneerTable):
+    def __init__(self, database):
+        super().__init__(database)
+        self._name = "security_zones"
+        self._table_schema = """security_zone_name TEXT PRIMARY KEY,
+            security_device_name TEXT NOT NULL,
+            object_container_name TEXT NOT NULL,
+            security_zone_assigned_device TEXT,
+            security_zone_mapped_interfaces TEXT[],
+            security_zone_description TEXT,
+            FOREIGN KEY(object_container_name) REFERENCES object_containers_table(object_container_name)"""
 
-    class NetworkAddressObjectGroupsTable(PioneerTable):
-        def __init__(self, database):
-            super().__init__(database)
-            self._name = "network_address_object_groups"
-            self._table_schema = """network_address_group_name TEXT PRIMARY KEY,
-                security_device_name TEXT NOT NULL,
-                object_container_name TEXT NOT NULL,
-                network_address_group_members TEXT[],
-                network_address_group_description TEXT,
-                overridable_object BOOLEAN NOT NULL,
-                FOREIGN KEY(object_container_name) REFERENCES object_containers_table(object_container_name)"""
-            self.create_schema(self._name, self._database)
+class URLObjectsTable(PioneerTable):
+    def __init__(self, database):
+        super().__init__(database)
+        self._name = "url_objects"
+        self._table_schema = """url_object_name TEXT PRIMARY KEY,
+            security_device_name TEXT NOT NULL,
+            object_container_name TEXT NOT NULL,
+            url_value TEXT,
+            url_object_description TEXT,
+            FOREIGN KEY(object_container_name) REFERENCES object_containers_table(object_container_name)"""
 
-    class GeolocationObjectsTable(PioneerTable):
-        def __init__(self, database):
-            super().__init__(database)
-            self._name = "geolocation_objects"
-            self._table_schema = """geolocation_object_name TEXT PRIMARY KEY,
-                security_device_name TEXT NOT NULL,
-                object_container_name TEXT NOT NULL,
-                continent_member_names TEXT[],
-                country_member_names TEXT[],
-                country_member_alpha2_codes TEXT[],
-                country_member_alpha3_codes TEXT[],
-                country_member_numeric_codes TEXT[],
-                FOREIGN KEY(object_container_name) REFERENCES object_containers_table(object_container_name)"""
-            self.create_schema(self._name, self._database)
+class URLObjectGroupsTable(PioneerTable):
+    def __init__(self, database):
+        super().__init__(database)
+        self._name = "url_object_groups"
+        self._table_schema = """url_object_group_name TEXT PRIMARY KEY,
+            security_device_name TEXT NOT NULL,
+            object_container_name TEXT NOT NULL,
+            url_object_members TEXT[],
+            url_group_object_description TEXT,
+            FOREIGN KEY(object_container_name) REFERENCES object_containers_table(object_container_name)"""
 
-    class PortObjectsTable(PioneerTable):
-        def __init__(self, database):
-            super().__init__(database)
-            self._name = "port_objects"
-            self._table_schema = """port_name TEXT PRIMARY KEY,
-                security_device_name TEXT NOT NULL,
-                object_container_name TEXT NOT NULL,
-                port_protocol TEXT,
-                port_number TEXT,
-                port_description TEXT,
-                overridable_object BOOLEAN NOT NULL,
-                FOREIGN KEY(object_container_name) REFERENCES object_containers_table(object_container_name)"""
+class NetworkAddressObjectsTable(PioneerTable):
+    def __init__(self, database):
+        super().__init__(database)
+        self._name = "network_address_objects"
+        self._table_schema = """network_address_name TEXT PRIMARY KEY,
+            security_device_name TEXT NOT NULL,
+            object_container_name TEXT NOT NULL,
+            network_address_value TEXT,
+            network_address_description TEXT,
+            network_address_type TEXT,
+            overridable_object BOOLEAN NOT NULL,
+            FOREIGN KEY(object_container_name) REFERENCES object_containers_table(object_container_name)"""
 
-    class ICMPObjectsTable(PioneerTable):
-        def __init__(self, database):
-            super().__init__(database)
-            self._name = "icmp_objects"
-            self._table_schema = """icmp_name TEXT PRIMARY KEY,
-                security_device_name TEXT NOT NULL,
-                object_container_name TEXT NOT NULL,
-                icmp_type TEXT,
-                icmp_code TEXT,
-                icmp_description TEXT,
-                overridable_object BOOLEAN NOT NULL,
-                FOREIGN KEY(object_container_name) REFERENCES object_containers_table(object_container_name)"""
+class NetworkAddressObjectGroupsTable(PioneerTable):
+    def __init__(self, database):
+        super().__init__(database)
+        self._name = "network_address_object_groups"
+        self._table_schema = """network_address_group_name TEXT PRIMARY KEY,
+            security_device_name TEXT NOT NULL,
+            object_container_name TEXT NOT NULL,
+            network_address_group_members TEXT[],
+            network_address_group_description TEXT,
+            overridable_object BOOLEAN NOT NULL,
+            FOREIGN KEY(object_container_name) REFERENCES object_containers_table(object_container_name)"""
+        
 
-    class PortObjectGroupsTable(PioneerTable):
-        def __init__(self, database):
-            super().__init__(database)
-            self._name = "port_object_groups"
-            self._table_schema = """port_group_name TEXT PRIMARY KEY,
-                security_device_name TEXT NOT NULL,
-                object_container_name TEXT NOT NULL,
-                port_group_members TEXT[],
-                port_group_description TEXT,
-                overridable_object BOOLEAN NOT NULL,
-                FOREIGN KEY(object_container_name) REFERENCES object_containers_table(object_container_name)"""
+class GeolocationObjectsTable(PioneerTable):
+    def __init__(self, database):
+        super().__init__(database)
+        self._name = "geolocation_objects"
+        self._table_schema = """geolocation_object_name TEXT PRIMARY KEY,
+            security_device_name TEXT NOT NULL,
+            object_container_name TEXT NOT NULL,
+            continent_member_names TEXT[],
+            country_member_names TEXT[],
+            country_member_alpha2_codes TEXT[],
+            country_member_alpha3_codes TEXT[],
+            country_member_numeric_codes TEXT[],
+            FOREIGN KEY(object_container_name) REFERENCES object_containers_table(object_container_name)"""
+        
 
-    class ScheduleObjectsTable(PioneerTable):
-        def __init__(self, database):
-            super().__init__(database)
-            self._name = "schedule_objects"
-            self._table_schema = """schedule_object_name TEXT PRIMARY KEY,
-                security_device_name TEXT NOT NULL,
-                object_container_name TEXT NOT NULL,
-                recurring BOOLEAN NOT NULL,
-                start_date TEXT,
-                start_time TEXT,
-                end_date TEXT,
-                end_time TEXT,
-                reccurence_type TEXT,
-                daily_start TEXT,
-                daily_end TEXT,
-                week_day TEXT,
-                week_day_start TEXT,
-                week_day_end TEXT,
-                FOREIGN KEY(object_container_name) REFERENCES object_containers_table(object_container_name)"""
+class PortObjectsTable(PioneerTable):
+    def __init__(self, database):
+        super().__init__(database)
+        self._name = "port_objects"
+        self._table_schema = """port_name TEXT PRIMARY KEY,
+            security_device_name TEXT NOT NULL,
+            object_container_name TEXT NOT NULL,
+            port_protocol TEXT,
+            port_number TEXT,
+            port_description TEXT,
+            overridable_object BOOLEAN NOT NULL,
+            FOREIGN KEY(object_container_name) REFERENCES object_containers_table(object_container_name)"""
 
-    class ManagedDevicesTable(PioneerTable):
-        def __init__(self, database):
-            super().__init__(database)
-            self._name = "managed_devices"
-            self._table_schema = """security_device_name TEXT NOT NULL,
-                managed_device_name TEXT PRIMARY KEY,
-                assigned_security_policy_container TEXT,
-                hostname TEXT,
-                cluster TEXT,
-                FOREIGN KEY(security_device_name) REFERENCES general_data_table(security_device_name)"""
+class ICMPObjectsTable(PioneerTable):
+    def __init__(self, database):
+        super().__init__(database)
+        self._name = "icmp_objects"
+        self._table_schema = """icmp_name TEXT PRIMARY KEY,
+            security_device_name TEXT NOT NULL,
+            object_container_name TEXT NOT NULL,
+            icmp_type TEXT,
+            icmp_code TEXT,
+            icmp_description TEXT,
+            overridable_object BOOLEAN NOT NULL,
+            FOREIGN KEY(object_container_name) REFERENCES object_containers_table(object_container_name)"""
+
+class PortObjectGroupsTable(PioneerTable):
+    def __init__(self, database):
+        super().__init__(database)
+        self._name = "port_object_groups"
+        self._table_schema = """port_group_name TEXT PRIMARY KEY,
+            security_device_name TEXT NOT NULL,
+            object_container_name TEXT NOT NULL,
+            port_group_members TEXT[],
+            port_group_description TEXT,
+            overridable_object BOOLEAN NOT NULL,
+            FOREIGN KEY(object_container_name) REFERENCES object_containers_table(object_container_name)"""
+
+class ScheduleObjectsTable(PioneerTable):
+    def __init__(self, database):
+        super().__init__(database)
+        self._name = "schedule_objects"
+        self._table_schema = """schedule_object_name TEXT PRIMARY KEY,
+            security_device_name TEXT NOT NULL,
+            object_container_name TEXT NOT NULL,
+            recurring BOOLEAN NOT NULL,
+            start_date TEXT,
+            start_time TEXT,
+            end_date TEXT,
+            end_time TEXT,
+            reccurence_type TEXT,
+            daily_start TEXT,
+            daily_end TEXT,
+            week_day TEXT,
+            week_day_start TEXT,
+            week_day_end TEXT,
+            FOREIGN KEY(object_container_name) REFERENCES object_containers_table(object_container_name)"""
+
+class ManagedDevicesTable(PioneerTable):
+    def __init__(self, database):
+        super().__init__(database)
+        self._name = "managed_devices"
+        self._table_schema = """security_device_name TEXT NOT NULL,
+            managed_device_name TEXT PRIMARY KEY,
+            assigned_security_policy_container TEXT,
+            hostname TEXT,
+            cluster TEXT,
+            FOREIGN KEY(security_device_name) REFERENCES general_data_table(security_device_name)"""
 
     # # this function inserts the metadata regarding the pioneer projects. will be overridden with "pass" by sub-classes in order to "stop" it from being inherited
     # def insert_into_projects_metadata(self, project_name, project_devices, project_description, creation_timestamp):

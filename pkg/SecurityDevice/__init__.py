@@ -1,5 +1,8 @@
 from abc import abstractmethod
-from pkg import PioneerDatabase
+from pkg import PioneerDatabase, GeneralDataTable, SecurityPolicyContainersTable, NATPolicyContainersTable, ObjectContainersTable, SecurityPoliciesTable, \
+PoliciesHitcountTable, SecurityZonesTable, URLObjectsTable, URLObjectGroupsTable, NetworkAddressObjectsTable, NetworkAddressObjectGroupsTable, \
+GeolocationObjectsTable, PortObjectsTable, ICMPObjectsTable, PortObjectGroupsTable, ScheduleObjectsTable, ManagedDevicesTable
+
 import utils.helper as helper
 import json
 import sys
@@ -22,8 +25,23 @@ class SecurityDeviceDatabase(PioneerDatabase):
         """
         super().__init__(cursor)
         general_logger.debug(f"Called SecurityDeviceDatabase::__init__().")
-    
+        self._GeneralDataTable = GeneralDataTable(self)
+        self._SecurityPolicyContainersTable = SecurityPolicyContainersTable(self)
+        self._ObjectContainersTable = ObjectContainersTable(self)
+        self._SecurityPoliciesTable = SecurityPoliciesTable(self)
+        self._UrlObjectsTable = URLObjectsTable(self)
+        self._UrlObjectGroupsTable = URLObjectGroupsTable(self)
+        self._NetworkAddressObjectsTable = NetworkAddressObjectsTable(self)
+        self._NetworkAddressObjectGroupsTable = NetworkAddressObjectGroupsTable(self)
+        self._GeolocationObjectsTable = GeolocationObjectsTable(self)
+        self._PortObjectsTable = PortObjectsTable(self)
+        self._ICMPObjectsTable = ICMPObjectsTable(self)
+        self._PortObjectGroupsTable = PortObjectGroupsTable(self)
+        self._ManagedDevicesTable = ManagedDevicesTable(self)
+
+
     def create_security_device_tables(self):
+        self._GeneralDataTable.create()
         pass
 
 class SecurityDeviceConnection:
