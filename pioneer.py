@@ -16,7 +16,7 @@ helper.logging.getLogger('fireREST').setLevel(helper.logging.CRITICAL)
 def main():
     db_user = gvars.pioneer_db_user
     db_password = gvars.pioneer_db_user_pass
-    landing_database = gvars.landing_db
+    landing_db = gvars.landing_db
     db_host = gvars.db_host
     db_port = gvars.db_port
 
@@ -94,17 +94,13 @@ def main():
         general_logger.debug(f"Got the following info about device from user, security device name: <{security_device_name}>, type <{security_device_type}>, hostname <{security_device_hostname}, username <{security_device_username}>, secret <>, port: <{security_device_port}>, domain <{domain}>.")
 
         # Connect to the landing device database
-        landing_db_conn = DBConnection(db_user, landing_database, db_password, db_host, db_port)
-        general_logger.info(f"Connecting to device database: <{landing_database}>.")
-        landing_cursor = landing_db_conn.create_cursor()
-
+        LandingDBcursor = PioneerDatabase.connect_to_db(db_user, landing_db, db_password, db_host)
         # Create the security device database object using the landing database
-        SecurityDeviceDB = SecurityDeviceDatabase(landing_cursor)
+        SecurityDeviceDB = SecurityDeviceDatabase(LandingDBcursor)
 
         # Try connecting to the security device and retrieving the version
         try:
             general_logger.info(f"Connecting to the security device...")
-            print("Connecting to the security device...")
             # Attempt to create the security device object based on the device type
             if '-api' in security_device_type:
                 general_logger.info(f"The device {security_device_name} is an API device. Its API will be used for interacting with it.")
@@ -121,24 +117,22 @@ def main():
             if security_device_version:
                 # Create the database
                 security_device_db_name = security_device_name + '_db'
-                general_logger.info(f"Creating device database: <{security_device_db_name}>.")
-                general_logger.debug(f"Connecting to the Postgres using, user: <{db_user}>, password ..., host: <{db_host}>, port: <{db_port}>, landing database: <{landing_database}>.")
+                general_logger.debug(f"Connecting to the Postgres using, user: <{db_user}>, password ..., host: <{db_host}>, port: <{db_port}>, landing database: <{landing_db}>.")
                 SecurityDeviceDB.create_database(security_device_db_name)
 
                 # Connect to the newly created security device database
-                security_device_db_conn = DBConnection(db_user, security_device_db_name, db_password, db_host, db_port)
-                security_device_cursor = security_device_db_conn.create_cursor()
-                SecurityDeviceDB = SecurityDeviceDatabase(security_device_cursor)
-                SecurityDeviceObject.set_database(SecurityDeviceDB)
+                SecurityDeviceDBcursor = PioneerDatabase.connect_to_db(db_user, security_device_db_name, db_password, db_host, db_port)
+                SecurityDeviceDB = SecurityDeviceDatabase(SecurityDeviceDBcursor)
 
                 # Create the tables in the device database
-                general_logger.info(f"Creating the tables in device database: <{security_device_db_name}>.")
-                #TODO: when you call this function, maybe create table objects and assign them to the security device class?
                 SecurityDeviceDB.create_security_device_tables()
+
+                SecurityDeviceObject.set_database(SecurityDeviceDB)
 
                 # Insert general device info into the database
                 general_logger.info(f"Inserting general device info in the database.")
-                SecurityDeviceObject.insert_into_general_table(security_device_username, security_device_secret, security_device_hostname, security_device_type, security_device_port, security_device_version, domain)
+                #TODO: modify this. SecurityDeviceObject's general data table object's insert function must be called here
+                # SecurityDeviceObject.insert_into_general_table(security_device_username, security_device_secret, security_device_hostname, security_device_type, security_device_port, security_device_version, domain)
 
                 #TODO: this must be moved when the ManagedDevices class is created
                 # # Retrieve information about the managed devices
@@ -156,8 +150,8 @@ def main():
             sys.exit(1)
         
         # close the cursors used to connect to the database
-        landing_cursor.close()
-        security_device_cursor.close()
+        LandingDBcursor.close()
+        SecurityDeviceDBcursor.close()
 
     # at this point, the backbone of the device is created, importing of data can start
     # the user used the --device option
@@ -356,21 +350,6 @@ def main():
                 # mapping will be saved in the database table of the target device
             object_container, container_hierarchy_map = SpecificTargetSecurityDeviceObject.map_containers()
             interface_map = SpecificTargetSecurityDeviceObject.map_zones()
-            # migration process will start by checking all the objects and see if they follow PA's standards. it will enforce compatibility
-            # and after compatibilty is enforced, it will move all this data in the target's device's database
-            # the adapt_config function will:
-                # track all the below changes
-                # check all the objects and see if they follow the target's device standards of definition and change the definition to follow the standards
-                # check all the security policies and see if they follow the target's device standards of definition and change the definition to follow the standards
-                    # check all the security policies with ICMP objects defined on them and apply the standards. for example in PA:
-                    # if ICMP objects are present (includig in the port object groups)
-                        # they will be removed from wherever they are and two policies will be imported in the target's device's database:
-                            # 1. the original policy, containing the destination ports. name unchanged
-                            # 2. a ping policy, containing only the application ping. name with _PING suffix.
-                            # 3. if the policy has only ping objects, the policy will not be split, name will still be modified, port objects removed and ping app added
-                            # to the policy
-                # adapt_config will also change the containers of the objects before adding them to the target's device database
-            #TODO: CONTINUE FROM HERE
             
             SpecificTargetSecurityDeviceObject.adapt_config(object_container, container_hierarchy_map, interface_map, SpecificSecurityDeviceObject)
             SpecificTargetSecurityDeviceObject.migrate_config(SpecificSecurityDeviceObject)

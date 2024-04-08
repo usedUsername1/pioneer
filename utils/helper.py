@@ -6,6 +6,7 @@ import ipaddress
 import logging
 import os
 
+general_logger = logging.getLogger('general')
 # this function returns a parser objects for the pioneer tool
 def create_parser():
     parser = argparse.ArgumentParser(description="Pioneer is a vendor-agnostic CLI tool for migrating firewall policies.")

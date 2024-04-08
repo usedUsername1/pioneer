@@ -19,3 +19,6 @@ general_log_file = general_logger + ".log"
 special_policies_logger = "special_policies"
 special_policies_logger_file = special_policies_logger + ".log"
 
+# DATABASE TABLE VARIABLES
+general_data_table_name = "general_data"
+security_policy_containers_table_name = "security_policy_containers"

@@ -23,8 +23,8 @@ class SecurityDeviceDatabase(PioneerDatabase):
         Args:
             cursor: The cursor object for database operations.
         """
+        general_logger.debug(f"Called SecurityDeviceDatabase.__init__().")
         super().__init__(cursor)
-        general_logger.debug(f"Called SecurityDeviceDatabase::__init__().")
         self._GeneralDataTable = GeneralDataTable(self)
         self._SecurityPolicyContainersTable = SecurityPolicyContainersTable(self)
         self._ObjectContainersTable = ObjectContainersTable(self)
@@ -39,10 +39,23 @@ class SecurityDeviceDatabase(PioneerDatabase):
         self._PortObjectGroupsTable = PortObjectGroupsTable(self)
         self._ManagedDevicesTable = ManagedDevicesTable(self)
 
-
+    #TODO: continue here
     def create_security_device_tables(self):
+        general_logger.debug(f"Called SecurityDeviceDatabase.create_security_device_tables().")
+        general_logger.info(f"Creating the PostgreSQL tables in device database.")
         self._GeneralDataTable.create()
-        pass
+        self._SecurityPolicyContainersTable.create()
+        self._ObjectContainersTable.create()
+        self._SecurityPoliciesTable.create()
+        self._UrlObjectsTable.create()
+        self._UrlObjectGroupsTable.create()
+        self._NetworkAddressObjectsTable.create()
+        self._NetworkAddressObjectGroupsTable.create()
+        self._GeolocationObjectsTable.create()
+        self._PortObjectsTable.create()
+        self._ICMPObjectsTable.create()
+        self._PortObjectGroupsTable.create()
+        self._ManagedDevicesTable.create()
 
 class SecurityDeviceConnection:
     """
@@ -64,7 +77,7 @@ class SecurityDevice:
         - name (str): The name of the security device.
         - sec_device_database (Database): An instance of the database for the security device.
         """
-        general_logger.debug("Called SecurityDevice::__init__.")
+        general_logger.debug("Called SecurityDevice.__init__.")
         self._name = name
         self._database = sec_device_database
     
@@ -86,7 +99,7 @@ class SecurityDevice:
         Returns:
         - list: List of processed container information.
         """
-        general_logger.debug(f"Called SecurityDevice::get_containers_info_from_device_conn()")
+        general_logger.debug(f"Called SecurityDevice.get_containers_info_from_device_conn()")
         general_logger.info(f"################## Importing configuration of the device containers. Container type: <{container_type}> ##################")
         processed_container_list = []
 
@@ -204,7 +217,7 @@ class SecurityDevice:
             str: Version of the device's server.
         """
         # Log a debug message to indicate that the function is called
-        general_logger.debug("Called SecurityDevice::get_device_version_from_device_conn()")
+        general_logger.debug("Called SecurityDevice.get_device_version_from_device_conn()")
 
         try:
             # Attempt to retrieve the device version using the method get_device_version()
@@ -319,7 +332,7 @@ class SecurityDevice:
             list: List of processed objects.
         """
         # Log a debug message indicating that the function is called
-        general_logger.debug("Called SecurityDevice::get_object_info_from_device_conn()")
+        general_logger.debug("Called SecurityDevice.get_object_info_from_device_conn()")
         # Define a dictionary mapping object types to functions retrieving objects
         match object_type:
             case 'network_objects':
@@ -536,7 +549,7 @@ class SecurityDevice:
         pass
 
     def get_security_device_type_from_db(self):
-        general_logger.debug(f"Called SecurityDevice::get_security_device_type().")
+        general_logger.debug(f"Called SecurityDevice.get_security_device_type().")
         general_logger.info(f"Fetching the device type of device: <{self._name}>.")
         """
         Retrieve the security device type.
@@ -548,7 +561,7 @@ class SecurityDevice:
         return self._get_security_device_attribute('security_device_type')
 
     def get_security_device_hostname_from_db(self):
-        general_logger.debug(f"Called SecurityDevice::get_security_device_hostname_from_db().")
+        general_logger.debug(f"Called SecurityDevice.get_security_device_hostname_from_db().")
         general_logger.info(f"Fetching the hostname of {self._name}.")
         """
         Retrieve the security device hostname.
@@ -560,7 +573,7 @@ class SecurityDevice:
         return self._get_security_device_attribute('security_device_hostname')
 
     def get_security_device_username_from_db(self):
-        general_logger.debug(f"Called SecurityDevice::get_security_device_username_from_db().")
+        general_logger.debug(f"Called SecurityDevice.get_security_device_username_from_db().")
         general_logger.info(f"Fetching the username of device <{self._name}>.")
         """
         Retrieve the security device username.
@@ -584,7 +597,7 @@ class SecurityDevice:
         return self._get_security_device_attribute('security_device_secret')
 
     def get_security_device_domain_from_db(self):
-        general_logger.debug(f"Called SecurityDevice::get_security_device_domain_from_db().")
+        general_logger.debug(f"Called SecurityDevice.get_security_device_domain_from_db().")
         general_logger.info(f"Fetching the domain of <{self._name}>.")
         """
         Retrieve the security device domain.
@@ -596,7 +609,7 @@ class SecurityDevice:
         return self._get_security_device_attribute('security_device_domain')
 
     def get_security_device_port_from_db(self):
-        general_logger.debug(f"Called SecurityDevice::get_security_device_port_from_db().")
+        general_logger.debug(f"Called SecurityDevice.get_security_device_port_from_db().")
         general_logger.info(f"Fetching the port of <{self._name}>.")
         """
         Retrieve the security device port.
@@ -608,7 +621,7 @@ class SecurityDevice:
         return self._get_security_device_attribute('security_device_port')
 
     def get_security_device_version_from_db(self):
-        general_logger.debug(f"Called SecurityDevice::get_security_device_version_from_db().")
+        general_logger.debug(f"Called SecurityDevice.get_security_device_version_from_db().")
         general_logger.info(f"Fetching the version of <{self._name}>.")
         """
         Retrieve the security device version.
@@ -620,7 +633,7 @@ class SecurityDevice:
         return self._get_security_device_attribute('security_device_version')
 
     def _get_security_device_attribute(self, attribute):
-        general_logger.debug(f"Called SecurityDevice::_get_security_device_attribute().")
+        general_logger.debug(f"Called SecurityDevice._get_security_device_attribute().")
         """
         Retrieve a specific attribute of the security device.
 
@@ -638,7 +651,7 @@ class SecurityDevice:
     # the following functions process the data from the database. all the objects are processed, the unique values
     # are gathered and returned in a list that will be further processed by the program
     def get_db_objects(self, object_type):
-        general_logger.debug(f"Called SecurityDevice::get_policy_db_objects().")
+        general_logger.debug(f"Called SecurityDevice.get_policy_db_objects().")
         """
         Retrieve and return unique database objects based on the specified type.
 
@@ -828,7 +841,7 @@ class SecurityDevice:
         return flattened_list
     
     def insert_into_managed_devices_table(self, managed_device_info):
-        general_logger.debug(f"Called SecurityDevice::insert_into_managed_devices_table().")
+        general_logger.debug(f"Called SecurityDevice.insert_into_managed_devices_table().")
         """
         Insert managed devices information into the 'managed_devices_table'.
 
@@ -868,58 +881,8 @@ class SecurityDevice:
             # Execute the insert command with the specified values
             self._database.insert_table_value('managed_devices_table', insert_command, values)
 
-    def insert_into_general_table(self, security_device_username, security_device_secret, security_device_hostname, security_device_type, security_device_port, security_device_version, domain):
-        general_logger.debug("Called SecurityDevice::insert_into_general_table().")
-        """
-        Insert general information into the 'general_data_table'.
-
-        Parameters:
-        - security_device_username (str): Security device username.
-        - security_device_secret (str): Security device secret.
-        - security_device_hostname (str): Security device hostname.
-        - security_device_type (str): Security device type.
-        - security_device_port (str): Security device port.
-        - security_device_version (str): Security device version.
-        - domain (str): Security device domain.
-
-        Returns:
-        None
-        """
-        # Check for duplicates before insertion
-        # if self.verify_duplicate('general_data_table', 'security_device_name', self._name):
-        #     general_logger.warn(f"Duplicate entry for device name: <{self._name}>. Skipping insertion.")
-        #     return
-
-        insert_command = """
-            INSERT INTO general_data_table (
-                security_device_name, 
-                security_device_username, 
-                security_device_secret,
-                security_device_hostname, 
-                security_device_type, 
-                security_device_port, 
-                security_device_version, 
-                security_device_domain
-            ) VALUES (
-                %s, %s, %s, %s, %s, %s, %s, %s
-            )
-        """
-
-        values = (
-            self._name, 
-            security_device_username, 
-            security_device_secret, 
-            security_device_hostname, 
-            security_device_type, 
-            security_device_port, 
-            security_device_version, 
-            domain
-        )
-
-        self._database.insert_table_value('general_data_table', insert_command, values)
-
     def insert_into_security_policy_containers_table(self, containers_data):
-        general_logger.debug("Called SecurityDevice::insert_into_security_policy_containers_table().")
+        general_logger.debug("Called SecurityDevice.insert_into_security_policy_containers_table().")
         """
         Insert values into the 'security_policy_containers_table' table.
 
@@ -961,7 +924,7 @@ class SecurityDevice:
             self._database.insert_table_value('security_policy_containers_table', insert_command, values)
 
     def insert_into_security_policies_table(self, sec_policy_data):
-        general_logger.debug("Called SecurityDevice::insert_into_security_policies_table().")
+        general_logger.debug("Called SecurityDevice.insert_into_security_policies_table().")
         """
         Insert security policy data into the 'security_policies_table'.
 
@@ -1063,7 +1026,7 @@ class SecurityDevice:
             self._database.insert_table_value('security_policies_table', insert_command, parameters)
 
     def insert_into_object_containers_table(self, containers_data):
-        general_logger.debug("Called SecurityDevice::insert_into_object_containers_table().")
+        general_logger.debug("Called SecurityDevice.insert_into_object_containers_table().")
         """
         Insert values into the 'object_containers_table' table.
 
@@ -1105,7 +1068,7 @@ class SecurityDevice:
             self._database.insert_table_value('object_containers_table', insert_command, values)
 
     def insert_into_network_address_objects_table(self, network_objects_data):
-        general_logger.debug("Called SecurityDevice::insert_into_network_address_objects_table().")
+        general_logger.debug("Called SecurityDevice.insert_into_network_address_objects_table().")
         """
         Insert network address objects data into the 'network_address_objects_table'.
 
@@ -1160,7 +1123,7 @@ class SecurityDevice:
             self._database.insert_table_value('network_address_objects_table', insert_command, values)
 
     def insert_into_network_address_object_groups_table(self, network_group_objects_data):
-        general_logger.debug("Called SecurityDevice::insert_into_network_address_object_groups_table().")
+        general_logger.debug("Called SecurityDevice.insert_into_network_address_object_groups_table().")
         """
         Insert network address object groups data into the 'network_address_objects_table'.
 
@@ -1212,7 +1175,7 @@ class SecurityDevice:
             self._database.insert_table_value('network_address_object_groups_table', insert_command, values)
 
     def insert_into_security_policy_containers_table(self, containers_data):
-        general_logger.debug("Called SecurityDevice::insert_into_security_policy_containers_table().")
+        general_logger.debug("Called SecurityDevice.insert_into_security_policy_containers_table().")
         """
         Insert values into the 'security_policy_containers_table' table.
 
@@ -1254,7 +1217,7 @@ class SecurityDevice:
             self._database.insert_table_value('security_policy_containers_table', insert_command, values)
 
     def insert_into_geolocation_table(self, geolocation_object_data):
-        general_logger.debug("Called SecurityDevice::insert_into_geolocation_table().")
+        general_logger.debug("Called SecurityDevice.insert_into_geolocation_table().")
         """
         Insert values into the 'geolocation_objects_table' table.
 
@@ -1335,7 +1298,7 @@ class SecurityDevice:
         return is_duplicate[0][0]
     
     def insert_into_port_objects_table(self, port_object_data):
-        general_logger.debug("Called SecurityDevice::insert_into_port_objects_table().")
+        general_logger.debug("Called SecurityDevice.insert_into_port_objects_table().")
         """
         Insert values into the 'port_objects_table' table.
 
@@ -1389,7 +1352,7 @@ class SecurityDevice:
             self._database.insert_table_value('port_objects_table', insert_command, values)
 
     def insert_into_icmp_objects_table(self, icmp_object_data):
-        general_logger.debug("Called SecurityDevice::insert_into_icmp_objects_table().")
+        general_logger.debug("Called SecurityDevice.insert_into_icmp_objects_table().")
         """
         Insert values into the 'icmp_objects_table' table.
 
@@ -1443,7 +1406,7 @@ class SecurityDevice:
             self._database.insert_table_value('icmp_objects_table', insert_command, values)
 
     def insert_into_port_object_groups_table(self, port_object_group_data):
-        general_logger.debug("Called SecurityDevice::insert_into_port_object_groups_table().")
+        general_logger.debug("Called SecurityDevice.insert_into_port_object_groups_table().")
         """
         Insert values into the 'port_object_groups_table' table.
 
@@ -1494,7 +1457,7 @@ class SecurityDevice:
             self._database.insert_table_value('port_object_groups_table', insert_command, values)
 
     def insert_into_url_objects_table(self, url_objects_data):
-        general_logger.debug("Called SecurityDevice::insert_into_url_objects_table().")
+        general_logger.debug("Called SecurityDevice.insert_into_url_objects_table().")
         """
         Insert values into the 'url_object_groups_table' table.
 
@@ -1542,7 +1505,7 @@ class SecurityDevice:
             self._database.insert_table_value('url_objects_table', insert_command, values)
 
     def insert_into_url_object_groups_table(self, url_object_group_data):
-        general_logger.debug("Called SecurityDevice::insert_into_url_object_groups_table().")
+        general_logger.debug("Called SecurityDevice.insert_into_url_object_groups_table().")
         """
         Insert values into the 'url_object_groups_table' table.
 

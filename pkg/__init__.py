@@ -71,6 +71,7 @@ class PioneerDatabase():
         # execute the request to create the database for the project. no need to specify the owner
         # as the owner will be the creator of the database.
         general_logger.debug(f"Called PioneerDatabase.create_database().")
+        general_logger.info(f"Creating device database: <{name}>.")
         try:
             # execute the query to create the database
             query = """CREATE DATABASE {};""".format(name)
@@ -138,33 +139,6 @@ class PioneerDatabase():
         general_logger.info(f"Succesfully retrieved values from table {table_name}.")
         return postgres_cursor_data
 
-
-    # this function inserts values into a table of a database
-    def insert_table_value(self, table_name, insert_command, values=None):
-        """
-        Insert values into a specified table of the database.
-
-        Parameters:
-        - table_name (str): Name of the table.
-        - insert_command (str): SQL command for insertion.
-        - values (tuple): Values to be inserted into the table. Default is None.
-
-        Returns:
-        None
-        """
-        general_logger.debug(f"Called PioneerDatabase.insert_table_value().")
-        try:
-            if values is not None:
-                self._cursor.execute(insert_command, values)
-            else:
-                self._cursor.execute(insert_command)
-
-            general_logger.info(f"Succesfully inserted values into table {table_name}.")
-        except psycopg2.Error as err:
-            general_logger.error(f"Failed to insert values {values} into: {table_name}. Reason: {err}")
-            # sys.exit(1)
-
-
     # this function updates values into a table
     def update_table_value(self, table_name, update_command):
         try:
@@ -186,6 +160,26 @@ class PioneerDatabase():
         general_logger.info(f"Flattened the query result.")
         return unique_values_list
 
+    @staticmethod
+    def connect_to_db(db_user, database, db_password, db_host, db_port):
+        """
+        Connects to the security device database.
+
+        Args:
+            db_user (str): Database username.
+            db_password (str): Password for the database user.
+            db_host (str): Hostname of the database server.
+            db_port (int): Port number of the database server.
+            security_device_name (str): Name of the security device.
+
+        Returns:
+            cursor: Cursor object for database operations.
+        """
+        DatabaseConnection = DBConnection(db_user, database, db_password, db_host, db_port)
+        general_logger.info(f"Connecting to device database: <{database}>.")
+        cursor = DatabaseConnection.create_cursor()
+        return cursor
+
 # TODO: implement this class
 # each child of this object should be associated with a firewall object.
 # for example. if i get the data of a firewall object, i want to do something like object.insert(), and the
@@ -197,13 +191,58 @@ class PioneerTable():
         self._table_schema = None
         self._database = database
 
-    # overriden function
     def create(self):
         self._database.create_table(self._name, self._table_schema)
 
     # move the insert_into_table code here
-    def insert_row():
-        pass
+    def insert_row(self):
+        """
+        Insert values into a specified table of the database.
+
+        Parameters:
+        - table_name (str): Name of the table.
+        - insert_command (str): SQL command for insertion.
+        - values (tuple): Values to be inserted into the table. Default is None.
+
+        Returns:
+        None
+        """
+        general_logger.debug(f"Called PioneerDatabase.insert_table_value().")
+        insert_command = """
+            INSERT INTO general_data_table (
+                security_device_name, 
+                security_device_username, 
+                security_device_secret,
+                security_device_hostname, 
+                security_device_type, 
+                security_device_port, 
+                security_device_version, 
+                security_device_domain
+            ) VALUES (
+                %s, %s, %s, %s, %s, %s, %s, %s
+            )
+        """
+
+        values = (
+            self._name, 
+            security_device_username, 
+            security_device_secret, 
+            security_device_hostname, 
+            security_device_type, 
+            security_device_port, 
+            security_device_version, 
+            domain
+        )
+        try:
+            if values is not None:
+                self._cursor.execute(insert_command, values)
+            else:
+                self._cursor.execute(insert_command)
+            general_logger.info(f"Succesfully inserted values into table {self._name}.")
+            
+        except psycopg2.Error as err:
+            general_logger.error(f"Failed to insert values {values} into: {self._name}. Reason: {err}")
+            # sys.exit(1)
     
     # move the get_table_value code here. the code must be rewritten in such a way
     # to permit multiple select queries
@@ -213,6 +252,26 @@ class PioneerTable():
 
     def update_value():
         pass
+
+class TableRow():
+    def __init__(self, table) -> None:
+        self._table = table
+    
+    def insert():
+        pass
+
+class GeneralDataTableRow(TableRow):
+    def __init__(self, table) -> None:
+        super().__init__(table)
+        self._security_device_name = None
+        self._security_device_username = None
+        self._security_device_secret = None
+        self._security_device_hostname = None
+        self._security_device_type = None
+        self._security_device_port = None
+        self._security_device_version = None
+        self._security_device_domain = None
+    
 
 # the following are not supported, no need to create tables: policies_hitcount_table, nat_policies_table, user_source_table, policy_users_table
 # security_zones_table, urls_categories_table, l7_apps_table, schedule_objects_table
@@ -228,6 +287,21 @@ class GeneralDataTable(PioneerTable):
                 security_device_port TEXT NOT NULL,
                 security_device_version TEXT NOT NULL,
                 security_device_domain TEXT NOT NULL"""
+        
+        
+        self._insert_params = """
+            INSERT INTO general_data_table (
+                security_device_name, 
+                security_device_username, 
+                security_device_secret,
+                security_device_hostname, 
+                security_device_type, 
+                security_device_port, 
+                security_device_version, 
+                security_device_domain
+            ) VALUES (
+                %s, %s, %s, %s, %s, %s, %s, %s
+            )"""
 
     # call insert_row to insert stuff
     # should this insert() be a function defined on the Object/Policy classes?
