@@ -91,7 +91,7 @@ def main():
 
         # Log creation of new device
         general_logger.info(f"################## CREATING A NEW DEVICE: <{security_device_name}> ##################")
-        general_logger.debug(f"Got the following info about device from user, security device name: <{security_device_name}>, type <{security_device_type}>, hostname <{security_device_hostname}, username <{security_device_username}>, secret <>, port: <{security_device_port}>, domain <{domain}>.")
+        general_logger.info(f"Got the following info about device from user, security device name: <{security_device_name}>, type <{security_device_type}>, hostname <{security_device_hostname}, username <{security_device_username}>, secret <>, port: <{security_device_port}>, domain <{domain}>.")
 
         # Connect to the landing device database
         LandingDBcursor = PioneerDatabase.connect_to_db(db_user, landing_db, db_password, db_host)
@@ -117,7 +117,7 @@ def main():
             if security_device_version:
                 # Create the database
                 security_device_db_name = security_device_name + '_db'
-                general_logger.debug(f"Connecting to the Postgres using, user: <{db_user}>, password ..., host: <{db_host}>, port: <{db_port}>, landing database: <{landing_db}>.")
+                general_logger.info(f"Connecting to the Postgres using, user: <{db_user}>, password ..., host: <{db_host}>, port: <{db_port}>, landing database: <{landing_db}>.")
                 SecurityDeviceDB.create_database(security_device_db_name)
 
                 # Connect to the newly created security device database
@@ -131,8 +131,8 @@ def main():
 
                 # Insert general device info into the database
                 general_logger.info(f"Inserting general device info in the database.")
-                #TODO: modify this. SecurityDeviceObject's general data table object's insert function must be called here
-                # SecurityDeviceObject.insert_into_general_table(security_device_username, security_device_secret, security_device_hostname, security_device_type, security_device_port, security_device_version, domain)
+                # TODO: TEST THIS
+                SecurityDeviceObject.save_general_info(security_device_username, security_device_secret, security_device_hostname, security_device_type, security_device_port, security_device_version, domain)
 
                 #TODO: this must be moved when the ManagedDevices class is created
                 # # Retrieve information about the managed devices
@@ -152,6 +152,7 @@ def main():
         # close the cursors used to connect to the database
         LandingDBcursor.close()
         SecurityDeviceDBcursor.close()
+
 
     # at this point, the backbone of the device is created, importing of data can start
     # the user used the --device option

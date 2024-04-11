@@ -39,7 +39,6 @@ class SecurityDeviceDatabase(PioneerDatabase):
         self._PortObjectGroupsTable = PortObjectGroupsTable(self)
         self._ManagedDevicesTable = ManagedDevicesTable(self)
 
-    #TODO: continue here
     def create_security_device_tables(self):
         general_logger.debug(f"Called SecurityDeviceDatabase.create_security_device_tables().")
         general_logger.info(f"Creating the PostgreSQL tables in device database.")
@@ -56,6 +55,45 @@ class SecurityDeviceDatabase(PioneerDatabase):
         self._ICMPObjectsTable.create()
         self._PortObjectGroupsTable.create()
         self._ManagedDevicesTable.create()
+
+    def get_general_data_table(self):
+        return self._GeneralDataTable
+
+    def get_security_policy_containers_table(self):
+        return self._SecurityPolicyContainersTable
+
+    def get_object_containers_table(self):
+        return self._ObjectContainersTable
+
+    def get_security_policies_table(self):
+        return self._SecurityPoliciesTable
+
+    def get_url_objects_table(self):
+        return self._UrlObjectsTable
+
+    def get_url_object_groups_table(self):
+        return self._UrlObjectGroupsTable
+
+    def get_network_address_objects_table(self):
+        return self._NetworkAddressObjectsTable
+
+    def get_network_address_object_groups_table(self):
+        return self._NetworkAddressObjectGroupsTable
+
+    def get_geolocation_objects_table(self):
+        return self._GeolocationObjectsTable
+
+    def get_port_objects_table(self):
+        return self._PortObjectsTable
+
+    def get_icmp_objects_table(self):
+        return self._ICMPObjectsTable
+
+    def get_port_object_groups_table(self):
+        return self._PortObjectGroupsTable
+
+    def get_managed_devices_table(self):
+        return self._ManagedDevicesTable
 
 class SecurityDeviceConnection:
     """
@@ -80,6 +118,12 @@ class SecurityDevice:
         general_logger.debug("Called SecurityDevice.__init__.")
         self._name = name
         self._database = sec_device_database
+    
+    def save_general_info(self, info):
+        GeneralDataTable = self._database.get_general_data_table()
+        GeneralDataTable.insert(info)
+
+
     
     def set_database(self, database):
         self._database = database
@@ -880,6 +924,56 @@ class SecurityDevice:
 
             # Execute the insert command with the specified values
             self._database.insert_table_value('managed_devices_table', insert_command, values)
+
+    def insert_into_general_table(self, security_device_username, security_device_secret, security_device_hostname, security_device_type, security_device_port, security_device_version, domain):
+        general_logger.debug("Called SecurityDevice.insert_into_general_table().")
+        """
+        Insert general information into the 'general_data_table'.
+
+        Parameters:
+        - security_device_username (str): Security device username.
+        - security_device_secret (str): Security device secret.
+        - security_device_hostname (str): Security device hostname.
+        - security_device_type (str): Security device type.
+        - security_device_port (str): Security device port.
+        - security_device_version (str): Security device version.
+        - domain (str): Security device domain.
+
+        Returns:
+        None
+        """
+        # Check for duplicates before insertion
+        # if self.verify_duplicate('general_data_table', 'security_device_name', self._name):
+        #     general_logger.warn(f"Duplicate entry for device name: <{self._name}>. Skipping insertion.")
+        #     return
+
+        insert_command = """
+            INSERT INTO general_data_table (
+                security_device_name, 
+                security_device_username, 
+                security_device_secret,
+                security_device_hostname, 
+                security_device_type, 
+                security_device_port, 
+                security_device_version, 
+                security_device_domain
+            ) VALUES (
+                %s, %s, %s, %s, %s, %s, %s, %s
+            )
+        """
+
+        values = (
+            self._name, 
+            security_device_username, 
+            security_device_secret, 
+            security_device_hostname, 
+            security_device_type, 
+            security_device_port, 
+            security_device_version, 
+            domain
+        )
+
+        self._database.insert_table_value('general_data_table', insert_command, values)
 
     def insert_into_security_policy_containers_table(self, containers_data):
         general_logger.debug("Called SecurityDevice.insert_into_security_policy_containers_table().")
