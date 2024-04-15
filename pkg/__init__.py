@@ -97,7 +97,6 @@ class PioneerDatabase():
 
     def create_table(self, table_name, table_schema):
         command = f"""CREATE TABLE IF NOT EXISTS {table_name} ({table_schema});"""
-        
         try:
             general_logger.info(f"Creating table: <{table_name}>.")
             self._cursor.execute(command)
@@ -161,21 +160,30 @@ class PioneerTable():
 
     def get_columns(self):
         # Extract only the column names from the table columns excluding foreign keys
-        column_names = [col[0] for col in self._table_columns if not col[0].startswith("FOREIGN KEY")]
+        column_names = [col[0] for col in self._table_columns if not col[0].startswith("CONSTRAINT")]
         # Join the column names into a string
         table_columns_str = ", ".join(column_names)
         return table_columns_str
 
     #TODO: get_cursor here and verify duplicate
     def insert(self, *values):
-        insert_command = f"""INSERT INTO {self._name} ({self.get_columns}) VALUES {values};"""
+        columns = self.get_columns()
+        
+        # Construct placeholders for the values in the SQL query
+        placeholders = ', '.join(['%s'] * len(values))
+        
+        insert_command = f"INSERT INTO {self._name} ({columns}) VALUES ({placeholders});"
+
         try:
-            self._database.get_cursor().execute(insert_command)
+            cursor = self._database.get_cursor()
+            
+            # Execute the insert command with the actual values
+            cursor.execute(insert_command, values)
+            
             general_logger.info(f"Succesfully inserted values into table <{self._name}>.")
             
         except psycopg2.Error as err:
-            general_logger.error(f"Failed to insert values <{values}> into: <{self._name}>. Reason: <{err}>")
-            # sys.exit(1)
+            general_logger.error(f"Failed to insert values <{values}> into: <{self._name}>. Reason: {err}")
    
     # move the get_table_value code here. the code must be rewritten in such a way
     # to permit multiple select queries
@@ -184,7 +192,7 @@ class PioneerTable():
 
         if name_col and val:
             # Construct the SELECT query with a WHERE clause
-            select_query = f"SELECT {column} FROM {self._name} WHERE {name_col} = %s;"
+            select_query = f"SELECT {column} FROM {self._name} WHERE {name_col} = {val};"
         else:
             # Construct the SELECT query without a WHERE clause
             select_query = f"SELECT {column} FROM {self._name} ORDER BY {order_param};"
@@ -214,16 +222,16 @@ class PioneerTable():
 class GeneralDataTable(PioneerTable):
     def __init__(self, database):
         super().__init__(database)
-        self._name = "general_data"
+        self._name = "general_security_device_data"
         self._table_columns = [
-            ("security_device_name", "TEXT PRIMARY KEY"),
-            ("security_device_username", "TEXT NOT NULL"),
-            ("security_device_secret", "TEXT NOT NULL"),
-            ("security_device_hostname", "TEXT NOT NULL"),
-            ("security_device_type", "TEXT NOT NULL"),
-            ("security_device_port", "TEXT NOT NULL"),
-            ("security_device_version", "TEXT NOT NULL"),
-            ("security_device_domain", "TEXT NOT NULL") 
+            ("name", "TEXT PRIMARY KEY"),
+            ("username", "TEXT NOT NULL"),
+            ("secret", "TEXT NOT NULL"),
+            ("hostname", "TEXT NOT NULL"),
+            ("type", "TEXT NOT NULL"),
+            ("port", "TEXT NOT NULL"),
+            ("version", "TEXT NOT NULL"),
+            ("management_domain", "TEXT NOT NULL") 
             ]
 
 class SecurityPolicyContainersTable(PioneerTable):
@@ -231,10 +239,9 @@ class SecurityPolicyContainersTable(PioneerTable):
         super().__init__(database)
         self._name = "security_policy_containers"
         self._table_columns = [
-            ("security_device_name", "TEXT NOT NULL"),
-            ("security_policy_container_name", "TEXT PRIMARY KEY"),
-            ("security_policy_container_parent", "TEXT"),
-            ("FOREIGN KEY(security_device_name)", "REFERENCES general_data(security_device_name)")
+            ("name", "TEXT PRIMARY KEY"),
+            ("parent", "TEXT"),
+            ("CONSTRAINT fk_security_device FOREIGN KEY(name)", "REFERENCES general_security_device_data(name)")
         ]
 
 class NATPolicyContainersTable(PioneerTable):
@@ -242,10 +249,9 @@ class NATPolicyContainersTable(PioneerTable):
         super().__init__(database)
         self._name = "nat_policy_containers"
         self._table_columns = [
-            ("security_device_name", "TEXT NOT NULL"),
-            ("nat_policy_container_name", "TEXT PRIMARY KEY"),
-            ("nat_policy_container_parent", "TEXT"),
-            ("FOREIGN KEY(security_device_name)", "REFERENCES general_data(security_device_name)")
+            ("name", "TEXT PRIMARY KEY"),
+            ("parent", "TEXT"),
+            ("CONSTRAINT fk_security_device FOREIGN KEY(name)", "REFERENCES general_security_device_data(name)")
         ]
 
 class ObjectContainersTable(PioneerTable):
@@ -253,10 +259,9 @@ class ObjectContainersTable(PioneerTable):
         super().__init__(database)
         self._name = "object_containers"
         self._table_columns = [
-            ("security_device_name", "TEXT NOT NULL"),
-            ("object_container_name", "TEXT PRIMARY KEY"),
-            ("object_container_parent", "TEXT"),
-            ("FOREIGN KEY(security_device_name)", "REFERENCES general_data(security_device_name)")
+            ("name", "TEXT PRIMARY KEY"),
+            ("parent", "TEXT"),
+            ("CONSTRAINT fk_security_device FOREIGN KEY(name)", "REFERENCES general_security_device_data(name)")
         ]
 
 class SecurityPoliciesTable(PioneerTable):
@@ -264,30 +269,32 @@ class SecurityPoliciesTable(PioneerTable):
         super().__init__(database)
         self._name = "security_policies"
         self._table_columns = [
-            ("security_device_name", "TEXT NOT NULL"),
-            ("security_policy_name", "TEXT NOT NULL"),
+            ("name", "TEXT NOT NULL"),
             ("security_policy_container_name", "TEXT NOT NULL"),
-            ("security_policy_index", "INT"),
-            ("security_policy_category", "TEXT"),
-            ("security_policy_status", "TEXT NOT NULL"),
-            ("security_policy_source_zones", "TEXT[] NOT NULL"),
-            ("security_policy_destination_zones", "TEXT[] NOT NULL"),
-            ("security_policy_source_networks", "TEXT[] NOT NULL"),
-            ("security_policy_destination_networks", "TEXT[] NOT NULL"),
-            ("security_policy_source_ports", "TEXT[] NOT NULL"),
-            ("security_policy_destination_ports", "TEXT[] NOT NULL"),
-            ("security_policy_schedules", "TEXT[] NOT NULL"),
-            ("security_policy_users", "TEXT[] NOT NULL"),
-            ("security_policy_urls", "TEXT[] NOT NULL"),
-            ("security_policy_l7_apps", "TEXT[] NOT NULL"),
-            ("security_policy_description", "TEXT"),
-            ("security_policy_comments", "TEXT[]"),
-            ("security_policy_log_setting", "TEXT[]"),
-            ("security_policy_log_start", "BOOLEAN NOT NULL"),
-            ("security_policy_log_end", "BOOLEAN NOT NULL"),
-            ("security_policy_section", "TEXT"),
-            ("security_policy_action", "TEXT"),
-            ("FOREIGN KEY(security_policy_container_name)", "REFERENCES security_policy_containers_table(security_policy_container_name)")
+            ("index", "INT"),
+            ("category", "TEXT"),
+            ("status", "TEXT NOT NULL"),
+            ("source_zones", "TEXT[] NOT NULL"),
+            ("destination_zones", "TEXT[] NOT NULL"),
+            ("source_networks", "TEXT[] NOT NULL"),
+            ("destination_networks", "TEXT[] NOT NULL"),
+            ("source_regions", "TEXT[] NOT NULL"),
+            ("destination_regions", "TEXT[] NOT NULL"),
+            ("source_ports", "TEXT[] NOT NULL"),
+            ("destination_ports", "TEXT[] NOT NULL"),
+            ("schedules", "TEXT[] NOT NULL"),
+            ("users", "TEXT[] NOT NULL"),
+            ("urls", "TEXT[] NOT NULL"),
+            ("url_categories", "TEXT[] NOT NULL"),
+            ("l7_apps", "TEXT[] NOT NULL"),
+            ("description", "TEXT"),
+            ("comments", "TEXT[]"),
+            ("log_setting", "TEXT[]"),
+            ("log_start", "BOOLEAN NOT NULL"),
+            ("log_end", "BOOLEAN NOT NULL"),
+            ("section", "TEXT"),
+            ("action", "TEXT"),
+            ("CONSTRAINT fk_security_policy_container FOREIGN KEY(name)", "REFERENCES security_policy_containers(name)")
         ]
 
 class PoliciesHitcountTable(PioneerTable):
@@ -295,7 +302,6 @@ class PoliciesHitcountTable(PioneerTable):
         super().__init__(database)
         self._name = "policies_hitcount"
         self._table_columns = [
-            ("security_device_name", "TEXT NOT NULL"),
             ("security_policy_name", "TEXT NOT NULL"),
             ("security_policy_container_name", "TEXT NOT NULL"),
             ("security_policy_hitcount", "INTEGER"),
@@ -305,8 +311,8 @@ class PoliciesHitcountTable(PioneerTable):
             ("nat_policy_hitcount", "INTEGER"),
             ("nat_policy_last_hit", "TIMESTAMP"),
             ("assigned_device_name", "TEXT NOT NULL"),
-            ("FOREIGN KEY(security_policy_container_name)", "REFERENCES security_policy_containers_table(security_policy_container_name)"),
-            ("FOREIGN KEY(nat_policy_container_name)", "REFERENCES security_policy_containers_table(security_policy_container_name)")
+            ("CONSTRAINT fk_security_policy_container FOREIGN KEY(name)", "REFERENCES security_policy_containers(name)"),
+            ("CONSTRAINT fk_nat_policy_container_name FOREIGN KEY(name)", "REFERENCES nat_policy_containers(name)")
         ]
 
 class SecurityZonesTable(PioneerTable):
@@ -314,13 +320,12 @@ class SecurityZonesTable(PioneerTable):
         super().__init__(database)
         self._name = "security_zones"
         self._table_columns = [
-            ("security_zone_name", "TEXT PRIMARY KEY"),
-            ("security_device_name", "TEXT NOT NULL"),
-            ("object_container_name", "TEXT NOT NULL"),
-            ("security_zone_assigned_device", "TEXT"),
-            ("security_zone_mapped_interfaces", "TEXT[]"),
-            ("security_zone_description", "TEXT"),
-            ("FOREIGN KEY(object_container_name)", "REFERENCES object_containers_table(object_container_name)")
+            ("name", "TEXT PRIMARY KEY"),
+            ("object_container", "TEXT NOT NULL"),
+            ("assigned_device", "TEXT"),
+            ("mapped_interfaces", "TEXT[]"),
+            ("description", "TEXT"),
+            ("CONSTRAINT fk_object_container FOREIGN KEY(name)", "REFERENCES object_containers(name)")
         ]
 
 class URLObjectsTable(PioneerTable):
@@ -328,12 +333,11 @@ class URLObjectsTable(PioneerTable):
         super().__init__(database)
         self._name = "url_objects"
         self._table_columns = [
-            ("url_object_name", "TEXT PRIMARY KEY"),
-            ("security_device_name", "TEXT NOT NULL"),
-            ("object_container_name", "TEXT NOT NULL"),
+            ("name", "TEXT PRIMARY KEY"),
+            ("object_container", "TEXT NOT NULL"),
             ("url_value", "TEXT"),
             ("url_object_description", "TEXT"),
-            ("FOREIGN KEY(object_container_name)", "REFERENCES object_containers_table(object_container_name)")
+            ("CONSTRAINT fk_object_container FOREIGN KEY(name)", "REFERENCES object_containers(name)")
         ]
 
 class URLObjectGroupsTable(PioneerTable):
@@ -341,12 +345,11 @@ class URLObjectGroupsTable(PioneerTable):
         super().__init__(database)
         self._name = "url_object_groups"
         self._table_columns = [
-            ("url_object_group_name", "TEXT PRIMARY KEY"),
-            ("security_device_name", "TEXT NOT NULL"),
-            ("object_container_name", "TEXT NOT NULL"),
-            ("url_object_members", "TEXT[]"),
-            ("url_group_object_description", "TEXT"),
-            ("FOREIGN KEY(object_container_name)", "REFERENCES object_containers_table(object_container_name)")
+            ("name", "TEXT PRIMARY KEY"),
+            ("object_container", "TEXT NOT NULL"),
+            ("members", "TEXT[]"),
+            ("description", "TEXT"),
+            ("CONSTRAINT fk_object_container FOREIGN KEY(name)", "REFERENCES object_containers(name)")
         ]
 
 class NetworkAddressObjectsTable(PioneerTable):
@@ -354,14 +357,13 @@ class NetworkAddressObjectsTable(PioneerTable):
         super().__init__(database)
         self._name = "network_address_objects"
         self._table_columns = [
-            ("network_address_name", "TEXT PRIMARY KEY"),
-            ("security_device_name", "TEXT NOT NULL"),
-            ("object_container_name", "TEXT NOT NULL"),
-            ("network_address_value", "TEXT"),
-            ("network_address_description", "TEXT"),
-            ("network_address_type", "TEXT"),
+            ("name", "TEXT PRIMARY KEY"),
+            ("object_container", "TEXT NOT NULL"),
+            ("value", "TEXT"),
+            ("description", "TEXT"),
+            ("type", "TEXT"),
             ("overridable_object", "BOOLEAN NOT NULL"),
-            ("FOREIGN KEY(object_container_name)", "REFERENCES object_containers_table(object_container_name)")
+            ("CONSTRAINT fk_object_container FOREIGN KEY(name)", "REFERENCES object_containers(name)")
         ]
 
 class NetworkAddressObjectGroupsTable(PioneerTable):
@@ -369,13 +371,12 @@ class NetworkAddressObjectGroupsTable(PioneerTable):
         super().__init__(database)
         self._name = "network_address_object_groups"
         self._table_columns = [
-            ("network_address_group_name", "TEXT PRIMARY KEY"),
-            ("security_device_name", "TEXT NOT NULL"),
-            ("object_container_name", "TEXT NOT NULL"),
-            ("network_address_group_members", "TEXT[]"),
-            ("network_address_group_description", "TEXT"),
+            ("name", "TEXT PRIMARY KEY"),
+            ("object_container", "TEXT NOT NULL"),
+            ("members", "TEXT[]"),
+            ("description", "TEXT"),
             ("overridable_object", "BOOLEAN NOT NULL"),
-            ("FOREIGN KEY(object_container_name)", "REFERENCES object_containers_table(object_container_name)")
+            ("CONSTRAINT fk_object_container FOREIGN KEY(name)", "REFERENCES object_containers(name)")
         ]
         
 class GeolocationObjectsTable(PioneerTable):
@@ -383,15 +384,14 @@ class GeolocationObjectsTable(PioneerTable):
         super().__init__(database)
         self._name = "geolocation_objects"
         self._table_columns = [
-            ("geolocation_object_name", "TEXT PRIMARY KEY"),
-            ("security_device_name", "TEXT NOT NULL"),
-            ("object_container_name", "TEXT NOT NULL"),
-            ("continent_member_names", "TEXT[]"),
-            ("country_member_names", "TEXT[]"),
-            ("country_member_alpha2_codes", "TEXT[]"),
-            ("country_member_alpha3_codes", "TEXT[]"),
-            ("country_member_numeric_codes", "TEXT[]"),
-            ("FOREIGN KEY(object_container_name)", "REFERENCES object_containers_table(object_container_name)")
+            ("name", "TEXT PRIMARY KEY"),
+            ("object_container", "TEXT NOT NULL"),
+            ("continents", "TEXT[]"),
+            ("countries", "TEXT[]"),
+            ("countries_alpha2_codes", "TEXT[]"),
+            ("countries_alpha3_codes", "TEXT[]"),
+            ("countries_numeric_codes", "TEXT[]"),
+            ("CONSTRAINT fk_object_container FOREIGN KEY(name)", "REFERENCES object_containers(name)")
         ]
 
 class PortObjectsTable(PioneerTable):
@@ -399,14 +399,13 @@ class PortObjectsTable(PioneerTable):
         super().__init__(database)
         self._name = "port_objects"
         self._table_columns = [
-            ("port_name", "TEXT PRIMARY KEY"),
-            ("security_device_name", "TEXT NOT NULL"),
-            ("object_container_name", "TEXT NOT NULL"),
-            ("port_protocol", "TEXT"),
-            ("port_number", "TEXT"),
-            ("port_description", "TEXT"),
+            ("name", "TEXT PRIMARY KEY"),
+            ("object_container", "TEXT NOT NULL"),
+            ("protocol", "TEXT"),
+            ("number", "TEXT"),
+            ("description", "TEXT"),
             ("overridable_object", "BOOLEAN NOT NULL"),
-            ("FOREIGN KEY(object_container_name)", "REFERENCES object_containers_table(object_container_name)")
+            ("CONSTRAINT fk_object_container FOREIGN KEY(name)", "REFERENCES object_containers(name)")
         ]
 
 class ICMPObjectsTable(PioneerTable):
@@ -414,14 +413,13 @@ class ICMPObjectsTable(PioneerTable):
         super().__init__(database)
         self._name = "icmp_objects"
         self._table_columns = [
-            ("icmp_name", "TEXT PRIMARY KEY"),
-            ("security_device_name", "TEXT NOT NULL"),
-            ("object_container_name", "TEXT NOT NULL"),
-            ("icmp_type", "TEXT"),
-            ("icmp_code", "TEXT"),
-            ("icmp_description", "TEXT"),
+            ("name", "TEXT PRIMARY KEY"),
+            ("object_container", "TEXT NOT NULL"),
+            ("type", "TEXT"),
+            ("code", "TEXT"),
+            ("description", "TEXT"),
             ("overridable_object", "BOOLEAN NOT NULL"),
-            ("FOREIGN KEY(object_container_name)", "REFERENCES object_containers_table(object_container_name)")
+            ("CONSTRAINT fk_object_container FOREIGN KEY(name)", "REFERENCES object_containers(name)")
         ]
 
 class PortObjectGroupsTable(PioneerTable):
@@ -429,13 +427,12 @@ class PortObjectGroupsTable(PioneerTable):
         super().__init__(database)
         self._name = "port_object_groups"
         self._table_columns = [
-            ("port_group_name", "TEXT PRIMARY KEY"),
-            ("security_device_name", "TEXT NOT NULL"),
-            ("object_container_name", "TEXT NOT NULL"),
-            ("port_group_members", "TEXT[]"),
-            ("port_group_description", "TEXT"),
+            ("name", "TEXT PRIMARY KEY"),
+            ("object_container", "TEXT NOT NULL"),
+            ("members", "TEXT[]"),
+            ("description", "TEXT"),
             ("overridable_object", "BOOLEAN NOT NULL"),
-            ("FOREIGN KEY(object_container_name)", "REFERENCES object_containers_table(object_container_name)")
+            ("CONSTRAINT fk_object_container FOREIGN KEY(name)", "REFERENCES object_containers(name)")
         ]
 
 class ScheduleObjectsTable(PioneerTable):
@@ -443,9 +440,8 @@ class ScheduleObjectsTable(PioneerTable):
         super().__init__(database)
         self._name = "schedule_objects"
         self._table_columns = [
-            ("schedule_object_name", "TEXT PRIMARY KEY"),
-            ("security_device_name", "TEXT NOT NULL"),
-            ("object_container_name", "TEXT NOT NULL"),
+            ("name", "TEXT PRIMARY KEY"),
+            ("object_container", "TEXT NOT NULL"),
             ("recurring", "BOOLEAN NOT NULL"),
             ("start_date", "TEXT"),
             ("start_time", "TEXT"),
@@ -457,7 +453,7 @@ class ScheduleObjectsTable(PioneerTable):
             ("week_day", "TEXT"),
             ("week_day_start", "TEXT"),
             ("week_day_end", "TEXT"),
-            ("FOREIGN KEY(object_container_name)", "REFERENCES object_containers_table(object_container_name)")
+            ("CONSTRAINT fk_object_container FOREIGN KEY(name)", "REFERENCES object_containers(name)")
         ]
 
 class ManagedDevicesTable(PioneerTable):
@@ -465,12 +461,10 @@ class ManagedDevicesTable(PioneerTable):
         super().__init__(database)
         self._name = "managed_devices"
         self._table_columns = [
-            ("security_device_name", "TEXT NOT NULL"),
-            ("managed_device_name", "TEXT PRIMARY KEY"),
+            ("name", "TEXT PRIMARY KEY"),
             ("assigned_security_policy_container", "TEXT"),
             ("hostname", "TEXT"),
-            ("cluster", "TEXT"),
-            ("FOREIGN KEY(security_device_name)", "REFERENCES general_data_table(security_device_name)")
+            ("cluster", "TEXT")
         ]
 
 

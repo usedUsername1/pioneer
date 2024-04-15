@@ -94,13 +94,13 @@ def main():
         general_logger.info(f"Got the following info about device from user, security device name: <{security_device_name}>, type <{security_device_type}>, hostname <{security_device_hostname}, username <{security_device_username}>, secret <>, port: <{security_device_port}>, domain <{domain}>.")
 
         # Connect to the landing device database
-        LandingDBcursor = PioneerDatabase.connect_to_db(db_user, landing_db, db_password, db_host)
+        LandingDBcursor = PioneerDatabase.connect_to_db(db_user, landing_db, db_password, db_host, db_port)
         # Create the security device database object using the landing database
         SecurityDeviceDB = SecurityDeviceDatabase(LandingDBcursor)
 
         # Try connecting to the security device and retrieving the version
         try:
-            general_logger.info(f"Connecting to the security device...")
+            general_logger.info(f"Connecting to the security device: <{security_device_name}>.")
             # Attempt to create the security device object based on the device type
             if '-api' in security_device_type:
                 general_logger.info(f"The device {security_device_name} is an API device. Its API will be used for interacting with it.")
@@ -131,22 +131,18 @@ def main():
 
                 # Insert general device info into the database
                 general_logger.info(f"Inserting general device info in the database.")
-                # TODO: TEST THIS
-                SecurityDeviceObject.save_general_info(security_device_username, security_device_secret, security_device_hostname, security_device_type, security_device_port, security_device_version, domain)
 
-                #TODO: this must be moved when the ManagedDevices class is created
-                # # Retrieve information about the managed devices
-                # general_logger.info(f"################## Getting the managed devices of device: <{security_device_name}>. ##################")
-                # managed_devices_info = SecurityDeviceObject.get_managed_devices_info_from_device_conn()
+                SecurityDeviceObject.save_general_info(security_device_name, security_device_username, security_device_secret, security_device_hostname, security_device_type, security_device_port, security_device_version, domain)
 
-                # # Insert managed device info into the database
-                # general_logger.info(f"Inserting managed device info in the database.")
-                # SecurityDeviceObject.insert_into_managed_devices_table(managed_devices_info)
+                # Retrieve information about the managed devices
+                general_logger.info(f"################## Getting the managed devices of device: <{security_device_name}>. ##################")
+                SecurityDeviceObject.get_managed_devices_info_from_device_conn()
+
             else:
-                general_logger.error(f"Failed to retrieve version of the security device. Exiting...")
+                general_logger.critical(f"Failed to retrieve version of the security device. Exiting...")
                 sys.exit(1)
         except Exception as e:
-            general_logger.error(f"Failed to connect to the security device or encountered an error: {e}")
+            general_logger.critical(f"Failed to connect to the security device or encountered an error: <{e}>.")
             sys.exit(1)
         
         # close the cursors used to connect to the database
@@ -159,6 +155,7 @@ def main():
     if pioneer_args["device_name [device_name]"]:
         security_device_name = pioneer_args["device_name [device_name]"]
         
+        # TODO: move from ###############here
         # Define the logging settings for general logging
         general_log_folder = helper.os.path.join('log', f'device_{security_device_name}')
         helper.setup_logging(general_log_folder, {'general': 'general.log'})
@@ -171,12 +168,12 @@ def main():
 
         general_logger.info(f"I am now processing security device <{security_device_name}>.")
         security_device_db_name = security_device_name + "_db"
-        security_device_db_conn = DBConnection(db_user, security_device_db_name, db_password, db_host, db_port)
-        security_device_cursor = security_device_db_conn.create_cursor()
-        
+        # Connect to the database of the security device
+        SecurityDevceDBcursor = PioneerDatabase.connect_to_db(db_user, security_device_db_name, db_password, db_host, db_port)
+
         # instantiate and extract all the data from a generic security device
         # the data will be used further for creating the specific security device object
-        SecurityDeviceDB = SecurityDeviceDatabase(security_device_cursor)
+        SecurityDeviceDB = SecurityDeviceDatabase(SecurityDevceDBcursor)
 
         GenericSecurityDevice = SecurityDevice(security_device_name, SecurityDeviceDB)
 
@@ -212,6 +209,8 @@ def main():
         else:
             general_logger.critical(f"{security_device_name} is an invalid API device! Type: {security_device_type}")
             sys.exit(1)
+
+        ########################to here in a different function that will be located in helper
 
         # sub-if statements for importing and getting parameters
         # the import of the objects will be done for a specific policy container
@@ -285,7 +284,7 @@ def main():
                 general_logger.info("\n################## IMPORTING OF DATA FINISHED. ##################")
                 print("Succesfully finished the import of the security device's data.")
                 # close the cursor used to connect to the device's database
-                security_device_cursor.close()
+                SecurityDevceDBcursor.close()
         
         # no need to retrieve the source device, as it is already specified in the parameter
         # how the command should look like:

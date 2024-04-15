@@ -1,7 +1,7 @@
 from abc import abstractmethod
 from pkg import PioneerDatabase, GeneralDataTable, SecurityPolicyContainersTable, NATPolicyContainersTable, ObjectContainersTable, SecurityPoliciesTable, \
 PoliciesHitcountTable, SecurityZonesTable, URLObjectsTable, URLObjectGroupsTable, NetworkAddressObjectsTable, NetworkAddressObjectGroupsTable, \
-GeolocationObjectsTable, PortObjectsTable, ICMPObjectsTable, PortObjectGroupsTable, ScheduleObjectsTable, ManagedDevicesTable
+GeolocationObjectsTable, PortObjectsTable, ICMPObjectsTable, PortObjectGroupsTable, ScheduleObjectsTable, ManagedDevicesTable, ManagedDevice
 
 import utils.helper as helper
 import json
@@ -115,18 +115,27 @@ class SecurityDevice:
         - name (str): The name of the security device.
         - sec_device_database (Database): An instance of the database for the security device.
         """
-        general_logger.debug("Called SecurityDevice.__init__.")
         self._name = name
         self._database = sec_device_database
     
-    def save_general_info(self, info):
+    def save_general_info(self, security_device_name, security_device_username, security_device_secret, security_device_hostname, security_device_type, security_device_port, security_device_version, domain):
         GeneralDataTable = self._database.get_general_data_table()
-        GeneralDataTable.insert(info)
+        GeneralDataTable.insert(security_device_name, security_device_username, security_device_secret, security_device_hostname, security_device_type, security_device_port, security_device_version, domain)
 
-
-    
     def set_database(self, database):
         self._database = database
+
+    def create_managed_device(self, managed_device_entry):
+        """
+        Create a ManagedDevice object based on the type of SecurityDevice.
+
+        Args:
+            managed_device_entry: Entry containing information about the managed device.
+
+        Returns:
+            ManagedDevice: Instance of the appropriate ManagedDevice subclass.
+        """
+        return ManagedDevice(managed_device_entry)
 
     #TODO: redocument this function
     def get_containers_info_from_device_conn(self, containers_list, container_type):
@@ -243,16 +252,6 @@ class SecurityDevice:
         """
         pass
 
-    @abstractmethod
-    def process_managed_device(self):
-        """
-        Abstract method to process information about a managed device. This method is overridden by the implementation of a child SecurityDevice class.
-
-        Returns:
-            tuple: Tuple containing information about the managed device.
-        """
-        pass
-
     def get_device_version_from_device_conn(self):
         """
         Retrieve the version of the device's server using the established device connection.
@@ -261,7 +260,6 @@ class SecurityDevice:
             str: Version of the device's server.
         """
         # Log a debug message to indicate that the function is called
-        general_logger.debug("Called SecurityDevice.get_device_version_from_device_conn()")
 
         try:
             # Attempt to retrieve the device version using the method get_device_version()
@@ -290,7 +288,6 @@ class SecurityDevice:
             list: List of dictionaries containing information about policies.
         """
         # Log a debug message indicating that the function is called
-        general_logger.debug("Called get_policy_info_from_device_conn().")
         # Log an informational message indicating that policy info configuration is being imported
 
 
@@ -322,7 +319,8 @@ class SecurityDevice:
         # Return the list of processed policy information
         return processed_policy_info
 
-    #TODO: this needs to be modified when ManagedDevice class will be implemented
+    #TODO: this needs to be modified when ManagedDevice class will be implemented. maybe move it to the geT_objecT_info()
+    # maybe also move the get_policy_info_from_device_conn() and have only a single function
     def get_managed_devices_info_from_device_conn(self):
         """
         Retrieve information about managed devices.
@@ -331,37 +329,29 @@ class SecurityDevice:
             list: List of dictionaries containing information about managed devices.
         """
         # Log a debug message indicating that the function is called
-        general_logger.debug("Called function get_managed_devices_info().")
-        # Log an informational message indicating that managed devices info retrieval is initiated
-        general_logger.info("################## GETTING MANAGED DEVICES INFO ##################")
-        
+        # Log an informational message indicating that managed devices info retrieval is initiated        
         try:
             # Attempt to retrieve managed devices info from the security device connection
+            # return a ManagedDevices object here
             managed_devices_info = self.get_managed_devices_info()
+            general_logger.debug(f"Raw managed devices info: <{managed_devices_info}>.")
         except Exception as err:
             # Log a critical error message if managed devices retrieval fails and exit the program
-            general_logger.critical(f'Could not retrieve managed devices. Reason: {err}')
+            general_logger.critical(f"Could not retrieve managed devices. Reason: <{err}>")
             sys.exit(1)
-
-        # Initialize an empty list to store processed managed devices
-        processed_managed_devices = []
         
         # Iterate over each managed device entry in the retrieved managed devices info
         for managed_device_entry in managed_devices_info:
-            # Process the managed device entry to extract relevant information
-            device_name, assigned_security_policy_container, device_hostname, device_cluster = self.process_managed_device(managed_device_entry)
-            # Create a dictionary containing processed information about the managed device
-            processed_managed_device = {
-                "managed_device_name": device_name,
-                "assigned_security_policy_container": assigned_security_policy_container,
-                "hostname": device_hostname,
-                "cluster": device_cluster
-            }
-            # Append the processed managed device entry to the list
-            processed_managed_devices.append(processed_managed_device)
+            # return an object here for each of the entries
+            ManagedDeviceObj = self.create_managed_device(managed_device_entry)
 
-        # Return the list of processed managed devices
-        return processed_managed_devices
+            # set all the attributes of the object
+            ManagedDeviceObj.set_name()
+            ManagedDeviceObj.set_assigned_security_policy_container()
+            ManagedDeviceObj.set_hostname()
+            ManagedDeviceObj.set_cluster()
+            # save it in the database
+            ManagedDeviceObj.save(self._database)
     
     def get_object_info_from_device_conn(self, object_type):
         """
@@ -376,7 +366,6 @@ class SecurityDevice:
             list: List of processed objects.
         """
         # Log a debug message indicating that the function is called
-        general_logger.debug("Called SecurityDevice.get_object_info_from_device_conn()")
         # Define a dictionary mapping object types to functions retrieving objects
         match object_type:
             case 'network_objects':
@@ -883,100 +872,8 @@ class SecurityDevice:
             flattened_list.remove('any')
 
         return flattened_list
-    
-    def insert_into_managed_devices_table(self, managed_device_info):
-        general_logger.debug(f"Called SecurityDevice.insert_into_managed_devices_table().")
-        """
-        Insert managed devices information into the 'managed_devices_table'.
-
-        Parameters:
-        - managed_device_info (list): List of dictionaries containing managed device information.
-
-        Returns:
-        None
-        """
-        for managed_device_entry in managed_device_info:
-            # Extract data from the current managed device entry
-            managed_device_name = managed_device_entry["managed_device_name"]
-            assigned_security_policy_container = managed_device_entry["assigned_security_policy_container"]
-            hostname = managed_device_entry["hostname"]
-            cluster = managed_device_entry['cluster']
-
-            # # Check for duplicates before insertion
-            # if self.verify_duplicate('managed_devices_table', 'managed_device_name', managed_device_name):
-            #     general_logger.warn(f"Duplicate entry for managed device: <{managed_device_name}>. Skipping insertion.")
-            #     continue
-
-            # SQL command to insert data into the 'managed_devices_table'
-            insert_command = """
-            INSERT INTO managed_devices_table (
-                security_device_name,
-                managed_device_name,
-                assigned_security_policy_container,
-                hostname,
-                cluster
-            ) VALUES (
-                %s, %s, %s, %s, %s
-            )"""
-
-            # Values to be inserted into the table
-            values = (self._name, managed_device_name, assigned_security_policy_container, hostname, cluster)
-
-            # Execute the insert command with the specified values
-            self._database.insert_table_value('managed_devices_table', insert_command, values)
-
-    def insert_into_general_table(self, security_device_username, security_device_secret, security_device_hostname, security_device_type, security_device_port, security_device_version, domain):
-        general_logger.debug("Called SecurityDevice.insert_into_general_table().")
-        """
-        Insert general information into the 'general_data_table'.
-
-        Parameters:
-        - security_device_username (str): Security device username.
-        - security_device_secret (str): Security device secret.
-        - security_device_hostname (str): Security device hostname.
-        - security_device_type (str): Security device type.
-        - security_device_port (str): Security device port.
-        - security_device_version (str): Security device version.
-        - domain (str): Security device domain.
-
-        Returns:
-        None
-        """
-        # Check for duplicates before insertion
-        # if self.verify_duplicate('general_data_table', 'security_device_name', self._name):
-        #     general_logger.warn(f"Duplicate entry for device name: <{self._name}>. Skipping insertion.")
-        #     return
-
-        insert_command = """
-            INSERT INTO general_data_table (
-                security_device_name, 
-                security_device_username, 
-                security_device_secret,
-                security_device_hostname, 
-                security_device_type, 
-                security_device_port, 
-                security_device_version, 
-                security_device_domain
-            ) VALUES (
-                %s, %s, %s, %s, %s, %s, %s, %s
-            )
-        """
-
-        values = (
-            self._name, 
-            security_device_username, 
-            security_device_secret, 
-            security_device_hostname, 
-            security_device_type, 
-            security_device_port, 
-            security_device_version, 
-            domain
-        )
-
-        self._database.insert_table_value('general_data_table', insert_command, values)
 
     def insert_into_security_policy_containers_table(self, containers_data):
-        general_logger.debug("Called SecurityDevice.insert_into_security_policy_containers_table().")
         """
         Insert values into the 'security_policy_containers_table' table.
 
@@ -1018,7 +915,6 @@ class SecurityDevice:
             self._database.insert_table_value('security_policy_containers_table', insert_command, values)
 
     def insert_into_security_policies_table(self, sec_policy_data):
-        general_logger.debug("Called SecurityDevice.insert_into_security_policies_table().")
         """
         Insert security policy data into the 'security_policies_table'.
 
@@ -1120,7 +1016,6 @@ class SecurityDevice:
             self._database.insert_table_value('security_policies_table', insert_command, parameters)
 
     def insert_into_object_containers_table(self, containers_data):
-        general_logger.debug("Called SecurityDevice.insert_into_object_containers_table().")
         """
         Insert values into the 'object_containers_table' table.
 
@@ -1162,7 +1057,6 @@ class SecurityDevice:
             self._database.insert_table_value('object_containers_table', insert_command, values)
 
     def insert_into_network_address_objects_table(self, network_objects_data):
-        general_logger.debug("Called SecurityDevice.insert_into_network_address_objects_table().")
         """
         Insert network address objects data into the 'network_address_objects_table'.
 
@@ -1217,7 +1111,6 @@ class SecurityDevice:
             self._database.insert_table_value('network_address_objects_table', insert_command, values)
 
     def insert_into_network_address_object_groups_table(self, network_group_objects_data):
-        general_logger.debug("Called SecurityDevice.insert_into_network_address_object_groups_table().")
         """
         Insert network address object groups data into the 'network_address_objects_table'.
 
@@ -1269,7 +1162,6 @@ class SecurityDevice:
             self._database.insert_table_value('network_address_object_groups_table', insert_command, values)
 
     def insert_into_security_policy_containers_table(self, containers_data):
-        general_logger.debug("Called SecurityDevice.insert_into_security_policy_containers_table().")
         """
         Insert values into the 'security_policy_containers_table' table.
 
@@ -1311,7 +1203,6 @@ class SecurityDevice:
             self._database.insert_table_value('security_policy_containers_table', insert_command, values)
 
     def insert_into_geolocation_table(self, geolocation_object_data):
-        general_logger.debug("Called SecurityDevice.insert_into_geolocation_table().")
         """
         Insert values into the 'geolocation_objects_table' table.
 
@@ -1368,7 +1259,6 @@ class SecurityDevice:
             self._database.insert_table_value('geolocation_objects_table', insert_command, values)
 
     def verify_duplicate(self, table, column, value):
-        general_logger.debug("Called verify_duplicate().")
         general_logger.info(f"Verifying duplicate in table {table}, column {column}, for value {value}.")
         """
         Verify if a duplicate entry exists in the specified table and column.
@@ -1392,7 +1282,6 @@ class SecurityDevice:
         return is_duplicate[0][0]
     
     def insert_into_port_objects_table(self, port_object_data):
-        general_logger.debug("Called SecurityDevice.insert_into_port_objects_table().")
         """
         Insert values into the 'port_objects_table' table.
 
@@ -1446,7 +1335,6 @@ class SecurityDevice:
             self._database.insert_table_value('port_objects_table', insert_command, values)
 
     def insert_into_icmp_objects_table(self, icmp_object_data):
-        general_logger.debug("Called SecurityDevice.insert_into_icmp_objects_table().")
         """
         Insert values into the 'icmp_objects_table' table.
 
@@ -1500,7 +1388,6 @@ class SecurityDevice:
             self._database.insert_table_value('icmp_objects_table', insert_command, values)
 
     def insert_into_port_object_groups_table(self, port_object_group_data):
-        general_logger.debug("Called SecurityDevice.insert_into_port_object_groups_table().")
         """
         Insert values into the 'port_object_groups_table' table.
 
@@ -1551,7 +1438,6 @@ class SecurityDevice:
             self._database.insert_table_value('port_object_groups_table', insert_command, values)
 
     def insert_into_url_objects_table(self, url_objects_data):
-        general_logger.debug("Called SecurityDevice.insert_into_url_objects_table().")
         """
         Insert values into the 'url_object_groups_table' table.
 
@@ -1599,7 +1485,6 @@ class SecurityDevice:
             self._database.insert_table_value('url_objects_table', insert_command, values)
 
     def insert_into_url_object_groups_table(self, url_object_group_data):
-        general_logger.debug("Called SecurityDevice.insert_into_url_object_groups_table().")
         """
         Insert values into the 'url_object_groups_table' table.
 
