@@ -12,9 +12,16 @@ class Container:
         """
         general_logger.debug("Called Container::__init__()")
         self._container_info = container_info
+        self._security_device_name = None
         self._name = None
         self._parent = None
     
+    def set_security_device_name(self, name):
+        self._security_device_name = name
+
+    def get_security_device_name(self):
+        return self._security_device_name
+
     def set_name(self, name):
         """
         Sets the name of the container.

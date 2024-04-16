@@ -55,7 +55,6 @@ class DBConnection():
         # return the cursor to the caller
         return database_cursor
 
-#TODO: refactor these functions as well!
 class PioneerDatabase():
     def __init__(self, cursor):
         self._cursor = cursor
@@ -165,7 +164,7 @@ class PioneerTable():
         table_columns_str = ", ".join(column_names)
         return table_columns_str
 
-    #TODO: get_cursor here and verify duplicate
+    #TODO: verify duplicate
     def insert(self, *values):
         columns = self.get_columns()
         
@@ -188,34 +187,36 @@ class PioneerTable():
     # move the get_table_value code here. the code must be rewritten in such a way
     # to permit multiple select queries
     # this function doesn't need an override
-    def get(self, column, order_param, name_col=None, val=None):
-
+    def get(self, column, name_col=None, val=None, order_param=None):
         if name_col and val:
             # Construct the SELECT query with a WHERE clause
-            select_query = f"SELECT {column} FROM {self._name} WHERE {name_col} = {val};"
+            select_query = f"SELECT {column} FROM {self._name} WHERE {name_col} = '{val}';"
         else:
             # Construct the SELECT query without a WHERE clause
             select_query = f"SELECT {column} FROM {self._name} ORDER BY {order_param};"
 
         try:
-            self._database.get_cursor().execute(select_query)
+            cursor = self._database.get_cursor()
+            
+            # Execute the insert command with the actual values
+            cursor.execute(select_query)
         except psycopg2.Error as err:
             general_logger.error(f"Failed to select values from table: <{self._name}>. Reason: {err}")
             # sys.exit(1)
 
         # Fetch the returned query values
-        postgres_cursor_data = self._cursor.fetchall()
+        postgres_cursor_data = cursor.fetchall()
         general_logger.info(f"Succesfully retrieved values from table: <{self._name}>.")
         return postgres_cursor_data
 
     # this function updates values into a table
-    def update(self, table_name, update_command):
-        try:
-            self._cursor.execute(update_command)
+    # def update(self, table_name, update_command):
+    #     try:
+    #         cursor.execute(update_command)
 
-        except psycopg2.Error as err:
-            general_logger.error(f"Failed to update values for: <{table_name}>. Reason: <{err}>")
-            sys.exit(1)
+    #     except psycopg2.Error as err:
+    #         general_logger.error(f"Failed to update values for: <{table_name}>. Reason: <{err}>")
+    #         sys.exit(1)
 
 # the following are not supported, no need to create tables: policies_hitcount_table, nat_policies_table, user_source_table, policy_users_table
 # security_zones_table, urls_categories_table, l7_apps_table, schedule_objects_table
@@ -239,9 +240,10 @@ class SecurityPolicyContainersTable(PioneerTable):
         super().__init__(database)
         self._name = "security_policy_containers"
         self._table_columns = [
+            ("security_device_name", "TEXT"),
             ("name", "TEXT PRIMARY KEY"),
             ("parent", "TEXT"),
-            ("CONSTRAINT fk_security_device FOREIGN KEY(name)", "REFERENCES general_security_device_data(name)")
+            ("CONSTRAINT fk_security_device FOREIGN KEY (security_device_name)", "REFERENCES general_security_device_data (name)")
         ]
 
 class NATPolicyContainersTable(PioneerTable):
@@ -249,9 +251,10 @@ class NATPolicyContainersTable(PioneerTable):
         super().__init__(database)
         self._name = "nat_policy_containers"
         self._table_columns = [
+            ("security_device_name", "TEXT"),
             ("name", "TEXT PRIMARY KEY"),
             ("parent", "TEXT"),
-            ("CONSTRAINT fk_security_device FOREIGN KEY(name)", "REFERENCES general_security_device_data(name)")
+            ("CONSTRAINT fk_security_device FOREIGN KEY (security_device_name)", "REFERENCES general_security_device_data (name)")
         ]
 
 class ObjectContainersTable(PioneerTable):
@@ -259,9 +262,10 @@ class ObjectContainersTable(PioneerTable):
         super().__init__(database)
         self._name = "object_containers"
         self._table_columns = [
+            ("security_device_name", "TEXT"),
             ("name", "TEXT PRIMARY KEY"),
             ("parent", "TEXT"),
-            ("CONSTRAINT fk_security_device FOREIGN KEY(name)", "REFERENCES general_security_device_data(name)")
+            ("CONSTRAINT fk_security_device FOREIGN KEY (security_device_name)", "REFERENCES general_security_device_data (name)")
         ]
 
 class SecurityPoliciesTable(PioneerTable):

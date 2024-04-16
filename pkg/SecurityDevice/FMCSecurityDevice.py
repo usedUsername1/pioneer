@@ -1,50 +1,16 @@
 from abc import abstractmethod
 from pkg.Container.FMCContainer import FMCSecurityPolicyContainer, FMCObjectContainer
-from pkg.SecurityDevice.APISecurityDevice.APISecurityDeviceConnection import APISecurityDeviceConnection
 from pkg.DeviceObject.FMCDeviceObject import FMCObject, FMCNetworkGroupObject, FMCNetworkObject, FMCNetworkLiteralObject, \
 FMCPortObject, FMCICMPObject, FMCLiteralICMPObject, FMCPortGroupObject, FMCPortLiteralObject, FMCGeolocationObject, \
 FMCContinentObject, FMCCountryObject, FMCURLObject, FMCURLLiteral, FMCURLGroupObject
 from pkg.Policy.FMCPolicy import FMCSecurityPolicy
-from pkg.SecurityDevice import SecurityDevice
+from pkg.SecurityDevice import SecurityDevice 
 from pkg.ManagedDevice.FMCManagedDevice import FMCManagedDevice
 
 import utils.helper as helper
-import fireREST
 import utils.gvars as gvars
 
 general_logger = helper.logging.getLogger('general')
-
-class FMCDeviceConnection(APISecurityDeviceConnection):
-    """
-    Represents a connection to a Firepower Management Center (FMC) device.
-    """
-
-    def __init__(self, api_username, api_secret, api_hostname, api_port, domain):
-        """
-        Initialize an FMCDeviceConnection instance.
-
-        Parameters:
-            api_username (str): The API username for the connection.
-            api_secret (str): The API secret for the connection.
-            api_hostname (str): The hostname of the FMC device.
-            api_port (int): The port number for the connection.
-            domain (str): The domain of the FMC device.
-        """
-        super().__init__(api_username, api_secret, api_hostname, api_port)
-        self._domain = domain
-        self._device_connection = self.return_security_device_conn_object()  # Initialize _device_connection with FMC object
-        general_logger.debug(f"Called FMCDeviceConnection __init__ with parameters: username {api_username}, hostname {api_hostname}, port {api_port}, domain {domain}.")
-
-    def connect_to_security_device(self):
-        """
-        Connect to the Firepower Management Center (FMC) device.
-
-        Returns:
-            fireREST.FMC: An FMC connection object.
-        """
-        # Implement connection to FMC specific to FMCDeviceConnection
-        fmc_conn = fireREST.FMC(hostname=self._api_hostname, username=self._api_username, password=self._api_secret, domain=self._domain, protocol=self._api_port, timeout=30)
-        return fmc_conn
   
 class FMCSecurityDevice(SecurityDevice):
     """
@@ -52,7 +18,7 @@ class FMCSecurityDevice(SecurityDevice):
 
     Args:
         name (str): The name of the security device.
-        sec_device_database: The database for the security device.
+        SecurityDeviceDatabase: The database for the security device.
         security_device_username (str): The username for accessing the security device.
         security_device_secret (str): The secret for accessing the security device.
         security_device_hostname (str): The hostname or IP address of the security device.
@@ -60,25 +26,25 @@ class FMCSecurityDevice(SecurityDevice):
         domain (str): The domain of the security device.
 
     Attributes:
-        _sec_device_connection: The connection to the FMC device.
+        _SecurityDeviceConnection: The connection to the FMC device.
     """
 
-    def __init__(self, name, sec_device_database, security_device_username, security_device_secret, security_device_hostname, security_device_port, domain):
+    #TODO: maybe get_connection() function, as it makes a little bit more sense than how it currently is
+    def __init__(self, name, SecurityDeviceDatabase, SecurityDeviceConnection):
         """
         Initializes an FMCSecurityDevice instance.
 
         Args:
             name (str): The name of the security device.
-            sec_device_database: The database for the security device.
+            SecurityDeviceDatabase: The database for the security device.
             security_device_username (str): The username for accessing the security device.
             security_device_secret (str): The secret for accessing the security device.
             security_device_hostname (str): The hostname or IP address of the security device.
             security_device_port (int): The port number for connecting to the security device.
             domain (str): The domain of the security device.
         """
-        super().__init__(name, sec_device_database)
-        # Establish connection to FMC device
-        self._sec_device_connection = FMCDeviceConnection(security_device_username, security_device_secret, security_device_hostname, security_device_port, domain).connect_to_security_device()
+        super().__init__(name, SecurityDeviceDatabase, SecurityDeviceConnection)
+        self._SecurityDeviceConnection = SecurityDeviceConnection
         self._network_address_objects_info = None
         self._network_group_objects_info = None
         self._geolocation_objects_info = None
@@ -105,7 +71,7 @@ class FMCSecurityDevice(SecurityDevice):
         match container_type:
             case 'security_policies_container':
                 # Retrieve ACP information from FMC device
-                acp_info = self._sec_device_connection.policy.accesspolicy.get(name=container_name)
+                acp_info = self._SecurityDeviceConnection.policy.accesspolicy.get(name=container_name)
                 # Initialize and return FMCPolicyContainer object
                 return FMCSecurityPolicyContainer(acp_info)
             case 'objects_container':
@@ -129,7 +95,7 @@ class FMCSecurityDevice(SecurityDevice):
         security_policy_objects = []
 
         # Retrieve security policy information from FMC device using the provided container name
-        fmc_policy_info = self._sec_device_connection.policy.accesspolicy.accessrule.get(container_name=container_name)
+        fmc_policy_info = self._SecurityDeviceConnection.policy.accesspolicy.accessrule.get(container_name=container_name)
 
         # Iterate through each policy entry retrieved from the FMC device
         for fmc_policy_entry in fmc_policy_info:
@@ -147,7 +113,7 @@ class FMCSecurityDevice(SecurityDevice):
             list: List of dictionaries containing information about managed devices.
         """
         # Execute the request to retrieve information about the devices
-        managed_devices = self._sec_device_connection.device.devicerecord.get()
+        managed_devices = self._SecurityDeviceConnection.device.devicerecord.get()
         return managed_devices
 
     def get_security_policies_info(self, policy_container_name):
@@ -163,7 +129,7 @@ class FMCSecurityDevice(SecurityDevice):
         general_logger.info("################## GETTING SECURITY POLICIES INFO ##################")
 
         # Execute the request to retrieve information about the security policies
-        security_policies_info = self._sec_device_connection.policy.accesspolicy.accessrule.get(container_name=policy_container_name)
+        security_policies_info = self._SecurityDeviceConnection.policy.accesspolicy.accessrule.get(container_name=policy_container_name)
         return security_policies_info
     
     def get_device_version(self):
@@ -174,7 +140,7 @@ class FMCSecurityDevice(SecurityDevice):
             str: Version of the device's server.
         """
         # Retrieve device system information to get the server version
-        device_system_info = self._sec_device_connection.system.info.serverversion.get()
+        device_system_info = self._SecurityDeviceConnection.system.info.serverversion.get()
 
         # Extract the exact info needed from the response got from the device
         device_version = device_system_info[0]['serverVersion']
@@ -199,58 +165,58 @@ class FMCSecurityDevice(SecurityDevice):
         if object_type == 'network_objects':
             # Fetch network address objects if not already fetched
             if not self._network_address_objects_info:
-                self._network_address_objects_info = self._sec_device_connection.object.networkaddress.get()
+                self._network_address_objects_info = self._SecurityDeviceConnection.object.networkaddress.get()
                 # Convert the fetched information into a dictionary for efficient lookup
                 network_address_objects_dict = {entry['name']: entry for entry in self._network_address_objects_info}
                 self._network_address_objects_info = network_address_objects_dict
 
             # Fetch network group objects if not already fetched
             if not self._network_group_objects_info:
-                self._network_group_objects_info = self._sec_device_connection.object.networkgroup.get()
+                self._network_group_objects_info = self._SecurityDeviceConnection.object.networkgroup.get()
                 # Convert the fetched information into a dictionary for efficient lookup
                 network_group_objects_dict = {entry['name']: entry for entry in self._network_group_objects_info}
                 self._network_group_objects_info = network_group_objects_dict
 
             # Fetch geolocation objects if not already fetched
             if not self._geolocation_objects_info:
-                self._geolocation_objects_info = self._sec_device_connection.object.geolocation.get()
+                self._geolocation_objects_info = self._SecurityDeviceConnection.object.geolocation.get()
                 # Convert the fetched information into a dictionary for efficient lookup
                 geolocation_objects_dict = {entry['name']: entry for entry in self._geolocation_objects_info}
                 self._geolocation_objects_info = geolocation_objects_dict
 
             # Fetch country objects if not already fetched
             if not self._countries_info:
-                self._countries_info = self._sec_device_connection.object.country.get()
+                self._countries_info = self._SecurityDeviceConnection.object.country.get()
                 # Convert the fetched information into a dictionary for efficient lookup
                 countries_dict = {entry['id']: entry for entry in self._countries_info if 'id' in entry}
                 self._countries_info = countries_dict
 
             # Fetch continent objects if not already fetched
             if not self._continents_info:
-                self._continents_info = self._sec_device_connection.object.continent.get()
+                self._continents_info = self._SecurityDeviceConnection.object.continent.get()
                 # Convert the fetched information into a dictionary for efficient lookup
                 continents_dict = {entry['name']: entry for entry in self._continents_info}
                 self._continents_info = continents_dict
         
         if object_type == 'port_objects':
             if not self._port_objects_info:
-                self._port_objects_info = self._sec_device_connection.object.port.get()
+                self._port_objects_info = self._SecurityDeviceConnection.object.port.get()
                 ports_dict = {entry['name']: entry for entry in self._port_objects_info if 'name' in entry}
                 self._port_objects_info = ports_dict
             
             if not self._port_group_objects_info:
-                self._port_group_objects_info = self._sec_device_connection.object.portobjectgroup.get()
+                self._port_group_objects_info = self._SecurityDeviceConnection.object.portobjectgroup.get()
                 port_groups_dict = {entry['name']: entry for entry in self._port_group_objects_info if 'name' in entry}
                 self._port_group_objects_info = port_groups_dict
         
         if object_type == 'url_objects':
             if not self._url_objects_info:
-                self._url_objects_info = self._sec_device_connection.object.url.get()
+                self._url_objects_info = self._SecurityDeviceConnection.object.url.get()
                 url_objects_dict = {entry['name']: entry for entry in self._url_objects_info if 'name' in entry}
                 self._url_objects_info = url_objects_dict
             
             if not self._url_object_groups_info:
-                self._url_object_groups_info = self._sec_device_connection.object.urlgroup.get()
+                self._url_object_groups_info = self._SecurityDeviceConnection.object.urlgroup.get()
                 url_group_objects_dict = {entry['name']: entry for entry in self._url_object_groups_info if 'name' in entry}
                 self._url_object_groups_info = url_group_objects_dict
 

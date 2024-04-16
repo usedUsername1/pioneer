@@ -3,10 +3,10 @@ import utils.helper as helper
 import utils.gvars as gvars
 import pkg.MigrationProject as MigrationProject
 from pkg import PioneerDatabase
-from pkg.SecurityDevice import SecurityDevice, SecurityDeviceDatabase
+from pkg.SecurityDevice import SecurityDevice, SecurityDeviceDatabase 
+from pkg.SecurityDevice.SecurityDeviceFactory import SecurityDeviceFactory
 import sys
 from datetime import datetime, timezone
-from pkg.SecurityDevice.APISecurityDevice import SecurityDeviceFactory
 
 import subprocess
 
@@ -153,7 +153,7 @@ def main():
     # the user used the --device option
     if pioneer_args["device_name [device_name]"]:
         security_device_name = pioneer_args["device_name [device_name]"]
-        SecurityDeviceObj = API.create_security_device(db_user, security_device_name, db_password, db_host, db_port)
+        SecurityDeviceObj = SecurityDeviceFactory.create_security_device(db_user, security_device_name, db_password, db_host, db_port)
 
         # sub-if statements for importing and getting parameters
         # the import of the objects will be done for a specific policy container
@@ -170,62 +170,61 @@ def main():
             # and pretty much the rest of the config (routing, VPNs, etc...)
         if pioneer_args["import_config"]:
             # import the policy containers of the device.
-            general_logger.info(f"################## IMPORTING CONFIGURATION OF <{security_device_name}>.##################")
             if(pioneer_args["security_policy_container [container_name]"]):
                 passed_container_names = pioneer_args["security_policy_container [container_name]"]
                 passed_container_names_list = []
                 passed_container_names_list.append(passed_container_names)
                 print("Importing the security policy containers info.")
-                # print(f"I am now importing the policy container info for the following containers: {passed_container_names_list}.")
+                print(f"I am now importing the policy container info for the following containers: {passed_container_names_list}.")
                 
-                # retrieve the security policy containers along with the parents
-                # insert them in the database
-                security_policy_containers_info = SecurityDeviceObj.get_container_info_from_device_conn(passed_container_names_list, 'security_policies_container')
-                SecurityDeviceObj.insert_into_security_policy_containers_table(security_policy_containers_info)
-                # import the security policies (data) that are part of the imported security policy containers
-                # the policy container info extracted earlier can be used here. we can use the child container entry since the child container
-                # contains the information (thus the policies) it inherits from all the parents
-                print("Importing the security policy data.")
+                # # retrieve the security policy containers along with the parents
+                # # insert them in the database
+                SecurityDeviceObj.get_container_info_from_device_conn(passed_container_names_list, 'security_policies_container')
+                # SecurityDeviceObj.insert_into_security_policy_containers_table(security_policy_containers_info)
+                # # import the security policies (data) that are part of the imported security policy containers
+                # # the policy container info extracted earlier can be used here. we can use the child container entry since the child container
+                # # contains the information (thus the policies) it inherits from all the parents
+                # print("Importing the security policy data.")
 
-                sec_policy_data = SecurityDeviceObj.get_policy_info_from_device_conn('security_policy', passed_container_names_list)
-                general_logger.info("\n################## EXTRACTED INFO FROM THE SECURITY POLICIES, INSERTING IN THE DATABASE. ##################")
-                # at this point, the data from all the security policies is extracted, it is time to insert it into the database
-                SecurityDeviceObj.insert_into_security_policies_table(sec_policy_data)
+                # sec_policy_data = SecurityDeviceObj.get_policy_info_from_device_conn('security_policy', passed_container_names_list)
 
-                print("Importing the object container data.")
-                general_logger.info("\n################## IMPORTING OBJECT CONTAINER DATA. ##################")
-                # import and insert the object container first!
-                object_containers_info = SecurityDeviceObj.get_container_info_from_device_conn(passed_container_names_list, 'object_container')
-                SecurityDeviceObj.insert_into_object_containers_table(object_containers_info)
+                # # at this point, the data from all the security policies is extracted, it is time to insert it into the database
+                # SecurityDeviceObj.insert_into_security_policies_table(sec_policy_data)
 
-                #TODO: the import functinoality must be independent of the policy type. so this part of the code should be taken out from here and put outside the import config if statement
-                print("Importing network object data.")
-                general_logger.info("\n################## IMPORTING NETWORK OBJECTS DATA. ##################")
-                # # at this point all the security policy data is imported. it is time to import the object data.
-                network_objects_data = SecurityDeviceObj.get_object_info_from_device_conn('network_objects')
+                # print("Importing the object container data.")
 
-                general_logger.info("\n################## INSERTING NETWORK OBJECTS DATA. ##################")                
-                SecurityDeviceObj.insert_into_network_address_objects_table(network_objects_data[0]['network_objects'])
-                SecurityDeviceObj.insert_into_network_address_object_groups_table(network_objects_data[0]['network_group_objects'])
-                SecurityDeviceObj.insert_into_geolocation_table(network_objects_data[0]['geolocation_objects'])
+                # # import and insert the object container first!
+                # object_containers_info = SecurityDeviceObj.get_container_info_from_device_conn(passed_container_names_list, 'object_container')
+                # SecurityDeviceObj.insert_into_object_containers_table(object_containers_info)
 
-                print("Importing port object data.")
-                general_logger.info("\n################## IMPORTING PORT OBJECTS DATA. ##################")
-                port_objects_data = SecurityDeviceObj.get_object_info_from_device_conn('port_objects')
-                print("Inserting port object data in the database.")
-                SecurityDeviceObj.insert_into_port_objects_table(port_objects_data[0]['port_objects'])
-                SecurityDeviceObj.insert_into_icmp_objects_table(port_objects_data[0]['icmp_port_objects'])
-                SecurityDeviceObj.insert_into_port_object_groups_table(port_objects_data[0]['port_group_objects'])
+                # #TODO: the import functinoality must be independent of the policy type. so this part of the code should be taken out from here and put outside the import config if statement
+                # print("Importing network object data.")
 
-                print("Skipping importing of schedule, users, URL categories and L7 apps since this is not yet supported!")
-                print("Importing URL object data.")
-                general_logger.info("\n################## IMPORTING URL OBJECTS DATA. ##################")
-                url_objects_data = SecurityDeviceObj.get_object_info_from_device_conn('url_objects')
+                # # # at this point all the security policy data is imported. it is time to import the object data.
+                # network_objects_data = SecurityDeviceObj.get_object_info_from_device_conn('network_objects')
 
-                SecurityDeviceObj.insert_into_url_objects_table(url_objects_data[0]['url_objects'])
-                SecurityDeviceObj.insert_into_url_object_groups_table(url_objects_data[0]['url_group_objects'])
-                general_logger.info("\n################## IMPORTING OF DATA FINISHED. ##################")
-                print("Succesfully finished the import of the security device's data.")
+
+                # SecurityDeviceObj.insert_into_network_address_objects_table(network_objects_data[0]['network_objects'])
+                # SecurityDeviceObj.insert_into_network_address_object_groups_table(network_objects_data[0]['network_group_objects'])
+                # SecurityDeviceObj.insert_into_geolocation_table(network_objects_data[0]['geolocation_objects'])
+
+                # print("Importing port object data.")
+
+                # port_objects_data = SecurityDeviceObj.get_object_info_from_device_conn('port_objects')
+                # print("Inserting port object data in the database.")
+                # SecurityDeviceObj.insert_into_port_objects_table(port_objects_data[0]['port_objects'])
+                # SecurityDeviceObj.insert_into_icmp_objects_table(port_objects_data[0]['icmp_port_objects'])
+                # SecurityDeviceObj.insert_into_port_object_groups_table(port_objects_data[0]['port_group_objects'])
+
+                # print("Skipping importing of schedule, users, URL categories and L7 apps since this is not yet supported!")
+                # print("Importing URL object data.")
+
+                # url_objects_data = SecurityDeviceObj.get_object_info_from_device_conn('url_objects')
+
+                # SecurityDeviceObj.insert_into_url_objects_table(url_objects_data[0]['url_objects'])
+                # SecurityDeviceObj.insert_into_url_object_groups_table(url_objects_data[0]['url_group_objects'])
+
+                # print("Succesfully finished the import of the security device's data.")
                 # close the cursor used to connect to the device's database
                 # TODO: create close_cursor() function
                 # SecurityDevceDBcursor.close()

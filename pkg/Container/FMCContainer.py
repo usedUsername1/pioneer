@@ -55,7 +55,7 @@ class FMCSecurityPolicyContainer(SecurityPolicyContainer):
     
     def save(self, database):
         SecurityPolicyContainerTable = database.get_security_policy_containers_table()
-        SecurityPolicyContainerTable.insert(self.get_name(), self.get_parent())
+        SecurityPolicyContainerTable.insert(self.get_security_device_name(), self.get_name(), self.get_parent())
 
 class FMCObjectContainer(ObjectContainer):
     """

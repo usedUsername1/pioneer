@@ -278,4 +278,3 @@ def netmask_to_cidr_bits(netmask):
         return cidr_bits
     except ValueError:
         return None  # Invalid netmask format
-

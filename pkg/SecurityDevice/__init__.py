@@ -92,36 +92,28 @@ class SecurityDeviceDatabase(PioneerDatabase):
     def get_managed_devices_table(self):
         return self._ManagedDevicesTable
 
-class SecurityDeviceConnection:
-    """
-    A class representing a connection to a security device.
-    """
-
-    def __init__(self) -> None:
-        """
-        Initialize the SecurityDeviceConnection instance.
-        """
-        pass
-
-
 class SecurityDevice:
-    def __init__(self, name, sec_device_database):
+    def __init__(self, name, DeviceDatabase, DeviceConnection):
         """
         Initialize a SecurityDevice instance.
 
         Parameters:
         - name (str): The name of the security device.
-        - sec_device_database (Database): An instance of the database for the security device.
+        - DeviceDatabase (Database): An instance of the database for the security device.
         """
         self._name = name
-        self._database = sec_device_database
+        self._Database = DeviceDatabase
+        self._DeviceConnection = DeviceConnection
+    
+    def set_DeviceConnection(self, Connection):
+        self._DeviceConnection = Connection
     
     def save_general_info(self, security_device_name, security_device_username, security_device_secret, security_device_hostname, security_device_type, security_device_port, security_device_version, domain):
-        GeneralDataTable = self._database.get_general_data_table()
+        GeneralDataTable = self._Database.get_general_data_table()
         GeneralDataTable.insert(security_device_name, security_device_username, security_device_secret, security_device_hostname, security_device_type, security_device_port, security_device_version, domain)
 
-    def set_database(self, database):
-        self._database = database
+    def set_database(self, Database):
+        self._Database = Database
 
     @abstractmethod
     def create_managed_device(self, managed_device_entry):
@@ -139,6 +131,7 @@ class SecurityDevice:
         processing it, and returning the processed information in a structured format.
         It handles different types of containers, and can handle nested containers with parent-child relationships.
         Additionally, it includes logging and error handling to ensure smooth execution and provide informative messages in case of errors.
+
         Parameters:
         - containers_list (list): List of container names passed by the user to retrieve information for.
         - container_type (str): Type of containers to retrieve information for. E.g: object, security policy containers
@@ -153,11 +146,14 @@ class SecurityDevice:
                 CurrentContainer = self.create_container(container_name, container_type)
                 CurrentContainer.set_name()
                 CurrentContainer.set_parent()
+                CurrentContainer.set_security_device_name(self._name)
 
                 general_logger.info(f"I am now processing the <{container_type}> container, name: <{container_name}>")
                 # Check if the current container has parent containers
                 while CurrentContainer.is_child_container():
                     CurrentContainer.set_name()
+                    CurrentContainer.set_parent()
+                    CurrentContainer.set_security_device_name(self._name)
 
                     # Retrieve the parent container name
                     parent_container_name = CurrentContainer.get_parent()
@@ -166,28 +162,28 @@ class SecurityDevice:
                         # Retrieve the parent container object using the same retrieval function
                         ParentContainer = self.create_container(parent_container_name, container_type)
 
-                        # set the current's container parent
-                        CurrentContainer.set_parent(ParentContainer)
                         # save the current container in the database
-                        CurrentContainer.save(self._database)
+                        CurrentContainer.save(self._Database)
 
                         # Set the parent container as the current container for the next iteration
                         CurrentContainer = ParentContainer
                     except Exception as e:
-                        general_logger.error(f"Error retrieving parent container <{parent_container_name}>: <{e}>")
+                        general_logger.error(f"Error retrieving parent container: <{parent_container_name}>. Reason: <{e}>")
                         break  # Break out of the loop if there's an error retrieving the parent container
-                
+
                 # If we break out of the loop, then it means we reached the highest parent in the hierarchy
                 # We also need to get the data for it
                 else:
+                    CurrentContainer.set_name()
+                    CurrentContainer.set_parent()
+                    CurrentContainer.set_security_device_name(self._name)
                     general_logger.info(f"Finished processing all children. <{CurrentContainer.get_name()}> is the highest container in the parent-child hierarchy.")
-                    CurrentContainer.save()
-        
-            #TODO: this gets printed to the console two times. problem with the logger, print statement works just fine
+                    CurrentContainer.save(self._Database)
+
             except Exception as err:
                 general_logger.error(f"Could not retrieve info regarding the container <{container_name}>. Reason: <{err}>")
                 sys.exit(1)
-        
+
         general_logger.info(f"I have finished completely processing <{container_type}> container, name: <{container_name}>.")
 
     def get_device_version_from_device_conn(self):
@@ -289,7 +285,7 @@ class SecurityDevice:
             ManagedDeviceObj.set_hostname()
             ManagedDeviceObj.set_cluster()
             # save it in the database
-            ManagedDeviceObj.save(self._database)
+            ManagedDeviceObj.save(self._Database)
     
     def get_object_info_from_device_conn(self, object_type):
         """
@@ -418,33 +414,8 @@ class SecurityDevice:
         security_policy_names = SourceDevice.get_db_objects_from_table_order_by('security_policy_name', 'security_policies_table', 'security_policy_index')
         self.migrate_security_policies(security_policy_names, SourceDevice)
 
-
-    def get_db_col_by_val(self, col, table, name_col, val):
-
-        select_query = f"select {col} from {table} where {name_col} = '{val}';"
-        # Execute the SQL query and fetch the results
-        query_result = self._database.get_table_value(table, select_query)
-
-        # Extract elements from tuples and flatten the list
-        flattened_list = [item[0] for item in query_result]
-
-        # Remove the 'any' element of the list, if it exists. It is not an object that can be imported
-        return flattened_list[0]
-
-
-    def get_db_objects_from_table_order_by(self, column, table, order_param):
-        select_command = f"SELECT {column} FROM {table} ORDER BY {order_param};"
-        # Execute the SQL query and fetch the results
-        query_result = self._database.get_table_value(table, select_command)
-
-        # Extract elements from tuples and flatten the list
-        flattened_list = [item[0] for item in query_result]
-
-        # Remove the 'any' element of the list, if it exists. It is not an object that can be imported
-        if 'any' in flattened_list:
-            flattened_list.remove('any')
-
-        return flattened_list
+    def get_general_data(self, column, name_col=None, val=None, order_param=None):
+        return self._Database.get_general_data_table().get(column, name_col, val, order_param)[0][0]
 
     @abstractmethod
     def fetch_objects_info(self, object_type):
@@ -519,98 +490,6 @@ class SecurityDevice:
     def map_containers(self):
         pass
 
-    def get_security_device_type_from_db(self):
-        general_logger.info(f"Fetching the device type of device: <{self._name}>.")
-        """
-        Retrieve the security device type.
-
-        Returns:
-        - str: The security device type.
-        """
-        general_logger.info(f"Got device type: <{self._get_security_device_attribute('security_device_type')}>.")
-        return self._get_security_device_attribute('security_device_type')
-
-    def get_security_device_hostname_from_db(self):
-        general_logger.info(f"Fetching the hostname of {self._name}.")
-        """
-        Retrieve the security device hostname.
-
-        Returns:
-        - str: The security device hostname.
-        """
-        general_logger.info(f"Got device hostname: <{self._get_security_device_attribute('security_device_hostname')}>.")
-        return self._get_security_device_attribute('security_device_hostname')
-
-    def get_security_device_username_from_db(self):
-        general_logger.info(f"Fetching the username of device <{self._name}>.")
-        """
-        Retrieve the security device username.
-
-        Returns:
-        - str: The security device username.
-        """
-        general_logger.info(f"Got device username: <{self._get_security_device_attribute('security_device_username')}>.")
-        return self._get_security_device_attribute('security_device_username')
-
-    def get_security_device_secret_from_db(self):
-        general_logger.info(f"Fetching the secret of <{self._name}>.")
-        """
-        Retrieve the security device secret.
-
-        Returns:
-        - str: The security device secret.
-        """
-        general_logger.info(f"Got device secret: ... .")
-        return self._get_security_device_attribute('security_device_secret')
-
-    def get_security_device_domain_from_db(self):
-        general_logger.info(f"Fetching the domain of <{self._name}>.")
-        """
-        Retrieve the security device domain.
-
-        Returns:
-        - str: The security device domain.
-        """
-        general_logger.info(f"Got device domain: <{self._get_security_device_attribute('security_device_domain')}>.")
-        return self._get_security_device_attribute('security_device_domain')
-
-    def get_security_device_port_from_db(self):
-        general_logger.info(f"Fetching the port of <{self._name}>.")
-        """
-        Retrieve the security device port.
-
-        Returns:
-        - str: The security device port.
-        """
-        general_logger.info(f"Got device port: <{self._get_security_device_attribute('security_device_port')}>.")
-        return self._get_security_device_attribute('security_device_port')
-
-    def get_security_device_version_from_db(self):
-        general_logger.info(f"Fetching the version of <{self._name}>.")
-        """
-        Retrieve the security device version.
-
-        Returns:
-        - str: The security device version.
-        """
-        general_logger.info(f"Got device version: <{self._get_security_device_attribute('security_device_version')}>.")
-        return self._get_security_device_attribute('security_device_version')
-
-    def _get_security_device_attribute(self, attribute):
-        """
-        Retrieve a specific attribute of the security device.
-
-        Parameters:
-        - attribute (str): The attribute to retrieve.
-
-        Returns:
-        - str: The value of the specified attribute for the security device.
-        """
-        select_command = f"SELECT {attribute} FROM general_data_table WHERE security_device_name = %s"
-        
-        result = self._database.get_table_value('general_data_table', select_command, (self._name,))
-        return result[0][0] if result else None
-
     # the following functions process the data from the database. all the objects are processed, the unique values
     # are gathered and returned in a list that will be further processed by the program
     def get_db_objects(self, object_type):
@@ -646,10 +525,10 @@ class SecurityDevice:
         select_command = f"SELECT {columns} FROM security_policies_table;"
 
         # Execute the SQL query and fetch the results
-        query_result = self._database.get_table_value('security_policies_table', select_command)
+        query_result = self._Database.get_table_value('security_policies_table', select_command)
 
         # Flatten the results so that the unique values can be returned
-        unique_objects_list = self._database.flatten_query_result(query_result)
+        unique_objects_list = self._Database.flatten_query_result(query_result)
 
         # Remove the 'any' element of the list, if it exists. It is not an object that can be imported
         element_to_remove = 'any'
@@ -662,7 +541,7 @@ class SecurityDevice:
         select_command = f"SELECT {column} FROM {table};"
         
         # Execute the SQL query and fetch the results
-        query_result = self._database.get_table_value(table, select_command)
+        query_result = self._Database.get_table_value(table, select_command)
 
         # Extract elements from tuples and flatten the list
         flattened_list = [item[0] for item in query_result]
@@ -682,7 +561,7 @@ class SecurityDevice:
             WHERE {column} = '{old_value}';
         """
 
-        self._database.update_table_value(table, update_query)
+        self._Database.update_table_value(table, update_query)
 
     def set_policy_param(self, table, security_policy_name, column_name, new_value):
         update_query = f"""
@@ -691,7 +570,7 @@ class SecurityDevice:
             WHERE security_policy_name = '{security_policy_name}';
         """
 
-        self._database.update_table_value(table, update_query)
+        self._Database.update_table_value(table, update_query)
 
     def set_port_members(self, table, port_group_name, column_name, new_value):
         update_query = f"""
@@ -700,7 +579,7 @@ class SecurityDevice:
             WHERE port_group_name = '{port_group_name}';
         """
 
-        self._database.update_table_value(table, update_query)
+        self._Database.update_table_value(table, update_query)
 
     def set_url_group_members(self, url_members, url_group_name):
         update_query = f"""
@@ -708,7 +587,7 @@ class SecurityDevice:
             SET url_object_members = '{url_members}'
             WHERE url_object_group_name = '{url_group_name}';
         """
-        self._database.update_table_value('url_object_groups_table', update_query)
+        self._Database.update_table_value('url_object_groups_table', update_query)
 
     def update_array_value(self, table, column_name, old_value, new_value):
 
@@ -717,12 +596,12 @@ class SecurityDevice:
             SET {column_name} = array_replace({column_name}, '{old_value}', '{new_value}')
             WHERE '{old_value}' = ANY({column_name})
         """
-        self._database.update_table_value(table, update_query)
+        self._Database.update_table_value(table, update_query)
 
     def get_policy_param(self, policy_name, param_column):
         select_query = f"select {param_column} from security_policies_table where security_policy_name = '{policy_name}'"
         # Execute the SQL query and fetch the results
-        query_result = self._database.get_table_value('security_policies_table', select_query)
+        query_result = self._Database.get_table_value('security_policies_table', select_query)
 
         # Extract elements from tuples and flatten the list
         flattened_list = [item[0] for item in query_result]
@@ -740,7 +619,7 @@ class SecurityDevice:
             SET {column_name} = array_remove({column_name}, '{value_to_remove}')
             WHERE '{value_to_remove}' = ANY({column_name})
         """
-        self._database.update_table_value(table, update_query)
+        self._Database.update_table_value(table, update_query)
 
     def delete_referenced_objects(self, port_group_name):
         # Check if the specified port group exists in the array
@@ -749,7 +628,7 @@ class SecurityDevice:
             FROM security_policies_table 
             WHERE '{port_group_name}' = ANY(security_policy_destination_ports);
         """
-        row = self._database.get_table_value('security_policies_table', select_query)
+        row = self._Database.get_table_value('security_policies_table', select_query)
 
         if row is None:
             print(f"No references found for {port_group_name}.")
@@ -765,7 +644,7 @@ class SecurityDevice:
                 WHERE '{port_group_name}' = ANY(security_policy_destination_ports);
             """
             # Execute the query with parameters
-            self._database.update_table_value('security_policies_table', delete_query)
+            self._Database.update_table_value('security_policies_table', delete_query)
             
         elif len(destination_ports) == 1:
             # If there's only one element, replace it with {any}
@@ -776,7 +655,7 @@ class SecurityDevice:
                 WHERE '{port_group_name}' = ANY(security_policy_destination_ports);
             """
             # Execute the query with parameters
-            self._database.update_table_value('security_policies_table', update_query)
+            self._Database.update_table_value('security_policies_table', update_query)
         
         # print(f"Reference to {port_group_name} deleted successfully.")
 
@@ -784,14 +663,14 @@ class SecurityDevice:
 
         delete_query = f""" delete from  port_object_groups_table where port_group_name = '{port_group_name}';"""
 
-        self._database.update_table_value('port_object_groups_table', delete_query)
+        self._Database.update_table_value('port_object_groups_table', delete_query)
     
     # QUERY: select port_group_members from port_object_groups_table where port_group_name = '{}'
     def get_port_group_members(self, table, name):
         select_command = f"SELECT port_group_members FROM port_object_groups_table WHERE port_group_name = '{name}';"
 
         # Execute the SQL query and fetch the results
-        query_result = self._database.get_table_value(table, select_command)
+        query_result = self._Database.get_table_value(table, select_command)
 
         # Extract elements from tuples and flatten the list
         flattened_list = [item[0] for item in query_result]
@@ -901,7 +780,7 @@ class SecurityDevice:
                 current_policy_data["sec_policy_action"]
             )
 
-            self._database.insert_table_value('security_policies_table', insert_command, parameters)
+            self._Database.insert_table_value('security_policies_table', insert_command, parameters)
 
     def insert_into_network_address_objects_table(self, network_objects_data):
         """
@@ -955,7 +834,7 @@ class SecurityDevice:
             )
 
             # Execute the insert command with the specified values
-            self._database.insert_table_value('network_address_objects_table', insert_command, values)
+            self._Database.insert_table_value('network_address_objects_table', insert_command, values)
 
     def insert_into_network_address_object_groups_table(self, network_group_objects_data):
         """
@@ -1006,7 +885,7 @@ class SecurityDevice:
             )
 
             # Execute the insert command with the specified values
-            self._database.insert_table_value('network_address_object_groups_table', insert_command, values)
+            self._Database.insert_table_value('network_address_object_groups_table', insert_command, values)
 
     def insert_into_security_policy_containers_table(self, containers_data):
         """
@@ -1047,7 +926,7 @@ class SecurityDevice:
             )
 
             # Execute the insert command with the specified values
-            self._database.insert_table_value('security_policy_containers_table', insert_command, values)
+            self._Database.insert_table_value('security_policy_containers_table', insert_command, values)
 
     def insert_into_geolocation_table(self, geolocation_object_data):
         """
@@ -1103,7 +982,7 @@ class SecurityDevice:
             )
 
             # Execute the insert command with the specified values
-            self._database.insert_table_value('geolocation_objects_table', insert_command, values)
+            self._Database.insert_table_value('geolocation_objects_table', insert_command, values)
 
     def verify_duplicate(self, table, column, value):
         general_logger.info(f"Verifying duplicate in table {table}, column {column}, for value {value}.")
@@ -1122,7 +1001,7 @@ class SecurityDevice:
         select_command = "SELECT EXISTS(SELECT 1 FROM {} WHERE {} = %s);".format(table, column)
 
         # Execute the parameterized query and get the result
-        is_duplicate = self._database.get_table_value(table, select_command, (value,))
+        is_duplicate = self._Database.get_table_value(table, select_command, (value,))
         general_logger.info(f"Verified duplicate in table {table}, column {column}, for value {value}. Result is {is_duplicate}")
 
         # Return the result as a boolean
@@ -1179,7 +1058,7 @@ class SecurityDevice:
             )
 
             # Execute the insert command with the specified values
-            self._database.insert_table_value('port_objects_table', insert_command, values)
+            self._Database.insert_table_value('port_objects_table', insert_command, values)
 
     def insert_into_icmp_objects_table(self, icmp_object_data):
         """
@@ -1232,7 +1111,7 @@ class SecurityDevice:
             )
 
             # Execute the insert command with the specified values
-            self._database.insert_table_value('icmp_objects_table', insert_command, values)
+            self._Database.insert_table_value('icmp_objects_table', insert_command, values)
 
     def insert_into_port_object_groups_table(self, port_object_group_data):
         """
@@ -1282,7 +1161,7 @@ class SecurityDevice:
             )
 
             # Execute the insert command with the specified values
-            self._database.insert_table_value('port_object_groups_table', insert_command, values)
+            self._Database.insert_table_value('port_object_groups_table', insert_command, values)
 
     def insert_into_url_objects_table(self, url_objects_data):
         """
@@ -1329,7 +1208,7 @@ class SecurityDevice:
             )
 
             # Execute the insert command with the specified values
-            self._database.insert_table_value('url_objects_table', insert_command, values)
+            self._Database.insert_table_value('url_objects_table', insert_command, values)
 
     def insert_into_url_object_groups_table(self, url_object_group_data):
         """
@@ -1376,8 +1255,22 @@ class SecurityDevice:
             )
 
             # Execute the insert command with the specified values
-            self._database.insert_table_value('url_object_groups_table', insert_command, values)
+            self._Database.insert_table_value('url_object_groups_table', insert_command, values)
 
         def delete_security_device(self):
             pass
 
+class APISecurityDevice(SecurityDevice):
+    def __init__(self, user, database, password, host, port):
+        """
+        Initialize an API Security Device.
+
+        Args:
+            user (str): The username for the security device.
+            database (str): The database name for the security device.
+            password (str): The password for the security device.
+            host (str): The hostname of the security device.
+            port (int): The port number for connecting to the security device.
+        """
+        general_logger.debug(f"Called APISecurityDevice::__init__().")
+        super().__init__(user, database, password, host, port)
