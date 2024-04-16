@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from pkg.Container import SecurityPolicyContainer, ObjectContainer
+from pkg.Container.FMCContainer import FMCSecurityPolicyContainer, FMCObjectContainer
 from pkg.SecurityDevice.APISecurityDevice.APISecurityDeviceConnection import APISecurityDeviceConnection
 from pkg.DeviceObject.FMCDeviceObject import FMCObject, FMCNetworkGroupObject, FMCNetworkObject, FMCNetworkLiteralObject, \
 FMCPortObject, FMCICMPObject, FMCLiteralICMPObject, FMCPortGroupObject, FMCPortLiteralObject, FMCGeolocationObject, \
@@ -45,84 +45,6 @@ class FMCDeviceConnection(APISecurityDeviceConnection):
         # Implement connection to FMC specific to FMCDeviceConnection
         fmc_conn = fireREST.FMC(hostname=self._api_hostname, username=self._api_username, password=self._api_secret, domain=self._domain, protocol=self._api_port, timeout=30)
         return fmc_conn
-
-#TODO: maybe use setters for setting the values in here, and use the getters from the parent class to retrieve the info. just like you do for objects
-class FMCPolicyContainer(SecurityPolicyContainer):
-    """
-    Represents a policy container specific to the Firepower Management Center (FMC).
-    """
-
-    def __init__(self, container_info) -> None:
-        """
-        Initialize an FMCPolicyContainer instance.
-
-        Parameters:
-            container_info (dict): Information about the policy container.
-        """
-        super().__init__(container_info)
-
-    def get_parent_name(self):
-        """
-        Get the name of the parent policy.
-
-        Returns:
-            str: Name of the parent policy.
-        """
-        try:
-            return self._container_info['metadata']['parentPolicy']['name']
-        except KeyError:
-            return None
-
-    def is_child_container(self):
-        """
-        Check if the container is a child container.
-
-        Returns:
-            bool: True if the container is a child container, False otherwise.
-        """
-        return self._container_info['metadata']['inherit']
-
-    def get_name(self):
-        """
-        Get the name of the policy container.
-
-        Returns:
-            str: Name of the policy container.
-        """
-        return self._container_info['name']
-
-#TODO: maybe use setters for setting the values in here, and use the getters from the parent class to retrieve the info. just like you do for objects
-class FMCObjectContainer(ObjectContainer):
-    """
-    Represents an object container specific to the Firepower Management Center (FMC).
-    """
-
-    def __init__(self, container_info) -> None:
-        """
-        Initialize an FMCObjectContainer instance.
-
-        Parameters:
-            container_info (dict): Information about the object container.
-        """
-        super().__init__(container_info)
-
-    def is_child_container(self):
-        """
-        Check if the container is a child container.
-
-        Returns:
-            bool: Always returns False for FMC object containers.
-        """
-        return False
-
-    def get_parent_name(self):
-        """
-        Get the name of the parent container.
-
-        Returns:
-            None: Since FMC object containers do not have parent containers, it returns None.
-        """
-        return None
   
 class FMCSecurityDevice(SecurityDevice):
     """
@@ -179,14 +101,14 @@ class FMCSecurityDevice(SecurityDevice):
         """
         return FMCManagedDevice(managed_device_entry)
 
-    def return_container_object(self, container_name, container_type):
+    def create_container(self, container_name, container_type):
         match container_type:
             case 'security_policies_container':
                 # Retrieve ACP information from FMC device
                 acp_info = self._sec_device_connection.policy.accesspolicy.get(name=container_name)
                 # Initialize and return FMCPolicyContainer object
-                return FMCPolicyContainer(acp_info)
-            case 'object_container':
+                return FMCSecurityPolicyContainer(acp_info)
+            case 'objects_container':
                 container_info = 'DUMMY_CONTAINER'
                 dummy_container = FMCObjectContainer(container_info)
                 dummy_container.set_name("virtual_object_container")

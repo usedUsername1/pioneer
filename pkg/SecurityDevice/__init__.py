@@ -2,7 +2,6 @@ from abc import abstractmethod
 from pkg import PioneerDatabase, GeneralDataTable, SecurityPolicyContainersTable, NATPolicyContainersTable, ObjectContainersTable, SecurityPoliciesTable, \
 PoliciesHitcountTable, SecurityZonesTable, URLObjectsTable, URLObjectGroupsTable, NetworkAddressObjectsTable, NetworkAddressObjectGroupsTable, \
 GeolocationObjectsTable, PortObjectsTable, ICMPObjectsTable, PortObjectGroupsTable, ScheduleObjectsTable, ManagedDevicesTable, ManagedDevice
-
 import utils.helper as helper
 import json
 import sys
@@ -23,7 +22,6 @@ class SecurityDeviceDatabase(PioneerDatabase):
         Args:
             cursor: The cursor object for database operations.
         """
-        general_logger.debug(f"Called SecurityDeviceDatabase.__init__().")
         super().__init__(cursor)
         self._GeneralDataTable = GeneralDataTable(self)
         self._SecurityPolicyContainersTable = SecurityPolicyContainersTable(self)
@@ -40,7 +38,6 @@ class SecurityDeviceDatabase(PioneerDatabase):
         self._ManagedDevicesTable = ManagedDevicesTable(self)
 
     def create_security_device_tables(self):
-        general_logger.debug(f"Called SecurityDeviceDatabase.create_security_device_tables().")
         general_logger.info(f"Creating the PostgreSQL tables in device database.")
         self._GeneralDataTable.create()
         self._SecurityPolicyContainersTable.create()
@@ -106,6 +103,7 @@ class SecurityDeviceConnection:
         """
         pass
 
+
 class SecurityDevice:
     def __init__(self, name, sec_device_database):
         """
@@ -125,20 +123,16 @@ class SecurityDevice:
     def set_database(self, database):
         self._database = database
 
+    @abstractmethod
     def create_managed_device(self, managed_device_entry):
-        """
-        Create a ManagedDevice object based on the type of SecurityDevice.
+        pass
 
-        Args:
-            managed_device_entry: Entry containing information about the managed device.
-
-        Returns:
-            ManagedDevice: Instance of the appropriate ManagedDevice subclass.
-        """
-        return ManagedDevice(managed_device_entry)
+    @abstractmethod
+    def create_container(self, container_name, container_type, container_info):
+        pass
 
     #TODO: redocument this function
-    def get_containers_info_from_device_conn(self, containers_list, container_type):
+    def get_container_info_from_device_conn(self, containers_list, container_type):
         """
         Retrieve information about containers from the security device.
         The purpose of this function is to provide a flexible and robust mechanism for retrieving information about containers from a security device,
@@ -152,105 +146,49 @@ class SecurityDevice:
         Returns:
         - list: List of processed container information.
         """
-        general_logger.debug(f"Called SecurityDevice.get_containers_info_from_device_conn()")
         general_logger.info(f"################## Importing configuration of the device containers. Container type: <{container_type}> ##################")
-        processed_container_list = []
 
         for container_name in containers_list:
             try:
-                CurrentContainer = self.return_container_object(container_name, container_type)
+                CurrentContainer = self.create_container(container_name, container_type)
+                CurrentContainer.set_name()
+                CurrentContainer.set_parent()
 
-                general_logger.info(f"I am now processing the <{container_type}> container, name: <{CurrentContainer.get_name()}>")
-                general_logger.debug(f"Raw container info:  <{CurrentContainer.get_info()}>")
+                general_logger.info(f"I am now processing the <{container_type}> container, name: <{container_name}>")
                 # Check if the current container has parent containers
                 while CurrentContainer.is_child_container():
+                    CurrentContainer.set_name()
+
                     # Retrieve the parent container name
-                    parent_container_name = CurrentContainer.get_parent_name()
+                    parent_container_name = CurrentContainer.get_parent()
                     general_logger.info(f"<{CurrentContainer.get_name()}> is a CHILD container. Its parent is: <{parent_container_name}>.")
                     try:
                         # Retrieve the parent container object using the same retrieval function
-                        ParentContainer = self.return_container_object(parent_container_name, container_type)
+                        ParentContainer = self.create_container(parent_container_name, container_type)
 
                         # set the current's container parent
                         CurrentContainer.set_parent(ParentContainer)
-                        # Process the current container
-                        processed_current_container = CurrentContainer.process_container_info()
-                        general_logger.info(f"Processed container: <{CurrentContainer.get_name()}>")
-                        general_logger.debug(f"Processed container info is: <{processed_current_container}>.")
-                        processed_container_list.append(processed_current_container)
+                        # save the current container in the database
+                        CurrentContainer.save(self._database)
 
                         # Set the parent container as the current container for the next iteration
                         CurrentContainer = ParentContainer
                     except Exception as e:
-                        general_logger.error(f"Error retrieving parent container '{parent_container_name}': {e}")
+                        general_logger.error(f"Error retrieving parent container <{parent_container_name}>: <{e}>")
                         break  # Break out of the loop if there's an error retrieving the parent container
                 
                 # If we break out of the loop, then it means we reached the highest parent in the hierarchy
                 # We also need to get the data for it
                 else:
-                    general_logger.info(f"Finished processing all children. <{CurrentContainer.get_name()}> is the highest container in the parent-child hierarchy. Sending it for processing.")
-                    processed_current_container = CurrentContainer.process_container_info()
-                    general_logger.info(f"Finished processing container: <{CurrentContainer.get_name()}>.")
-                    general_logger.debug(f"Processed container info is: <{processed_current_container}>.")
-                    processed_container_list.append(processed_current_container)
+                    general_logger.info(f"Finished processing all children. <{CurrentContainer.get_name()}> is the highest container in the parent-child hierarchy.")
+                    CurrentContainer.save()
+        
             #TODO: this gets printed to the console two times. problem with the logger, print statement works just fine
             except Exception as err:
-                general_logger.error(f"Could not retrieve info regarding the container {container_name}. Reason: {err}.")
+                general_logger.error(f"Could not retrieve info regarding the container <{container_name}>. Reason: <{err}>")
                 sys.exit(1)
         
-        general_logger.info(f"I have finished completely processing <{container_type}> container, name: <{CurrentContainer.get_name()}> ")
-        return processed_container_list
-    
-    @abstractmethod
-    def return_security_policy_container_object(self):
-        """
-        Abstract method to return a security policy container object. This method is overridden by the implementation of a child SecurityDevice class.
-        """
-        pass
-
-    @abstractmethod
-    def get_device_version(self):
-        """
-        Abstract method to retrieve the version of the device's server. This method is overridden by the implementation of a child SecurityDevice class.
-        
-        Returns:
-            String: A string containing info about the platform on which the security device is running
-        """
-        pass
-
-    @abstractmethod
-    def return_security_policy_object(self):
-        """
-        Abstract method to return a security policy object. This method is overridden by the implementation of a child SecurityDevice class.
-        
-        Returns:
-            Object: A device-specifc security policy object.
-        """
-        pass
-    
-    #TODO: document this again
-    @abstractmethod
-    def return_container_object(self, container_name, container_type):
-        """
-        Abstract method to return an object container object. This method is overridden by the implementation of a child SecurityDevice class.
-
-        Args:
-            container_name (str): Name of the object container.
-
-        Returns:
-            Object: Object container object.
-        """
-        pass
-
-    @abstractmethod
-    def get_managed_devices_info(self):
-        """
-        Abstract method to retrieve information about managed devices. This method is overridden by the implementation of a child SecurityDevice class.
-
-        Returns:
-            list: List of dictionaries containing information about managed devices.
-        """
-        pass
+        general_logger.info(f"I have finished completely processing <{container_type}> container, name: <{container_name}>.")
 
     def get_device_version_from_device_conn(self):
         """
@@ -582,7 +520,6 @@ class SecurityDevice:
         pass
 
     def get_security_device_type_from_db(self):
-        general_logger.debug(f"Called SecurityDevice.get_security_device_type().")
         general_logger.info(f"Fetching the device type of device: <{self._name}>.")
         """
         Retrieve the security device type.
@@ -594,7 +531,6 @@ class SecurityDevice:
         return self._get_security_device_attribute('security_device_type')
 
     def get_security_device_hostname_from_db(self):
-        general_logger.debug(f"Called SecurityDevice.get_security_device_hostname_from_db().")
         general_logger.info(f"Fetching the hostname of {self._name}.")
         """
         Retrieve the security device hostname.
@@ -606,7 +542,6 @@ class SecurityDevice:
         return self._get_security_device_attribute('security_device_hostname')
 
     def get_security_device_username_from_db(self):
-        general_logger.debug(f"Called SecurityDevice.get_security_device_username_from_db().")
         general_logger.info(f"Fetching the username of device <{self._name}>.")
         """
         Retrieve the security device username.
@@ -618,7 +553,6 @@ class SecurityDevice:
         return self._get_security_device_attribute('security_device_username')
 
     def get_security_device_secret_from_db(self):
-        general_logger.debug(f"Called get_security_device_secret_from_db().")
         general_logger.info(f"Fetching the secret of <{self._name}>.")
         """
         Retrieve the security device secret.
@@ -630,7 +564,6 @@ class SecurityDevice:
         return self._get_security_device_attribute('security_device_secret')
 
     def get_security_device_domain_from_db(self):
-        general_logger.debug(f"Called SecurityDevice.get_security_device_domain_from_db().")
         general_logger.info(f"Fetching the domain of <{self._name}>.")
         """
         Retrieve the security device domain.
@@ -642,7 +575,6 @@ class SecurityDevice:
         return self._get_security_device_attribute('security_device_domain')
 
     def get_security_device_port_from_db(self):
-        general_logger.debug(f"Called SecurityDevice.get_security_device_port_from_db().")
         general_logger.info(f"Fetching the port of <{self._name}>.")
         """
         Retrieve the security device port.
@@ -654,7 +586,6 @@ class SecurityDevice:
         return self._get_security_device_attribute('security_device_port')
 
     def get_security_device_version_from_db(self):
-        general_logger.debug(f"Called SecurityDevice.get_security_device_version_from_db().")
         general_logger.info(f"Fetching the version of <{self._name}>.")
         """
         Retrieve the security device version.
@@ -666,7 +597,6 @@ class SecurityDevice:
         return self._get_security_device_attribute('security_device_version')
 
     def _get_security_device_attribute(self, attribute):
-        general_logger.debug(f"Called SecurityDevice._get_security_device_attribute().")
         """
         Retrieve a specific attribute of the security device.
 
@@ -684,7 +614,6 @@ class SecurityDevice:
     # the following functions process the data from the database. all the objects are processed, the unique values
     # are gathered and returned in a list that will be further processed by the program
     def get_db_objects(self, object_type):
-        general_logger.debug(f"Called SecurityDevice.get_policy_db_objects().")
         """
         Retrieve and return unique database objects based on the specified type.
 
@@ -873,47 +802,6 @@ class SecurityDevice:
 
         return flattened_list
 
-    def insert_into_security_policy_containers_table(self, containers_data):
-        """
-        Insert values into the 'security_policy_containers_table' table.
-
-        Parameters:
-        - containers_data (list): List of dictionaries containing security policy container information.
-
-        Returns:
-        None
-        """
-        for container_entry in containers_data:
-            # Extract data from the current security policy container entry
-            container_name = container_entry['security_policy_container_name']
-            container_parent = container_entry['security_policy_parent']
-
-            # Check for duplicates before insertion
-            if self.verify_duplicate('security_policy_containers_table', 'security_policy_container_name', container_name):
-                general_logger.warn(f"Duplicate entry for container: <{container_name}>. Skipping insertion.")
-                continue
-
-            # SQL command to insert data into the 'security_policy_containers_table'
-            insert_command = """
-                INSERT INTO security_policy_containers_table (
-                    security_device_name, 
-                    security_policy_container_name, 
-                    security_policy_container_parent
-                ) VALUES (
-                    %s, %s, %s
-                )
-            """
-
-            # Values to be inserted into the table
-            values = (
-                self._name,
-                container_name,
-                container_parent
-            )
-
-            # Execute the insert command with the specified values
-            self._database.insert_table_value('security_policy_containers_table', insert_command, values)
-
     def insert_into_security_policies_table(self, sec_policy_data):
         """
         Insert security policy data into the 'security_policies_table'.
@@ -1014,47 +902,6 @@ class SecurityDevice:
             )
 
             self._database.insert_table_value('security_policies_table', insert_command, parameters)
-
-    def insert_into_object_containers_table(self, containers_data):
-        """
-        Insert values into the 'object_containers_table' table.
-
-        Parameters:
-        - containers_data (list): List of dictionaries containing object container information.
-
-        Returns:
-        None
-        """
-        for container_entry in containers_data:
-            # Extract data from the current object container entry
-            container_name = container_entry['object_container_name']
-            container_parent = container_entry['object_container_parent']
-
-            # Check for duplicates before insertion
-            if self.verify_duplicate('object_containers_table', 'object_container_name', container_name):
-                general_logger.warn(f"Duplicate entry for object container: <{container_name}>. Skipping insertion.")
-                continue
-
-            # SQL command to insert data into the 'object_containers_table'
-            insert_command = """
-                INSERT INTO object_containers_table (
-                    security_device_name, 
-                    object_container_name, 
-                    object_container_parent
-                ) VALUES (
-                    %s, %s, %s
-                )
-            """
-
-            # Values to be inserted into the table
-            values = (
-                self._name,
-                container_name,
-                container_parent
-            )
-
-            # Execute the insert command with the specified values
-            self._database.insert_table_value('object_containers_table', insert_command, values)
 
     def insert_into_network_address_objects_table(self, network_objects_data):
         """
@@ -1533,4 +1380,4 @@ class SecurityDevice:
 
         def delete_security_device(self):
             pass
-        
+

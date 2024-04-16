@@ -55,16 +55,6 @@ class Container:
         general_logger.debug("Called Container::get_parent_name()")
         return self._parent.get_name()
 
-    def get_security_device_name(self):
-        """
-        Gets the name of the security device associated with the container.
-
-        Returns:
-            str: The name of the security device.
-        """
-        general_logger.debug("Called Container::get_security_device_name()")
-        return self._security_device_name
-
     @abstractmethod
     def process_container_info(self):
         """
@@ -82,15 +72,10 @@ class Container:
         """
         pass
 
-    def get_info(self):
-        """
-        Retrieves the information of a container info that is used to initialize the container.
-
-        Returns:
-            Any: Information related to the container.
-        """
-        general_logger.debug("Called Container::get_info()")
-        return self._container_info
+    
+    @abstractmethod
+    def save(self, database):
+        pass
 
 class SecurityPolicyContainer(Container):
     def __init__(self, container_info) -> None:
@@ -103,29 +88,6 @@ class SecurityPolicyContainer(Container):
         general_logger.debug("Called SecurityPolicyContainer::__init__()")
         super().__init__(container_info)
 
-    def process_container_info(self):
-        """
-        Processes the security policy container information.
-
-        Returns:
-            dict: Processed information about the security policy container.
-        """
-        general_logger.debug("Called SecurityPolicyContainer::process_container_info()")
-        try:
-            container_processed_info = {
-                'security_policy_container_name': self.get_name(),
-                'security_policy_parent': self.get_parent_name()
-            }
-        
-        # If the parent doesn't exist, then an Attribute Error exception will be raised
-        except AttributeError:
-            container_processed_info = {
-                'security_policy_container_name': self.get_name(),
-                'security_policy_parent': None
-            }
-
-        return container_processed_info
-
 class ObjectContainer(Container):
     def __init__(self, container_info) -> None:
         """
@@ -136,28 +98,6 @@ class ObjectContainer(Container):
         """
         general_logger.debug("Called ObjectPolicyContainer::__init__()")
         super().__init__(container_info)
-    
-    def process_container_info(self):
-        """
-        Processes the object policy container information.
-
-        Returns:
-            dict: Processed information about the object policy container.
-        """
-        general_logger.debug("Called ObjectPolicyContainer::process_container_info()")
-        try:
-            container_processed_info = {
-                'object_container_name': self.get_name(),
-                'object_container_parent': self.get_parent_name()
-            }
-        
-        except AttributeError:
-            container_processed_info = {
-                'object_container_name': self.get_name(),
-                'object_container_parent': None
-            }
-
-        return container_processed_info
 
 class NATPolicyContainer:
     pass
