@@ -3,26 +3,7 @@ from abc import abstractmethod
 
 general_logger = helper.logging.getLogger('general')
 special_policies_logger = helper.logging.getLogger('special_policies')
-# A problem faced at this step is that we can't create objects with the data we get, as the only thing
-# we can get and process is mainly a list with the objects that are defined on the policy
-# We could, for each object, retrieve all the data about it and process it, however, this would break the modularity
-# of the code. The code must be as modular as possible and perform only one operation at time, for as much as possible.
-# for example, the workflow is like this: extract all the info, insert it into the database, extract the info about the objects, insert it into the database, and so so on...
 
-# creating objects for each of the elements here at this point wouldn't scale really well, as we would have to have objects for security policies, nat policies and so on.
-# since the obejct data is stored differently in each one of them... wait, this will be set via the setter. but even so, the process method will need to be overriden
-# which means you'll end up having a shitload of classes for objects.
-# i think the best approach whould be to have processor functions for each of the different entity processed (sec policy, nat policy, routing, and other places where the objects are used)
-
-# what if i override the extract_object method based on the policy type? so like, i could have the xtract_object method implemented on the FMCSecurityPolicy class
-# in this way, i could keep a single processor function, and I will be able to extracft objects for different types of policies
-# extract object info could serve as a central place to hold different functions and it will extract objects based on the parameters passed in to the extract_object
-
-# what if i use objects and initialize them with the info you get from the policy you are processing?
-# then i would have somehting like SecurityPolicyObjects, NATPolicyObjects... RoutingObjects and so on... that would be a lot of classes to create and maintain
-# plus, they are not really different objects per se, it's just a different way of storing the info
-
-# in order to use process_objects and the other functions in other places, very simple: create a new class and put them in there
 class Rule:
     pass
 
@@ -57,7 +38,6 @@ class Policy:
         Args:
             policy_info (dict): Information about the policy.
         """
-        general_logger.debug("Called Policy::__init__()")
         self._policy_info = policy_info
         self._name = None
         self._source_zones = None
@@ -65,7 +45,7 @@ class Policy:
         self._container_name = None
         self._container_index = None
         self._status = None
-        self._policy_container = None
+        self._container = None
         self._description = None
         self._comments = None
         self._log_start = None
@@ -79,7 +59,6 @@ class Policy:
         Returns:
             Any: The policy information stored in the object.
         """
-        general_logger.debug("Called Policy::get_policy_info()")
         return self._policy_info
 
     def get_name(self):
@@ -89,7 +68,6 @@ class Policy:
         Returns:
             str: The name of the policy.
         """
-        general_logger.debug("Called Policy::get_name()")
         return self._name
 
     def set_name(self, name):
@@ -99,7 +77,6 @@ class Policy:
         Args:
             name (str): The name to set for the policy.
         """
-        general_logger.debug("Called Policy::set_name()")
         self._name = name
 
     def set_container_name(self, name):
@@ -109,7 +86,6 @@ class Policy:
         Args:
             name (str): The name of the container.
         """
-        general_logger.debug("Called Policy::set_container_name()")
         self._container_name = name
 
     def get_container_name(self):
@@ -119,7 +95,6 @@ class Policy:
         Returns:
             str: The name of the container.
         """
-        general_logger.debug("Called Policy::get_container_name()")
         return self._container_name
 
     def set_container_index(self, index):
@@ -129,7 +104,6 @@ class Policy:
         Args:
             index (int): The index of the container.
         """
-        general_logger.debug("Called Policy::set_container_index()")
         self._container_index = index
 
     def get_container_index(self):
@@ -139,7 +113,6 @@ class Policy:
         Returns:
             int: The index of the container.
         """
-        general_logger.debug("Called Policy::get_container_index()")
         return self._container_index
 
     def get_status(self):
@@ -149,7 +122,6 @@ class Policy:
         Returns:
             str: The status of the policy.
         """
-        general_logger.debug("Called Policy::get_status()")
         return self._status
 
     def set_status(self, status):
@@ -159,7 +131,6 @@ class Policy:
         Args:
             status (str): The status to set for the policy.
         """
-        general_logger.debug("Called Policy::set_status()")
         self._status = status
 
     def get_source_zones(self):
@@ -169,8 +140,7 @@ class Policy:
         Returns:
             list: List of source security zones.
         """
-        general_logger.debug("Called Policy::get_source_zones()")
-        return self.process_policy_objects('security_zone', 'source')
+        return self._source_zones
 
     def set_source_zones(self, source_zones):
         """
@@ -179,7 +149,6 @@ class Policy:
         Args:
             source_zones (list): List of source security zones.
         """
-        general_logger.debug("Called Policy::set_source_zones()")
         self._source_zones = source_zones
 
     def get_destination_zones(self):
@@ -189,8 +158,7 @@ class Policy:
         Returns:
             list: List of destination security zones.
         """
-        general_logger.debug("Called Policy::get_destination_zones()")
-        return self.process_policy_objects('security_zone', 'destination')
+        return self._destination_zones
 
     def set_destination_zones(self, destination_zones):
         """
@@ -199,7 +167,6 @@ class Policy:
         Args:
             destination_zones (list): List of destination security zones.
         """
-        general_logger.debug("Called Policy::set_destination_zones()")
         self._destination_zones = destination_zones
 
     def get_description(self):
@@ -209,7 +176,6 @@ class Policy:
         Returns:
             str: The description of the policy.
         """
-        general_logger.debug("Called Policy::get_description()")
         return self._description
 
     def set_description(self, description):
@@ -219,7 +185,6 @@ class Policy:
         Args:
             description (str): The description of the policy.
         """
-        general_logger.debug("Called Policy::set_description()")
         self._description = description
 
     def get_comments(self):
@@ -229,8 +194,7 @@ class Policy:
         Returns:
             str: The comments associated with the policy.
         """
-        general_logger.debug("Called Policy::get_comments()")
-        return self.process_policy_objects('comment', None)
+        return self._comments
 
     def set_comments(self, comments):
         """
@@ -239,7 +203,6 @@ class Policy:
         Args:
             comments (str): The comments associated with the policy.
         """
-        general_logger.debug("Called Policy::set_comments()")
         self._comments = comments
 
     def get_log_start(self):
@@ -249,7 +212,6 @@ class Policy:
         Returns:
             datetime: The start time for logging.
         """
-        general_logger.debug("Called Policy::get_log_start()")
         return self._log_start
 
     def set_log_start(self, log_start):
@@ -259,7 +221,6 @@ class Policy:
         Args:
             log_start (datetime): The start time for logging.
         """
-        general_logger.debug("Called Policy::set_log_start()")
         self._log_start = log_start
 
     def get_log_end(self):
@@ -269,7 +230,6 @@ class Policy:
         Returns:
             datetime: The end time for logging.
         """
-        general_logger.debug("Called Policy::get_log_end()")
         return self._log_end
 
     def set_log_end(self, log_end):
@@ -279,17 +239,15 @@ class Policy:
         Args:
             log_end (datetime): The end time for logging.
         """
-        general_logger.debug("Called Policy::set_log_end()")
         self._log_end = log_end
 
-    def get_processed_log_settings(self):
+    def get_log_settings(self):
         """
         Retrieve the logging settings for the policy.
 
         Returns:
             str: The logging settings for the policy.
         """
-        general_logger.debug("Called Policy::get_processed_log_settings()")
         return self._log_settings
 
     def set_log_setting(self, log_settings):
@@ -299,83 +257,8 @@ class Policy:
         Args:
             log_setting (str): The logging settings for the policy.
         """
-        general_logger.debug("Called Policy::set_log_setting()")
         self._log_settings = log_settings
     
-    # This function is responsible for processing the object info. Based on the object_type and on the flow_direction
-    # it will retrieve the raw information about the object_type and then extract the info from it.
-    # the raw information is retrieved and stored in a dictionary
-    def process_policy_objects(self, object_type, flow_direction):
-        """
-        Process security objects defined in the security policy.
-
-        This function retrieves and processes security objects based on the specified object type.
-
-        Args:
-            object_type (str): Type of security objects to process ('sourceObjects' or 'destinationObjects').
-            flow_direction (str): Direction of flow for which objects are being processed.
-
-        Returns:
-            list: List of processed security objects.
-        """
-        # Log debug message indicating the function has been called
-        general_logger.debug("Called Policy::process_policy_objects()")
-        
-        # Log information message indicating the start of processing for the specified object type
-        general_logger.info(f"################## Processing policy objects info, processing the following objects: <{object_type}> of policy: <{self._name}> ##################.")
-        
-        # Initialize an empty list to store processed security objects
-        processed_objects_list = []
-
-        # Check if a specific flow direction is provided
-        if flow_direction is not None:
-            # Log information message indicating the direction of flow being processed
-            general_logger.info(f"I am looking for <{flow_direction}> objects on policy: <{self._name}>.")
-        
-        # Retrieve raw objects information based on the specified object type and flow direction
-        raw_object_info = self.get_raw_policy_objects_info(object_type, flow_direction)
-
-        # Check if the raw_object_info list contains only the 'any' keyword or if the raw_object_info is 'None'
-        if raw_object_info == ['any'] or raw_object_info is None:
-            # Log information message indicating no explicit object defined, defaulting to 'any'
-            general_logger.info(f"No explicit <{object_type}> defined for flow <{flow_direction}> policy: <{self._name}>.")
-            # Return a list containing only 'any'
-            return ['any'] if raw_object_info == ['any'] else None
-        else:
-            # Log information message indicating the presence of defined objects for the specified object type and flow direction
-            general_logger.info(f"Found {object_type} objects defined for flow <{flow_direction}> policy: <{self._name}>.")
-            # Log debug message displaying the raw objects information
-            general_logger.debug(f"This is the {object_type} object's info: <{raw_object_info}>.")
-            
-        for raw_object_entry in raw_object_info:
-            # Log information message indicating the start of processing for the current raw object
-            general_logger.info(f"Processing raw info object entry: {raw_object_entry}.")
-            
-            # Extract information from the raw object
-            processed_objects_list = self.extract_policy_object_info(raw_object_entry, object_type)
-            
-            # Log information message indicating the processed object
-            general_logger.info(f"Finished processing object info for object type <{object_type}>.")
-            general_logger.debug(f"Processed info entry: <{processed_objects_list}>.")
-        
-        # Return the list of processed objects
-        return processed_objects_list
-
-    @abstractmethod
-    def extract_policy_object_info(raw_object, object_type):
-        """
-        This function is overridden in the Policy child class. It will extract all the necessary information about a single object of type object_type that is being passed to it. 
-
-        Args:
-            raw_object: The raw object from which information needs to be extracted.
-            object_type (str): The type of the object from which information is to be extracted.
-
-        Returns:
-            None
-        """
-        pass
-
-# TODO: continue doc here
 class SecurityPolicy(Policy):
     """
     Class representing a security policy.
@@ -409,7 +292,6 @@ class SecurityPolicy(Policy):
         Args:
             policy_info (dict): Information about the security policy.
         """
-        general_logger.debug("Called SecurityPolicy::__init__()")
         super().__init__(policy_info)
         self._category = None
         self._container_index = None
@@ -423,7 +305,7 @@ class SecurityPolicy(Policy):
         self._l7_apps = None
         self._section = None
         self._action = None
-    
+
     def set_category(self, category):
         """
         Set the category of the security policy.
@@ -458,7 +340,7 @@ class SecurityPolicy(Policy):
         Returns:
             list: List of source network objects.
         """
-        return self.process_policy_objects("network_address_object", "source")
+        return self._source_networks
 
     def set_destination_networks(self, destination_networks):
         """
@@ -476,7 +358,7 @@ class SecurityPolicy(Policy):
         Returns:
             list: List of destination network objects.
         """
-        return self.process_policy_objects("network_address_object", "destination")
+        return self._destination_networks
 
     def set_source_ports(self, source_ports):
         """
@@ -494,7 +376,7 @@ class SecurityPolicy(Policy):
         Returns:
             list: List of source port objects.
         """
-        return self.process_policy_objects("port_object", "source")
+        return self._source_ports
 
     def set_destination_ports(self, destination_ports):
         """
@@ -512,7 +394,7 @@ class SecurityPolicy(Policy):
         Returns:
             list: List of destination port objects.
         """
-        return self.process_policy_objects("port_object", "destination")
+        return self._destination_ports
 
     def set_schedule_objects(self, schedule_objects):
         """
@@ -530,7 +412,7 @@ class SecurityPolicy(Policy):
         Returns:
             list: List of schedule objects.
         """
-        return self.process_policy_objects("schedule_object", None)
+        return self._schedule_objects
 
     def set_users(self, users):
         """
@@ -548,7 +430,7 @@ class SecurityPolicy(Policy):
         Returns:
             list: List of user objects.
         """
-        return self.process_policy_objects("user_object", None)
+        return self._users
 
     def set_urls(self, urls):
         """
@@ -566,7 +448,7 @@ class SecurityPolicy(Policy):
         Returns:
             list: List of URL objects.
         """
-        return self.process_policy_objects("url_object", None)
+        return self._url_objects
 
     def set_policy_apps(self, policy_apps):
         """
@@ -584,7 +466,7 @@ class SecurityPolicy(Policy):
         Returns:
             list: List of Layer 7 application objects.
         """
-        return self.process_policy_objects("l7_app_object", None)
+        return self._l7_apps
 
     def set_section(self, section):
         """
@@ -622,129 +504,39 @@ class SecurityPolicy(Policy):
         """
         return self._action
 
-    def get_raw_policy_objects_info(self, object_type, flow_direction):
-        """
-        Retrieve raw objects information based on the specified object type and flow direction.
-
-        This method retrieves raw objects information from the respective attribute based on the provided object type
-        and flow direction.
-
-        Args:
-            object_type (str): Type of object to retrieve information for ('security_zone', 'network_address_object', 
-                            'port_object', 'user_object', 'schedule_object', 'url_objects', 'l7_app_object').
-            flow_direction (str): Direction of flow for which objects are being retrieved ('source' or 'destination').
-
-        Returns:
-            list: List of raw objects information based on the specified object type and flow direction.
-        """
-        raw_objects = []
-
-        # Determine the attribute to retrieve raw objects from based on object type and flow direction
-        if flow_direction == 'source':
-            if object_type == 'security_zone':
-                raw_objects = self._source_zones
-            elif object_type == 'network_address_object':
-                raw_objects = self._source_networks
-            elif object_type == 'port_object':
-                raw_objects = self._source_ports
-        elif flow_direction == 'destination':
-            if object_type == 'security_zone':
-                raw_objects = self._destination_zones
-            elif object_type == 'network_address_object':
-                raw_objects = self._destination_networks
-            elif object_type == 'port_object':
-                raw_objects = self._destination_ports
-        else:
-            if object_type == 'user_object':
-                raw_objects = self._users
-            elif object_type == 'schedule_object':
-                raw_objects = self._schedule_objects
-            elif object_type == 'url_object':
-                raw_objects = self._url_objects
-            elif object_type == 'l7_app_object':
-                raw_objects = self._l7_apps
-            elif object_type == 'comment':
-                raw_objects = self._comments
-
-        return raw_objects
-
-    def process_policy_info(self):
-        """
-        Process and extract information for a single security policy.
-
-        This method processes the raw information of a security policy and extracts relevant details 
-        to be inserted into the database.
-
-        Returns:
-            dict: A dictionary containing information about the security policy.
-        """
-        general_logger.debug("Called SecurityPolicy::process_sec_policy_info()")
-        
-        # Setters are necessary because the objects' attributes are not set upon their creation. We can only get this data after we construct the object with the data from the security device.
+    def set_attributes(self):
         self.set_name()
-        self.set_container_name()
-        self.set_container_index()
-        
-        # Log information about the security policy being processed
-        general_logger.info(f"\n\n################## PROCESSING SECURITY POLICY: <{self._name}>. CONTAINER: <{self._container_name}>. RULE INDEX: <{self._container_index}>.##################")
-        general_logger.debug(f"Security policy raw data: {self._policy_info}")
-
-        self.set_status()
-        self.set_category()
         self.set_source_zones()
         self.set_destination_zones()
+        self.set_container_name()
+        self.set_container_index()
+        self.set_status()
+        self.set_description()
+        self.set_comments()
+        self.set_log_start()
+        self.set_log_end()
+        self.set_log_setting()
+        self.set_category()
+        self.set_container_index()
         self.set_source_networks()
         self.set_destination_networks()
         self.set_source_ports()
         self.set_destination_ports()
         self.set_schedule_objects()
-        self.set_users()
         self.set_urls()
+        self.set_users()
         self.set_policy_apps()
-        self.set_description()
-        self.set_comments()
-        self.set_log_setting()
-        self.set_log_start()
-        self.set_log_end()
         self.set_section()
         self.set_action()
-        # if the policy has any of the following parameters: schedule, users, url categories with rep or l7 apps, 
-        # create a new log line and put it in the file logging the special policies
-        # the extractor functions are called by processor functions which are called by the get functions
-        if 'any' not in self._users or 'any' not in self._schedule_objects or 'any' not in self._url_objects or 'any' not in self._l7_apps:
-            special_policies_logger.info(f"\nPolicy: <{self._name}> in container: <{self._container_name}>, index: <{self._container_index}> has parameters that require your attention!")
 
-        # Construct the processed policy entry dictionary
-        processed_policy_entry = {
-            "sec_policy_name": self.get_name(),
-            "sec_policy_container_name": self.get_container_name(),
-            "security_policy_index": self.get_container_index(),
-            "sec_policy_category": self.get_category(),
-            "sec_policy_status": self.get_status(),
-            "sec_policy_source_zones": self.get_source_zones(),
-            "sec_policy_destination_zones": self.get_destination_zones(),
-            "sec_policy_source_networks": self.get_source_networks(),
-            "sec_policy_destination_networks": self.get_destination_networks(),
-            "sec_policy_source_ports": self.get_source_ports(),
-            "sec_policy_destination_ports": self.get_destination_ports(),
-            "sec_policy_schedules": self.get_schedule_objects(),
-            "sec_policy_users": self.get_users(),
-            "sec_policy_urls": self.get_urls(),
-            "sec_policy_apps": self.get_policy_apps(),
-            "sec_policy_description": self.get_description(),
-            "sec_policy_comments": self.get_comments(),
-            "sec_policy_log_settings": self.get_processed_log_settings(),
-            "sec_policy_log_start": self.get_log_start(),
-            "sec_policy_log_end": self.get_log_end(),
-            "sec_policy_section": self.get_section(),
-            "sec_policy_action": self.get_action(),
-        }
-
-        # Log information about the processed policy entry
-        general_logger.info(f"Processed security policy: <{self._name}>.")
-        general_logger.debug(f"Processed security policy data: <{processed_policy_entry}>.")
-                            
-        return processed_policy_entry
+    def save(self, Database):
+        SecurityPoliciesTable = Database.get_security_policies_table()
+        SecurityPoliciesTable.insert(self.get_name(), self.get_container_name(), self.get_container_index(), self.get_category(),
+        self.get_status(), self.get_source_zones(), self.get_destination_zones(), self.get_source_networks(),
+        self.get_destination_networks(), self.get_source_ports(), self.get_destination_ports(), self.get_schedule_objects(), self.get_users(),
+        self.get_urls(), self.get_policy_apps(), self.get_description(),
+        self.get_comments(), self.get_log_settings(), self.get_log_start(), self.get_log_end(),
+        self.get_section(), self.get_action())
 
 class NATPolicy:
     pass

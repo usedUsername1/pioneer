@@ -30,8 +30,12 @@ class ManagedDevice():
     def set_cluster(self, cluster):
         self._cluster = cluster
     
-    def save(self, database):
-        # get the table with the ManagedDevices
-        ManagedDevicesTable = database.get_managed_devices_table()
-        ManagedDevicesTable.insert(self._name, self._assigned_security_policy_container, self._hostname, self._cluster)
-        # insert the info in the table
+    def set_attributes(self):
+        self.set_name()
+        self.set_assigned_security_policy_container()
+        self.set_hostname()
+        self.set_cluster()
+
+    def save(self, Database):
+        ManagedDevicesTable = Database.get_managed_devices_table()
+        ManagedDevicesTable.insert(self.get_name(), self.get_assigned_security_policy_container(), self.get_hostname(), self.get_cluster())

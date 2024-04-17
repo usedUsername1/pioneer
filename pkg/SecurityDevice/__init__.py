@@ -115,15 +115,32 @@ class SecurityDevice:
     def set_database(self, Database):
         self._Database = Database
 
-    @abstractmethod
-    def create_managed_device(self, managed_device_entry):
-        pass
+    def create_container(self, container_name, container_type):
+        match container_type:
+            case "security_policies_container":
+                container = self.return_security_policy_container(container_name)
+            case "objects_container":
+                container = self.return_objects_container()
+        
+        return container
 
-    @abstractmethod
-    def create_container(self, container_name, container_type, container_info):
-        pass
+    def get_policy_info(self, container_name, policy_type):
+        policy_info = None
+        match policy_type:
+            case 'security_policy':
+                policy_info = self.return_security_policies_info(container_name)
+            # case 'nat_policy':
+            #     policy_info = self.return_nat_policy_info()
+        
+        return policy_info
 
-    #TODO: redocument this function
+    def create_policy(self, policy_type, policy_entry):
+        match policy_type:
+            case 'security_policy':
+                policy = self.create_security_policy(policy_entry)
+        
+        return policy
+
     def get_container_info_from_device_conn(self, containers_list, container_type):
         """
         Retrieve information about containers from the security device.
@@ -211,50 +228,31 @@ class SecurityDevice:
             # Exit the program with status code 1 indicating a critical error
             sys.exit(1)
 
-    def get_policy_info_from_device_conn(self, policy_type, sec_policy_containers_list):
+    def get_policy_info_from_device_conn(self, policy_type, policy_containers_list):
         """
         Retrieve information about policies from the specified policy containers.
 
         Args:
-            sec_policy_containers_list (list): List of policy container names.
+            policy_containers_list (list): List of policy container names.
 
         Returns:
             list: List of dictionaries containing information about policies.
         """
-        # Log a debug message indicating that the function is called
-        # Log an informational message indicating that policy info configuration is being imported
-
-
-        # Define a dictionary to map container types to their corresponding retrieval functions
-        policy_type_mapping = {
-            'security_policy': self.return_security_policy_object,
-            # 'nat_policy': self.return_object_container_object
-        }
-        general_logger.info(f"################## Importing policy info configuration. Policy type is <{policy_type}>. ##################")
-        # Initialize an empty list to store processed policy information
-        processed_policy_info = []
-        
-        policy_retriever_function = policy_type_mapping.get(policy_type)
+        general_logger.info(f"################## Importing <{policy_type}>. ##################")
         # Iterate over each policy container name in the provided list
-        for sec_policy_container_name in sec_policy_containers_list:
-            # Log an informational message indicating the processing of policies for the current container
-            general_logger.info(f"Processing policies, type <{policy_type}> of the following container: <{sec_policy_container_name}>.")
-            
-            # Retrieve raw policy objects from the specified container
-            raw_policy_objects_list = policy_retriever_function(sec_policy_container_name)
+        for policy_container in policy_containers_list:
+            policy_info = self.get_policy_info(policy_container, policy_type)
+            # now loop through the policy info
+            for policy_entry in policy_info:
+                # and create the policy object
+                Policy = self.create_policy(policy_type, policy_entry)
+                
+                # set the attributes of the policy
+                Policy.set_attributes()
 
-            # Iterate over each raw policy object
-            for RawPolicyObject in raw_policy_objects_list:
-                # Process the raw policy object to extract relevant information
-                processed_sec_policy_entry = RawPolicyObject.process_policy_info()
-                # Append the processed policy entry to the list
-                processed_policy_info.append(processed_sec_policy_entry)
+                # save the policy data in the database
+                Policy.save(self._Database)
 
-        # Return the list of processed policy information
-        return processed_policy_info
-
-    #TODO: this needs to be modified when ManagedDevice class will be implemented. maybe move it to the geT_objecT_info()
-    # maybe also move the get_policy_info_from_device_conn() and have only a single function
     def get_managed_devices_info_from_device_conn(self):
         """
         Retrieve information about managed devices.
@@ -278,12 +276,8 @@ class SecurityDevice:
         for managed_device_entry in managed_devices_info:
             # return an object here for each of the entries
             ManagedDeviceObj = self.create_managed_device(managed_device_entry)
-
             # set all the attributes of the object
-            ManagedDeviceObj.set_name()
-            ManagedDeviceObj.set_assigned_security_policy_container()
-            ManagedDeviceObj.set_hostname()
-            ManagedDeviceObj.set_cluster()
+            ManagedDeviceObj.set_attributes()
             # save it in the database
             ManagedDeviceObj.save(self._Database)
     
@@ -377,6 +371,10 @@ class SecurityDevice:
         # Return the dictionary of processed objects
         return [processed_objects_dict]
 
+    @abstractmethod
+    def create_managed_device(self, managed_device_entry):
+        pass
+
     # call the implementations of create_network_objects, create_port_objects, create_url_objects
     #TODO: uncomment all when done testing
     def migrate_config(self, SourceDevice):
@@ -416,79 +414,6 @@ class SecurityDevice:
 
     def get_general_data(self, column, name_col=None, val=None, order_param=None):
         return self._Database.get_general_data_table().get(column, name_col, val, order_param)[0][0]
-
-    @abstractmethod
-    def fetch_objects_info(self, object_type):
-        pass
-
-    @abstractmethod
-    def return_network_objects(self):
-        """
-        Abstract method to return network objects. This method is overridden by the implementation of a child SecurityDevice class.
-
-        Returns:
-            list: List of processed network objects.
-        """
-        pass
-
-    @abstractmethod
-    def return_port_objects(self):
-        """
-        Abstract method to return port objects. This method is overridden by the implementation of a child SecurityDevice class.
-
-        Returns:
-            list: List of processed port objects.
-        """
-        pass
-    
-    @abstractmethod
-    def return_schedule_objects(self):
-        """
-        Abstract method to return schedule objects. This method is overridden by the implementation of a child SecurityDevice class.
-
-        Returns:
-            list: List of processed schedule objects.
-        """
-        pass
-
-    @abstractmethod
-    def return_policy_users(self):
-        """
-        Abstract method to return policy users. This method is overridden by the implementation of a child SecurityDevice class.
-
-        Returns:
-            list: List of processed policy users.
-        """
-        pass
-
-    @abstractmethod
-    def return_url_objects(self):
-        """
-        Abstract method to return URL objects. This method is overridden by the implementation of a child SecurityDevice class.
-
-        Returns:
-            list: List of processed URL objects.
-        """
-        pass
-
-    @abstractmethod
-    def return_app_objects(self):
-        """
-        Abstract method to return application objects. This method is overridden by the implementation of a child SecurityDevice class.
-
-        Returns:
-            list: List of processed application objects.
-        """
-        pass
-
-    #TODO: doc this
-    @abstractmethod
-    def print_compatibility_issues(self):
-        pass
-    
-    @abstractmethod
-    def map_containers(self):
-        pass
 
     # the following functions process the data from the database. all the objects are processed, the unique values
     # are gathered and returned in a list that will be further processed by the program
@@ -680,107 +605,6 @@ class SecurityDevice:
             flattened_list.remove('any')
 
         return flattened_list
-
-    def insert_into_security_policies_table(self, sec_policy_data):
-        """
-        Insert security policy data into the 'security_policies_table'.
-
-        Parameters:
-        - sec_policy_data (list): List of dictionaries containing security policy information.
-
-        Returns:
-        None
-        """
-        # Loop through the security policy data, extract it, and then insert it into the table
-        for current_policy_data in sec_policy_data:
-            current_policy_name = current_policy_data["sec_policy_name"]
-            
-            # Check for duplicates before insertion
-            if self.verify_duplicate('security_policies_table', 'security_policy_name', current_policy_name):
-                general_logger.warn(f"Duplicate entry for security policy: <{current_policy_name}>. Skipping insertion.")
-                continue
-
-            formatted_security_policy_source_zones = "{" + ",".join(current_policy_data["sec_policy_source_zones"]) + "}"
-            formatted_security_policy_destination_zones = "{" + ",".join(current_policy_data["sec_policy_destination_zones"]) + "}"
-            formatted_security_policy_source_networks = "{" + ",".join(current_policy_data["sec_policy_source_networks"]) + "}"
-            formatted_security_policy_destination_networks = "{" + ",".join(current_policy_data["sec_policy_destination_networks"]) + "}"
-            formatted_security_policy_source_ports = "{" + ",".join(current_policy_data["sec_policy_source_ports"]) + "}"
-            formatted_security_policy_destination_ports = "{" + ",".join(current_policy_data["sec_policy_destination_ports"]) + "}"
-            formatted_security_policy_schedules = "{" + ",".join(current_policy_data["sec_policy_schedules"]) + "}"
-            formatted_security_policy_users = "{" + ",".join(current_policy_data["sec_policy_users"]) + "}"
-            formatted_security_policy_urls = "{" + ",".join(current_policy_data["sec_policy_urls"]) + "}"
-            formatted_security_policy_l7_apps = "{" + ",".join(current_policy_data["sec_policy_apps"]) + "}"
-            comments = current_policy_data["sec_policy_comments"]
-
-            # # TODO: not sure this is the most optimal solution, maybe retrieve all the comments in a list, without dictionaries
-            if comments is not None:
-                # Convert each dictionary to a JSON string and escape double quotes for SQL
-                comments_as_json_strings = ['"' + json.dumps(comment).replace('"', '\\"') + '"' for comment in comments]
-                # Join the strings into a PostgreSQL array format
-                formatted_security_policy_comments = "{" + ",".join(comments_as_json_strings) + "}"
-            else:
-                # Set formatted_security_policy_comments to None when comments is None
-                formatted_security_policy_comments = None
-
-            formatted_security_policy_log_setting = "{" + ",".join(current_policy_data["sec_policy_log_settings"]) + "}"
-
-            insert_command = """
-                INSERT INTO security_policies_table (
-                    security_device_name, 
-                    security_policy_name, 
-                    security_policy_container_name,
-                    security_policy_index, 
-                    security_policy_category, 
-                    security_policy_status, 
-                    security_policy_source_zones, 
-                    security_policy_destination_zones, 
-                    security_policy_source_networks, 
-                    security_policy_destination_networks, 
-                    security_policy_source_ports, 
-                    security_policy_destination_ports, 
-                    security_policy_schedules, 
-                    security_policy_users, 
-                    security_policy_urls, 
-                    security_policy_l7_apps, 
-                    security_policy_description, 
-                    security_policy_comments, 
-                    security_policy_log_setting, 
-                    security_policy_log_start, 
-                    security_policy_log_end, 
-                    security_policy_section, 
-                    security_policy_action
-                ) VALUES (
-                    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
-                )
-            """
-            # Use a tuple to pass parameters to the execute method
-            parameters = (
-                self._name,
-                current_policy_name,
-                current_policy_data["sec_policy_container_name"],
-                current_policy_data["security_policy_index"],
-                current_policy_data["sec_policy_category"],
-                current_policy_data["sec_policy_status"],
-                formatted_security_policy_source_zones,
-                formatted_security_policy_destination_zones,
-                formatted_security_policy_source_networks,
-                formatted_security_policy_destination_networks,
-                formatted_security_policy_source_ports,
-                formatted_security_policy_destination_ports,
-                formatted_security_policy_schedules,
-                formatted_security_policy_users,
-                formatted_security_policy_urls,
-                formatted_security_policy_l7_apps,
-                current_policy_data["sec_policy_description"],
-                formatted_security_policy_comments,
-                formatted_security_policy_log_setting,
-                current_policy_data["sec_policy_log_start"],
-                current_policy_data["sec_policy_log_end"],
-                current_policy_data["sec_policy_section"],
-                current_policy_data["sec_policy_action"]
-            )
-
-            self._Database.insert_table_value('security_policies_table', insert_command, parameters)
 
     def insert_into_network_address_objects_table(self, network_objects_data):
         """

@@ -268,6 +268,7 @@ class ObjectContainersTable(PioneerTable):
             ("CONSTRAINT fk_security_device FOREIGN KEY (security_device_name)", "REFERENCES general_security_device_data (name)")
         ]
 
+#TODO: find out what to do with regions and url categories.
 class SecurityPoliciesTable(PioneerTable):
     def __init__(self, database):
         super().__init__(database)
@@ -282,14 +283,11 @@ class SecurityPoliciesTable(PioneerTable):
             ("destination_zones", "TEXT[] NOT NULL"),
             ("source_networks", "TEXT[] NOT NULL"),
             ("destination_networks", "TEXT[] NOT NULL"),
-            ("source_regions", "TEXT[] NOT NULL"),
-            ("destination_regions", "TEXT[] NOT NULL"),
             ("source_ports", "TEXT[] NOT NULL"),
             ("destination_ports", "TEXT[] NOT NULL"),
             ("schedules", "TEXT[] NOT NULL"),
             ("users", "TEXT[] NOT NULL"),
             ("urls", "TEXT[] NOT NULL"),
-            ("url_categories", "TEXT[] NOT NULL"),
             ("l7_apps", "TEXT[] NOT NULL"),
             ("description", "TEXT"),
             ("comments", "TEXT[]"),
@@ -298,7 +296,7 @@ class SecurityPoliciesTable(PioneerTable):
             ("log_end", "BOOLEAN NOT NULL"),
             ("section", "TEXT"),
             ("action", "TEXT"),
-            ("CONSTRAINT fk_security_policy_container FOREIGN KEY(name)", "REFERENCES security_policy_containers(name)")
+            ("CONSTRAINT fk_security_policy_container FOREIGN KEY(security_policy_container_name)", "REFERENCES security_policy_containers(name)")
         ]
 
 class PoliciesHitcountTable(PioneerTable):
@@ -315,8 +313,8 @@ class PoliciesHitcountTable(PioneerTable):
             ("nat_policy_hitcount", "INTEGER"),
             ("nat_policy_last_hit", "TIMESTAMP"),
             ("assigned_device_name", "TEXT NOT NULL"),
-            ("CONSTRAINT fk_security_policy_container FOREIGN KEY(name)", "REFERENCES security_policy_containers(name)"),
-            ("CONSTRAINT fk_nat_policy_container_name FOREIGN KEY(name)", "REFERENCES nat_policy_containers(name)")
+            ("CONSTRAINT fk_security_policy_container FOREIGN KEY(security_policy_container_name)", "REFERENCES security_policy_containers(name)"),
+            ("CONSTRAINT fk_nat_policy_container_name FOREIGN KEY(nat_policy_container_name)", "REFERENCES nat_policy_containers(name)")
         ]
 
 class SecurityZonesTable(PioneerTable):
@@ -341,7 +339,7 @@ class URLObjectsTable(PioneerTable):
             ("object_container", "TEXT NOT NULL"),
             ("url_value", "TEXT"),
             ("url_object_description", "TEXT"),
-            ("CONSTRAINT fk_object_container FOREIGN KEY(name)", "REFERENCES object_containers(name)")
+            ("CONSTRAINT fk_object_container FOREIGN KEY(object_container)", "REFERENCES object_containers(name)")
         ]
 
 class URLObjectGroupsTable(PioneerTable):
@@ -353,7 +351,7 @@ class URLObjectGroupsTable(PioneerTable):
             ("object_container", "TEXT NOT NULL"),
             ("members", "TEXT[]"),
             ("description", "TEXT"),
-            ("CONSTRAINT fk_object_container FOREIGN KEY(name)", "REFERENCES object_containers(name)")
+            ("CONSTRAINT fk_object_container FOREIGN KEY(object_container)", "REFERENCES object_containers(name)")
         ]
 
 class NetworkAddressObjectsTable(PioneerTable):
@@ -367,7 +365,7 @@ class NetworkAddressObjectsTable(PioneerTable):
             ("description", "TEXT"),
             ("type", "TEXT"),
             ("overridable_object", "BOOLEAN NOT NULL"),
-            ("CONSTRAINT fk_object_container FOREIGN KEY(name)", "REFERENCES object_containers(name)")
+            ("CONSTRAINT fk_object_container FOREIGN KEY(object_container)", "REFERENCES object_containers(name)")
         ]
 
 class NetworkAddressObjectGroupsTable(PioneerTable):
@@ -380,7 +378,7 @@ class NetworkAddressObjectGroupsTable(PioneerTable):
             ("members", "TEXT[]"),
             ("description", "TEXT"),
             ("overridable_object", "BOOLEAN NOT NULL"),
-            ("CONSTRAINT fk_object_container FOREIGN KEY(name)", "REFERENCES object_containers(name)")
+            ("CONSTRAINT fk_object_container FOREIGN KEY(object_container)", "REFERENCES object_containers(name)")
         ]
         
 class GeolocationObjectsTable(PioneerTable):
@@ -395,9 +393,10 @@ class GeolocationObjectsTable(PioneerTable):
             ("countries_alpha2_codes", "TEXT[]"),
             ("countries_alpha3_codes", "TEXT[]"),
             ("countries_numeric_codes", "TEXT[]"),
-            ("CONSTRAINT fk_object_container FOREIGN KEY(name)", "REFERENCES object_containers(name)")
+            ("CONSTRAINT fk_object_container FOREIGN KEY(object_container)", "REFERENCES object_containers(name)")
         ]
 
+#TODO: source_port and destination_ports are needed here
 class PortObjectsTable(PioneerTable):
     def __init__(self, database):
         super().__init__(database)
@@ -409,7 +408,7 @@ class PortObjectsTable(PioneerTable):
             ("number", "TEXT"),
             ("description", "TEXT"),
             ("overridable_object", "BOOLEAN NOT NULL"),
-            ("CONSTRAINT fk_object_container FOREIGN KEY(name)", "REFERENCES object_containers(name)")
+            ("CONSTRAINT fk_object_container FOREIGN KEY(object_container)", "REFERENCES object_containers(name)")
         ]
 
 class ICMPObjectsTable(PioneerTable):
@@ -423,7 +422,7 @@ class ICMPObjectsTable(PioneerTable):
             ("code", "TEXT"),
             ("description", "TEXT"),
             ("overridable_object", "BOOLEAN NOT NULL"),
-            ("CONSTRAINT fk_object_container FOREIGN KEY(name)", "REFERENCES object_containers(name)")
+            ("CONSTRAINT fk_object_container FOREIGN KEY(object_container)", "REFERENCES object_containers(name)")
         ]
 
 class PortObjectGroupsTable(PioneerTable):
@@ -436,7 +435,7 @@ class PortObjectGroupsTable(PioneerTable):
             ("members", "TEXT[]"),
             ("description", "TEXT"),
             ("overridable_object", "BOOLEAN NOT NULL"),
-            ("CONSTRAINT fk_object_container FOREIGN KEY(name)", "REFERENCES object_containers(name)")
+            ("CONSTRAINT fk_object_container FOREIGN KEY(object_container)", "REFERENCES object_containers(name)")
         ]
 
 class ScheduleObjectsTable(PioneerTable):
@@ -457,18 +456,21 @@ class ScheduleObjectsTable(PioneerTable):
             ("week_day", "TEXT"),
             ("week_day_start", "TEXT"),
             ("week_day_end", "TEXT"),
-            ("CONSTRAINT fk_object_container FOREIGN KEY(name)", "REFERENCES object_containers(name)")
+            ("CONSTRAINT fk_object_container FOREIGN KEY(object_container)", "REFERENCES object_containers(name)")
         ]
 
+#TODO: add FK referencing security_device_name
 class ManagedDevicesTable(PioneerTable):
     def __init__(self, database):
         super().__init__(database)
         self._name = "managed_devices"
         self._table_columns = [
             ("name", "TEXT PRIMARY KEY"),
+#            ("security_device_name", "TEXT")
             ("assigned_security_policy_container", "TEXT"),
             ("hostname", "TEXT"),
             ("cluster", "TEXT")
+            # ("CONSTRAINT fk_object_container FOREIGN KEY(security_device_name)", "REFERENCES general_security_device_data (name)")
         ]
 
 

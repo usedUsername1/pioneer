@@ -67,43 +67,23 @@ class FMCSecurityDevice(SecurityDevice):
         """
         return FMCManagedDevice(managed_device_entry)
 
-    def create_container(self, container_name, container_type):
-        match container_type:
-            case 'security_policies_container':
-                # Retrieve ACP information from FMC device
-                acp_info = self._SecurityDeviceConnection.policy.accesspolicy.get(name=container_name)
-                # Initialize and return FMCPolicyContainer object
-                return FMCSecurityPolicyContainer(acp_info)
-            case 'objects_container':
-                container_info = 'DUMMY_CONTAINER'
-                dummy_container = FMCObjectContainer(container_info)
-                dummy_container.set_name("virtual_object_container")
-                dummy_container.set_parent(None)
-                return dummy_container
-            
-    def return_security_policy_object(self, container_name):
-        """
-        Returns a list of security policy objects.
+    def return_security_policy_container(self, container_name):
+        acp_info = self._SecurityDeviceConnection.policy.accesspolicy.get(name=container_name)
+        return FMCSecurityPolicyContainer(acp_info)
 
-        Args:
-            container_name (str): The name of the container.
-
-        Returns:
-            list: A list of FMCSecurityPolicy objects.
-        """
-        # Initialize an empty list to store FMCSecurityPolicy objects
-        security_policy_objects = []
-
-        # Retrieve security policy information from FMC device using the provided container name
-        fmc_policy_info = self._SecurityDeviceConnection.policy.accesspolicy.accessrule.get(container_name=container_name)
-
-        # Iterate through each policy entry retrieved from the FMC device
-        for fmc_policy_entry in fmc_policy_info:
-            # Create an instance of FMCSecurityPolicy using the policy entry and append it to the list
-            security_policy_objects.append(FMCSecurityPolicy(fmc_policy_entry))
-        
-        # Return the list of FMCSecurityPolicy objects
-        return security_policy_objects
+    def return_objects_container(self):
+        container_info = "DUMMY_CONTAINER"
+        dummy_container = FMCObjectContainer(container_info)
+        dummy_container.set_name("virtual_object_container")
+        dummy_container.set_parent(None)
+        return dummy_container
+    
+    def get_policies_info(self, policy_type):
+        match policy_type:
+            case "security_policy":
+                pass
+            case "nat_policy":
+                pass
 
     def get_managed_devices_info(self):
         """
@@ -116,7 +96,7 @@ class FMCSecurityDevice(SecurityDevice):
         managed_devices = self._SecurityDeviceConnection.device.devicerecord.get()
         return managed_devices
 
-    def get_security_policies_info(self, policy_container_name):
+    def return_security_policies_info(self, policy_container_name):
         """
         Retrieve information about security policies within a specified container.
 
@@ -126,12 +106,13 @@ class FMCSecurityDevice(SecurityDevice):
         Returns:
             list: List of dictionaries containing information about security policies.
         """
-        general_logger.info("################## GETTING SECURITY POLICIES INFO ##################")
-
         # Execute the request to retrieve information about the security policies
         security_policies_info = self._SecurityDeviceConnection.policy.accesspolicy.accessrule.get(container_name=policy_container_name)
         return security_policies_info
     
+    def create_security_policy(self, policy_entry):
+        return FMCSecurityPolicy(policy_entry)
+
     def get_device_version(self):
         """
         Retrieve the version of the device's server.

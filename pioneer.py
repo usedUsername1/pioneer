@@ -175,21 +175,12 @@ def main():
                 passed_container_names_list = []
                 passed_container_names_list.append(passed_container_names)
                 print("Importing the security policy containers info.")
-                print(f"I am now importing the policy container info for the following containers: {passed_container_names_list}.")
+                print(f"I am now importing the policy container info for the following containers: <{passed_container_names_list}>.")
                 
-                # # retrieve the security policy containers along with the parents
-                # # insert them in the database
+                # # retrieve the security policy containers along with the parents and insert them in the database
                 SecurityDeviceObj.get_container_info_from_device_conn(passed_container_names_list, 'security_policies_container')
-                # SecurityDeviceObj.insert_into_security_policy_containers_table(security_policy_containers_info)
-                # # import the security policies (data) that are part of the imported security policy containers
-                # # the policy container info extracted earlier can be used here. we can use the child container entry since the child container
-                # # contains the information (thus the policies) it inherits from all the parents
-                # print("Importing the security policy data.")
-
-                # sec_policy_data = SecurityDeviceObj.get_policy_info_from_device_conn('security_policy', passed_container_names_list)
-
-                # # at this point, the data from all the security policies is extracted, it is time to insert it into the database
-                # SecurityDeviceObj.insert_into_security_policies_table(sec_policy_data)
+                print("Importing the security policies.")
+                SecurityDeviceObj.get_policy_info_from_device_conn('security_policy', passed_container_names_list)
 
                 # print("Importing the object container data.")
 
