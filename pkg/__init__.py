@@ -172,7 +172,7 @@ class PioneerTable():
         placeholders = ', '.join(['%s'] * len(values))
         
         insert_command = f"INSERT INTO {self._name} ({columns}) VALUES ({placeholders});"
-
+        
         try:
             cursor = self._database.get_cursor()
             

@@ -74,8 +74,6 @@ class FMCSecurityDevice(SecurityDevice):
     def return_objects_container(self):
         container_info = "DUMMY_CONTAINER"
         dummy_container = FMCObjectContainer(container_info)
-        dummy_container.set_name("virtual_object_container")
-        dummy_container.set_parent(None)
         return dummy_container
     
     def get_policies_info(self, policy_type):

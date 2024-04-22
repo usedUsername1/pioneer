@@ -52,10 +52,6 @@ class FMCSecurityPolicyContainer(SecurityPolicyContainer):
             bool: True if the container is a child container, False otherwise.
         """
         return self._container_info['metadata']['inherit']
-    
-    def save(self, database):
-        SecurityPolicyContainerTable = database.get_security_policy_containers_table()
-        SecurityPolicyContainerTable.insert(self.get_security_device_name(), self.get_name(), self.get_parent())
 
 class FMCObjectContainer(ObjectContainer):
     """
@@ -88,7 +84,12 @@ class FMCObjectContainer(ObjectContainer):
             None: Since FMC object containers do not have parent containers, it returns None.
         """
         return None
+
+    def set_name(self):
+        name = "virtual_object_container"
+        return super().set_name(name)
+
+    def set_parent(self):
+        parent = None
+        return super().set_parent(parent)
     
-    def save(self, database):
-        SecurityPolicyContainerTable = database.get_security_policy_containers_table()
-        SecurityPolicyContainerTable.insert(self.get_name(), self.get_parent())

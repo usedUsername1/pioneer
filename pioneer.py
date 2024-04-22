@@ -1,4 +1,5 @@
 # git ls-files | xargs wc -l
+#TODO: the entire database structure must be redone, stop using arrays
 import utils.helper as helper
 import utils.gvars as gvars
 import pkg.MigrationProject as MigrationProject
@@ -182,11 +183,9 @@ def main():
                 print("Importing the security policies.")
                 SecurityDeviceObj.get_policy_info_from_device_conn('security_policy', passed_container_names_list)
 
-                # print("Importing the object container data.")
-
-                # # import and insert the object container first!
-                # object_containers_info = SecurityDeviceObj.get_container_info_from_device_conn(passed_container_names_list, 'object_container')
-                # SecurityDeviceObj.insert_into_object_containers_table(object_containers_info)
+                print("Importing the object container data.")
+                # import and insert the object container first!
+                SecurityDeviceObj.get_container_info_from_device_conn(passed_container_names_list, 'objects_container')
 
                 # #TODO: the import functinoality must be independent of the policy type. so this part of the code should be taken out from here and put outside the import config if statement
                 # print("Importing network object data.")
@@ -229,7 +228,7 @@ def main():
         if pioneer_args["migrate_config"]:
         # get the target security device's name
             target_security_device_name = pioneer_args["target_device [target_device_name]"]
-            TargetSecurityDevice = SecurityDevice.create_security_device(db_user, target_security_device_name, db_password, db_host, db_port)
+            TargetSecurityDevice = SecurityDeviceFactory.create_security_device(db_user, target_security_device_name, db_password, db_host, db_port)
                         
             # print the compatibility issues
             # SpecificTargetSecurityDeviceObject.print_compatibility_issues()

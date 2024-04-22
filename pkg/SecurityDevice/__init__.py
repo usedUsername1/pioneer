@@ -253,6 +253,7 @@ class SecurityDevice:
                 # save the policy data in the database
                 Policy.save(self._Database)
 
+
     def get_managed_devices_info_from_device_conn(self):
         """
         Retrieve information about managed devices.

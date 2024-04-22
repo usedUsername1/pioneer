@@ -79,7 +79,6 @@ class Container:
         """
         pass
 
-    
     @abstractmethod
     def save(self, database):
         pass
@@ -95,6 +94,10 @@ class SecurityPolicyContainer(Container):
         general_logger.debug("Called SecurityPolicyContainer::__init__()")
         super().__init__(container_info)
 
+    def save(self, database):
+        SecurityPolicyContainerTable = database.get_security_policy_containers_table()
+        SecurityPolicyContainerTable.insert(self.get_security_device_name(), self.get_name(), self.get_parent())
+
 class ObjectContainer(Container):
     def __init__(self, container_info) -> None:
         """
@@ -105,6 +108,10 @@ class ObjectContainer(Container):
         """
         general_logger.debug("Called ObjectPolicyContainer::__init__()")
         super().__init__(container_info)
+
+    def save(self, database):
+        ObjectContainersTable = database.get_object_containers_table()
+        ObjectContainersTable.insert(self.get_security_device_name(), self.get_name(), self.get_parent())
 
 class NATPolicyContainer:
     pass
