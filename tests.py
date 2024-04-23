@@ -38,22 +38,22 @@ dg = DeviceGroup('Global Internet')
 # Add the device group to Panorama
 pano.add(dg)
 
-# Create the service object
-testobj = ServiceObject(name='TEST_SCRIPT', protocol='tcp', destination_port='1-65535', description='k', tag=None)
+# # Create the service object
+# testobj = ServiceObject(name='TEST_SCRIPT', protocol='tcp', destination_port='1-65535', description='k', tag=None)
 
-# Add the service object to the device group
-dg.add(testobj)
+# # Add the service object to the device group
+# dg.add(testobj)
 
-# Find the service object within the device group
-found_obj = dg.find(testobj)
+# # Find the service object within the device group
+# found_obj = dg.find(testobj)
 
-# Check if the object was found
-if found_obj is not None:
-    # If found, create a similar object
-    similar_obj = found_obj.create_similar()
-    print("Similar object created successfully.")
-else:
-    print("Object not found.")
+# # Check if the object was found
+# if found_obj is not None:
+#     # If found, create a similar object
+#     similar_obj = found_obj.create_similar()
+#     print("Similar object created successfully.")
+# else:
+#     print("Object not found.")
 
 # dg.find(testobj).create_similar()
 

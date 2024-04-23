@@ -187,12 +187,13 @@ def main():
                 # import and insert the object container first!
                 SecurityDeviceObj.get_container_info_from_device_conn(passed_container_names_list, 'objects_container')
 
+                # TODO: before continuing with importing the objects, the database structure must be redone.
+                # how to proceed with the import? should all the objects be imported first?
                 # #TODO: the import functinoality must be independent of the policy type. so this part of the code should be taken out from here and put outside the import config if statement
                 # print("Importing network object data.")
 
                 # # # at this point all the security policy data is imported. it is time to import the object data.
                 # network_objects_data = SecurityDeviceObj.get_object_info_from_device_conn('network_objects')
-
 
                 # SecurityDeviceObj.insert_into_network_address_objects_table(network_objects_data[0]['network_objects'])
                 # SecurityDeviceObj.insert_into_network_address_object_groups_table(network_objects_data[0]['network_group_objects'])

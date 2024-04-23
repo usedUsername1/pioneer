@@ -123,6 +123,9 @@ class SecurityDevice:
                 container = self.return_objects_container()
         
         return container
+    
+    def create_device_object(object_type):
+        pass
 
     def get_policy_info(self, container_name, policy_type):
         policy_info = None
@@ -252,7 +255,6 @@ class SecurityDevice:
 
                 # save the policy data in the database
                 Policy.save(self._Database)
-
 
     def get_managed_devices_info_from_device_conn(self):
         """
@@ -537,7 +539,6 @@ class SecurityDevice:
             flattened_list.remove('any')
 
         return flattened_list
-        
 
     def remove_array_value(self, table, column_name, value_to_remove):
         update_query = f"""
@@ -591,7 +592,6 @@ class SecurityDevice:
 
         self._Database.update_table_value('port_object_groups_table', delete_query)
     
-    # QUERY: select port_group_members from port_object_groups_table where port_group_name = '{}'
     def get_port_group_members(self, table, name):
         select_command = f"SELECT port_group_members FROM port_object_groups_table WHERE port_group_name = '{name}';"
 

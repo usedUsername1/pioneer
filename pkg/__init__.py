@@ -172,7 +172,7 @@ class PioneerTable():
         placeholders = ', '.join(['%s'] * len(values))
         
         insert_command = f"INSERT INTO {self._name} ({columns}) VALUES ({placeholders});"
-        
+
         try:
             cursor = self._database.get_cursor()
             
@@ -278,24 +278,14 @@ class SecurityPoliciesTable(PioneerTable):
             ("security_policy_container_name", "TEXT NOT NULL"),
             ("index", "INT"),
             ("category", "TEXT"),
+            ("schedule", "TEXT"),
             ("status", "TEXT NOT NULL"),
-            ("source_zones", "TEXT[] NOT NULL"),
-            ("destination_zones", "TEXT[] NOT NULL"),
-            ("source_networks", "TEXT[] NOT NULL"),
-            ("destination_networks", "TEXT[] NOT NULL"),
-            ("source_ports", "TEXT[] NOT NULL"),
-            ("destination_ports", "TEXT[] NOT NULL"),
-            ("schedules", "TEXT[] NOT NULL"),
-            ("users", "TEXT[] NOT NULL"),
-            ("urls", "TEXT[] NOT NULL"),
-            ("l7_apps", "TEXT[] NOT NULL"),
-            ("description", "TEXT"),
-            ("comments", "TEXT[]"),
-            ("log_setting", "TEXT[]"),
             ("log_start", "BOOLEAN NOT NULL"),
             ("log_end", "BOOLEAN NOT NULL"),
             ("section", "TEXT"),
             ("action", "TEXT"),
+            ("comments", "TEXT"),
+            ("description", "TEXT"),
             ("CONSTRAINT fk_security_policy_container FOREIGN KEY(security_policy_container_name)", "REFERENCES security_policy_containers(name)")
         ]
 
@@ -466,13 +456,94 @@ class ManagedDevicesTable(PioneerTable):
         self._name = "managed_devices"
         self._table_columns = [
             ("name", "TEXT PRIMARY KEY"),
-#            ("security_device_name", "TEXT")
+            ("security_device_name", "TEXT"),
             ("assigned_security_policy_container", "TEXT"),
             ("hostname", "TEXT"),
-            ("cluster", "TEXT")
-            # ("CONSTRAINT fk_object_container FOREIGN KEY(security_device_name)", "REFERENCES general_security_device_data (name)")
+            ("cluster", "TEXT"),
+            ("CONSTRAINT fk_security_device FOREIGN KEY (security_device_name)", "REFERENCES general_security_device_data (name)")
         ]
 
+# to import zone data, new tables are needed for interfaces. multiple interfaces can be mapped to one zone.
+# import the zone data from the device. use an ID for the zones. ID will be primary key
+# import all the object data from the security device. use an ID for all the objects. the ID will be primary key
+# don't forget that literals can also be used for defining object group data!
+# both zone and object data should be imported after importing the security device
+
+# scan policy data. find all literals first and insert them in the tables storing the object info.
+# how to find all literals?
+# now insert the policy data in the tables containing policy data and the referenced objects.
+
+# security policies tables
+class SecurityPolicyZones(PioneerTable):
+    def __init__(self, database):
+        super().__init__(database)
+        self._name = "policy_zones"
+        self._table_columns = [
+            ("id", "INTEGER PRIMARY KEY"),
+            ("policy_name", "TEXT"),
+            ("name", "TEXT"),
+            ("flow", "TEXT"),
+            ("CONSTRAINT fk_security_policy FOREIGN KEY (policy_name)", "REFERENCES security_policies (name)")
+        ]
+
+class SecurityPolicyObjects(PioneerTable):
+    def __init__(self, database):
+        super().__init__(database)
+        self._name = "policy_networks"
+        self._table_columns = [
+            ("id", "INTEGER PRIMARY KEY"),
+            ("security_policy_name", "TEXT"),
+            ("name", "TEXT"),
+            ("flow", "TEXT")
+            ("CONSTRAINT fk_security_policy FOREIGN KEY (security_policy_name)", "REFERENCES security_policies (name)")
+        ]
+
+class SecurityPolicyServices(PioneerTable):
+    def __init__(self, database):
+        super().__init__(database)
+        self._name = "policy_services"
+        self._table_columns = [
+            ("id", "INTEGER PRIMARY KEY"),
+            ("security_policy_name", "TEXT"),
+            ("name", "TEXT"),
+            ("flow", "TEXT")
+            ("CONSTRAINT fk_security_policy FOREIGN KEY (security_policy_name)", "REFERENCES security_policies (name)")
+        ]
+
+class PolicyUsers(PioneerTable):
+    def __init__(self, database):
+        super().__init__(database)
+        self._name = "policy_networks"
+        self._table_columns = [
+            ("id", "INTEGER PRIMARY KEY"),
+            ("name", "TEXT"),
+            ("security_policy_name", "TEXT")
+            ("CONSTRAINT fk_security_policy FOREIGN KEY (security_policy_name)", "REFERENCES security_policies (name)")
+        ]
+
+class SecurityPolicyURLS(PioneerTable):
+    def __init__(self, database):
+        super().__init__(database)
+        self._name = "policy_networks"
+        self._table_columns = [
+            ("id", "INTEGER PRIMARY KEY"),
+            ("name", "TEXT"),
+            ("security_policy_name", "TEXT")
+            ("CONSTRAINT fk_security_policy FOREIGN KEY (security_policy_name)", "REFERENCES security_policies (name)")
+        ]
+
+class SecurityPolicyL7Apps(PioneerTable):
+    def __init__(self, database):
+        super().__init__(database)
+        self._name = "policy_networks"
+        self._table_columns = [
+            ("id", "INTEGER PRIMARY KEY"),
+            ("name", "TEXT"),
+            ("security_policy_name", "TEXT")
+            ("CONSTRAINT fk_security_policy FOREIGN KEY (security_policy_name)", "REFERENCES security_policies (name)")
+        ]
+
+# nat policies params
 
     # # this function inserts the metadata regarding the pioneer projects. will be overridden with "pass" by sub-classes in order to "stop" it from being inherited
     # def insert_into_projects_metadata(self, project_name, project_devices, project_description, creation_timestamp):
