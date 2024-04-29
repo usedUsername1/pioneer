@@ -21,7 +21,7 @@ class SecurityDeviceConnection:
 
 class SecurityDeviceFactory:
     @staticmethod
-    def build_api_security_device(security_device_name, security_device_type, SecurityDeviceDB, security_device_hostname, security_device_username, security_device_secret, security_device_port, domain):
+    def build_api_security_device(security_device_uid, security_device_name, security_device_type, SecurityDeviceDB, security_device_hostname, security_device_username, security_device_secret, security_device_port, domain):
         """
         Build an API Security Device Python object based on its type.
 
@@ -42,7 +42,7 @@ class SecurityDeviceFactory:
             case "fmc-api":
                 general_logger.info(f"Device <{security_device_name}> is a Firepower Management Center.")
                 Connection = FMCDeviceConnection(security_device_username, security_device_secret, security_device_hostname, security_device_port, domain).connect_to_security_device()
-                SecurityDeviceObj = FMCSecurityDevice(security_device_name, SecurityDeviceDB, Connection)
+                SecurityDeviceObj = FMCSecurityDevice(security_device_uid, security_device_name, SecurityDeviceDB, Connection)
 
             # case "panmc-api":
             #     general_logger.info(f"Device <{security_device_name}> is a Panorama Management Center.")
@@ -77,7 +77,9 @@ class SecurityDeviceFactory:
 
         # initialize the connection to None, as we don't know yet to what device we will connect to
         SecurityDeviceConn = None
-        GenericSecurityDevice = SecurityDevice(security_device_name, SecurityDeviceDB, SecurityDeviceConn)
+        security_device_uid = None
+
+        GenericSecurityDevice = SecurityDevice(security_device_uid, security_device_name, SecurityDeviceDB, SecurityDeviceConn)
 
         # get the security device type
         security_device_type = GenericSecurityDevice.get_general_data("type", "name", security_device_name)
@@ -101,8 +103,11 @@ class SecurityDeviceFactory:
             # get the security device domain
             security_device_domain = GenericSecurityDevice.get_general_data("management_domain", "name", security_device_name)
 
+            # get the security device uid
+            security_device_uid = GenericSecurityDevice.get_general_data("uid", "name", security_device_name)
+
             # create the API security object based on the device type
-            SpecificSecurityDeviceObject = SecurityDeviceFactory.build_api_security_device(security_device_name, security_device_type, SecurityDeviceDB, security_device_hostname, security_device_username, security_device_secret, security_device_port, security_device_domain)
+            SpecificSecurityDeviceObject = SecurityDeviceFactory.build_api_security_device(security_device_uid, security_device_name, security_device_type, SecurityDeviceDB, security_device_hostname, security_device_username, security_device_secret, security_device_port, security_device_domain)
 
         elif '-config' in security_device_type:
             general_logger.info(f"{security_device_name} is an device that does not use API. Only its config file will be processed.")

@@ -29,8 +29,7 @@ class FMCSecurityDevice(SecurityDevice):
         _SecurityDeviceConnection: The connection to the FMC device.
     """
 
-    #TODO: maybe get_connection() function, as it makes a little bit more sense than how it currently is
-    def __init__(self, name, SecurityDeviceDatabase, SecurityDeviceConnection):
+    def __init__(self, uid, name, SecurityDeviceDatabase, SecurityDeviceConnection):
         """
         Initializes an FMCSecurityDevice instance.
 
@@ -43,7 +42,7 @@ class FMCSecurityDevice(SecurityDevice):
             security_device_port (int): The port number for connecting to the security device.
             domain (str): The domain of the security device.
         """
-        super().__init__(name, SecurityDeviceDatabase, SecurityDeviceConnection)
+        super().__init__(uid, name, SecurityDeviceDatabase, SecurityDeviceConnection)
         self._SecurityDeviceConnection = SecurityDeviceConnection
         self._network_address_objects_info = None
         self._network_group_objects_info = None
@@ -65,15 +64,15 @@ class FMCSecurityDevice(SecurityDevice):
         Returns:
             FMCManagedDevice: Instance of FMCManagedDevice.
         """
-        return FMCManagedDevice(managed_device_entry)
+        return FMCManagedDevice(self, managed_device_entry)
 
     def return_security_policy_container(self, container_name):
         acp_info = self._SecurityDeviceConnection.policy.accesspolicy.get(name=container_name)
-        return FMCSecurityPolicyContainer(acp_info)
+        return FMCSecurityPolicyContainer(self, acp_info)
 
     def return_objects_container(self):
         container_info = "DUMMY_CONTAINER"
-        dummy_container = FMCObjectContainer(container_info)
+        dummy_container = FMCObjectContainer(self, container_info)
         return dummy_container
     
     def get_policies_info(self, policy_type):

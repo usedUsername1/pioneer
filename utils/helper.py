@@ -6,6 +6,14 @@ import ipaddress
 import logging
 import os
 
+import uuid
+
+def generate_uid():
+    """
+    Generates a UUID (Universally Unique Identifier) and returns it as a string.
+    """
+    return str(uuid.uuid4())
+
 general_logger = logging.getLogger('general')
 # this function returns a parser objects for the pioneer tool
 def create_parser():

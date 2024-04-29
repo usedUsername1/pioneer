@@ -99,13 +99,15 @@ def main():
         # Create the security device database object using the landing database
         SecurityDeviceDB = SecurityDeviceDatabase(LandingDBcursor)
 
+        security_device_uuid = helper.generate_uid()
+
         # Try connecting to the security device and retrieving the version
         try:
             general_logger.info(f"Connecting to the security device: <{security_device_name}>.")
             # Attempt to create the security device object based on the device type
             if '-api' in security_device_type:
-                general_logger.info(f"The device {security_device_name} is an API device. Its API will be used for interacting with it.")
-                SecurityDeviceObject = SecurityDeviceFactory.build_api_security_device(security_device_name, security_device_type, SecurityDeviceDB, security_device_hostname, security_device_username, security_device_secret, security_device_port, domain)
+                general_logger.info(f"The device <{security_device_name}> is an API device. Its API will be used for interacting with it.")
+                SecurityDeviceObject = SecurityDeviceFactory.build_api_security_device(security_device_uuid, security_device_name, security_device_type, SecurityDeviceDB, security_device_hostname, security_device_username, security_device_secret, security_device_port, domain)
             else:
                 general_logger.critical(f"Provided device type <{security_device_type}> is invalid.")
                 sys.exit(1)
@@ -133,7 +135,7 @@ def main():
                 # Insert general device info into the database
                 general_logger.info(f"Inserting general device info in the database.")
 
-                SecurityDeviceObject.save_general_info(security_device_name, security_device_username, security_device_secret, security_device_hostname, security_device_type, security_device_port, security_device_version, domain)
+                SecurityDeviceObject.save_general_info(SecurityDeviceObject.get_uid(), security_device_name, security_device_username, security_device_secret, security_device_hostname, security_device_type, security_device_port, security_device_version, domain)
 
                 # Retrieve information about the managed devices
                 general_logger.info(f"################## Getting the managed devices of device: <{security_device_name}>. ##################")
@@ -181,6 +183,8 @@ def main():
                 # # retrieve the security policy containers along with the parents and insert them in the database
                 SecurityDeviceObj.get_container_info_from_device_conn(passed_container_names_list, 'security_policies_container')
                 print("Importing the security policies.")
+                
+                return
                 SecurityDeviceObj.get_policy_info_from_device_conn('security_policy', passed_container_names_list)
 
                 print("Importing the object container data.")
@@ -191,34 +195,6 @@ def main():
                 # how to proceed with the import? should all the objects be imported first?
                 # #TODO: the import functinoality must be independent of the policy type. so this part of the code should be taken out from here and put outside the import config if statement
                 # print("Importing network object data.")
-
-                # # # at this point all the security policy data is imported. it is time to import the object data.
-                # network_objects_data = SecurityDeviceObj.get_object_info_from_device_conn('network_objects')
-
-                # SecurityDeviceObj.insert_into_network_address_objects_table(network_objects_data[0]['network_objects'])
-                # SecurityDeviceObj.insert_into_network_address_object_groups_table(network_objects_data[0]['network_group_objects'])
-                # SecurityDeviceObj.insert_into_geolocation_table(network_objects_data[0]['geolocation_objects'])
-
-                # print("Importing port object data.")
-
-                # port_objects_data = SecurityDeviceObj.get_object_info_from_device_conn('port_objects')
-                # print("Inserting port object data in the database.")
-                # SecurityDeviceObj.insert_into_port_objects_table(port_objects_data[0]['port_objects'])
-                # SecurityDeviceObj.insert_into_icmp_objects_table(port_objects_data[0]['icmp_port_objects'])
-                # SecurityDeviceObj.insert_into_port_object_groups_table(port_objects_data[0]['port_group_objects'])
-
-                # print("Skipping importing of schedule, users, URL categories and L7 apps since this is not yet supported!")
-                # print("Importing URL object data.")
-
-                # url_objects_data = SecurityDeviceObj.get_object_info_from_device_conn('url_objects')
-
-                # SecurityDeviceObj.insert_into_url_objects_table(url_objects_data[0]['url_objects'])
-                # SecurityDeviceObj.insert_into_url_object_groups_table(url_objects_data[0]['url_group_objects'])
-
-                # print("Succesfully finished the import of the security device's data.")
-                # close the cursor used to connect to the device's database
-                # TODO: create close_cursor() function
-                # SecurityDevceDBcursor.close()
         
         # no need to retrieve the source device, as it is already specified in the parameter
         # how the command should look like:

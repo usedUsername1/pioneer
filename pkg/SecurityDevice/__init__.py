@@ -93,7 +93,7 @@ class SecurityDeviceDatabase(PioneerDatabase):
         return self._ManagedDevicesTable
 
 class SecurityDevice:
-    def __init__(self, name, DeviceDatabase, DeviceConnection):
+    def __init__(self, uid, name, DeviceDatabase, DeviceConnection):
         """
         Initialize a SecurityDevice instance.
 
@@ -101,6 +101,7 @@ class SecurityDevice:
         - name (str): The name of the security device.
         - DeviceDatabase (Database): An instance of the database for the security device.
         """
+        self._uid = uid
         self._name = name
         self._Database = DeviceDatabase
         self._DeviceConnection = DeviceConnection
@@ -108,9 +109,9 @@ class SecurityDevice:
     def set_DeviceConnection(self, Connection):
         self._DeviceConnection = Connection
     
-    def save_general_info(self, security_device_name, security_device_username, security_device_secret, security_device_hostname, security_device_type, security_device_port, security_device_version, domain):
+    def save_general_info(self, security_device_uid, security_device_name, security_device_username, security_device_secret, security_device_hostname, security_device_type, security_device_port, security_device_version, domain):
         GeneralDataTable = self._Database.get_general_data_table()
-        GeneralDataTable.insert(security_device_name, security_device_username, security_device_secret, security_device_hostname, security_device_type, security_device_port, security_device_version, domain)
+        GeneralDataTable.insert(security_device_uid, security_device_name, security_device_username, security_device_secret, security_device_hostname, security_device_type, security_device_port, security_device_version, domain)
 
     def set_database(self, Database):
         self._Database = Database
@@ -136,6 +137,12 @@ class SecurityDevice:
             #     policy_info = self.return_nat_policy_info()
         
         return policy_info
+
+    def set_uid(self, uid):
+        self._uid = uid
+
+    def get_uid(self):
+        return self._uid
 
     def create_policy(self, policy_type, policy_entry):
         match policy_type:
@@ -166,14 +173,12 @@ class SecurityDevice:
                 CurrentContainer = self.create_container(container_name, container_type)
                 CurrentContainer.set_name()
                 CurrentContainer.set_parent()
-                CurrentContainer.set_security_device_name(self._name)
 
                 general_logger.info(f"I am now processing the <{container_type}> container, name: <{container_name}>")
                 # Check if the current container has parent containers
                 while CurrentContainer.is_child_container():
                     CurrentContainer.set_name()
                     CurrentContainer.set_parent()
-                    CurrentContainer.set_security_device_name(self._name)
 
                     # Retrieve the parent container name
                     parent_container_name = CurrentContainer.get_parent()
@@ -196,7 +201,7 @@ class SecurityDevice:
                 else:
                     CurrentContainer.set_name()
                     CurrentContainer.set_parent()
-                    CurrentContainer.set_security_device_name(self._name)
+
                     general_logger.info(f"Finished processing all children. <{CurrentContainer.get_name()}> is the highest container in the parent-child hierarchy.")
                     CurrentContainer.save(self._Database)
 
@@ -606,484 +611,6 @@ class SecurityDevice:
             flattened_list.remove('any')
 
         return flattened_list
-
-    def insert_into_network_address_objects_table(self, network_objects_data):
-        """
-        Insert network address objects data into the 'network_address_objects_table'.
-
-        Parameters:
-        - network_objects_data (list): List of dictionaries containing network address objects information.
-
-        Returns:
-        None
-        """
-        for current_object_entry in network_objects_data:
-            # Extract data from the current network address object entry
-            network_address_name = current_object_entry['network_address_name']
-
-            # Check for duplicates before insertion
-            if self.verify_duplicate('network_address_objects_table', 'network_address_name', network_address_name):
-                general_logger.warn(f"Duplicate entry for network address object: <{network_address_name}>. Skipping insertion.")
-                continue
-
-            object_container_name = current_object_entry['object_container_name']
-            network_address_value = current_object_entry['network_address_value']
-            network_address_description = current_object_entry['network_address_description']
-            network_address_type = current_object_entry['network_address_type']
-            is_overridable_object = current_object_entry['overridable_object']
-
-            # SQL command to insert data into the 'network_address_objects_table'
-            insert_command = """
-                INSERT INTO network_address_objects_table (
-                    network_address_name, 
-                    security_device_name, 
-                    object_container_name,
-                    network_address_value, 
-                    network_address_description, 
-                    network_address_type, 
-                    overridable_object
-                ) VALUES (
-                    %s, %s, %s, %s, %s, %s, %s
-                )
-            """
-
-            # Values to be inserted into the table
-            values = (
-                network_address_name,
-                self._name,
-                object_container_name,
-                network_address_value,
-                network_address_description,
-                network_address_type,
-                is_overridable_object
-            )
-
-            # Execute the insert command with the specified values
-            self._Database.insert_table_value('network_address_objects_table', insert_command, values)
-
-    def insert_into_network_address_object_groups_table(self, network_group_objects_data):
-        """
-        Insert network address object groups data into the 'network_address_objects_table'.
-
-        Parameters:
-        - network_group_objects_data (list): List of dictionaries containing network address object groups information.
-
-        Returns:
-        None
-        """
-        for current_group_object_entry in network_group_objects_data:
-            # Extract data from the current network address object group entry
-            network_address_group_name = current_group_object_entry['network_address_group_name']
-            # Check for duplicates before insertion
-            if self.verify_duplicate('network_address_object_groups_table', 'network_address_group_name', network_address_group_name):
-                general_logger.warn(f"Duplicate entry for network address object group: <{network_address_group_name}>. Skipping insertion.")
-                continue
-            
-            object_container_name = current_group_object_entry['object_container_name']
-            network_address_group_members = current_group_object_entry['network_address_group_members']
-            network_address_group_members = "{" + ",".join(network_address_group_members) + "}"
-            network_address_description = current_group_object_entry['network_address_group_description']
-            is_overridable_object = current_group_object_entry['overridable_object']
-
-            # SQL command to insert data into the 'network_address_objects_table'
-            insert_command = """
-                INSERT INTO network_address_object_groups_table (
-                    network_address_group_name, 
-                    security_device_name,
-                    object_container_name, 
-                    network_address_group_members,
-                    network_address_group_description, 
-                    overridable_object
-                ) VALUES (
-                    %s, %s, %s, %s, %s, %s
-                )
-            """
-
-            # Values to be inserted into the table
-            values = (
-                network_address_group_name,
-                self._name,
-                object_container_name,
-                network_address_group_members,
-                network_address_description,
-                is_overridable_object
-            )
-
-            # Execute the insert command with the specified values
-            self._Database.insert_table_value('network_address_object_groups_table', insert_command, values)
-
-    def insert_into_security_policy_containers_table(self, containers_data):
-        """
-        Insert values into the 'security_policy_containers_table' table.
-
-        Parameters:
-        - containers_data (list): List of dictionaries containing security policy container information.
-
-        Returns:
-        None
-        """
-        for container_entry in containers_data:
-            # Extract data from the current security policy container entry
-            container_name = container_entry['security_policy_container_name']
-            container_parent = container_entry['security_policy_parent']
-
-            # Check for duplicates before insertion
-            if self.verify_duplicate('security_policy_containers_table', 'security_policy_container_name', container_name):
-                general_logger.warn(f"Duplicate entry for container: <{container_name}>. Skipping insertion.")
-                continue
-
-            # SQL command to insert data into the 'security_policy_containers_table'
-            insert_command = """
-                INSERT INTO security_policy_containers_table (
-                    security_device_name, 
-                    security_policy_container_name, 
-                    security_policy_container_parent
-                ) VALUES (
-                    %s, %s, %s
-                )
-            """
-
-            # Values to be inserted into the table
-            values = (
-                self._name,
-                container_name,
-                container_parent
-            )
-
-            # Execute the insert command with the specified values
-            self._Database.insert_table_value('security_policy_containers_table', insert_command, values)
-
-    def insert_into_geolocation_table(self, geolocation_object_data):
-        """
-        Insert values into the 'geolocation_objects_table' table.
-
-        Parameters:
-        - geolocation_object_data (list): List of dictionaries containing geolocation object information.
-
-        Returns:
-        None
-        """
-        for geo_entry in geolocation_object_data:
-            # Extract data from the current geolocation object entry
-            geo_name = geo_entry.get('geolocation_object_name', None)
-            container_name = geo_entry.get('object_container_name', None)
-            continent_names = [geo_entry.get('continent_member_names', [])]
-            country_names = [geo_entry.get('country_member_names', [])]
-            country_alpha2 = [geo_entry.get('country_member_alpha2_codes', [])]
-            country_alpha3 = [geo_entry.get('country_member_alpha3_codes', [])]
-            country_numeric = [geo_entry.get('country_member_numeric_codes', [])]
-
-            # Check for duplicates before insertion
-            if self.verify_duplicate('geolocation_objects_table', 'geolocation_object_name', geo_name):
-                general_logger.warn(f"Duplicate entry for geolocation object: <{geo_name}>. Skipping insertion.")
-                continue
-
-            # SQL command to insert data into the 'geolocation_objects_table'
-            insert_command = """
-                INSERT INTO geolocation_objects_table (
-                    geolocation_object_name,
-                    security_device_name,
-                    object_container_name,
-                    continent_member_names,
-                    country_member_names,
-                    country_member_alpha2_codes,
-                    country_member_alpha3_codes,
-                    country_member_numeric_codes
-                ) VALUES (
-                    %s, %s, %s, %s, %s, %s, %s, %s
-                )
-            """
-
-            # Values to be inserted into the table
-            values = (
-                geo_name,
-                self._name,
-                container_name,
-                continent_names,
-                country_names,
-                country_alpha2,
-                country_alpha3,
-                country_numeric
-            )
-
-            # Execute the insert command with the specified values
-            self._Database.insert_table_value('geolocation_objects_table', insert_command, values)
-
-    def verify_duplicate(self, table, column, value):
-        general_logger.info(f"Verifying duplicate in table {table}, column {column}, for value {value}.")
-        """
-        Verify if a duplicate entry exists in the specified table and column.
-
-        Args:
-            table (str): Name of the table to check for duplicates.
-            column (str): Name of the column to check for duplicates.
-            value (str): Value to check for duplicate entries in the specified column.
-
-        Returns:
-            bool: True if a duplicate entry exists, False otherwise.
-        """
-        # Use parameterized query to prevent SQL injection
-        select_command = "SELECT EXISTS(SELECT 1 FROM {} WHERE {} = %s);".format(table, column)
-
-        # Execute the parameterized query and get the result
-        is_duplicate = self._Database.get_table_value(table, select_command, (value,))
-        general_logger.info(f"Verified duplicate in table {table}, column {column}, for value {value}. Result is {is_duplicate}")
-
-        # Return the result as a boolean
-        return is_duplicate[0][0]
-    
-    def insert_into_port_objects_table(self, port_object_data):
-        """
-        Insert values into the 'port_objects_table' table.
-
-        Parameters:
-        - port_object_data (list): List of dictionaries containing port object information.
-
-        Returns:
-        None
-        """
-        for port_entry in port_object_data:
-            # Extract data from the current port object entry
-            port_name = port_entry['port_name']
-            object_container_name = port_entry['object_container_name']
-            port_protocol = port_entry.get('port_protocol')
-            port_number = port_entry.get('port_number')
-            port_description = port_entry.get('port_description')
-            overridable_object = port_entry.get('overridable_object')
-
-            # Check for duplicates before insertion
-            if self.verify_duplicate('port_objects_table', 'port_name', port_name):
-                general_logger.warn(f"Duplicate entry for port object: <{port_name}>. Skipping insertion.")
-                continue
-
-            # SQL command to insert data into the 'port_objects_table'
-            insert_command = """
-                INSERT INTO port_objects_table (
-                    port_name, 
-                    security_device_name, 
-                    object_container_name, 
-                    port_protocol, 
-                    port_number, 
-                    port_description, 
-                    overridable_object
-                ) VALUES (
-                    %s, %s, %s, %s, %s, %s, %s
-                )
-            """
-
-            # Values to be inserted into the table
-            values = (
-                port_name,
-                self._name,
-                object_container_name,
-                port_protocol,
-                port_number,
-                port_description,
-                overridable_object
-            )
-
-            # Execute the insert command with the specified values
-            self._Database.insert_table_value('port_objects_table', insert_command, values)
-
-    def insert_into_icmp_objects_table(self, icmp_object_data):
-        """
-        Insert values into the 'icmp_objects_table' table.
-
-        Parameters:
-        - icmp_object_data (list): List of dictionaries containing ICMP object information.
-
-        Returns:
-        None
-        """
-        for icmp_entry in icmp_object_data:
-            # Extract data from the current ICMP object entry
-            icmp_name = icmp_entry['icmp_name']
-            object_container_name = icmp_entry['object_container_name']
-            icmp_type = icmp_entry.get('icmp_type')
-            icmp_code = icmp_entry.get('icmp_code')
-            icmp_description = icmp_entry.get('icmp_description')
-            overridable_object = icmp_entry.get('overridable_object')
-
-            # Check for duplicates before insertion
-            if self.verify_duplicate('icmp_objects_table', 'icmp_name', icmp_name):
-                general_logger.warn(f"Duplicate entry for ICMP object: <{icmp_name}>. Skipping insertion.")
-                continue
-
-            # SQL command to insert data into the 'icmp_objects_table'
-            insert_command = """
-                INSERT INTO icmp_objects_table (
-                    icmp_name, 
-                    security_device_name, 
-                    object_container_name, 
-                    icmp_type, 
-                    icmp_code, 
-                    icmp_description, 
-                    overridable_object
-                ) VALUES (
-                    %s, %s, %s, %s, %s, %s, %s
-                )
-            """
-
-            # Values to be inserted into the table
-            values = (
-                icmp_name,
-                self._name,
-                object_container_name,
-                icmp_type,
-                icmp_code,
-                icmp_description,
-                overridable_object
-            )
-
-            # Execute the insert command with the specified values
-            self._Database.insert_table_value('icmp_objects_table', insert_command, values)
-
-    def insert_into_port_object_groups_table(self, port_object_group_data):
-        """
-        Insert values into the 'port_object_groups_table' table.
-
-        Parameters:
-        - port_object_group_data (list): List of dictionaries containing port object group information.
-
-        Returns:
-        None
-        """
-        for group_entry in port_object_group_data:
-            # Extract data from the current port object group entry
-            port_group_name = group_entry['port_group_name']
-            object_container_name = group_entry['object_container_name']
-            port_group_members = group_entry.get('port_group_members')
-            port_group_description = group_entry.get('port_group_description')
-            overridable_object = group_entry.get('overridable_object')
-
-            # Check for duplicates before insertion
-            if self.verify_duplicate('port_object_groups_table', 'port_group_name', port_group_name):
-                general_logger.warn(f"Duplicate entry for port object group: <{port_group_name}>. Skipping insertion.")
-                continue
-
-            # SQL command to insert data into the 'port_object_groups_table'
-            insert_command = """
-                INSERT INTO port_object_groups_table (
-                    port_group_name, 
-                    security_device_name, 
-                    object_container_name, 
-                    port_group_members, 
-                    port_group_description, 
-                    overridable_object
-                ) VALUES (
-                    %s, %s, %s, %s, %s, %s
-                )
-            """
-
-            # Values to be inserted into the table
-            values = (
-                port_group_name,
-                self._name,
-                object_container_name,
-                port_group_members,
-                port_group_description,
-                overridable_object
-            )
-
-            # Execute the insert command with the specified values
-            self._Database.insert_table_value('port_object_groups_table', insert_command, values)
-
-    def insert_into_url_objects_table(self, url_objects_data):
-        """
-        Insert values into the 'url_object_groups_table' table.
-
-        Parameters:
-        - url_object_group_data (list): List of dictionaries containing URL object group information.
-
-        Returns:
-        None
-        """
-        for group_entry in url_objects_data:
-            # Extract data from the current URL object group entry
-            url_object_name = group_entry['url_object_name']
-            object_container_name = group_entry['object_container_name']
-            url_object_value = group_entry.get('url_value')  # Assuming it's a single value, not a list
-            url_group_description = group_entry['url_object_description']
-
-            # Check for duplicates before insertion
-            if self.verify_duplicate('url_objects_table', 'url_object_name', url_object_name):
-                general_logger.warn(f"Duplicate entry for URL object: <{url_object_name}>. Skipping insertion.")
-                continue
-
-            # SQL command to insert data into the 'url_objects_table'
-            insert_command = """
-                INSERT INTO url_objects_table (
-                    url_object_name, 
-                    security_device_name, 
-                    object_container_name, 
-                    url_value, 
-                    url_object_description
-                ) VALUES (
-                    %s, %s, %s, %s, %s
-                )
-            """
-
-            # Values to be inserted into the table
-            values = (
-                url_object_name,
-                self._name,
-                object_container_name,
-                url_object_value,
-                url_group_description
-            )
-
-            # Execute the insert command with the specified values
-            self._Database.insert_table_value('url_objects_table', insert_command, values)
-
-    def insert_into_url_object_groups_table(self, url_object_group_data):
-        """
-        Insert values into the 'url_object_groups_table' table.
-
-        Parameters:
-        - url_object_group_data (list): List of dictionaries containing URL object group information.
-
-        Returns:
-        None
-        """
-        for group_entry in url_object_group_data:
-            # Extract data from the current URL object group entry
-            url_object_group_name = group_entry['url_object_group_name']
-            object_container_name = group_entry['object_container_name']
-            url_object_members = group_entry['url_object_members']
-            url_object_description = group_entry['url_group_object_description']
-
-            # Check for duplicates before insertion
-            if self.verify_duplicate('url_object_groups_table', 'url_object_group_name', url_object_group_name):
-                general_logger.warn(f"Duplicate entry for URL object group: <{url_object_group_name}>. Skipping insertion.")
-                continue
-
-            # SQL command to insert data into the 'url_object_groups_table'
-            insert_command = """
-                INSERT INTO url_object_groups_table (
-                    url_object_group_name, 
-                    security_device_name, 
-                    object_container_name, 
-                    url_object_members, 
-                    url_group_object_description
-                ) VALUES (
-                    %s, %s, %s, %s, %s
-                )
-            """
-
-            # Values to be inserted into the table
-            values = (
-                url_object_group_name,
-                self._name,
-                object_container_name,
-                url_object_members,
-                url_object_description
-            )
-
-            # Execute the insert command with the specified values
-            self._Database.insert_table_value('url_object_groups_table', insert_command, values)
-
-        def delete_security_device(self):
-            pass
 
 class APISecurityDevice(SecurityDevice):
     def __init__(self, user, database, password, host, port):

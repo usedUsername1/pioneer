@@ -3,24 +3,18 @@ from abc import abstractmethod
 general_logger = helper.logging.getLogger('general')
 
 class Container:
-    def __init__(self, container_info) -> None:
+    def __init__(self, SecurityDevice, container_info) -> None:
         """
         Initializes a Container object.
 
         Args:
             container_info: Information related to the container.
         """
-        general_logger.debug("Called Container::__init__()")
         self._container_info = container_info
-        self._security_device_name = None
+        self._security_device_uid = SecurityDevice.get_uid()
         self._name = None
         self._parent = None
-    
-    def set_security_device_name(self, name):
-        self._security_device_name = name
-
-    def get_security_device_name(self):
-        return self._security_device_name
+        self._uid = helper.generate_uid()
 
     def set_name(self, name):
         """
@@ -29,7 +23,6 @@ class Container:
         Args:
             name (str): The name of the container.
         """
-        general_logger.debug("Called Container::set_name()")
         self._name = name
 
     def set_parent(self, parent):
@@ -39,8 +32,13 @@ class Container:
         Args:
             parent (Container): The parent container object.
         """
-        general_logger.debug("Called Container::set_parent()")
         self._parent = parent
+    
+    def set_uid(self, uid):
+        self._uid = uid
+    
+    def get_uid(self):
+        return self._uid
 
     def get_name(self):
         """
@@ -49,18 +47,19 @@ class Container:
         Returns:
             str: The name of the container.
         """
-        general_logger.debug("Called Container::get_name()")
         return self._name
 
-    def get_parent_name(self):
+    def get_parent(self):
         """
-        Gets the name of the parent container.
+        Get the name of the parent policy.
 
         Returns:
-            str: The name of the parent container.
+            str: Name of the parent policy.
         """
-        general_logger.debug("Called Container::get_parent_name()")
-        return self._parent.get_name()
+        return self._parent
+
+    def get_security_device_uid(self):
+        return self._security_device_uid
 
     @abstractmethod
     def process_container_info(self):
@@ -80,38 +79,36 @@ class Container:
         pass
 
     @abstractmethod
-    def save(self, database):
+    def save(self, Database):
         pass
 
 class SecurityPolicyContainer(Container):
-    def __init__(self, container_info) -> None:
+    def __init__(self, SecurityDevice, container_info) -> None:
         """
         Initializes a SecurityPolicyContainer object.
 
         Args:
             container_info: Information related to the security policy container.
         """
-        general_logger.debug("Called SecurityPolicyContainer::__init__()")
-        super().__init__(container_info)
+        super().__init__(SecurityDevice, container_info)
 
-    def save(self, database):
-        SecurityPolicyContainerTable = database.get_security_policy_containers_table()
-        SecurityPolicyContainerTable.insert(self.get_security_device_name(), self.get_name(), self.get_parent())
+    def save(self, Database):
+        SecurityPolicyContainerTable = Database.get_security_policy_containers_table()
+        SecurityPolicyContainerTable.insert(self.get_uid(), self.get_name(), self.get_security_device_uid(), self.get_parent())
 
 class ObjectContainer(Container):
-    def __init__(self, container_info) -> None:
+    def __init__(self, SecurityDevice, container_info) -> None:
         """
         Initializes an ObjectPolicyContainer object.
 
         Args:
             container_info: Information related to the object policy container.
         """
-        general_logger.debug("Called ObjectPolicyContainer::__init__()")
-        super().__init__(container_info)
+        super().__init__(SecurityDevice, container_info)
 
-    def save(self, database):
-        ObjectContainersTable = database.get_object_containers_table()
-        ObjectContainersTable.insert(self.get_security_device_name(), self.get_name(), self.get_parent())
+    def save(self, Database):
+        ObjectContainersTable = Database.get_object_containers_table()
+        ObjectContainersTable.insert(self.get_uid(), self.get_name(), self.get_security_device_uid(), self.get_parent())
 
 class NATPolicyContainer:
     pass
