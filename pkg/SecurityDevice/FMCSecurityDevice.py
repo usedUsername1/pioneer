@@ -54,7 +54,7 @@ class FMCSecurityDevice(SecurityDevice):
         self._url_objects_info = None
         self._url_object_groups_info = None
 
-    def create_managed_device(self, managed_device_entry):
+    def return_managed_device(self, managed_device_entry):
         """
         Override create_managed_device method to return FMCManagedDevice instance.
 
@@ -66,32 +66,27 @@ class FMCSecurityDevice(SecurityDevice):
         """
         return FMCManagedDevice(self, managed_device_entry)
 
-    def return_security_policy_container(self, container_name):
-        acp_info = self._SecurityDeviceConnection.policy.accesspolicy.get(name=container_name)
-        return FMCSecurityPolicyContainer(self, acp_info)
-
-    def return_objects_container(self):
-        container_info = "DUMMY_CONTAINER"
-        dummy_container = FMCObjectContainer(self, container_info)
-        return dummy_container
+    def return_security_policy_container_info(self):
+        return self._SecurityDeviceConnection.policy.accesspolicy.get()
     
-    def get_policies_info(self, policy_type):
-        match policy_type:
-            case "security_policy":
-                pass
-            case "nat_policy":
-                pass
+    def return_object_container_info(self):
+        return "DUMMY_CONTAINER"
 
-    def get_managed_devices_info(self):
-        """
-        Retrieve information about managed devices.
+    def return_managed_device_info(self):
+        return self._SecurityDeviceConnection.device.devicerecord.get()
 
-        Returns:
-            list: List of dictionaries containing information about managed devices.
-        """
-        # Execute the request to retrieve information about the devices
-        managed_devices = self._SecurityDeviceConnection.device.devicerecord.get()
-        return managed_devices
+    def return_security_zone_info(self):
+        return
+    
+
+    def return_security_policy_container(self, container_entry):
+        return FMCSecurityPolicyContainer(self, container_entry)
+
+    def return_object_container(self, container_entry):
+        return FMCObjectContainer(self, container_entry)
+    
+    # def return_security_zone(self, zone_entry):
+    #     return FMCSecurityZone(zone_entry)
 
     def return_security_policies_info(self, policy_container_name):
         """

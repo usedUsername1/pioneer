@@ -116,100 +116,11 @@ class SecurityDevice:
     def set_database(self, Database):
         self._Database = Database
 
-    def create_container(self, container_name, container_type):
-        match container_type:
-            case "security_policies_container":
-                container = self.return_security_policy_container(container_name)
-            case "objects_container":
-                container = self.return_objects_container()
-        
-        return container
-    
-    def create_device_object(object_type):
-        pass
-
-    def get_policy_info(self, container_name, policy_type):
-        policy_info = None
-        match policy_type:
-            case 'security_policy':
-                policy_info = self.return_security_policies_info(container_name)
-            # case 'nat_policy':
-            #     policy_info = self.return_nat_policy_info()
-        
-        return policy_info
-
     def set_uid(self, uid):
         self._uid = uid
 
     def get_uid(self):
         return self._uid
-
-    def create_policy(self, policy_type, policy_entry):
-        match policy_type:
-            case 'security_policy':
-                policy = self.create_security_policy(policy_entry)
-        
-        return policy
-
-    def get_container_info_from_device_conn(self, containers_list, container_type):
-        """
-        Retrieve information about containers from the security device.
-        The purpose of this function is to provide a flexible and robust mechanism for retrieving information about containers from a security device,
-        processing it, and returning the processed information in a structured format.
-        It handles different types of containers, and can handle nested containers with parent-child relationships.
-        Additionally, it includes logging and error handling to ensure smooth execution and provide informative messages in case of errors.
-
-        Parameters:
-        - containers_list (list): List of container names passed by the user to retrieve information for.
-        - container_type (str): Type of containers to retrieve information for. E.g: object, security policy containers
-
-        Returns:
-        - list: List of processed container information.
-        """
-        general_logger.info(f"################## Importing configuration of the device containers. Container type: <{container_type}> ##################")
-
-        for container_name in containers_list:
-            try:
-                CurrentContainer = self.create_container(container_name, container_type)
-                CurrentContainer.set_name()
-                CurrentContainer.set_parent()
-
-                general_logger.info(f"I am now processing the <{container_type}> container, name: <{container_name}>")
-                # Check if the current container has parent containers
-                while CurrentContainer.is_child_container():
-                    CurrentContainer.set_name()
-                    CurrentContainer.set_parent()
-
-                    # Retrieve the parent container name
-                    parent_container_name = CurrentContainer.get_parent()
-                    general_logger.info(f"<{CurrentContainer.get_name()}> is a CHILD container. Its parent is: <{parent_container_name}>.")
-                    try:
-                        # Retrieve the parent container object using the same retrieval function
-                        ParentContainer = self.create_container(parent_container_name, container_type)
-
-                        # save the current container in the database
-                        CurrentContainer.save(self._Database)
-
-                        # Set the parent container as the current container for the next iteration
-                        CurrentContainer = ParentContainer
-                    except Exception as e:
-                        general_logger.error(f"Error retrieving parent container: <{parent_container_name}>. Reason: <{e}>")
-                        break  # Break out of the loop if there's an error retrieving the parent container
-
-                # If we break out of the loop, then it means we reached the highest parent in the hierarchy
-                # We also need to get the data for it
-                else:
-                    CurrentContainer.set_name()
-                    CurrentContainer.set_parent()
-
-                    general_logger.info(f"Finished processing all children. <{CurrentContainer.get_name()}> is the highest container in the parent-child hierarchy.")
-                    CurrentContainer.save(self._Database)
-
-            except Exception as err:
-                general_logger.error(f"Could not retrieve info regarding the container <{container_name}>. Reason: <{err}>")
-                sys.exit(1)
-
-        general_logger.info(f"I have finished completely processing <{container_type}> container, name: <{container_name}>.")
 
     def get_device_version_from_device_conn(self):
         """
@@ -235,8 +146,99 @@ class SecurityDevice:
             
             # Exit the program with status code 1 indicating a critical error
             sys.exit(1)
+        
+    def create_py_object(self, object_type, object_entry):
+        match object_type:
+            case 'object_container':
+                return self.return_object_container(object_entry)
+            case 'security_policy_container':
+                return self.return_security_policy_container(object_entry)
+            
+            case 'security_zone':
+                return self.return_security_zone(object_entry)
+            
+            case 'managed_device':
+                return self.return_managed_device(object_entry)
 
-    def get_policy_info_from_device_conn(self, policy_type, policy_containers_list):
+    def get_container_info_from_device_conn(self, container_type):
+        """
+        Retrieve information about containers from the security device.
+
+        This function retrieves information about containers from a security device, processes it, and returns the processed information in a structured format.
+        It handles different types of containers, including nested containers with parent-child relationships. Logging and error handling are included
+        to ensure smooth execution and provide informative messages in case of errors.
+
+        Parameters:
+        - container_type (str): Type of containers to retrieve information for. E.g., object, security policy containers.
+
+        """
+        general_logger.info(f"Importing configuration of the device containers. Container type: <{container_type}>")
+        
+        try:
+            match container_type:
+                case 'security_policy_container':
+                    containers_info = self.return_security_policy_container_info()
+                case 'object_container':
+                    containers_info = self.return_object_container_info()
+        except Exception as err:
+            # Log a critical error message if managed devices retrieval fails and exit the program
+            general_logger.critical(f"Could not retrieve container info. Reason: <{err}>")
+            sys.exit(1)
+
+        # Set to store processed container names
+        processed_containers = set()
+
+        for container_entry in containers_info:
+            CurrentContainer = self.create_py_object(container_type, container_entry)
+
+            # Set name and parent for the current container
+            CurrentContainer.set_name()
+            CurrentContainer.set_parent()
+
+            current_container_name = CurrentContainer.get_name()
+
+            # Skip processing if the container is already processed
+            if current_container_name in processed_containers:
+                continue
+
+            general_logger.info(f"Processing <{container_type}> container. Name: <{current_container_name}>")
+
+            # Retrieve the parent container name
+            parent_container_name = CurrentContainer.get_parent()
+            general_logger.info(f"<{current_container_name}> is a child container. Its parent is: <{parent_container_name}>.")
+
+            # Save the current container in the database
+            CurrentContainer.save(self._Database)
+
+            # Add the current container to the set of processed containers
+            processed_containers.add(current_container_name)
+
+        # Log completion message for all containers
+        general_logger.info(f"Finished processing all containers of type <{container_type}>.")
+
+    def get_object_info_from_device_conn(self, object_type):
+        """
+        Retrieve information about managed devices.
+
+        Returns:
+            list: List of dictionaries containing information about managed devices.
+        """
+        match object_type:
+            case 'security_zone':
+                objects_info = self.return_security_zone_info()
+            case 'managed_device':
+                objects_info = self.return_managed_device_info()
+        
+        # Iterate over each managed device entry in the retrieved managed devices info
+        for object_entry in objects_info:
+            # return an object here for each of the entries
+            SecurityDeviceObject = self.create_py_object(object_type, object_entry)
+            # set all the attributes of the object
+            SecurityDeviceObject.set_attributes()
+            # save it in the database
+            SecurityDeviceObject.save(self._Database)
+
+    def get_policy_info_from_device_conn(self, policy_containers_list, policy_type):
         """
         Retrieve information about policies from the specified policy containers.
 
@@ -260,129 +262,7 @@ class SecurityDevice:
 
                 # save the policy data in the database
                 Policy.save(self._Database)
-
-    def get_managed_devices_info_from_device_conn(self):
-        """
-        Retrieve information about managed devices.
-
-        Returns:
-            list: List of dictionaries containing information about managed devices.
-        """
-        # Log a debug message indicating that the function is called
-        # Log an informational message indicating that managed devices info retrieval is initiated        
-        try:
-            # Attempt to retrieve managed devices info from the security device connection
-            # return a ManagedDevices object here
-            managed_devices_info = self.get_managed_devices_info()
-            general_logger.debug(f"Raw managed devices info: <{managed_devices_info}>.")
-        except Exception as err:
-            # Log a critical error message if managed devices retrieval fails and exit the program
-            general_logger.critical(f"Could not retrieve managed devices. Reason: <{err}>")
-            sys.exit(1)
-        
-        # Iterate over each managed device entry in the retrieved managed devices info
-        for managed_device_entry in managed_devices_info:
-            # return an object here for each of the entries
-            ManagedDeviceObj = self.create_managed_device(managed_device_entry)
-            # set all the attributes of the object
-            ManagedDeviceObj.set_attributes()
-            # save it in the database
-            ManagedDeviceObj.save(self._Database)
     
-    def get_object_info_from_device_conn(self, object_type):
-        """
-        Retrieve information about objects of a specified type from the security device. It defines a dictionary mapping object types to functions retrieving objects
-        It then retrieves objects of the specified type using the dictionary, processes each retrieved object, appends the processed objects to a list,
-        and finally returns the list of processed objects.
-
-        Args:
-            object_type (str): Type of objects to retrieve information for.
-
-        Returns:
-            list: List of processed objects.
-        """
-        # Log a debug message indicating that the function is called
-        # Define a dictionary mapping object types to functions retrieving objects
-        match object_type:
-            case 'network_objects':
-                self.fetch_objects_info('network_objects')
-                object_names = self.get_db_objects('network_objects')
-                processed_objects_dict = {
-                    "network_objects": [],
-                    "network_group_objects": [],
-                    "geolocation_objects": []
-                }
-                
-            case 'port_objects':
-                self.fetch_objects_info('port_objects')
-                object_names = self.get_db_objects('port_objects')
-                processed_objects_dict = {
-                    "port_objects": [],
-                    "icmp_port_objects": [],
-                    "port_group_objects": []
-                }
-            
-            case 'url_objects':
-                self.fetch_objects_info('url_objects')
-                object_names = self.get_db_objects('url_objects')
-                processed_objects_dict = {
-                    "url_objects": [],
-                    "url_group_objects": []
-                }                
-        #TODO: proper support for schedule objects, users and l7 apps
-        object_type_mapping = {
-            'network_objects': self.return_network_objects,
-            'port_objects': self.return_port_objects,
-            # 'schedule_objects': self.return_schedule_objects(),
-            # 'policy_users': self.return_policy_users(),
-            'url_objects': self.return_url_objects,
-            # 'app_objects': self.return_app_objects()
-        }
-
-        # Retrieve the function corresponding to the specified object type
-        retrieve_function = object_type_mapping.get(object_type)
-
-        if retrieve_function is None:
-            return []  # Or raise an error if necessary
-
-        # Call the function to retrieve objects of the specified type
-        retrieved_objects_list = retrieve_function(object_names)
-
-        general_logger.info(f"################## Importing object configuration. Object type is: <{object_type}>. ##################")        
-        # Process retrieved objects
-        for RetrievedObject in retrieved_objects_list:
-            general_logger.info(f"Processing object: <{RetrievedObject.get_name()}. Object type is: <{object_type}>")
-            general_logger.debug(f"Raw object info: <{RetrievedObject.get_info()}>")
-            # Process the retrieved object
-            processed_object_info = RetrievedObject.process_object()
-            # Append the processed object to the corresponding list based on its type
-            if isinstance(RetrievedObject, NetworkObject):
-                processed_objects_dict["network_objects"].append(processed_object_info)
-            elif isinstance(RetrievedObject, NetworkGroupObject):
-                processed_objects_dict["network_group_objects"].append(processed_object_info)
-            elif isinstance(RetrievedObject, GeolocationObject):
-                processed_objects_dict["geolocation_objects"].append(processed_object_info)
-            elif isinstance(RetrievedObject, PortObject):
-                processed_objects_dict["port_objects"].append(processed_object_info)
-            elif isinstance(RetrievedObject, ICMPObject):
-                processed_objects_dict["icmp_port_objects"].append(processed_object_info)
-            elif isinstance(RetrievedObject, PortGroupObject):
-                processed_objects_dict["port_group_objects"].append(processed_object_info)
-            elif isinstance(RetrievedObject, URLObject):
-                processed_objects_dict["url_objects"].append(processed_object_info)
-            elif isinstance(RetrievedObject, URLGroupObject):
-                processed_objects_dict["url_group_objects"].append(processed_object_info)
-
-            general_logger.info(f"Processed object: <{RetrievedObject.get_name()}. Object type is: <{object_type}>")
-            general_logger.debug(f"Processed object info: <{processed_object_info}>")
-        
-        # Return the dictionary of processed objects
-        return [processed_objects_dict]
-
-    @abstractmethod
-    def create_managed_device(self, managed_device_entry):
-        pass
-
     # call the implementations of create_network_objects, create_port_objects, create_url_objects
     #TODO: uncomment all when done testing
     def migrate_config(self, SourceDevice):
