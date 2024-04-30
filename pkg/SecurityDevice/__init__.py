@@ -216,6 +216,10 @@ class SecurityDevice:
         # Log completion message for all containers
         general_logger.info(f"Finished processing all containers of type <{container_type}>.")
 
+
+    # TODO: merge the get_policy_info function here as well, add the container_list parameter. this container_list will, by default, be
+    # should container_list be kept? should just a container name be used?
+    # the problem is that there are cases where objects belong to a container and cases where objects belong to a device?
     def get_object_info_from_device_conn(self, object_type):
         """
         Retrieve information about managed devices.
