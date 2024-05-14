@@ -1,7 +1,7 @@
 from abc import abstractmethod
 from pkg import PioneerDatabase, GeneralDataTable, SecurityPolicyContainersTable, NATPolicyContainersTable, ObjectContainersTable, SecurityPoliciesTable, \
 PoliciesHitcountTable, SecurityZonesTable, URLObjectsTable, URLObjectGroupsTable, NetworkAddressObjectsTable, NetworkAddressObjectGroupsTable, \
-GeolocationObjectsTable, PortObjectsTable, ICMPObjectsTable, PortObjectGroupsTable, ScheduleObjectsTable, ManagedDevicesTable, ManagedDevice
+GeolocationObjectsTable, PortObjectsTable, ICMPObjectsTable, PortObjectGroupsTable, ScheduleObjectsTable, ManagedDevicesTable, ManagedDeviceContainersTable, ZoneContainersTable
 import utils.helper as helper
 import json
 import sys
@@ -26,6 +26,8 @@ class SecurityDeviceDatabase(PioneerDatabase):
         self._GeneralDataTable = GeneralDataTable(self)
         self._SecurityPolicyContainersTable = SecurityPolicyContainersTable(self)
         self._ObjectContainersTable = ObjectContainersTable(self)
+        self._ZoneContainersTable = ZoneContainersTable(self)
+        self._ManagedDeviceContainersTable = ManagedDeviceContainersTable(self)
         self._SecurityPoliciesTable = SecurityPoliciesTable(self)
         self._UrlObjectsTable = URLObjectsTable(self)
         self._UrlObjectGroupsTable = URLObjectGroupsTable(self)
@@ -42,6 +44,8 @@ class SecurityDeviceDatabase(PioneerDatabase):
         self._GeneralDataTable.create()
         self._SecurityPolicyContainersTable.create()
         self._ObjectContainersTable.create()
+        self._ZoneContainersTable.create()
+        self._ManagedDeviceContainersTable.create()
         self._SecurityPoliciesTable.create()
         self._UrlObjectsTable.create()
         self._UrlObjectGroupsTable.create()
@@ -61,6 +65,12 @@ class SecurityDeviceDatabase(PioneerDatabase):
 
     def get_object_containers_table(self):
         return self._ObjectContainersTable
+
+    def get_zone_containers_table(self):
+        return self._ZoneContainersTable
+    
+    def get_managed_device_containers_table(self):
+        return self._ManagedDeviceContainersTable
 
     def get_security_policies_table(self):
         return self._SecurityPoliciesTable
@@ -149,14 +159,16 @@ class SecurityDevice:
         
     def create_py_object(self, object_type, object_entry):
         match object_type:
+            case 'zone_container':
+                return self.return_zone_container(object_entry)
+            case 'managed_device_container':
+                return self.return_managed_device_container(object_entry)
             case 'object_container':
                 return self.return_object_container(object_entry)
             case 'security_policy_container':
                 return self.return_security_policy_container(object_entry)
-            
             case 'security_zone':
                 return self.return_security_zone(object_entry)
-            
             case 'managed_device':
                 return self.return_managed_device(object_entry)
 
@@ -178,6 +190,10 @@ class SecurityDevice:
             match container_type:
                 case 'security_policy_container':
                     containers_info = self.return_security_policy_container_info()
+                case 'zone_container':
+                    containers_info = self.return_zone_container_info()
+                case 'managed_device_container':
+                    containers_info = self.return_managed_device_container_info()
                 case 'object_container':
                     containers_info = self.return_object_container_info()
         except Exception as err:
@@ -216,7 +232,6 @@ class SecurityDevice:
         # Log completion message for all containers
         general_logger.info(f"Finished processing all containers of type <{container_type}>.")
 
-
     # TODO: merge the get_policy_info function here as well, add the container_list parameter. this container_list will, by default, be
     # should container_list be kept? should just a container name be used?
     # the problem is that there are cases where objects belong to a container and cases where objects belong to a device?
@@ -241,6 +256,19 @@ class SecurityDevice:
             SecurityDeviceObject.set_attributes()
             # save it in the database
             SecurityDeviceObject.save(self._Database)
+
+    # these functions are overridden in the subclasses whenever needed/relevant
+    def return_object_container_info(self):
+        return "container"
+
+    def return_managed_device_container_info(self):
+        return "container"
+    
+    def return_zone_container_info(self):
+        return "container"
+    
+    def return_security_policy_container_info(self):
+        return "container"
 
     def get_policy_info_from_device_conn(self, policy_containers_list, policy_type):
         """

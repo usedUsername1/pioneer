@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from pkg.Container.FMCContainer import FMCSecurityPolicyContainer, FMCObjectContainer
+from pkg.Container.FMCContainer import FMCSecurityPolicyContainer, FMCObjectContainer, FMCZoneContainer, FMCManagedDeviceContainer
 from pkg.DeviceObject.FMCDeviceObject import FMCObject, FMCNetworkGroupObject, FMCNetworkObject, FMCNetworkLiteralObject, \
 FMCPortObject, FMCICMPObject, FMCLiteralICMPObject, FMCPortGroupObject, FMCPortLiteralObject, FMCGeolocationObject, \
 FMCContinentObject, FMCCountryObject, FMCURLObject, FMCURLLiteral, FMCURLGroupObject
@@ -68,9 +68,6 @@ class FMCSecurityDevice(SecurityDevice):
 
     def return_security_policy_container_info(self):
         return self._SecurityDeviceConnection.policy.accesspolicy.get()
-    
-    def return_object_container_info(self):
-        return "DUMMY_CONTAINER"
 
     def return_managed_device_info(self):
         return self._SecurityDeviceConnection.device.devicerecord.get()
@@ -78,15 +75,17 @@ class FMCSecurityDevice(SecurityDevice):
     def return_security_zone_info(self):
         return
     
-
     def return_security_policy_container(self, container_entry):
         return FMCSecurityPolicyContainer(self, container_entry)
 
     def return_object_container(self, container_entry):
         return FMCObjectContainer(self, container_entry)
+
+    def return_zone_container(self, container_entry):
+        return FMCZoneContainer(self, container_entry)
     
-    # def return_security_zone(self, zone_entry):
-    #     return FMCSecurityZone(zone_entry)
+    def return_managed_device_container(self, container_entry):
+        return FMCManagedDeviceContainer(self, container_entry)
 
     def return_security_policies_info(self, policy_container_name):
         """

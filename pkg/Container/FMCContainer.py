@@ -1,4 +1,4 @@
-from pkg.Container import SecurityPolicyContainer, ObjectContainer
+from pkg.Container import SecurityPolicyContainer, ObjectContainer, VirtualContainer, ZoneContainer, ManagedDeviceContainer
 
 #TODO: maybe use setters for setting the values in here, and use the getters from the parent class to retrieve the info. just like you do for objects
 class FMCSecurityPolicyContainer(SecurityPolicyContainer):
@@ -44,7 +44,7 @@ class FMCSecurityPolicyContainer(SecurityPolicyContainer):
         """
         return self._container_info['metadata']['inherit']
 
-class FMCObjectContainer(ObjectContainer):
+class FMCObjectContainer(ObjectContainer, VirtualContainer):
     """
     Represents an object container specific to the Firepower Management Center (FMC).
     """
@@ -58,29 +58,10 @@ class FMCObjectContainer(ObjectContainer):
         """
         super().__init__(SecurityDevice, container_info)
 
-    def is_child_container(self):
-        """
-        Check if the container is a child container.
+class FMCZoneContainer(ZoneContainer, VirtualContainer):
+    def __init__(self, SecurityDevice, container_info) -> None:
+        super().__init__(SecurityDevice, container_info)
 
-        Returns:
-            bool: Always returns False for FMC object containers.
-        """
-        return False
-
-    def get_parent(self):
-        """
-        Get the name of the parent container.
-
-        Returns:
-            None: Since FMC object containers do not have parent containers, it returns None.
-        """
-        return None
-
-    def set_name(self):
-        name = "virtual_object_container"
-        return super().set_name(name)
-
-    def set_parent(self):
-        parent = None
-        return super().set_parent(parent)
-    
+class FMCManagedDeviceContainer(ManagedDeviceContainer, VirtualContainer):
+    def __init__(self, SecurityDevice, container_info) -> None:
+        super().__init__(SecurityDevice, container_info)

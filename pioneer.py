@@ -134,28 +134,33 @@ def main():
 
                 # Insert general device info into the database
                 general_logger.info(f"Inserting general device info in the database.")
-
                 SecurityDeviceObject.save_general_info(SecurityDeviceObject.get_uid(), security_device_name, security_device_username, security_device_secret, security_device_hostname, security_device_type, security_device_port, security_device_version, domain)
 
                 # Retrieve the information about the containers, interfaces and objects
                 print("Importing the object container data.")
                 # import and insert the object container first!
                 SecurityDeviceObject.get_container_info_from_device_conn('object_container')
-                
+                print("Importing security zones container data.")
+                SecurityDeviceObject.get_container_info_from_device_conn('zone_container')
+                print("Importing managed devices container data.")
+                SecurityDeviceObject.get_container_info_from_device_conn('managed_device_container')
                 # Retrieve the security policy containers along with the parents and insert them in the database
                 print("Importing the security policy containers info.")
                 SecurityDeviceObject.get_container_info_from_device_conn('security_policy_container')
 
+                # TODO: CONTINUE FROM HERE
                 # Retrieve information about the managed devices
-                general_logger.info(f"################## Getting the managed devices of device: <{security_device_name}>. ##################")
-                print("Importing the managed devices data.")
-                SecurityDeviceObject.get_object_info_from_device_conn('managed_device')
+                #TODO: how to tie the devices to the container? loop through the containers from the database and for each of them, extract the devices?
+                # general_logger.info(f"################## Getting the managed devices of device: <{security_device_name}>. ##################")
+                # print("Importing the managed devices data.")
+                # SecurityDeviceObject.get_object_info_from_device_conn('managed_device')
 
-                # Retrieve all the interfaces/zones of the device.
-                print("Importing the interfaces/zones data.")
-                SecurityDeviceObject.get_object_info_from_device_conn('security_zone')
+                # # Retrieve all the interfaces/zones of the device.
+                # # Be aware that interfaces might be stored in different containers. A new table is needed for this!
+                # print("Importing the interfaces/zones data.")
+                # SecurityDeviceObject.get_object_info_from_device_conn('security_zone')
 
-                #TODO: should the import of objects happen here or when a container is imported? do it here.
+                #TODO CONTINUE HERE TODO: should the import of objects happen here or when a container is imported? do it here.
                 # loop through all the object containers and retrieve the objects from there
                 # Retrieve all the objects defined on all containers of the device.
                 # loop through the object containers and get all the objects from there

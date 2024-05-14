@@ -110,5 +110,63 @@ class ObjectContainer(Container):
         ObjectContainersTable = Database.get_object_containers_table()
         ObjectContainersTable.insert(self.get_uid(), self.get_name(), self.get_security_device_uid(), self.get_parent())
 
+class VirtualContainer(Container):
+    def __init__(self, SecurityDevice, container_info) -> None:
+        super().__init__(SecurityDevice, container_info)
+    """
+    Represents a virtual container.
+    """
+    def __init__(self, SecurityDevice, container_info) -> None:
+        """
+        Initialize an Virtual Container instance.
+
+        Parameters:
+            container_info (dict): Information about the object container.
+        """
+        super().__init__(SecurityDevice, container_info)
+
+    def is_child_container(self):
+        """
+        Check if the container is a child container.
+
+        Returns:
+            bool: Always returns False for FMC object containers.
+        """
+        return False
+
+    def get_parent(self):
+        """
+        Get the name of the parent container.
+
+        Returns:
+            None: Since FMC object containers do not have parent containers, it returns None.
+        """
+        return None
+
+    def set_name(self):
+        name = "virtual_container"
+        return super().set_name(name)
+
+    def set_parent(self):
+        parent = None
+        return super().set_parent(parent)
+
+class ZoneContainer(Container):
+    def __init__(self, SecurityDevice, container_info) -> None:
+        super().__init__(SecurityDevice, container_info)
+    
+    def save(self, Database):
+        ZoneContainersTable = Database.get_zone_containers_table()
+        ZoneContainersTable.insert(self.get_uid(), self.get_name(), self.get_security_device_uid(), self.get_parent())
+
+class ManagedDeviceContainer(Container):
+    def __init__(self, SecurityDevice, container_info) -> None:
+        super().__init__(SecurityDevice, container_info)
+    
+    def save(self, Database):
+        ManagedDeviceContainersTable = Database.get_managed_device_containers_table()
+        ManagedDeviceContainersTable.insert(self.get_uid(), self.get_name(), self.get_security_device_uid(), self.get_parent())
+
+
 class NATPolicyContainer:
     pass

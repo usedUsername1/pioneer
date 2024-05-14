@@ -271,6 +271,29 @@ class ObjectContainersTable(PioneerTable):
             ("CONSTRAINT fk_security_device FOREIGN KEY (security_device_uid)", "REFERENCES general_security_device_data (uid)"),
         ]
 
+class ZoneContainersTable(PioneerTable):
+    def __init__(self, database):
+        super().__init__(database)
+        self._name = "zone_containers"
+        self._table_columns = [
+            ("uid", "TEXT PRIMARY KEY"),
+            ("name", "TEXT UNIQUE NOT NULL"),
+            ("security_device_uid", "TEXT"),
+            ("parent", "TEXT"),
+            ("CONSTRAINT fk_security_device FOREIGN KEY (security_device_uid)", "REFERENCES general_security_device_data (uid)"),
+        ]
+
+class ManagedDeviceContainersTable(PioneerTable):
+    def __init__(self, database):
+        super().__init__(database)
+        self._name = "managed_device_containers"
+        self._table_columns = [
+            ("uid", "TEXT PRIMARY KEY"),
+            ("name", "TEXT UNIQUE NOT NULL"),
+            ("security_device_uid", "TEXT"),
+            ("parent", "TEXT"),
+            ("CONSTRAINT fk_security_device FOREIGN KEY (security_device_uid)", "REFERENCES general_security_device_data (uid)"),
+        ]
 class ManagedDevicesTable(PioneerTable):
     def __init__(self, database):
         super().__init__(database)
@@ -278,12 +301,12 @@ class ManagedDevicesTable(PioneerTable):
         self._table_columns = [
             ("uid", "TEXT PRIMARY KEY"),
             ("name", "TEXT NOT NULL"),
-            ("security_device_uid", "TEXT"),
+            ("managed_device_container_uid", "TEXT"),
             ("assigned_security_policy_container", "TEXT"),
             ("hostname", "TEXT"),
             ("cluster", "TEXT"),
-            ("CONSTRAINT fk_security_device FOREIGN KEY (security_device_uid)", "REFERENCES general_security_device_data (uid)"),
-            ("CONSTRAINT uc_object_container_uid4", "UNIQUE (name, security_device_uid)")
+            ("CONSTRAINT fk_managed_device_container_uid FOREIGN KEY (managed_device_container_uid)", "REFERENCES managed_device_containers (uid)"),
+            ("CONSTRAINT uc_managed_device_container_uid", "UNIQUE (name, managed_device_container_uid)")
         ]
 
 #TODO: find out what to do with regions and url categories.
@@ -334,10 +357,10 @@ class SecurityZonesTable(PioneerTable):
         self._table_columns = [
             ("uid", "TEXT PRIMARY KEY"),
             ("name", "TEXT NOT NULL"),
-            ("object_container_uid", "TEXT NOT NULL"),
+            ("zone_container_uid", "TEXT NOT NULL"),
             ("description", "TEXT"),
-            ("CONSTRAINT fk_object_container FOREIGN KEY(object_container_uid)", "REFERENCES object_containers(uid)"),
-            ("CONSTRAINT uc_object_container_uid5", "UNIQUE (name, object_container_uid)")
+            ("CONSTRAINT fk_zone_container_uid FOREIGN KEY(zone_container_uid)", "REFERENCES zone_container_uid(uid)"),
+            ("CONSTRAINT uc_zone_container_uid", "UNIQUE (name, zone_container_uid)")
         ]
 
 class URLObjectsTable(PioneerTable):
@@ -486,6 +509,7 @@ class ScheduleObjectsTable(PioneerTable):
             ("CONSTRAINT fk_object_container FOREIGN KEY(object_container_uid)", "REFERENCES object_containers(uid)"),
             ("CONSTRAINT uc_object_container_uid14", "UNIQUE (name, object_container_uid)")
         ]
+
 
 # import the zone data from the device. use an ID for the zones. ID will be primary key. import only the names for now
 # import all the object data from the security device. use an ID for all the objects. the ID will be primary key
