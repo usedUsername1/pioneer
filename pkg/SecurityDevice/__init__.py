@@ -1,7 +1,7 @@
 from abc import abstractmethod
 from pkg import PioneerDatabase, GeneralDataTable, SecurityPolicyContainersTable, NATPolicyContainersTable, ObjectContainersTable, SecurityPoliciesTable, \
 PoliciesHitcountTable, SecurityZonesTable, URLObjectsTable, URLObjectGroupsTable, NetworkAddressObjectsTable, NetworkAddressObjectGroupsTable, \
-GeolocationObjectsTable, PortObjectsTable, ICMPObjectsTable, PortObjectGroupsTable, ScheduleObjectsTable, ManagedDevicesTable, ManagedDeviceContainersTable, ZoneContainersTable
+GeolocationObjectsTable, PortObjectsTable, ICMPObjectsTable, PortObjectGroupsTable, ScheduleObjectsTable, ManagedDevicesTable, ManagedDeviceContainersTable, SecurityZoneContainersTable
 import utils.helper as helper
 import json
 import sys
@@ -26,7 +26,7 @@ class SecurityDeviceDatabase(PioneerDatabase):
         self._GeneralDataTable = GeneralDataTable(self)
         self._SecurityPolicyContainersTable = SecurityPolicyContainersTable(self)
         self._ObjectContainersTable = ObjectContainersTable(self)
-        self._ZoneContainersTable = ZoneContainersTable(self)
+        self._ZoneContainersTable = SecurityZoneContainersTable(self)
         self._ManagedDeviceContainersTable = ManagedDeviceContainersTable(self)
         self._SecurityPoliciesTable = SecurityPoliciesTable(self)
         self._UrlObjectsTable = URLObjectsTable(self)
@@ -162,7 +162,7 @@ class SecurityDevice:
         
     def create_py_object(self, object_type, object_entry, ObjectContainer):
         match object_type:
-            case 'zone_container':
+            case 'security_zone_container':
                 return self.return_zone_container(object_entry)
             case 'managed_device_container':
                 return self.return_managed_device_container(object_entry)
@@ -193,7 +193,7 @@ class SecurityDevice:
             match container_type:
                 case 'security_policy_container':
                     containers_info = self.return_security_policy_container_info()
-                case 'zone_container':
+                case 'security_zone_container':
                     containers_info = self.return_zone_container_info()
                 case 'managed_device_container':
                     containers_info = self.return_managed_device_container_info()
@@ -241,10 +241,10 @@ class SecurityDevice:
     # the problem is that there are cases where objects belong to a container and cases where objects belong to a device?
     def get_object_info_from_device_conn(self, object_type, ObjectContainer):
         """
-        Retrieve information about managed devices.
+        Retrieve information about objects.
 
         Returns:
-            list: List of dictionaries containing information about managed devices.
+            list: List of dictionaries containing information about objects.
         """
         match object_type:
             case 'security_zone':
@@ -252,7 +252,7 @@ class SecurityDevice:
             case 'managed_device':
                 objects_info = self.return_managed_device_info()
         
-        # Iterate over each managed device entry in the retrieved managed devices info
+        # Iterate over each managed device entry in the retrieved objects info
         for object_entry in objects_info:
             # return an object here for each of the entries
             SecurityDeviceObject = self.create_py_object(object_type, object_entry, ObjectContainer)

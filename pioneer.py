@@ -141,15 +141,28 @@ def main():
                 #TODO: should the program import ALL the data and migrate only the data the user wants to? - yes
                 print("Importing the object container data.")
                 # import and insert the object container first!
+                general_logger.info(f"################## Getting the object containers of device: <{security_device_name}>. ##################")
                 object_containers_list = SecurityDeviceObject.get_container_info_from_device_conn('object_container')
+                print("Importing the object data")
+                general_logger.info(f"################## Getting the objects of device: <{security_device_name}>. ##################")
+                #TODO: continue from here
+                for ObjectContainer in object_containers_list:
+                    SecurityDeviceObject.get_object_info_from_device_conn('network_object', ObjectContainer)
+                    SecurityDeviceObject.get_object_info_from_device_conn('network_group_object', ObjectContainer)
+                    SecurityDeviceObject.get_object_info_from_device_conn('geolocation_object', ObjectContainer)
+                    SecurityDeviceObject.get_object_info_from_device_conn('port_object', ObjectContainer)
+                    SecurityDeviceObject.get_object_info_from_device_conn('icmp_object', ObjectContainer)
+                    SecurityDeviceObject.get_object_info_from_device_conn('port_group_object', ObjectContainer)
+                    SecurityDeviceObject.get_object_info_from_device_conn('url_object', ObjectContainer)
+                    SecurityDeviceObject.get_object_info_from_device_conn('url_group_object', ObjectContainer)
+                
                 print("Importing security zones container data.")
-                zone_containers_list = SecurityDeviceObject.get_container_info_from_device_conn('zone_container')
+                zone_containers_list = SecurityDeviceObject.get_container_info_from_device_conn('security_zone_container')
                 
                 # Retrieve the security policy containers along with the parents and insert them in the database
                 print("Importing the security policy containers info.")
                 SecurityDeviceObject.get_container_info_from_device_conn('security_policy_container')
 
-                # TODO: CONTINUE FROM HERE
                 print("Importing managed devices container data.")
                 managed_devices_container_list = SecurityDeviceObject.get_container_info_from_device_conn('managed_device_container')
                 

@@ -271,10 +271,10 @@ class ObjectContainersTable(PioneerTable):
             ("CONSTRAINT fk_security_device FOREIGN KEY (security_device_uid)", "REFERENCES general_security_device_data (uid)"),
         ]
 
-class ZoneContainersTable(PioneerTable):
+class SecurityZoneContainersTable(PioneerTable):
     def __init__(self, database):
         super().__init__(database)
-        self._name = "zone_containers"
+        self._name = "security_zone_containers"
         self._table_columns = [
             ("uid", "TEXT PRIMARY KEY"),
             ("name", "TEXT UNIQUE NOT NULL"),
@@ -450,7 +450,8 @@ class PortObjectsTable(PioneerTable):
             ("name", "TEXT NOT NULL"),
             ("object_container_uid", "TEXT NOT NULL"),
             ("protocol", "TEXT"),
-            ("number", "TEXT"),
+            ("source_port_number", "TEXT"),
+            ("destination_port_number", "TEXT"),
             ("description", "TEXT"),
             ("overridable_object", "BOOLEAN NOT NULL"),
             ("CONSTRAINT fk_object_container FOREIGN KEY(object_container_uid)", "REFERENCES object_containers(uid)"),
