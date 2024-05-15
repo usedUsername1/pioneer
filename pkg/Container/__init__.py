@@ -11,7 +11,7 @@ class Container:
             container_info: Information related to the container.
         """
         self._container_info = container_info
-        # self._SecurityDevice = SecurityDevice
+        self._SecurityDevice = SecurityDevice
         self._security_device_uid = SecurityDevice.get_uid()
         self._name = None
         self._parent_name = None
@@ -69,8 +69,8 @@ class Container:
     def get_security_device_uid(self):
         return self._security_device_uid
     
-    # def get_security_device(self):
-    #     return self._SecurityDevice
+    def get_security_device(self):
+        return self._SecurityDevice
 
     @abstractmethod
     def process_container_info(self):

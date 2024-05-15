@@ -126,6 +126,9 @@ class SecurityDevice:
     def set_database(self, Database):
         self._Database = Database
 
+    def get_database(self):
+        return self._Database
+
     def set_uid(self, uid):
         self._uid = uid
 

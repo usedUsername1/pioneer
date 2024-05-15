@@ -11,9 +11,9 @@ class FMCManagedDevice(ManagedDevice):
         name = self._managed_device_info['name']
         return super().set_name(name)
     
-    def set_assigned_security_policy_container(self):
-        assigned_security_policy_container = self._managed_device_info['accessPolicy']['name']
-        return super().set_assigned_security_policy_container(assigned_security_policy_container)
+    def set_assigned_security_policy_container_uid(self):
+        assigned_security_policy_container_name = self._managed_device_info['accessPolicy']['name']
+        return super().set_assigned_security_policy_container_uid(assigned_security_policy_container_name)
     
     def set_hostname(self):
         hostname = self._managed_device_info['hostName']
