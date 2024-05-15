@@ -28,12 +28,12 @@ class FMCSecurityPolicyContainer(SecurityPolicyContainer):
         """
         return self._name
 
-    def set_parent(self):
+    def set_parent_name(self):
         try:
-            parent = self._container_info['metadata']['parentPolicy']['name']
+            parent_name = self._container_info['metadata']['parentPolicy']['name']
         except KeyError:
-            parent = None
-        return super().set_parent(parent)
+            parent_name = None
+        return super().set_parent_name(parent_name)
 
     def is_child_container(self):
         """
@@ -48,7 +48,6 @@ class FMCObjectContainer(ObjectContainer, VirtualContainer):
     """
     Represents an object container specific to the Firepower Management Center (FMC).
     """
-
     def __init__(self, SecurityDevice, container_info) -> None:
         """
         Initialize an FMCObjectContainer instance.

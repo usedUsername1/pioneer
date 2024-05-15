@@ -13,6 +13,7 @@ class Container:
         self._container_info = container_info
         self._security_device_uid = SecurityDevice.get_uid()
         self._name = None
+        self._parent_name = None
         self._parent = None
         self._uid = helper.generate_uid()
 
@@ -25,14 +26,20 @@ class Container:
         """
         self._name = name
 
-    def set_parent(self, parent):
+    def set_parent_name(self, parent_name):
         """
         Sets the parent container of the current container.
 
         Args:
             parent (Container): The parent container object.
         """
+        self._parent_name = parent_name
+    
+    def set_parent(self, parent):
         self._parent = parent
+    
+    def get_parent(self):
+        return self._parent
     
     def set_uid(self, uid):
         self._uid = uid
@@ -49,14 +56,14 @@ class Container:
         """
         return self._name
 
-    def get_parent(self):
+    def get_parent_name(self):
         """
         Get the name of the parent policy.
 
         Returns:
             str: Name of the parent policy.
         """
-        return self._parent
+        return self._parent_name
 
     def get_security_device_uid(self):
         return self._security_device_uid
@@ -94,7 +101,10 @@ class SecurityPolicyContainer(Container):
 
     def save(self, Database):
         SecurityPolicyContainerTable = Database.get_security_policy_containers_table()
-        SecurityPolicyContainerTable.insert(self.get_uid(), self.get_name(), self.get_security_device_uid(), self.get_parent())
+        try:
+            SecurityPolicyContainerTable.insert(self.get_uid(), self.get_name(), self.get_security_device_uid(), self.get_parent().get_uid())
+        except AttributeError:
+            SecurityPolicyContainerTable.insert(self.get_uid(), self.get_name(), self.get_security_device_uid(), None)
 
 class ObjectContainer(Container):
     def __init__(self, SecurityDevice, container_info) -> None:
@@ -108,7 +118,10 @@ class ObjectContainer(Container):
 
     def save(self, Database):
         ObjectContainersTable = Database.get_object_containers_table()
-        ObjectContainersTable.insert(self.get_uid(), self.get_name(), self.get_security_device_uid(), self.get_parent())
+        try:
+            ObjectContainersTable.insert(self.get_uid(), self.get_name(), self.get_security_device_uid(), self.get_parent().get_uid())
+        except AttributeError:
+            ObjectContainersTable.insert(self.get_uid(), self.get_name(), self.get_security_device_uid(), None)
 
 class VirtualContainer(Container):
     def __init__(self, SecurityDevice, container_info) -> None:
@@ -134,7 +147,7 @@ class VirtualContainer(Container):
         """
         return False
 
-    def get_parent(self):
+    def get_parent_name(self):
         """
         Get the name of the parent container.
 
@@ -147,9 +160,9 @@ class VirtualContainer(Container):
         name = "virtual_container"
         return super().set_name(name)
 
-    def set_parent(self):
-        parent = None
-        return super().set_parent(parent)
+    def set_parent_name(self):
+        parent_name = None
+        return super().set_parent_name(parent_name)
 
 class ZoneContainer(Container):
     def __init__(self, SecurityDevice, container_info) -> None:
@@ -157,7 +170,10 @@ class ZoneContainer(Container):
     
     def save(self, Database):
         ZoneContainersTable = Database.get_zone_containers_table()
-        ZoneContainersTable.insert(self.get_uid(), self.get_name(), self.get_security_device_uid(), self.get_parent())
+        try:
+            ZoneContainersTable.insert(self.get_uid(), self.get_name(), self.get_security_device_uid(), self.get_parent().get_uid())
+        except AttributeError:
+            ZoneContainersTable.insert(self.get_uid(), self.get_name(), self.get_security_device_uid(), None)
 
 class ManagedDeviceContainer(Container):
     def __init__(self, SecurityDevice, container_info) -> None:
@@ -165,7 +181,10 @@ class ManagedDeviceContainer(Container):
     
     def save(self, Database):
         ManagedDeviceContainersTable = Database.get_managed_device_containers_table()
-        ManagedDeviceContainersTable.insert(self.get_uid(), self.get_name(), self.get_security_device_uid(), self.get_parent())
+        try:
+            ManagedDeviceContainersTable.insert(self.get_uid(), self.get_name(), self.get_security_device_uid(), self.get_parent().get_uid())
+        except:
+            ManagedDeviceContainersTable.insert(self.get_uid(), self.get_name(), self.get_security_device_uid(), None)
 
 
 class NATPolicyContainer:

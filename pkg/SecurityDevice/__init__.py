@@ -196,41 +196,40 @@ class SecurityDevice:
                     containers_info = self.return_managed_device_container_info()
                 case 'object_container':
                     containers_info = self.return_object_container_info()
+                case _:
+                    raise ValueError(f"Unknown container type: {container_type}")
         except Exception as err:
-            # Log a critical error message if managed devices retrieval fails and exit the program
             general_logger.critical(f"Could not retrieve container info. Reason: <{err}>")
             sys.exit(1)
 
-        # Set to store processed container names
-        processed_containers = set()
+        container_objects = set()
 
         for container_entry in containers_info:
-            CurrentContainer = self.create_py_object(container_type, container_entry)
+            current_container = self.create_py_object(container_type, container_entry)
 
-            # Set name and parent for the current container
-            CurrentContainer.set_name()
-            CurrentContainer.set_parent()
+            current_container.set_name()
+            current_container.set_parent_name()
 
-            current_container_name = CurrentContainer.get_name()
-
-            # Skip processing if the container is already processed
-            if current_container_name in processed_containers:
-                continue
+            current_container_name = current_container.get_parent_name()
 
             general_logger.info(f"Processing <{container_type}> container. Name: <{current_container_name}>")
 
-            # Retrieve the parent container name
-            parent_container_name = CurrentContainer.get_parent()
+            parent_container_name = current_container.get_parent_name()
             general_logger.info(f"<{current_container_name}> is a child container. Its parent is: <{parent_container_name}>.")
 
-            # Save the current container in the database
-            CurrentContainer.save(self._Database)
+            container_objects.add(current_container)
 
-            # Add the current container to the set of processed containers
-            processed_containers.add(current_container_name)
+        general_logger.info(f"Finished processing all containers of type <{container_type}>. I will now start inserting them in the database.")
+        parent_name_to_object = {container.get_name(): container for container in container_objects}
 
-        # Log completion message for all containers
-        general_logger.info(f"Finished processing all containers of type <{container_type}>.")
+        for Container in container_objects:
+            parent_name = Container.get_parent_name()
+            if parent_name:
+                ParentContainer = parent_name_to_object.get(parent_name)
+                if ParentContainer:
+                    Container.set_parent(ParentContainer)
+
+            Container.save(self._Database)
 
     # TODO: merge the get_policy_info function here as well, add the container_list parameter. this container_list will, by default, be
     # should container_list be kept? should just a container name be used?
@@ -259,16 +258,16 @@ class SecurityDevice:
 
     # these functions are overridden in the subclasses whenever needed/relevant
     def return_object_container_info(self):
-        return "container"
+        return ["container"]
 
     def return_managed_device_container_info(self):
-        return "container"
+        return ["container"]
     
     def return_zone_container_info(self):
-        return "container"
+        return ["container"]
     
     def return_security_policy_container_info(self):
-        return "container"
+        return ["container"]
 
     def get_policy_info_from_device_conn(self, policy_containers_list, policy_type):
         """
