@@ -1,10 +1,10 @@
 import utils.helper as helper
 class ManagedDevice():
-    def __init__(self, SecurityDevice, managed_device_info) -> None:
+    def __init__(self, ManagedDevicesContainer, managed_device_info) -> None:
         self._managed_device_info = managed_device_info
         self._uid = helper.generate_uid()
         self._name = None
-        self._security_device_uid = SecurityDevice.get_uid()
+        self._managed_devices_container_uid = ManagedDevicesContainer.get_uid()
         self._assigned_security_policy_container = None
         self._hostname = None
         self._cluster = None
@@ -18,6 +18,7 @@ class ManagedDevice():
     def get_assigned_security_policy_container(self):
         return self._assigned_security_policy_container
 
+    #TODO: see how to get the ID of a container by name
     def set_assigned_security_policy_container(self, container):
         self._assigned_security_policy_container = container
 
@@ -39,8 +40,8 @@ class ManagedDevice():
     def get_uid(self):
         return self._uid
     
-    def get_security_device_uid(self):
-        return self._security_device_uid
+    def get_managed_devices_container_uid(self):
+        return self._managed_devices_container_uid
     
     def set_attributes(self):
         self.set_name()
@@ -50,4 +51,4 @@ class ManagedDevice():
 
     def save(self, Database):
         ManagedDevicesTable = Database.get_managed_devices_table()
-        ManagedDevicesTable.insert(self.get_uid(), self.get_name(), self.get_security_device_uid(), self.get_assigned_security_policy_container(), self.get_hostname(), self.get_cluster())
+        ManagedDevicesTable.insert(self.get_uid(), self.get_name(), self.get_managed_devices_container_uid(), self.get_assigned_security_policy_container(), self.get_hostname(), self.get_cluster())

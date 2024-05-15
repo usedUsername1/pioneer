@@ -54,7 +54,7 @@ class FMCSecurityDevice(SecurityDevice):
         self._url_objects_info = None
         self._url_object_groups_info = None
 
-    def return_managed_device(self, managed_device_entry):
+    def return_managed_device(self, ManagedDeviceContainer, managed_device_entry):
         """
         Override create_managed_device method to return FMCManagedDevice instance.
 
@@ -64,7 +64,7 @@ class FMCSecurityDevice(SecurityDevice):
         Returns:
             FMCManagedDevice: Instance of FMCManagedDevice.
         """
-        return FMCManagedDevice(self, managed_device_entry)
+        return FMCManagedDevice(ManagedDeviceContainer, managed_device_entry)
 
     def return_security_policy_container_info(self):
         return self._SecurityDeviceConnection.policy.accesspolicy.get()
@@ -84,6 +84,7 @@ class FMCSecurityDevice(SecurityDevice):
     def return_zone_container(self, container_entry):
         return FMCZoneContainer(self, container_entry)
     
+    #TODO: get the uid of the container 
     def return_managed_device_container(self, container_entry):
         return FMCManagedDeviceContainer(self, container_entry)
 

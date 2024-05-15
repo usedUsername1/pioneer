@@ -302,10 +302,11 @@ class ManagedDevicesTable(PioneerTable):
             ("uid", "TEXT PRIMARY KEY"),
             ("name", "TEXT NOT NULL"),
             ("managed_device_container_uid", "TEXT"),
-            ("assigned_security_policy_container", "TEXT"),
+            ("assigned_security_policy_container_uid", "TEXT"),
             ("hostname", "TEXT"),
             ("cluster", "TEXT"),
             ("CONSTRAINT fk_managed_device_container_uid FOREIGN KEY (managed_device_container_uid)", "REFERENCES managed_device_containers (uid)"),
+            ("CONSTRAINT fk_assigned_security_policy_container_uid FOREIGN KEY (assigned_security_policy_container_uid)", "REFERENCES security_policy_containers (uid)"),
             ("CONSTRAINT uc_managed_device_container_uid", "UNIQUE (name, managed_device_container_uid)")
         ]
 

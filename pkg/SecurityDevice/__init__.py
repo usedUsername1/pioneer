@@ -157,7 +157,7 @@ class SecurityDevice:
             # Exit the program with status code 1 indicating a critical error
             sys.exit(1)
         
-    def create_py_object(self, object_type, object_entry):
+    def create_py_object(self, object_type, object_entry, ObjectContainer):
         match object_type:
             case 'zone_container':
                 return self.return_zone_container(object_entry)
@@ -170,7 +170,7 @@ class SecurityDevice:
             case 'security_zone':
                 return self.return_security_zone(object_entry)
             case 'managed_device':
-                return self.return_managed_device(object_entry)
+                return self.return_managed_device(ObjectContainer, object_entry)
 
     def get_container_info_from_device_conn(self, container_type):
         """
@@ -205,7 +205,7 @@ class SecurityDevice:
         container_objects = set()
 
         for container_entry in containers_info:
-            current_container = self.create_py_object(container_type, container_entry)
+            current_container = self.create_py_object(container_type, container_entry, ObjectContainer=None)
 
             current_container.set_name()
             current_container.set_parent_name()
@@ -230,11 +230,13 @@ class SecurityDevice:
                     Container.set_parent(ParentContainer)
 
             Container.save(self._Database)
+        
+        return container_objects
 
     # TODO: merge the get_policy_info function here as well, add the container_list parameter. this container_list will, by default, be
     # should container_list be kept? should just a container name be used?
     # the problem is that there are cases where objects belong to a container and cases where objects belong to a device?
-    def get_object_info_from_device_conn(self, object_type):
+    def get_object_info_from_device_conn(self, object_type, ObjectContainer):
         """
         Retrieve information about managed devices.
 
@@ -250,7 +252,7 @@ class SecurityDevice:
         # Iterate over each managed device entry in the retrieved managed devices info
         for object_entry in objects_info:
             # return an object here for each of the entries
-            SecurityDeviceObject = self.create_py_object(object_type, object_entry)
+            SecurityDeviceObject = self.create_py_object(object_type, object_entry, ObjectContainer)
             # set all the attributes of the object
             SecurityDeviceObject.set_attributes()
             # save it in the database
@@ -293,8 +295,7 @@ class SecurityDevice:
 
                 # save the policy data in the database
                 Policy.save(self._Database)
-    
-    # call the implementations of create_network_objects, create_port_objects, create_url_objects
+
     #TODO: uncomment all when done testing
     def migrate_config(self, SourceDevice):
         print("called migrate config")

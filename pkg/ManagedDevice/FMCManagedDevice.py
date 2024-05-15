@@ -4,8 +4,8 @@ import utils.helper as helper
 general_logger = helper.logging.getLogger('general')
 
 class FMCManagedDevice(ManagedDevice):
-    def __init__(self, SecurityDevice, managed_device_info) -> None:
-        super().__init__(SecurityDevice, managed_device_info)
+    def __init__(self, ManagedDevicesContainer, managed_device_info) -> None:
+        super().__init__(ManagedDevicesContainer, managed_device_info)
     
     def set_name(self):
         name = self._managed_device_info['name']
