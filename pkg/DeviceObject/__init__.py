@@ -7,21 +7,28 @@ class Object:
     Base class for representing objects in the system.
     """
 
-    def __init__(self, object_info) -> None:
+    def __init__(self, ObjectContainer, object_info) -> None:
         """
         Initialize an Object instance.
 
         Parameters:
         - object_info (dict): Information about the object.
         """
-        general_logger.debug("Called Object::__init__()")
         # Store the provided object information
         self._object_info = object_info
         
         # Initialize attributes
+        self._uid = helper.generate_uid()
+        self._ObjectContainer = ObjectContainer
         self._name = None
         self._description = None
         self._is_overridable = None
+
+    def get_uid(self):
+        return self._uid
+    
+    def get_object_container(self):
+        return self._ObjectContainer
 
     def get_name(self):
         """
@@ -30,7 +37,6 @@ class Object:
         Returns:
             str: Name of the object.
         """
-        general_logger.debug("Called Object::get_name()")
         return self._name
 
     def set_name(self, value):
@@ -40,7 +46,6 @@ class Object:
         Parameters:
             value (str): Name of the object.
         """
-        general_logger.debug("Called Object::set_name()")
         self._name = value
 
     def get_description(self):
@@ -50,7 +55,6 @@ class Object:
         Returns:
             str: Description of the object.
         """
-        general_logger.debug("Called Object::get_description()")
         return self._description
 
     def set_description(self, value):
@@ -60,7 +64,6 @@ class Object:
         Parameters:
             value (str): Description of the object.
         """
-        general_logger.debug("Called Object::set_description()")
         self._description = value
 
     def get_override_bool(self):
@@ -70,7 +73,6 @@ class Object:
         Returns:
             bool: Override status of the object.
         """
-        general_logger.debug("Called Object::get_override_bool()")
         return self._is_overridable
 
     def set_override_bool(self, value):
@@ -80,7 +82,6 @@ class Object:
         Parameters:
             value (bool): Override status of the object.
         """
-        general_logger.debug("Called Object::set_override_bool()")
         self._is_overridable = value
 
     def get_object_container_name(self):
@@ -90,7 +91,6 @@ class Object:
         Returns:
             str: Name of the object container.
         """
-        general_logger.debug("Called Object::get_object_container_name()")
         return self._object_container
 
     def set_object_container_name(self, value):
@@ -100,7 +100,6 @@ class Object:
         Parameters:
             value (str): Name of the object container.
         """
-        general_logger.debug("Called Object::set_object_container_name()")
         self._object_container = value
 
     def get_info(self):
@@ -110,9 +109,8 @@ class Object:
         Returns:
             dict: Information about the object.
         """
-        general_logger.debug("Called Object::get_object_device_info()")
         return self._object_info
-    
+          
 # regarding processing groups: the object members of the groups have to be processed as well
 class GroupObject(Object):
     """
@@ -129,7 +127,7 @@ class GroupObject(Object):
         super().__init__(object_info)
         self._members = None
     
-    def get_member_names(self):
+    def get_members(self):
         """
         Get the member names of the group object.
 
@@ -138,7 +136,7 @@ class GroupObject(Object):
         """
         return self._members
     
-    def set_member_names(self, members):
+    def set_members(self, members):
         """
         Set the member objects of the group object.
 
@@ -147,20 +145,24 @@ class GroupObject(Object):
         """
         self._members = members
 
+    def set_attributes(self):
+        self.set_name()
+        self.set_description()
+        self.set_override_bool()
+
 class NetworkObject(Object):
     """
     A class representing a network object.
     """
 
-    def __init__(self, object_info) -> None:
+    def __init__(self, ObjectContainer, object_info) -> None:
         """
         Initialize the NetworkObject instance.
 
         Args:
             object_info (dict): Information about the network object.
         """
-        general_logger.debug("Called NetworkObject::__init__()")
-        super().__init__(object_info)
+        super().__init__(ObjectContainer, object_info)
         self._network_address_value = None
         self._network_address_type = None
 
@@ -171,7 +173,6 @@ class NetworkObject(Object):
         Returns:
             str: The network address value.
         """
-        general_logger.debug("Called NetworkObject::get_network_address_value()")
         return self._network_address_value
     
     def set_network_address_value(self, value):
@@ -181,7 +182,6 @@ class NetworkObject(Object):
         Parameters:
             value (str): The network address value.
         """
-        general_logger.debug("Called NetworkObject::set_network_address_value()")
         self._network_address_value = value
 
     def get_network_address_type(self):
@@ -191,7 +191,6 @@ class NetworkObject(Object):
         Returns:
             str: The network address type.
         """
-        general_logger.debug("Called NetworkObject::get_network_address_type()")
         return self._network_address_type
     
     def set_network_address_type(self, value):
@@ -201,36 +200,18 @@ class NetworkObject(Object):
         Parameters:
             value (str): The network address type.
         """
-        general_logger.debug("Called NetworkObject::set_network_address_type()")
         self._network_address_type = value
-    
-    def process_object(self):
-        """
-        Process the network object.
 
-        Returns:
-            dict: Processed information about the network object.
-        """
-        general_logger.debug("Called NetworkObject::process_object()")
-        
-        # Set the values with for the object with the data you got in the object_info variable, which holds the info of the device as extracted from the Security Device
+    def set_attributes(self):
         self.set_name()
-        self.set_object_container_name()        
-        self.set_network_address_value()
         self.set_description()
-        self.set_network_address_type()
         self.set_override_bool()
+        self.set_network_address_type()
+        self.set_network_address_value()
 
-        processed_object_info = {
-            "network_address_name": self.get_name(),
-            "object_container_name": self.get_object_container_name(),
-            "network_address_value": self.get_network_address_value(),
-            "network_address_description": self.get_description(),
-            "network_address_type": self.get_network_address_type(),
-            "overridable_object": self.get_override_bool()
-        }
-
-        return processed_object_info
+    def save(self, Database):
+        NetworkAddressObjectsTable = Database.get_network_address_objects_table()
+        NetworkAddressObjectsTable.insert(self.get_uid(), self.get_name(), self.get_object_container().get_uid(), self.get_network_address_value(), self.get_description(), self.get_network_address_type(), self.get_override_bool())  
 
 class NetworkGroupObject(GroupObject):
     """
@@ -245,31 +226,6 @@ class NetworkGroupObject(GroupObject):
             object_info (dict): Information about the network group object.
         """
         super().__init__(object_info)
-
-    def process_object(self):
-        """
-        Process the network group object.
-
-        Returns:
-            dict: Information about the processed network group object.
-        """
-        processed_group_object_info = []
-
-        self.set_name()
-        self.set_object_container_name()
-        # no need to set the member names, they will be set in the implementation of return_network_objects function
-        self.set_description()
-        self.set_override_bool()
-
-        processed_group_object_info = {
-            "network_address_group_name": self.get_name(),
-            "object_container_name": self.get_object_container_name(),
-            "network_address_group_members": self.get_member_names(),
-            "network_address_group_description": self.get_description(),
-            "overridable_object": self.get_override_bool()
-        }
-
-        return processed_group_object_info
 
 # For simplicity, all geo data is going to be treated as a Geolocation object.
 # For example, in FMC, you have Geolocation objects (made out of countries and other continents), and then you have the countries and the continents. they are not object entities per se
@@ -292,7 +248,6 @@ class GeolocationObject(Object):
         Args:
             object_info (dict): Information about the geolocation object.
         """
-        general_logger.debug("Called GeolocationObject::__init__()")
         super().__init__(object_info)
         self._continents = None
         self._countries = None
@@ -307,7 +262,6 @@ class GeolocationObject(Object):
         Args:
             value (list): List of continents.
         """
-        general_logger.debug("Called GeolocationObject::set_continents()")
         self._continents = value
 
     def get_continents(self):
@@ -317,7 +271,6 @@ class GeolocationObject(Object):
         Returns:
             list: List of continents.
         """
-        general_logger.debug("Called GeolocationObject::get_continents()")
         return self._continents
 
     def set_countries(self, value):
@@ -327,7 +280,6 @@ class GeolocationObject(Object):
         Args:
             value (list): List of countries.
         """
-        general_logger.debug("Called GeolocationObject::set_countries()")
         self._countries = value
 
     def get_countries(self):
@@ -337,7 +289,6 @@ class GeolocationObject(Object):
         Returns:
             list: List of countries.
         """
-        general_logger.debug("Called GeolocationObject::get_countries()")
         return self._countries
 
     def set_member_alpha2_codes(self, value):
@@ -347,7 +298,6 @@ class GeolocationObject(Object):
         Args:
             value (list): List of alpha-2 codes.
         """
-        general_logger.debug("Called GeolocationObject::set_member_alpha2_codes()")
         self._country_alpha2_codes = value
 
     def get_alpha2_codes(self):
@@ -357,7 +307,6 @@ class GeolocationObject(Object):
         Returns:
             list: List of alpha-2 codes.
         """
-        general_logger.debug("Called GeolocationObject::get_alpha2_codes()")
         return self._country_alpha2_codes
 
     def set_member_alpha3_codes(self, value):
@@ -367,7 +316,6 @@ class GeolocationObject(Object):
         Args:
             value (list): List of alpha-3 codes.
         """
-        general_logger.debug("Called GeolocationObject::set_member_alpha3_codes()")
         self._country_alpha3_codes = value
 
     def get_alpha3_codes(self):
@@ -377,7 +325,6 @@ class GeolocationObject(Object):
         Returns:
             list: List of alpha-3 codes.
         """
-        general_logger.debug("Called GeolocationObject::get_alpha3_codes()")
         return self._country_alpha3_codes
 
     def set_member_numeric_codes(self, value):
@@ -387,7 +334,6 @@ class GeolocationObject(Object):
         Args:
             value (list): List of numeric codes.
         """
-        general_logger.debug("Called GeolocationObject::set_member_numeric_codes()")
         self._country_numeric_codes = value
 
     def get_numeric_codes(self):
@@ -397,7 +343,6 @@ class GeolocationObject(Object):
         Returns:
             list: List of numeric codes.
         """
-        general_logger.debug("Called GeolocationObject::get_numeric_codes()")
         return self._country_numeric_codes
 
     def get_member_continent_names(self):
@@ -407,7 +352,6 @@ class GeolocationObject(Object):
         Returns:
             list: List of continent names.
         """
-        general_logger.debug("Called GeolocationObject::get_member_continent_names()")
         if self._continents is None:
             return None
         
@@ -425,7 +369,6 @@ class GeolocationObject(Object):
         Returns:
             list: List of country names.
         """
-        general_logger.debug("Called GeolocationObject::get_member_country_names()")
         if self._countries is None:
             return None
         
@@ -443,7 +386,6 @@ class GeolocationObject(Object):
         Returns:
             list: List of alpha-2 codes.
         """
-        general_logger.debug("Called GeolocationObject::get_member_alpha2_codes()")
         if self._countries is None:
             return None
         
@@ -461,7 +403,6 @@ class GeolocationObject(Object):
         Returns:
             list: List of alpha-3 codes.
         """
-        general_logger.debug("Called GeolocationObject::get_member_alpha3_codes()")
         if self._countries is None:
             return None
         
@@ -479,7 +420,6 @@ class GeolocationObject(Object):
         Returns:
             list: List of numeric codes.
         """
-        general_logger.debug("Called GeolocationObject::get_member_numeric_codes()")
         if self._countries is None:
             return None
         
@@ -497,7 +437,6 @@ class GeolocationObject(Object):
         Returns:
             dict: Processed information about the geolocation object.
         """
-        general_logger.debug("Called GeolocationObject::process_object()")
         # Setters are necessary because the objects' attributes are not set upon their creation. We can only get this data after we construct the object with the data from the security device.
 
         self.set_name()
@@ -532,7 +471,6 @@ class PortObject(Object):
         Args:
             object_info (dict): Information about the port object.
         """
-        general_logger.debug("Called PortObject::__init__()")
         super().__init__(object_info)
         self._port_protocol = None
         self._port_number = None
@@ -544,7 +482,6 @@ class PortObject(Object):
         Returns:
             str: The port protocol.
         """
-        general_logger.debug("Called PortObject::get_port_protocol()")
         return self._port_protocol
     
     def set_port_protocol(self, protocol):
@@ -554,7 +491,6 @@ class PortObject(Object):
         Parameters:
             protocol (str): The port protocol.
         """
-        general_logger.debug("Called PortObject::set_port_protocol()")
         self._port_protocol = protocol
 
     def get_port_number(self):
@@ -564,7 +500,6 @@ class PortObject(Object):
         Returns:
             int: The port number.
         """
-        general_logger.debug("Called PortObject::get_port_number()")
         return self._port_number
     
     def set_port_number(self, number):
@@ -574,35 +509,7 @@ class PortObject(Object):
         Parameters:
             number (int): The port number.
         """
-        general_logger.debug("Called PortObject::set_port_number()")
         self._port_number = number
-    
-    def process_object(self):
-        """
-        Process the network object.
-
-        Returns:
-            dict: Processed information about the port object.
-        """
-        general_logger.debug("Called PortObject::process_object()")
-        # Set the values with for the object with the data you got in the object_info variable, which holds the info of the device as extracted from the Security Device
-        self.set_name()
-        self.set_object_container_name()
-        self.set_port_protocol()
-        self.set_port_number()        
-        self.set_description()
-        self.set_override_bool()
-
-        processed_object_info = {
-            "port_name": self.get_name(),
-            "object_container_name": self.get_object_container_name(),
-            "port_protocol": self.get_port_protocol(),
-            "port_number": self.get_port_number(),
-            "port_description": self.get_description(),
-            "overridable_object": self.get_override_bool()
-        }
-
-        return processed_object_info
     
 class PortGroupObject(GroupObject):
     """
@@ -618,31 +525,6 @@ class PortGroupObject(GroupObject):
         """
         super().__init__(object_info)
 
-    def process_object(self):
-        """
-        Process the port group object.
-
-        Returns:
-            dict: Information about the processed port group object.
-        """
-        processed_group_object_info = []
-
-        self.set_name()
-        self.set_object_container_name()
-        # no need to set the member names, they will be set in the implementation of return_network_objects function
-        self.set_description()
-        self.set_override_bool()
-
-        processed_group_object_info = {
-            "port_group_name": self.get_name(),
-            "object_container_name": self.get_object_container_name(),
-            "port_group_members": self.get_member_names(),
-            "port_group_description": self.get_description(),
-            "overridable_object": self.get_override_bool()
-        }
-
-        return processed_group_object_info
-
 class ICMPObject(Object):
     """
     Class representing an ICMP object in the system, inheriting from the base Object class.
@@ -655,7 +537,6 @@ class ICMPObject(Object):
         Parameters:
         - object_info (dict): Information about the ICMP object.
         """
-        general_logger.debug("Called ICMPObject::__init__()")
         super().__init__(object_info)
         self._icmp_type = None
         self._icmp_code = None
@@ -667,7 +548,6 @@ class ICMPObject(Object):
         Returns:
             str: ICMP type.
         """
-        general_logger.debug("Called ICMPObject::get_icmp_type()")
         return self._icmp_type
 
     def set_icmp_type(self, icmp_type):
@@ -677,7 +557,6 @@ class ICMPObject(Object):
         Parameters:
             icmp_type (str): ICMP type.
         """
-        general_logger.debug("Called ICMPObject::set_icmp_type()")
         self._icmp_type = icmp_type
 
     def get_icmp_code(self):
@@ -687,7 +566,6 @@ class ICMPObject(Object):
         Returns:
             str: ICMP code.
         """
-        general_logger.debug("Called ICMPObject::get_icmp_code()")
         return self._icmp_code
 
     def set_icmp_code(self, icmp_code):
@@ -697,44 +575,7 @@ class ICMPObject(Object):
         Parameters:
             icmp_code (str): ICMP code.
         """
-        general_logger.debug("Called ICMPObject::set_icmp_code()")
         self._icmp_code = icmp_code
-
-    def process_object(self):
-        """
-        Process the ICMP object to gather its information.
-
-        This method sets various attributes of the ICMP object, including name, object container name,
-        ICMP type, ICMP code, description, and override boolean. After setting these attributes, it constructs
-        a dictionary containing the processed information about the ICMP object.
-
-        Returns:
-            dict: A dictionary containing the processed information about the ICMP object.
-                  It includes the following keys:
-                  - "icmp_name": The name of the ICMP object.
-                  - "object_container_name": The name of the object container.
-                  - "icmp_type": The ICMP type.
-                  - "icmp_code": The ICMP code.
-                  - "icmp_description": The description of the ICMP object.
-                  - "overridable_object": A boolean indicating whether the object is overridable.
-        """
-        self.set_name()
-        self.set_object_container_name()
-        self.set_icmp_type()
-        self.set_icmp_code()
-        self.set_description()
-        self.set_override_bool()
-
-        processed_object_info = {
-            "icmp_name": self.get_name(),
-            "object_container_name": self.get_object_container_name(),
-            "icmp_type": self.get_icmp_type(),
-            "icmp_code": self.get_icmp_code(),
-            "icmp_description": self.get_description(),
-            "overridable_object": self.get_override_bool()
-        }
-
-        return processed_object_info
 
 class URLObject(Object):
     def __init__(self, object_info) -> None:
@@ -770,31 +611,6 @@ class URLObject(Object):
         None
         """
         self._url_value = url_value
-    
-    def process_object(self):
-        """
-        Process the URL object.
-
-        Returns:
-        dict: Processed information about the URL object.
-        """
-        # Set object attributes
-        self.set_name()
-        self.set_object_container_name()
-        self.set_url_value()
-        self.set_description()
-        self.set_override_bool()
-
-        # Create processed object info dictionary
-        processed_object_info = {
-            "url_object_name": self.get_name(),
-            "object_container_name": self.get_object_container_name(),
-            "url_value": self.get_url_value(),
-            "url_object_description": self.get_description()          
-        }
-
-        return processed_object_info
-
 
 class URLGroupObject(GroupObject):
     def __init__(self, object_info) -> None:
@@ -808,31 +624,6 @@ class URLGroupObject(GroupObject):
         None
         """
         super().__init__(object_info)
-    
-    def process_object(self):
-        """
-        Process the URL group object.
-
-        Returns:
-        dict: Processed information about the URL group object.
-        """
-        # Set object attributes
-        self.set_name()
-        self.set_object_container_name()
-        self.set_description()
-        self.set_override_bool()
-
-        # Create processed object info dictionary
-        processed_object_info = {
-            "url_object_group_name": self.get_name(),
-            "object_container_name": self.get_object_container_name(),
-            "url_object_members": self.get_member_names(),
-            "url_group_object_description": self.get_description()
-        }
-
-        return processed_object_info
-
-
 
 # class SecurityZone(Object):
 #     def __init__(self, name, description, is_overridable, object_container_name=None) -> None:

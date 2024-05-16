@@ -54,26 +54,38 @@ class FMCSecurityDevice(SecurityDevice):
         self._url_objects_info = None
         self._url_object_groups_info = None
 
-    def return_managed_device(self, ManagedDeviceContainer, managed_device_entry):
-        """
-        Override create_managed_device method to return FMCManagedDevice instance.
-
-        Args:
-            managed_device_entry: Entry containing information about the managed device.
-
-        Returns:
-            FMCManagedDevice: Instance of FMCManagedDevice.
-        """
-        return FMCManagedDevice(ManagedDeviceContainer, managed_device_entry)
-
     def return_security_policy_container_info(self):
         return self._SecurityDeviceConnection.policy.accesspolicy.get()
 
     def return_managed_device_info(self):
         return self._SecurityDeviceConnection.device.devicerecord.get()
 
-    def return_security_zone_info(self):
-        return
+    def return_network_object_info(self):
+        return self._SecurityDeviceConnection.object.networkaddress.get()
+
+    def return_network_group_object_info(self):
+        return self._SecurityDeviceConnection.object.networkgroup.get()
+    
+    #TODO: should contintents and countries be imported here as well?
+    def return_geolocation_object_info(self):
+        return self._SecurityDeviceConnection.object.geolocation.get()
+        # return self._SecurityDeviceConnection.object.country.get()
+        # self._SecurityDeviceConnection.object.continent.get()
+    
+    def return_port_object_info(self):
+        return self._SecurityDeviceConnection.object.port.get()
+        
+    def return_port_group_object_info(self):
+        return self._SecurityDeviceConnection.object.portobjectgroup.get()
+        
+    def return_url_object_info(self):
+        return self._SecurityDeviceConnection.object.url.get()
+        
+    def return_url_group_object_info(self):
+        return self._SecurityDeviceConnection.object.urlgroup.get()
+
+    # def return_security_zone_info(self):
+    #     return self._SecurityDeviceConnection
     
     def return_security_policy_container(self, container_entry):
         return FMCSecurityPolicyContainer(self, container_entry)
@@ -87,6 +99,39 @@ class FMCSecurityDevice(SecurityDevice):
     #TODO: get the uid of the container 
     def return_managed_device_container(self, container_entry):
         return FMCManagedDeviceContainer(self, container_entry)
+
+    def return_managed_device(self, ManagedDeviceContainer, managed_device_entry):
+        """
+        Override create_managed_device method to return FMCManagedDevice instance.
+
+        Args:
+            managed_device_entry: Entry containing information about the managed device.
+
+        Returns:
+            FMCManagedDevice: Instance of FMCManagedDevice.
+        """
+        return FMCManagedDevice(ManagedDeviceContainer, managed_device_entry)
+
+    def return_network_object(self, ObjectContainer, network_object_entry):
+        return FMCNetworkObject(ObjectContainer, network_object_entry)
+    
+    def return_network_group_object(self, ObjectContainer, network_group_object_entry):
+        return FMCNetworkGroupObject(ObjectContainer, network_group_object_entry)
+
+    def return_geolocation_object(self, ObjectContainer, geolocation_object_entry):
+        return FMCGeolocationObject(ObjectContainer, geolocation_object_entry)
+
+    def return_port_object(self, ObjectContainer, port_object_entry):
+        return FMCPortObject(ObjectContainer, port_object_entry)
+
+    def return_port_group_object(self, ObjectContainer, port_group_object_entry):
+        return FMCPortGroupObject(ObjectContainer, port_group_object_entry)
+
+    def return_url_object(self, ObjectContainer, url_object_entry):
+        return FMCURLObject(ObjectContainer, url_object_entry)
+
+    def return_url_group_object(self, ObjectContainer, url_group_object_entry):
+        return FMCURLGroupObject(ObjectContainer, url_group_object_entry)
 
     def return_security_policies_info(self, policy_container_name):
         """
@@ -118,80 +163,6 @@ class FMCSecurityDevice(SecurityDevice):
         # Extract the exact info needed from the response got from the device
         device_version = device_system_info[0]['serverVersion']
         return device_version
-    
-    # This function returns Python network objects back to the caller.
-    # for the objects stored in the database, it checks where they are exactly located on the Security Device
-    # if "example" is a network address, it will stop processing and then it will return a network address object
-    def fetch_objects_info(self, object_type):
-        """
-        This function fetches information about different types of objects from the security device based on the specified object type.
-        It checks if the information has already been fetched to avoid redundant API calls.
-        If the information is not already available, it fetches it from the device and converts it into dictionaries for efficient lookup.
-
-        Args:
-            object_type (str): Type of objects to fetch information for.
-
-        Returns:
-            None
-        """
-        # Fetch information for network objects
-        if object_type == 'network_objects':
-            # Fetch network address objects if not already fetched
-            if not self._network_address_objects_info:
-                self._network_address_objects_info = self._SecurityDeviceConnection.object.networkaddress.get()
-                # Convert the fetched information into a dictionary for efficient lookup
-                network_address_objects_dict = {entry['name']: entry for entry in self._network_address_objects_info}
-                self._network_address_objects_info = network_address_objects_dict
-
-            # Fetch network group objects if not already fetched
-            if not self._network_group_objects_info:
-                self._network_group_objects_info = self._SecurityDeviceConnection.object.networkgroup.get()
-                # Convert the fetched information into a dictionary for efficient lookup
-                network_group_objects_dict = {entry['name']: entry for entry in self._network_group_objects_info}
-                self._network_group_objects_info = network_group_objects_dict
-
-            # Fetch geolocation objects if not already fetched
-            if not self._geolocation_objects_info:
-                self._geolocation_objects_info = self._SecurityDeviceConnection.object.geolocation.get()
-                # Convert the fetched information into a dictionary for efficient lookup
-                geolocation_objects_dict = {entry['name']: entry for entry in self._geolocation_objects_info}
-                self._geolocation_objects_info = geolocation_objects_dict
-
-            # Fetch country objects if not already fetched
-            if not self._countries_info:
-                self._countries_info = self._SecurityDeviceConnection.object.country.get()
-                # Convert the fetched information into a dictionary for efficient lookup
-                countries_dict = {entry['id']: entry for entry in self._countries_info if 'id' in entry}
-                self._countries_info = countries_dict
-
-            # Fetch continent objects if not already fetched
-            if not self._continents_info:
-                self._continents_info = self._SecurityDeviceConnection.object.continent.get()
-                # Convert the fetched information into a dictionary for efficient lookup
-                continents_dict = {entry['name']: entry for entry in self._continents_info}
-                self._continents_info = continents_dict
-        
-        if object_type == 'port_objects':
-            if not self._port_objects_info:
-                self._port_objects_info = self._SecurityDeviceConnection.object.port.get()
-                ports_dict = {entry['name']: entry for entry in self._port_objects_info if 'name' in entry}
-                self._port_objects_info = ports_dict
-            
-            if not self._port_group_objects_info:
-                self._port_group_objects_info = self._SecurityDeviceConnection.object.portobjectgroup.get()
-                port_groups_dict = {entry['name']: entry for entry in self._port_group_objects_info if 'name' in entry}
-                self._port_group_objects_info = port_groups_dict
-        
-        if object_type == 'url_objects':
-            if not self._url_objects_info:
-                self._url_objects_info = self._SecurityDeviceConnection.object.url.get()
-                url_objects_dict = {entry['name']: entry for entry in self._url_objects_info if 'name' in entry}
-                self._url_objects_info = url_objects_dict
-            
-            if not self._url_object_groups_info:
-                self._url_object_groups_info = self._SecurityDeviceConnection.object.urlgroup.get()
-                url_group_objects_dict = {entry['name']: entry for entry in self._url_object_groups_info if 'name' in entry}
-                self._url_object_groups_info = url_group_objects_dict
 
     # this function is responsible for retrieving all the member objects
     # it also sets the members of a group objects to be the objects retrieved

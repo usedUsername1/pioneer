@@ -29,8 +29,8 @@ class SecurityDeviceDatabase(PioneerDatabase):
         self._ZoneContainersTable = SecurityZoneContainersTable(self)
         self._ManagedDeviceContainersTable = ManagedDeviceContainersTable(self)
         self._SecurityPoliciesTable = SecurityPoliciesTable(self)
-        self._UrlObjectsTable = URLObjectsTable(self)
-        self._UrlObjectGroupsTable = URLObjectGroupsTable(self)
+        self._URLObjectsTable = URLObjectsTable(self)
+        self._URLObjectGroupsTable = URLObjectGroupsTable(self)
         self._NetworkAddressObjectsTable = NetworkAddressObjectsTable(self)
         self._NetworkAddressObjectGroupsTable = NetworkAddressObjectGroupsTable(self)
         self._GeolocationObjectsTable = GeolocationObjectsTable(self)
@@ -47,8 +47,8 @@ class SecurityDeviceDatabase(PioneerDatabase):
         self._ZoneContainersTable.create()
         self._ManagedDeviceContainersTable.create()
         self._SecurityPoliciesTable.create()
-        self._UrlObjectsTable.create()
-        self._UrlObjectGroupsTable.create()
+        self._URLObjectsTable.create()
+        self._URLObjectGroupsTable.create()
         self._NetworkAddressObjectsTable.create()
         self._NetworkAddressObjectGroupsTable.create()
         self._GeolocationObjectsTable.create()
@@ -76,10 +76,10 @@ class SecurityDeviceDatabase(PioneerDatabase):
         return self._SecurityPoliciesTable
 
     def get_url_objects_table(self):
-        return self._UrlObjectsTable
+        return self._URLObjectsTable
 
     def get_url_object_groups_table(self):
-        return self._UrlObjectGroupsTable
+        return self._URLObjectGroupsTable
 
     def get_network_address_objects_table(self):
         return self._NetworkAddressObjectsTable
@@ -174,6 +174,20 @@ class SecurityDevice:
                 return self.return_security_zone(object_entry)
             case 'managed_device':
                 return self.return_managed_device(ObjectContainer, object_entry)
+            case 'network_object':
+                return self.return_network_object(ObjectContainer, object_entry)
+            case 'network_group_object':
+                return self.return_network_group_object(ObjectContainer, object_entry)
+            case 'geolocation_object':
+                return self.return_geolocation_object(ObjectContainer, object_entry)
+            case 'port_object':
+                return self.return_port_object(ObjectContainer, object_entry)
+            case 'port_group_object':
+                return self.return_port_group_object(ObjectContainer, object_entry)
+            case 'url_object':
+                return self.return_url_object(ObjectContainer, object_entry)
+            case 'url_group_object':
+                return self.return_url_group_object(ObjectContainer, object_entry)
 
     def get_container_info_from_device_conn(self, container_type):
         """
@@ -251,6 +265,20 @@ class SecurityDevice:
                 objects_info = self.return_security_zone_info()
             case 'managed_device':
                 objects_info = self.return_managed_device_info()
+            case 'network_object':
+                objects_info = self.return_network_object_info()
+            case 'network_group_object':
+                objects_info = self.return_network_group_object_info()
+            case 'geolocation_object':
+                objects_info = self.return_geolocation_object_info()
+            case 'port_object':
+                objects_info = self.return_port_object_info()
+            case 'port_group_object':
+                objects_info = self.return_port_group_object_info()
+            case 'url_object':
+                objects_info = self.return_url_object_info()
+            case 'url_group_object':
+                objects_info = self.return_url_group_object_info()
         
         # Iterate over each managed device entry in the retrieved objects info
         for object_entry in objects_info:
