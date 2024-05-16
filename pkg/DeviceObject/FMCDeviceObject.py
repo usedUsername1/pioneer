@@ -1,5 +1,5 @@
 import utils.helper as helper
-from pkg.DeviceObject import Object, NetworkObject, NetworkGroupObject, GeolocationObject, PortObject, PortGroupObject, ICMPObject, URLObject, URLGroupObject
+from pkg.DeviceObject import Object, NetworkObject, GroupObject, GeolocationObject, PortObject, ICMPObject, URLObject
 import utils.gvars as gvars
 import ipaddress
 import utils.exceptions as PioneerExceptions
@@ -306,25 +306,19 @@ class FMCNetworkLiteralObject(FMCLiteral, NetworkObject):
 
         return super().set_network_address_type(type)
 
-class FMCNetworkGroupObject(FMCObject, NetworkGroupObject):
-    def __init__(self, object_info) -> None:
+class FMCNetworkGroupObject(FMCObject, GroupObject):
+    def __init__(self, ObjectContainer, object_info) -> None:
         """
         Initializes a new FMCNetworkGroupObject.
 
         Args:
             object_info (dict): Information about the network group object.
         """
-        super().__init__(object_info)
-
-    #TODO: this is not actually needed, or is it?    
-    def set_member_names(self, members):
-        """
-        Sets the member names of the network group object.
-
-        Args:
-            members (list): A list of member names.
-        """
-        return super().set_member_names(members)
+        super().__init__(ObjectContainer, object_info)
+    
+    def set_group_type(self, group_type):
+        group_type = 'network'
+        return super().set_group_type(group_type)
 
 class FMCCountryObject(GeolocationObject):
     """
@@ -900,7 +894,7 @@ class FMCLiteralICMPObject(ICMPObject):
         is_overridable = False
         return super().set_override_bool(is_overridable)
 
-class FMCPortGroupObject(FMCObject, PortGroupObject):
+class FMCPortGroupObject(FMCObject, GroupObject):
     def __init__(self, object_info) -> None:
         """
         Initialize an FMC Port Group Object.
@@ -962,7 +956,7 @@ class FMCURLLiteral(FMCLiteral, URLObject):
         url_value = split_info[1]
         return super().set_url_value(url_value)
 
-class FMCURLGroupObject(FMCObject, URLGroupObject):
+class FMCURLGroupObject(FMCObject, GroupObject):
     def __init__(self, object_info) -> None:
         """
         Initialize an FMC URL Group Object.

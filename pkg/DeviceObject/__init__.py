@@ -125,30 +125,23 @@ class GroupObject(Object):
             object_info (dict): Information about the group object.
         """
         super().__init__(object_info)
-        self._members = None
+        self._group_type = None
     
-    def get_members(self):
-        """
-        Get the member names of the group object.
-
-        Returns:
-            list: The names of the members.
-        """
-        return self._members
+    def set_group_type(self, group_type):
+        self.group_type = group_type
     
-    def set_members(self, members):
-        """
-        Set the member objects of the group object.
-
-        Parameters:
-            members (list): The list of member names.
-        """
-        self._members = members
+    def get_group_type(self):
+        return self._group_type
 
     def set_attributes(self):
         self.set_name()
         self.set_description()
         self.set_override_bool()
+        self.set_group_type()
+
+    def save(self, Database):
+        ObjectGroupsTable = Database.get_object_groups_table()
+        ObjectGroupsTable.insert(self.get_uid(), self.get_name(), self.get_object_container().get_uid(), self.get_description(), self.get_override_bool(), self.get_group_type())  
 
 class NetworkObject(Object):
     """
@@ -212,20 +205,6 @@ class NetworkObject(Object):
     def save(self, Database):
         NetworkAddressObjectsTable = Database.get_network_address_objects_table()
         NetworkAddressObjectsTable.insert(self.get_uid(), self.get_name(), self.get_object_container().get_uid(), self.get_network_address_value(), self.get_description(), self.get_network_address_type(), self.get_override_bool())  
-
-class NetworkGroupObject(GroupObject):
-    """
-    A class representing a network group object.
-    """
-
-    def __init__(self, object_info) -> None:
-        """
-        Initialize the NetworkGroupObject instance.
-
-        Args:
-            object_info (dict): Information about the network group object.
-        """
-        super().__init__(object_info)
 
 # For simplicity, all geo data is going to be treated as a Geolocation object.
 # For example, in FMC, you have Geolocation objects (made out of countries and other continents), and then you have the countries and the continents. they are not object entities per se
@@ -510,20 +489,6 @@ class PortObject(Object):
             number (int): The port number.
         """
         self._port_number = number
-    
-class PortGroupObject(GroupObject):
-    """
-    A class representing a port group object.
-    """
-
-    def __init__(self, object_info) -> None:
-        """
-        Initialize the PortGroupObject instance.
-
-        Args:
-            object_info (dict): Information about the port group object.
-        """
-        super().__init__(object_info)
 
 class ICMPObject(Object):
     """
@@ -611,19 +576,6 @@ class URLObject(Object):
         None
         """
         self._url_value = url_value
-
-class URLGroupObject(GroupObject):
-    def __init__(self, object_info) -> None:
-        """
-        Initialize a URL Group Object.
-
-        Parameters:
-        - object_info (dict): Information about the URL group object.
-
-        Returns:
-        None
-        """
-        super().__init__(object_info)
 
 # class SecurityZone(Object):
 #     def __init__(self, name, description, is_overridable, object_container_name=None) -> None:

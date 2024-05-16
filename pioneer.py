@@ -152,8 +152,15 @@ def main():
                     print("Import network objects.")
                     SecurityDeviceObject.get_object_info_from_device_conn('network_object', ObjectContainer)
 
-                    # general_logger.info(f"################## Getting the network group objects of device: <{security_device_name}>. Container: <{object_container_name}> ##################")
-                    # SecurityDeviceObject.get_object_info_from_device_conn('network_group_object', ObjectContainer)
+                    #TODO: continue importing groups
+                        # all group objects are the same -> use a single table for storing groups, add an extra parameter to the group definition
+                            # indicating the type of group
+                        # there needs to be a new table many-to-many relationship storing the relationship between the members and the group object
+                        # literal values defined on the group must be converted to objects and inserted in the objects table
+                        # import the network groups first, then create the relationships between the objects
+
+                    general_logger.info(f"################## Getting the network group objects of device: <{security_device_name}>. Container: <{object_container_name}> ##################")
+                    SecurityDeviceObject.get_object_info_from_device_conn('network_group_object', ObjectContainer)
                     
                     # general_logger.info(f"################## Getting the geolocation objects of device: <{security_device_name}>. Container: <{object_container_name}> ##################")
                     # SecurityDeviceObject.get_object_info_from_device_conn('geolocation_object', ObjectContainer)
@@ -190,12 +197,6 @@ def main():
                 # # Be aware that interfaces might be stored in different containers. A new table is needed for this!
                 # print("Importing the interfaces/zones data.")
                 # SecurityDeviceObject.get_object_info_from_device_conn('security_zone')
-
-                #TODO CONTINUE HERE TODO: should the import of objects happen here or when a container is imported? do it here.
-                # loop through all the object containers and retrieve the objects from there
-                # Retrieve all the objects defined on all containers of the device.
-                # loop through the object containers and get all the objects from there
-                # print("Importing objects data.")
 
             else:
                 general_logger.critical(f"Failed to retrieve version of the security device. Exiting...")

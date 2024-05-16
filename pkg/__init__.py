@@ -159,7 +159,7 @@ class PioneerTable():
 
     def get_columns(self):
         # Extract only the column names from the table columns excluding foreign keys
-        column_names = [col[0] for col in self._table_columns if not col[0].startswith("CONSTRAINT")]
+        column_names = [col[0] for col in self._table_columns if not (col[0].startswith("CONSTRAINT") or col[0].startswith("PRIMARY"))]
         # Join the column names into a string
         table_columns_str = ", ".join(column_names)
         return table_columns_str
@@ -378,20 +378,6 @@ class URLObjectsTable(PioneerTable):
             ("CONSTRAINT uc_object_container_uid6", "UNIQUE (name, object_container_uid)")
         ]
 
-class URLObjectGroupsTable(PioneerTable):
-    def __init__(self, database):
-        super().__init__(database)
-        self._name = "url_object_groups"
-        self._table_columns = [
-            ("uid", "TEXT PRIMARY KEY"),
-            ("name", "TEXT NOT NULL"),
-            ("object_container_uid", "TEXT NOT NULL"),
-            ("members", "TEXT[]"),
-            ("description", "TEXT"),
-            ("CONSTRAINT fk_object_container FOREIGN KEY(object_container_uid)", "REFERENCES object_containers(uid)"),
-            ("CONSTRAINT uc_object_container_uid7", "UNIQUE (name, object_container_uid)")
-        ]
-
 class NetworkAddressObjectsTable(PioneerTable):
     def __init__(self, database):
         super().__init__(database)
@@ -408,21 +394,36 @@ class NetworkAddressObjectsTable(PioneerTable):
             ("CONSTRAINT uc_object_container_uid8", "UNIQUE (name, object_container_uid)")
         ]
 
-class NetworkAddressObjectGroupsTable(PioneerTable):
+# all groups will be stored in the same table since group objects
+# don't have any particular value that distinguishes them from the rest of the object groups
+class ObjectGroupsTable(PioneerTable):
     def __init__(self, database):
         super().__init__(database)
-        self._name = "network_address_object_groups"
+        self._name = "object_groups"
         self._table_columns = [
             ("uid", "TEXT PRIMARY KEY"),
             ("name", "TEXT NOT NULL"),
             ("object_container_uid", "TEXT NOT NULL"),
-            ("members", "TEXT[]"),
             ("description", "TEXT"),
             ("overridable_object", "BOOLEAN NOT NULL"),
+            # this column defines the type of the group (etc network group, port group, etc)
+            ("group_type", "TEXT NOT NULL"),
             ("CONSTRAINT fk_object_container FOREIGN KEY(object_container_uid)", "REFERENCES object_containers(uid)"),
-            ("CONSTRAINT uc_object_container_uid9", "UNIQUE (name, object_container_uid)")
+            ("CONSTRAINT uc_object_container_uid", "UNIQUE (name, object_container_uid)")
         ]
-        
+
+class ObjectGroupMembersTable(PioneerTable):
+    def __init__(self, database):
+        super().__init__(database)
+        self._name = "object_group_members"
+        self._table_columns = [
+            ("group_uid", "TEXT NOT NULL"),
+            ("object_uid", "TEXT NOT NULL"),
+            ("CONSTRAINT fk_group FOREIGN KEY(group_uid)", "REFERENCES object_groups(uid)"),
+            ("CONSTRAINT fk_object FOREIGN KEY(object_uid)", "REFERENCES network_address_objects(uid)"),
+            ("PRIMARY KEY(group_uid, object_uid)", "")
+        ]
+
 class GeolocationObjectsTable(PioneerTable):
     def __init__(self, database):
         super().__init__(database)
@@ -472,21 +473,6 @@ class ICMPObjectsTable(PioneerTable):
             ("overridable_object", "BOOLEAN NOT NULL"),
             ("CONSTRAINT fk_object_container FOREIGN KEY(object_container_uid)", "REFERENCES object_containers(uid)"),
             ("CONSTRAINT uc_object_container_uid12", "UNIQUE (name, object_container_uid)")
-        ]
-
-class PortObjectGroupsTable(PioneerTable):
-    def __init__(self, database):
-        super().__init__(database)
-        self._name = "port_object_groups"
-        self._table_columns = [
-            ("uid", "TEXT PRIMARY KEY"),
-            ("name", "TEXT NOT NULL"),
-            ("object_container_uid", "TEXT NOT NULL"),
-            ("members", "TEXT[]"),
-            ("description", "TEXT"),
-            ("overridable_object", "BOOLEAN NOT NULL"),
-            ("CONSTRAINT fk_object_container FOREIGN KEY(object_container_uid)", "REFERENCES object_containers(uid)"),
-            ("CONSTRAINT uc_object_container_uid13", "UNIQUE (name, object_container_uid)")
         ]
 
 class ScheduleObjectsTable(PioneerTable):
