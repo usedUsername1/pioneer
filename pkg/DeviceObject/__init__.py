@@ -117,18 +117,15 @@ class GroupObject(Object):
     A class representing a group object.
     """
 
-    def __init__(self, object_info) -> None:
+    def __init__(self, ObjectContainer, object_info, group_type) -> None:
         """
         Initialize the GroupObject instance.
 
         Args:
             object_info (dict): Information about the group object.
         """
-        super().__init__(object_info)
-        self._group_type = None
-    
-    def set_group_type(self, group_type):
-        self.group_type = group_type
+        self._group_type = group_type
+        super().__init__(ObjectContainer, object_info)
     
     def get_group_type(self):
         return self._group_type
@@ -137,7 +134,6 @@ class GroupObject(Object):
         self.set_name()
         self.set_description()
         self.set_override_bool()
-        self.set_group_type()
 
     def save(self, Database):
         ObjectGroupsTable = Database.get_object_groups_table()

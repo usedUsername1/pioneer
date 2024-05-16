@@ -306,7 +306,7 @@ class FMCNetworkLiteralObject(FMCLiteral, NetworkObject):
 
         return super().set_network_address_type(type)
 
-class FMCNetworkGroupObject(FMCObject, GroupObject):
+class FMCNetworkGroupObject(GroupObject, FMCObject):
     def __init__(self, ObjectContainer, object_info) -> None:
         """
         Initializes a new FMCNetworkGroupObject.
@@ -314,11 +314,8 @@ class FMCNetworkGroupObject(FMCObject, GroupObject):
         Args:
             object_info (dict): Information about the network group object.
         """
-        super().__init__(ObjectContainer, object_info)
-    
-    def set_group_type(self, group_type):
-        group_type = 'network'
-        return super().set_group_type(group_type)
+        self._group_type = 'network'
+        super().__init__(ObjectContainer, object_info, self._group_type)
 
 class FMCCountryObject(GeolocationObject):
     """
@@ -894,7 +891,7 @@ class FMCLiteralICMPObject(ICMPObject):
         is_overridable = False
         return super().set_override_bool(is_overridable)
 
-class FMCPortGroupObject(FMCObject, GroupObject):
+class FMCPortGroupObject(GroupObject, FMCObject):
     def __init__(self, object_info) -> None:
         """
         Initialize an FMC Port Group Object.
@@ -956,7 +953,7 @@ class FMCURLLiteral(FMCLiteral, URLObject):
         url_value = split_info[1]
         return super().set_url_value(url_value)
 
-class FMCURLGroupObject(FMCObject, GroupObject):
+class FMCURLGroupObject(GroupObject, FMCObject):
     def __init__(self, object_info) -> None:
         """
         Initialize an FMC URL Group Object.
