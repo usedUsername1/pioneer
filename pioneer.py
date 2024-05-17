@@ -8,6 +8,7 @@ from pkg.SecurityDevice import SecurityDevice, SecurityDeviceDatabase
 from pkg.SecurityDevice.SecurityDeviceFactory import SecurityDeviceFactory
 import sys
 from datetime import datetime, timezone
+import psutil
 
 import subprocess
 
@@ -151,20 +152,9 @@ def main():
                 print("Import network objects.")
                 SecurityDeviceObject.get_object_info_from_device_conn('network_object', ObjectContainer)
 
-                #TODO: continue importing groups
-                    # all group objects are the same -> use a single table for storing groups, add an extra parameter to the group definition
-                        # indicating the type of group - done
-                    # there needs to be a new table many-to-many relationship storing the relationship between the members and the group object - done
-                    
-                    # literal values defined on the group must be converted to objects and inserted in the objects table - pending
-                    # import the network groups first, then create the relationships between the objects
-                        # use the two-pass method, after you got all the objects, build the relationships between them by iterating all over them again
-
                 general_logger.info(f"################## Getting the network group objects of device: <{security_device_name}>. Container: <{object_container_name}> ##################")
                 print("Import network group objects.")
                 SecurityDeviceObject.get_object_info_from_device_conn('network_group_object', ObjectContainer)
-
-                # at this stage in the code, you have all the 
                 
                 # general_logger.info(f"################## Getting the geolocation objects of device: <{security_device_name}>. Container: <{object_container_name}> ##################")
                 # SecurityDeviceObject.get_object_info_from_device_conn('geolocation_object', ObjectContainer)

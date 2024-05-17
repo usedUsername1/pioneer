@@ -6,8 +6,6 @@ import utils.exceptions as PioneerExceptions
 from abc import abstractmethod
 general_logger = helper.logging.getLogger('general')
 
-#TODO: are class specific group classes needed?, eg FMCPortGroupObject
-
 class FMCObject(Object):
     """
     A class representing a FMC object.
@@ -237,13 +235,33 @@ class FMCNetworkGroupObject(GroupObject, FMCObject):
             for literal_member in literal_members:
                 converted_literal = FMCObject.convert_network_literal_to_object(ObjectContainer, literal_member)
                 converted_literal.set_attributes()
+
+                # add the name of the literal object to the list tracking the member names of the object
+                self.add_group_member_name(converted_literal.get_name())
                 converted_literal.save(Database)
         except:
             general_logger.info(f"No literal members found for network group <{self._name}>.")
+
+    def set_object_member_names(self):
+        general_logger.info(f"Getting the names of object members of group <{self._name}>.")
+        try:
+            object_members = self._object_info['objects']
+            for object_member in object_members:
+                self.add_group_member_name(object_member['name'])
+        except:
+            general_logger.info(f"There are no object members for group <{self._name}>.")
+
+    # since we are dealing with a group object, there are a few operations that must be done
+    # before the object is saved in the database
+    # we need to get the names of the objects that are members of the group objects and track them
+    # we need to check for literals. the name of the converted literal object will be tracked as well
+    # finally, the object group will be inserted
     def save(self, Database):
-        ObjectGroupsTable = Database.get_object_groups_table()
-        # now check for literals
+        # set the names of the object members
+        self.set_object_member_names()
+        # check for literals
         self.check_for_literals(self.get_object_container(), Database)
+        ObjectGroupsTable = Database.get_object_groups_table()
         ObjectGroupsTable.insert(self.get_uid(), self.get_name(), self.get_object_container().get_uid(), self.get_description(), self.get_override_bool(), self.get_group_type())   
 
 class FMCCountryObject(GeolocationObject):
@@ -716,7 +734,6 @@ class FMCPortGroupObject(GroupObject, FMCObject):
         """
         super().__init__(object_info)
 
-#TODO: implement the classes and process URL objects
 class FMCURLObject(FMCObject, URLObject):
     def __init__(self, object_info) -> None:
         """

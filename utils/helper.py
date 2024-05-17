@@ -5,7 +5,7 @@ import utils.exceptions as PioneerExceptions
 import ipaddress
 import logging
 import os
-
+import psutil
 import uuid
 
 def generate_uid():
@@ -286,3 +286,9 @@ def netmask_to_cidr_bits(netmask):
         return cidr_bits
     except ValueError:
         return None  # Invalid netmask format
+
+def get_usage():
+    cpu_percent = psutil.cpu_percent()
+    mem_info = psutil.virtual_memory()
+    mem_usage_mb = mem_info.used / (1024 ** 2)  # Convert bytes to MB
+    return cpu_percent, mem_usage_mb

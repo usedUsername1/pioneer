@@ -125,10 +125,17 @@ class GroupObject(Object):
             object_info (dict): Information about the group object.
         """
         self._group_type = group_type
+        self._group_member_names = []
         super().__init__(ObjectContainer, object_info)
     
     def get_group_type(self):
         return self._group_type
+    
+    def get_group_member_names(self):
+        return self._group_member_names
+
+    def add_group_member_name(self, group_member_name):
+        self._group_member_names.append(group_member_name)
 
     def set_attributes(self):
         self.set_name()
@@ -137,7 +144,7 @@ class GroupObject(Object):
 
     def save(self, Database):
         ObjectGroupsTable = Database.get_object_groups_table()
-        ObjectGroupsTable.insert(self.get_uid(), self.get_name(), self.get_object_container().get_uid(), self.get_description(), self.get_override_bool(), self.get_group_type())  
+        ObjectGroupsTable.insert(self.get_uid(), self.get_name(), self.get_object_container().get_uid(), self.get_description(), self.get_override_bool(), self.get_group_type())
 
 class NetworkObject(Object):
     """

@@ -63,6 +63,39 @@ class PioneerDatabase():
     def table_factory(self):
         pass
     
+    @staticmethod
+    def create_db_relationships(object_groups, object_type, Database):
+        members_dict_from_db = {}
+
+        match object_type:
+            case 'network_group_object':
+                network_address_table = Database.get_network_address_objects_table()
+                values_from_network_address_table_tuple_list = network_address_table.get(columns=['name', 'uid'])
+                values_from_network_address_table_dict = dict(values_from_network_address_table_tuple_list)
+                members_dict_from_db.update(values_from_network_address_table_dict)
+
+                network_address_groups_table = Database.get_object_groups_table()
+                values_from_object_groups_tuple_list = network_address_groups_table.get(columns=['name', 'uid'], name_col='group_type', val='network')
+                values_from_object_groups_table_dict = dict(values_from_object_groups_tuple_list)
+                members_dict_from_db.update(values_from_object_groups_table_dict)
+
+        # retrieve the table storing the relationships between objects
+        object_group_members_table = Database.get_object_group_members_table()
+
+        # at this stage we assume that all the members of group objects for the current group type
+        # have been saved in the database.
+        # we can now retrieve the UIDs of members based on their names
+        # loop through the object_groups
+        for object_group in object_groups:
+            # get the member names of the current object
+            # for each member, retrieve its uid based on name
+            # insert the relationship between the group uid and members uid in the database
+            group_member_names = object_group.get_group_member_names()
+
+            for group_member_name in group_member_names:
+                group_member_uid = members_dict_from_db.get(group_member_name)
+                object_group_members_table.insert(object_group.get_uid(), group_member_uid)
+
     def create_database(self, name):
         # execute the request to create the database for the project. no need to specify the owner
         # as the owner will be the creator of the database.
@@ -186,26 +219,39 @@ class PioneerTable():
     # move the get_table_value code here. the code must be rewritten in such a way
     # to permit multiple select queries
     # this function doesn't need an override
-    def get(self, column, name_col=None, val=None, order_param=None):
+    def get(self, columns, name_col=None, val=None, order_param=None):
+        # Ensure columns is either a string (single column) or a list/tuple (multiple columns)
+        if isinstance(columns, str):
+            columns_str = columns
+        elif isinstance(columns, (list, tuple)):
+            columns_str = ', '.join(columns)
+        else:
+            raise ValueError("columns parameter must be a string, list, or tuple of column names")
+
         if name_col and val:
             # Construct the SELECT query with a WHERE clause
-            select_query = f"SELECT {column} FROM {self._name} WHERE {name_col} = '{val}';"
+            select_query = f"SELECT {columns_str} FROM {self._name} WHERE {name_col} = %s;"
+            params = (val,)
         else:
             # Construct the SELECT query without a WHERE clause
-            select_query = f"SELECT {column} FROM {self._name} ORDER BY {order_param};"
+            if order_param:
+                select_query = f"SELECT {columns_str} FROM {self._name} ORDER BY {order_param};"
+            else:
+                select_query = f"SELECT {columns_str} FROM {self._name};"
+            params = ()
 
         try:
             cursor = self._database.get_cursor()
             
-            # Execute the insert command with the actual values
-            cursor.execute(select_query)
+            # Execute the select command with the actual values
+            cursor.execute(select_query, params)
         except psycopg2.Error as err:
             general_logger.error(f"Failed to select values from table: <{self._name}>. Reason: {err}")
-            # sys.exit(1)
+            # sys.exit(1) or raise an exception if needed
 
         # Fetch the returned query values
         postgres_cursor_data = cursor.fetchall()
-        general_logger.info(f"Succesfully retrieved values from table: <{self._name}>.")
+        general_logger.info(f"Successfully retrieved values from table: <{self._name}>.")
         return postgres_cursor_data
 
     # this function updates values into a table
@@ -420,7 +466,6 @@ class ObjectGroupMembersTable(PioneerTable):
             ("group_uid", "TEXT NOT NULL"),
             ("object_uid", "TEXT NOT NULL"),
             ("CONSTRAINT fk_group FOREIGN KEY(group_uid)", "REFERENCES object_groups(uid)"),
-            ("CONSTRAINT fk_object FOREIGN KEY(object_uid)", "REFERENCES network_address_objects(uid)"),
             ("PRIMARY KEY(group_uid, object_uid)", "")
         ]
 

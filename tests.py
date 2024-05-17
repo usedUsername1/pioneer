@@ -1,10 +1,10 @@
-# import fireREST
+import fireREST
 
-# fmc = fireREST.FMC(hostname='10.2.196.131', username='admin', password='2wsx#EDC', domain='Global')
+fmc = fireREST.FMC(hostname='10.2.196.131', username='admin', password='2wsx#EDC', domain='Global')
 
-# policy = fmc.object.urlgroup.get(name="test-url-inline")
+policy = fmc.object.networkgroup.get(name="abnqzbyst")
 
-# print(policy)
+print(policy)
 
 # from panos.panorama import Panorama
 # pano  = Panorama("10.2.196.196", "admin", "2wsx#EDC")
@@ -26,17 +26,17 @@
 #     print("PARENT:", value, "CHILD:",key)
 
 
-from panos.panorama import Panorama, DeviceGroup
-from panos.objects import ServiceObject
+# from panos.panorama import Panorama, DeviceGroup
+# from panos.objects import ServiceObject
 
-# Create a Panorama object
-pano = Panorama("10.2.196.196", "admin", "2wsx#EDC")
+# # Create a Panorama object
+# pano = Panorama("10.2.196.196", "admin", "2wsx#EDC")
 
-# Create a DeviceGroup object for 'Debug'
-dg = DeviceGroup('Global Internet')
+# # Create a DeviceGroup object for 'Debug'
+# dg = DeviceGroup('Global Internet')
 
-# Add the device group to Panorama
-pano.add(dg)
+# # Add the device group to Panorama
+# pano.add(dg)
 
 # # Create the service object
 # testobj = ServiceObject(name='TEST_SCRIPT', protocol='tcp', destination_port='1-65535', description='k', tag=None)
@@ -106,4 +106,3 @@ pano.add(dg)
             #     'fromzone:', security_policy_source_zones, 'tozone:', security_policy_destination_zones, 'source:', security_policy_source_networks,
             #     'destination:', security_policy_destination_networks, 'service:', security_policy_destination_ports, 'category:', security_policy_urls, 'application:', security_policy_apps,
             #     'description:', security_policy_description, 'log_setting:', log_forwarding, 'log_end:', log_end, 'action:', policy_action)
-

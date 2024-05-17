@@ -274,17 +274,29 @@ class SecurityDevice:
                 objects_info = self.return_url_group_object_info()
         
         # Iterate over each managed device entry in the retrieved objects info
-        for object_entry in objects_info:
-            # return an object here for each of the entries
-            SecurityDeviceObject = self.create_py_object(object_type, object_entry, ObjectContainer)
-            # set all the attributes of the object
-            SecurityDeviceObject.set_attributes()
-            # save it in the database
-            SecurityDeviceObject.save(self._Database)
-        
-        # now check the type of the objects that were processed.
-        # if the object is of type 'group', then the relationships between the group
-        # and is members must be created and stored in the database
+        if 'group' not in object_type:
+            for object_entry in objects_info:
+                # return an object here for each of the entries
+                SecurityDeviceObject = self.create_py_object(object_type, object_entry, ObjectContainer)
+                # set all the attributes of the object
+                SecurityDeviceObject.set_attributes()
+                # save it in the database
+                SecurityDeviceObject.save(self._Database)
+        else:
+            object_groups = []
+            for object_entry in objects_info:
+                # return an object here for each of the entries
+                SecurityDeviceObject = self.create_py_object(object_type, object_entry, ObjectContainer)
+                # set all the attributes of the object
+                SecurityDeviceObject.set_attributes()
+                # save it in the database
+                SecurityDeviceObject.save(self._Database)
+
+                object_groups.append(SecurityDeviceObject)
+
+            # form the relationships between groups and their member objects
+            Database = self.get_database()
+            PioneerDatabase.create_db_relationships(object_groups, object_type, Database)
 
     # these functions are overridden in the subclasses whenever needed/relevant
     def return_object_container_info(self):
