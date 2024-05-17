@@ -588,7 +588,7 @@ class ICMPObject(Object):
         ICMPObjectsTable.insert(self.get_uid(), self.get_name(), self.get_object_container().get_uid(), self.get_icmp_type(), self.get_icmp_code(), self.get_description(), self.get_override_bool())
 
 class URLObject(Object):
-    def __init__(self, object_info) -> None:
+    def __init__(self, ObjectContainer, object_info) -> None:
         """
         Initialize a URL Object.
 
@@ -598,7 +598,7 @@ class URLObject(Object):
         Returns:
         None
         """
-        super().__init__(object_info)
+        super().__init__(ObjectContainer, object_info)
         self._url_value = None
     
     def get_url_value(self):
@@ -621,6 +621,17 @@ class URLObject(Object):
         None
         """
         self._url_value = url_value
+    
+    def set_attributes(self):
+        self.set_name()
+        self.set_url_value()
+        self.set_description()
+        self.set_override_bool()
+
+    def save(self, Database):
+        URLObjectsTable = Database.get_url_objects_table()
+        URLObjectsTable.insert(self.get_uid(), self.get_name(), self.get_object_container().get_uid(), self.get_url_value(), self.get_description(), self.get_override_bool())
+
 
 # class SecurityZone(Object):
 #     def __init__(self, name, description, is_overridable, object_container_name=None) -> None:

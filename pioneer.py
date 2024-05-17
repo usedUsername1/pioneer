@@ -166,14 +166,13 @@ def main():
                 
                 general_logger.info(f"################## Getting the port group objects of device: <{security_device_name}>. Container: <{object_container_name}> ##################")
                 print("Import port group objects.")
-                #TODO: set the members of the group ffs
                 SecurityDeviceObject.get_object_info_from_device_conn('port_group_object', ObjectContainer)
                 
-                # general_logger.info(f"################## Getting the URL objects of device: <{security_device_name}>. Container: <{object_container_name}> ##################")
-                # SecurityDeviceObject.get_object_info_from_device_conn('url_object', ObjectContainer)
+                general_logger.info(f"################## Getting the URL objects of device: <{security_device_name}>. Container: <{object_container_name}> ##################")
+                SecurityDeviceObject.get_object_info_from_device_conn('url_object', ObjectContainer)
                 
-                # general_logger.info(f"################## Getting the URL group objects of device: <{security_device_name}>. Container: <{object_container_name}> ##################")
-                # SecurityDeviceObject.get_object_info_from_device_conn('url_group_object', ObjectContainer)
+                general_logger.info(f"################## Getting the URL group objects of device: <{security_device_name}>. Container: <{object_container_name}> ##################")
+                SecurityDeviceObject.get_object_info_from_device_conn('url_group_object', ObjectContainer)
             
             print("Importing security zones container data.")
             zone_containers_list = SecurityDeviceObject.get_container_info_from_device_conn('security_zone_container')

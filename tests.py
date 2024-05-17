@@ -2,7 +2,7 @@ import fireREST
 
 fmc = fireREST.FMC(hostname='10.2.196.131', username='admin', password='2wsx#EDC', domain='Global')
 
-policy = fmc.object.networkgroup.get(name="abnqzbyst")
+policy = fmc.object.urlgroup.get(name="CrowdStrikeAgents")
 
 print(policy)
 

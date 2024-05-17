@@ -74,8 +74,8 @@ class PioneerDatabase():
                 values_from_network_address_table_dict = dict(values_from_network_address_table_tuple_list)
                 members_dict_from_db.update(values_from_network_address_table_dict)
 
-                network_address_groups_table = Database.get_object_groups_table()
-                values_from_object_groups_tuple_list = network_address_groups_table.get(columns=['name', 'uid'], name_col='group_type', val='network')
+                object_groups_table = Database.get_object_groups_table()
+                values_from_object_groups_tuple_list = object_groups_table.get(columns=['name', 'uid'], name_col='group_type', val='network')
                 values_from_object_groups_table_dict = dict(values_from_object_groups_tuple_list)
                 members_dict_from_db.update(values_from_object_groups_table_dict)
             
@@ -91,8 +91,19 @@ class PioneerDatabase():
                 values_from_icmp_objects_table_dict = dict(values_from_icmp_objects_table_tuple_list)
                 members_dict_from_db.update(values_from_icmp_objects_table_dict)
 
-                port_object_groups_table = Database.get_object_groups_table()
-                values_from_object_groups_tuple_list = port_object_groups_table.get(columns=['name', 'uid'], name_col='group_type', val='port')
+                object_groups_table = Database.get_object_groups_table()
+                values_from_object_groups_tuple_list = object_groups_table.get(columns=['name', 'uid'], name_col='group_type', val='port')
+                values_from_object_groups_table_dict = dict(values_from_object_groups_tuple_list)
+                members_dict_from_db.update(values_from_object_groups_table_dict)
+
+            case 'url_group_object':
+                url_group_objects_table = Database.get_url_objects_table()
+                values_from_url_group_objects_table_tuple_list = url_group_objects_table.get(columns=['name', 'uid'])
+                values_from_url_group_objects_table_dict = dict(values_from_url_group_objects_table_tuple_list)
+                members_dict_from_db.update(values_from_url_group_objects_table_dict)
+
+                network_address_groups_table = Database.get_object_groups_table()
+                values_from_object_groups_tuple_list = network_address_groups_table.get(columns=['name', 'uid'], name_col='group_type', val='url')
                 values_from_object_groups_table_dict = dict(values_from_object_groups_tuple_list)
                 members_dict_from_db.update(values_from_object_groups_table_dict)
 
@@ -111,7 +122,6 @@ class PioneerDatabase():
 
             for group_member_name in group_member_names:
                 group_member_uid = members_dict_from_db.get(group_member_name)
-                print(group_member_uid)
                 object_group_members_table.insert(object_group.get_uid(), group_member_uid)
 
     def create_database(self, name):
@@ -438,6 +448,7 @@ class URLObjectsTable(PioneerTable):
             ("object_container_uid", "TEXT NOT NULL"),
             ("url_value", "TEXT"),
             ("description", "TEXT"),
+            ("overridable_object", "BOOLEAN NOT NULL"),
             ("CONSTRAINT fk_object_container FOREIGN KEY(object_container_uid)", "REFERENCES object_containers(uid)"),
             ("CONSTRAINT uc_object_container_uid6", "UNIQUE (name, object_container_uid)")
         ]

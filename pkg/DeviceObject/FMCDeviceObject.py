@@ -178,14 +178,11 @@ class FMCObject(Object):
         return FMCNetworkObject(ObjectContainer, literal_object_info)
 
     @staticmethod
-    def convert_url_literals_to_objects(url_literals):
-        url_objects_list = []
-
-        for url_literal in url_literals:
-            url_object_name = gvars.url_literal_prefix + url_literal['url']
-            url_objects_list.append(url_object_name)
-        
-        return url_objects_list
+    def convert_url_literal_to_objects(ObjectContainer, url_literal):
+        literal_value = url_literal['url']
+        url_object_name = gvars.url_literal_prefix + literal_value
+        object_info = {'name':url_object_name, 'url':literal_value, 'description':gvars.literal_objects_description, 'overridable':False}
+        return FMCURLObject(ObjectContainer, object_info)
 
 class FMCNetworkObject(FMCObject, NetworkObject):
     """
@@ -752,7 +749,7 @@ class FMCPortGroupObject(GroupObject, FMCObject):
         ObjectGroupsTable.insert(self.get_uid(), self.get_name(), self.get_object_container().get_uid(), self.get_description(), self.get_override_bool(), self.get_group_type())   
 
 class FMCURLObject(FMCObject, URLObject):
-    def __init__(self, object_info) -> None:
+    def __init__(self, ObjectContainer, object_info) -> None:
         """
         Initialize an FMC URL Object.
 
@@ -762,7 +759,7 @@ class FMCURLObject(FMCObject, URLObject):
         Returns:
         None
         """
-        super().__init__(object_info)
+        super().__init__(ObjectContainer, object_info)
     
     def set_url_value(self):
         """
@@ -775,7 +772,7 @@ class FMCURLObject(FMCObject, URLObject):
         return super().set_url_value(url_value)
 
 class FMCURLGroupObject(GroupObject, FMCObject):
-    def __init__(self, object_info) -> None:
+    def __init__(self, ObjectContainer, object_info) -> None:
         """
         Initialize an FMC URL Group Object.
 
@@ -785,4 +782,33 @@ class FMCURLGroupObject(GroupObject, FMCObject):
         Returns:
         None
         """
-        super().__init__(object_info)
+        self._group_type = 'url'
+        super().__init__(ObjectContainer, object_info, self._group_type)
+    
+    def check_for_literals(self, ObjectContainer, Database):
+        general_logger.info(f"Checking URL group <{self._name}> for literal members.")
+        # get the group object info
+        object_info = self.get_info()
+        converted_literal = ''
+        
+        # check for literals key in the object definition
+        try:
+            literal_members = object_info['literals']
+            # now loop through the literal_members
+            for literal_member in literal_members:
+                converted_literal = FMCObject.convert_url_literal_to_objects(ObjectContainer, literal_member)
+                converted_literal.set_attributes()
+
+                # add the name of the literal object to the list tracking the member names of the object
+                self.add_group_member_name(converted_literal.get_name())
+                converted_literal.save(Database)
+        except:
+            general_logger.info(f"No literal members found for URL group <{self._name}>.")
+
+    def save(self, Database):
+        # set the names of the object members
+        self.set_object_member_names()
+        # check for literals
+        self.check_for_literals(self.get_object_container(), Database)
+        ObjectGroupsTable = Database.get_object_groups_table()
+        ObjectGroupsTable.insert(self.get_uid(), self.get_name(), self.get_object_container().get_uid(), self.get_description(), self.get_override_bool(), self.get_group_type())   
