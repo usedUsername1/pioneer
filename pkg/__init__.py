@@ -78,6 +78,23 @@ class PioneerDatabase():
                 values_from_object_groups_tuple_list = network_address_groups_table.get(columns=['name', 'uid'], name_col='group_type', val='network')
                 values_from_object_groups_table_dict = dict(values_from_object_groups_tuple_list)
                 members_dict_from_db.update(values_from_object_groups_table_dict)
+            
+            # check the port, icmp and port group tables for members
+            case 'port_group_object':
+                port_objects_table = Database.get_port_objects_table()
+                values_from_port_objects_table_tuple_list = port_objects_table.get(columns=['name', 'uid'])
+                values_from_port_objects_table_dict = dict(values_from_port_objects_table_tuple_list)
+                members_dict_from_db.update(values_from_port_objects_table_dict)
+
+                icmp_objects_table = Database.get_icmp_objects_table()
+                values_from_icmp_objects_table_tuple_list = icmp_objects_table.get(columns=['name', 'uid'])
+                values_from_icmp_objects_table_dict = dict(values_from_icmp_objects_table_tuple_list)
+                members_dict_from_db.update(values_from_icmp_objects_table_dict)
+
+                port_object_groups_table = Database.get_object_groups_table()
+                values_from_object_groups_tuple_list = port_object_groups_table.get(columns=['name', 'uid'], name_col='group_type', val='port')
+                values_from_object_groups_table_dict = dict(values_from_object_groups_tuple_list)
+                members_dict_from_db.update(values_from_object_groups_table_dict)
 
         # retrieve the table storing the relationships between objects
         object_group_members_table = Database.get_object_group_members_table()
@@ -94,6 +111,7 @@ class PioneerDatabase():
 
             for group_member_name in group_member_names:
                 group_member_uid = members_dict_from_db.get(group_member_name)
+                print(group_member_uid)
                 object_group_members_table.insert(object_group.get_uid(), group_member_uid)
 
     def create_database(self, name):

@@ -121,8 +121,13 @@ class FMCSecurityDevice(SecurityDevice):
     def return_geolocation_object(self, ObjectContainer, geolocation_object_entry):
         return FMCGeolocationObject(ObjectContainer, geolocation_object_entry)
 
+    #TODO: the problem is ICMP objects and port objects are treated the same by FMC, there is no distinction between them.
+    # we need to determine the type of the object and then call the right constructor based on the object's type
     def return_port_object(self, ObjectContainer, port_object_entry):
-        return FMCPortObject(ObjectContainer, port_object_entry)
+        if 'ICMP' in port_object_entry['type']:
+            return FMCICMPObject(ObjectContainer, port_object_entry)
+        else:
+            return FMCPortObject(ObjectContainer, port_object_entry)
 
     def return_port_group_object(self, ObjectContainer, port_group_object_entry):
         return FMCPortGroupObject(ObjectContainer, port_group_object_entry)

@@ -110,6 +110,9 @@ class Object:
             dict: Information about the object.
         """
         return self._object_info
+
+    def add_group_member_name(self, group_member_name):
+        self._group_member_names.append(group_member_name)
           
 # regarding processing groups: the object members of the groups have to be processed as well
 class GroupObject(Object):
@@ -133,9 +136,6 @@ class GroupObject(Object):
     
     def get_group_member_names(self):
         return self._group_member_names
-
-    def add_group_member_name(self, group_member_name):
-        self._group_member_names.append(group_member_name)
 
     def set_attributes(self):
         self.set_name()
@@ -446,16 +446,17 @@ class PortObject(Object):
     A class representing a port object.
     """
 
-    def __init__(self, object_info) -> None:
+    def __init__(self, ObjectContainer, object_info) -> None:
         """
         Initialize the PortObject instance.
 
         Args:
             object_info (dict): Information about the port object.
         """
-        super().__init__(object_info)
+        super().__init__(ObjectContainer, object_info)
         self._port_protocol = None
-        self._port_number = None
+        self._source_port = None
+        self._destination_port = None
 
     def get_port_protocol(self):
         """
@@ -475,37 +476,67 @@ class PortObject(Object):
         """
         self._port_protocol = protocol
 
-    def get_port_number(self):
+    def get_source_port(self):
         """
-        Get the port number of the object.
+        Get the source port of the object.
 
         Returns:
-            int: The port number.
+            int: The source port.
         """
-        return self._port_number
+        return self._source_port
     
-    def set_port_number(self, number):
+    def set_source_port(self, number):
         """
-        Set the port number of the object.
+        Set the source port of the object.
 
         Parameters:
-            number (int): The port number.
+            number (int): The source port.
         """
-        self._port_number = number
+        self._source_port = number
+
+    def get_destination_port(self):
+        """
+        Get the destination port of the object.
+
+        Returns:
+            int: The destination port.
+        """
+        return self._destination_port
+    
+    def set_destination_port(self, number):
+        """
+        Set the destination port of the object.
+
+        Parameters:
+            number (int): The destination port.
+        """
+        self._destination_port = number
+    
+    def set_attributes(self):
+        self.set_name()
+        self.set_port_protocol()
+        self.set_source_port()
+        self.set_destination_port()
+        self.set_description()
+        self.set_override_bool()
+
+    def save(self, Database):
+        PortObjectsTable = Database.get_port_objects_table()
+        PortObjectsTable.insert(self.get_uid(), self.get_name(), self.get_object_container().get_uid(), self.get_port_protocol(), self.get_source_port(), self.get_destination_port(), self.get_description(), self.get_override_bool())
 
 class ICMPObject(Object):
     """
     Class representing an ICMP object in the system, inheriting from the base Object class.
     """
 
-    def __init__(self, object_info) -> None:
+    def __init__(self, ObjectContainer, object_info) -> None:
         """
         Initialize an ICMPObject instance.
 
         Parameters:
         - object_info (dict): Information about the ICMP object.
         """
-        super().__init__(object_info)
+        super().__init__(ObjectContainer, object_info)
         self._icmp_type = None
         self._icmp_code = None
     
@@ -544,6 +575,17 @@ class ICMPObject(Object):
             icmp_code (str): ICMP code.
         """
         self._icmp_code = icmp_code
+
+    def set_attributes(self):
+        self.set_name()
+        self.set_icmp_type()
+        self.set_icmp_code()
+        self.set_description()
+        self.set_override_bool()
+
+    def save(self, Database):
+        ICMPObjectsTable = Database.get_icmp_objects_table()
+        ICMPObjectsTable.insert(self.get_uid(), self.get_name(), self.get_object_container().get_uid(), self.get_icmp_type(), self.get_icmp_code(), self.get_description(), self.get_override_bool())
 
 class URLObject(Object):
     def __init__(self, object_info) -> None:

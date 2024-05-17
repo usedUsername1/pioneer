@@ -155,15 +155,19 @@ def main():
                 general_logger.info(f"################## Getting the network group objects of device: <{security_device_name}>. Container: <{object_container_name}> ##################")
                 print("Import network group objects.")
                 SecurityDeviceObject.get_object_info_from_device_conn('network_group_object', ObjectContainer)
-                
+
+                #TODO: geolocation objects support                
                 # general_logger.info(f"################## Getting the geolocation objects of device: <{security_device_name}>. Container: <{object_container_name}> ##################")
                 # SecurityDeviceObject.get_object_info_from_device_conn('geolocation_object', ObjectContainer)
 
-                # general_logger.info(f"################## Getting the port objects of device: <{security_device_name}>. Container: <{object_container_name}> ##################")
-                # SecurityDeviceObject.get_object_info_from_device_conn('port_object', ObjectContainer)
+                general_logger.info(f"################## Getting the port objects of device: <{security_device_name}>. Container: <{object_container_name}> ##################")
+                print("Import port objects.")
+                SecurityDeviceObject.get_object_info_from_device_conn('port_object', ObjectContainer)
                 
-                # general_logger.info(f"################## Getting the port group objects of device: <{security_device_name}>. Container: <{object_container_name}> ##################")
-                # SecurityDeviceObject.get_object_info_from_device_conn('port_group_object', ObjectContainer)
+                general_logger.info(f"################## Getting the port group objects of device: <{security_device_name}>. Container: <{object_container_name}> ##################")
+                print("Import port group objects.")
+                #TODO: set the members of the group ffs
+                SecurityDeviceObject.get_object_info_from_device_conn('port_group_object', ObjectContainer)
                 
                 # general_logger.info(f"################## Getting the URL objects of device: <{security_device_name}>. Container: <{object_container_name}> ##################")
                 # SecurityDeviceObject.get_object_info_from_device_conn('url_object', ObjectContainer)

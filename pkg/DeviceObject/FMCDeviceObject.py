@@ -63,6 +63,16 @@ class FMCObject(Object):
         is_overridable = self._object_info['overridable']
         return super().set_override_bool(is_overridable)
 
+    # maybe not the best place where to place this but
+    def set_object_member_names(self):
+        general_logger.info(f"Getting the names of object members of group <{self._name}>.")
+        try:
+            object_members = self._object_info['objects']
+            for object_member in object_members:
+                self.add_group_member_name(object_member['name'])
+        except:
+            general_logger.info(f"There are no object members for group <{self._name}>.")
+
     @staticmethod
     def convert_port_literals_to_objects(port_literals):
         """
@@ -241,15 +251,6 @@ class FMCNetworkGroupObject(GroupObject, FMCObject):
                 converted_literal.save(Database)
         except:
             general_logger.info(f"No literal members found for network group <{self._name}>.")
-
-    def set_object_member_names(self):
-        general_logger.info(f"Getting the names of object members of group <{self._name}>.")
-        try:
-            object_members = self._object_info['objects']
-            for object_member in object_members:
-                self.add_group_member_name(object_member['name'])
-        except:
-            general_logger.info(f"There are no object members for group <{self._name}>.")
 
     # since we are dealing with a group object, there are a few operations that must be done
     # before the object is saved in the database
@@ -646,22 +647,36 @@ class FMCGeolocationObject(GeolocationObject):
         """
         pass
 
+#TODO: the problem is ICMP objects and port objects are treated the same by FMC, there is no distinction between them.
+# we need to determine the type of the object and then call the right 
 class FMCPortObject(FMCObject, PortObject):
     """
     Class representing a port object in the Firepower Management Center (FMC).
     Inherits from both FMCObject and PortObject classes.
     """
-
-    def __init__(self, object_info) -> None:
+    # before initializing the object, check if it is an ICMP object
+    # if it is, send it to the FMCICMPObject constructctor
+    def __init__(self, ObjectContainer, object_info) -> None:
         """
         Initialize an FMCPortObject instance.
 
         Parameters:
         - object_info (dict): Information about the port object.
         """
-        super().__init__(object_info)
-    
-    def set_port_number(self):
+        super().__init__(ObjectContainer, object_info)
+
+    def set_source_port(self):
+        """
+        Set the port number for the port object.
+
+        Returns:
+            str: The port number.
+        """
+        port_number = "1-65535"
+        return super().set_source_port(port_number)
+
+
+    def set_destination_port(self):
         """
         Set the port number for the port object.
 
@@ -669,12 +684,11 @@ class FMCPortObject(FMCObject, PortObject):
             str: The port number.
         """
         try:
-
             port_number = self._object_info['port']
         except KeyError:
             general_logger.info(f"<{self._name}> port object does not have a port number defined.")
             port_number = "1-65535"
-        return super().set_port_number(port_number)
+        return super().set_destination_port(port_number)
 
     def set_port_protocol(self):
         """
@@ -715,24 +729,27 @@ class FMCICMPObject(FMCObject, ICMPObject):
             str: The ICMP code.
         """
         try:
-
             icmp_code = self._object_info['code']
         except KeyError:
             icmp_code = None
         return super().set_icmp_code(icmp_code)
 
 class FMCPortGroupObject(GroupObject, FMCObject):
-    def __init__(self, object_info) -> None:
+    def __init__(self, ObjectContainer, object_info) -> None:
         """
-        Initialize an FMC Port Group Object.
+        Initializes a new FMCNetworkGroupObject.
 
-        Parameters:
-        - object_info (dict): Information about the port group object.
-
-        Returns:
-        None
+        Args:
+            object_info (dict): Information about the network group object.
         """
-        super().__init__(object_info)
+        self._group_type = 'port'
+        super().__init__(ObjectContainer, object_info, self._group_type)
+
+    def save(self, Database):
+        # set the names of the object members
+        self.set_object_member_names()
+        ObjectGroupsTable = Database.get_object_groups_table()
+        ObjectGroupsTable.insert(self.get_uid(), self.get_name(), self.get_object_container().get_uid(), self.get_description(), self.get_override_bool(), self.get_group_type())   
 
 class FMCURLObject(FMCObject, URLObject):
     def __init__(self, object_info) -> None:
