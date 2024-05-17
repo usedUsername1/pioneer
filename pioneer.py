@@ -102,109 +102,113 @@ def main():
         security_device_uuid = helper.generate_uid()
 
         # Try connecting to the security device and retrieving the version
-        try:
-            general_logger.info(f"Connecting to the security device: <{security_device_name}>.")
-            # Attempt to create the security device object based on the device type
-            if '-api' in security_device_type:
-                general_logger.info(f"The device <{security_device_name}> is an API device. Its API will be used for interacting with it.")
-                SecurityDeviceObject = SecurityDeviceFactory.build_api_security_device(security_device_uuid, security_device_name, security_device_type, SecurityDeviceDB, security_device_hostname, security_device_username, security_device_secret, security_device_port, domain)
-            else:
-                general_logger.critical(f"Provided device type <{security_device_type}> is invalid.")
-                sys.exit(1)
-        
-            # Get the version of the security device
-            general_logger.info(f"################## Getting the device version for device: <{security_device_name}>. ##################")
-            security_device_version = SecurityDeviceObject.get_device_version_from_device_conn()
-        
-            # If version retrieval is successful, proceed with database creation and data insertion
-            if security_device_version:
-                # Create the database
-                security_device_db_name = security_device_name + '_db'
-                general_logger.info(f"Connecting to the Postgres using, user: <{db_user}>, password ..., host: <{db_host}>, port: <{db_port}>, landing database: <{landing_db}>.")
-                SecurityDeviceDB.create_database(security_device_db_name)
-
-                # Connect to the newly created security device database
-                SecurityDeviceDBcursor = PioneerDatabase.connect_to_db(db_user, security_device_db_name, db_password, db_host, db_port)
-                SecurityDeviceDB = SecurityDeviceDatabase(SecurityDeviceDBcursor)
-
-                # Create the tables in the device database
-                SecurityDeviceDB.create_security_device_tables()
-
-                SecurityDeviceObject.set_database(SecurityDeviceDB)
-
-                # Insert general device info into the database
-                general_logger.info(f"Inserting general device info in the database.")
-                SecurityDeviceObject.save_general_info(SecurityDeviceObject.get_uid(), security_device_name, security_device_username, security_device_secret, security_device_hostname, security_device_type, security_device_port, security_device_version, domain)
-
-                # Retrieve the information about the containers, interfaces and objects
-                #TODO: should get_container_info return a list of the containers?
-                #TODO: should the program import ALL the data and migrate only the data the user wants to? - yes
-                print("Importing the object container data.")
-                # import and insert the object container first!
-                general_logger.info(f"################## Getting the object containers of device: <{security_device_name}>. ##################")
-                object_containers_list = SecurityDeviceObject.get_container_info_from_device_conn('object_container')
-                print("Importing the object data")
-                general_logger.info(f"################## Getting the objects of device: <{security_device_name}>. ##################")
-                #TODO: continue from here
-                for ObjectContainer in object_containers_list:
-                    object_container_name = ObjectContainer.get_name()
-                    general_logger.info(f"################## Getting the network objects of device: <{security_device_name}>. Container: <{object_container_name}> ##################")
-                    print("Import network objects.")
-                    SecurityDeviceObject.get_object_info_from_device_conn('network_object', ObjectContainer)
-
-                    #TODO: continue importing groups
-                        # all group objects are the same -> use a single table for storing groups, add an extra parameter to the group definition
-                            # indicating the type of group
-                        # there needs to be a new table many-to-many relationship storing the relationship between the members and the group object
-                        # literal values defined on the group must be converted to objects and inserted in the objects table
-                        # import the network groups first, then create the relationships between the objects
-
-                    general_logger.info(f"################## Getting the network group objects of device: <{security_device_name}>. Container: <{object_container_name}> ##################")
-                    SecurityDeviceObject.get_object_info_from_device_conn('network_group_object', ObjectContainer)
-                    
-                    # general_logger.info(f"################## Getting the geolocation objects of device: <{security_device_name}>. Container: <{object_container_name}> ##################")
-                    # SecurityDeviceObject.get_object_info_from_device_conn('geolocation_object', ObjectContainer)
-
-                    # general_logger.info(f"################## Getting the port objects of device: <{security_device_name}>. Container: <{object_container_name}> ##################")
-                    # SecurityDeviceObject.get_object_info_from_device_conn('port_object', ObjectContainer)
-                    
-                    # general_logger.info(f"################## Getting the port group objects of device: <{security_device_name}>. Container: <{object_container_name}> ##################")
-                    # SecurityDeviceObject.get_object_info_from_device_conn('port_group_object', ObjectContainer)
-                    
-                    # general_logger.info(f"################## Getting the URL objects of device: <{security_device_name}>. Container: <{object_container_name}> ##################")
-                    # SecurityDeviceObject.get_object_info_from_device_conn('url_object', ObjectContainer)
-                    
-                    # general_logger.info(f"################## Getting the URL group objects of device: <{security_device_name}>. Container: <{object_container_name}> ##################")
-                    # SecurityDeviceObject.get_object_info_from_device_conn('url_group_object', ObjectContainer)
-                
-                print("Importing security zones container data.")
-                zone_containers_list = SecurityDeviceObject.get_container_info_from_device_conn('security_zone_container')
-                
-                # Retrieve the security policy containers along with the parents and insert them in the database
-                print("Importing the security policy containers info.")
-                SecurityDeviceObject.get_container_info_from_device_conn('security_policy_container')
-
-                print("Importing managed devices container data.")
-                managed_devices_container_list = SecurityDeviceObject.get_container_info_from_device_conn('managed_device_container')
-                
-                # get the devices managed by the security device
-                general_logger.info(f"################## Getting the managed devices of device: <{security_device_name}>. ##################")
-                print("Importing the managed devices data.")
-                for ManagedDeviceContainer in managed_devices_container_list:
-                    SecurityDeviceObject.get_object_info_from_device_conn('managed_device', ManagedDeviceContainer)
-
-                # # Retrieve all the interfaces/zones of the device.
-                # # Be aware that interfaces might be stored in different containers. A new table is needed for this!
-                # print("Importing the interfaces/zones data.")
-                # SecurityDeviceObject.get_object_info_from_device_conn('security_zone')
-
-            else:
-                general_logger.critical(f"Failed to retrieve version of the security device. Exiting...")
-                sys.exit(1)
-
-        except Exception as e:
-            general_logger.critical(f"Failed to connect to the security device or encountered an error: <{e}>.")
+        # try:
+        general_logger.info(f"Connecting to the security device: <{security_device_name}>.")
+        # Attempt to create the security device object based on the device type
+        if '-api' in security_device_type:
+            general_logger.info(f"The device <{security_device_name}> is an API device. Its API will be used for interacting with it.")
+            SecurityDeviceObject = SecurityDeviceFactory.build_api_security_device(security_device_uuid, security_device_name, security_device_type, SecurityDeviceDB, security_device_hostname, security_device_username, security_device_secret, security_device_port, domain)
+        else:
+            general_logger.critical(f"Provided device type <{security_device_type}> is invalid.")
             sys.exit(1)
+    
+        # Get the version of the security device
+        general_logger.info(f"################## Getting the device version for device: <{security_device_name}>. ##################")
+        security_device_version = SecurityDeviceObject.get_device_version_from_device_conn()
+    
+        # If version retrieval is successful, proceed with database creation and data insertion
+        if security_device_version:
+            # Create the database
+            security_device_db_name = security_device_name + '_db'
+            general_logger.info(f"Connecting to the Postgres using, user: <{db_user}>, password ..., host: <{db_host}>, port: <{db_port}>, landing database: <{landing_db}>.")
+            SecurityDeviceDB.create_database(security_device_db_name)
+
+            # Connect to the newly created security device database
+            SecurityDeviceDBcursor = PioneerDatabase.connect_to_db(db_user, security_device_db_name, db_password, db_host, db_port)
+            SecurityDeviceDB = SecurityDeviceDatabase(SecurityDeviceDBcursor)
+
+            # Create the tables in the device database
+            SecurityDeviceDB.create_security_device_tables()
+
+            SecurityDeviceObject.set_database(SecurityDeviceDB)
+
+            # Insert general device info into the database
+            general_logger.info(f"Inserting general device info in the database.")
+            SecurityDeviceObject.save_general_info(SecurityDeviceObject.get_uid(), security_device_name, security_device_username, security_device_secret, security_device_hostname, security_device_type, security_device_port, security_device_version, domain)
+
+            # Retrieve the information about the containers, interfaces and objects
+            #TODO: should get_container_info return a list of the containers?
+            #TODO: should the program import ALL the data and migrate only the data the user wants to? - yes
+            print("Importing the object container data.")
+            # import and insert the object container first!
+            general_logger.info(f"################## Getting the object containers of device: <{security_device_name}>. ##################")
+            object_containers_list = SecurityDeviceObject.get_container_info_from_device_conn('object_container')
+            print("Importing the object data")
+            general_logger.info(f"################## Getting the objects of device: <{security_device_name}>. ##################")
+            for ObjectContainer in object_containers_list:
+                object_container_name = ObjectContainer.get_name()
+                general_logger.info(f"################## Getting the network objects of device: <{security_device_name}>. Container: <{object_container_name}> ##################")
+                print("Import network objects.")
+                SecurityDeviceObject.get_object_info_from_device_conn('network_object', ObjectContainer)
+
+                #TODO: continue importing groups
+                    # all group objects are the same -> use a single table for storing groups, add an extra parameter to the group definition
+                        # indicating the type of group - done
+                    # there needs to be a new table many-to-many relationship storing the relationship between the members and the group object - done
+                    
+                    # literal values defined on the group must be converted to objects and inserted in the objects table - pending
+                    # import the network groups first, then create the relationships between the objects
+                        # use the two-pass method, after you got all the objects, build the relationships between them by iterating all over them again
+
+                general_logger.info(f"################## Getting the network group objects of device: <{security_device_name}>. Container: <{object_container_name}> ##################")
+                print("Import network group objects.")
+                SecurityDeviceObject.get_object_info_from_device_conn('network_group_object', ObjectContainer)
+
+                # at this stage in the code, you have all the 
+                
+                # general_logger.info(f"################## Getting the geolocation objects of device: <{security_device_name}>. Container: <{object_container_name}> ##################")
+                # SecurityDeviceObject.get_object_info_from_device_conn('geolocation_object', ObjectContainer)
+
+                # general_logger.info(f"################## Getting the port objects of device: <{security_device_name}>. Container: <{object_container_name}> ##################")
+                # SecurityDeviceObject.get_object_info_from_device_conn('port_object', ObjectContainer)
+                
+                # general_logger.info(f"################## Getting the port group objects of device: <{security_device_name}>. Container: <{object_container_name}> ##################")
+                # SecurityDeviceObject.get_object_info_from_device_conn('port_group_object', ObjectContainer)
+                
+                # general_logger.info(f"################## Getting the URL objects of device: <{security_device_name}>. Container: <{object_container_name}> ##################")
+                # SecurityDeviceObject.get_object_info_from_device_conn('url_object', ObjectContainer)
+                
+                # general_logger.info(f"################## Getting the URL group objects of device: <{security_device_name}>. Container: <{object_container_name}> ##################")
+                # SecurityDeviceObject.get_object_info_from_device_conn('url_group_object', ObjectContainer)
+            
+            print("Importing security zones container data.")
+            zone_containers_list = SecurityDeviceObject.get_container_info_from_device_conn('security_zone_container')
+            
+            # Retrieve the security policy containers along with the parents and insert them in the database
+            print("Importing the security policy containers info.")
+            SecurityDeviceObject.get_container_info_from_device_conn('security_policy_container')
+
+            print("Importing managed devices container data.")
+            managed_devices_container_list = SecurityDeviceObject.get_container_info_from_device_conn('managed_device_container')
+            
+            # get the devices managed by the security device
+            general_logger.info(f"################## Getting the managed devices of device: <{security_device_name}>. ##################")
+            print("Importing the managed devices data.")
+            for ManagedDeviceContainer in managed_devices_container_list:
+                SecurityDeviceObject.get_object_info_from_device_conn('managed_device', ManagedDeviceContainer)
+
+            # # Retrieve all the interfaces/zones of the device.
+            # # Be aware that interfaces might be stored in different containers. A new table is needed for this!
+            # print("Importing the interfaces/zones data.")
+            # SecurityDeviceObject.get_object_info_from_device_conn('security_zone')
+
+        else:
+            general_logger.critical(f"Failed to retrieve version of the security device. Exiting...")
+            sys.exit(1)
+
+        # except Exception as e:
+        #     general_logger.critical(f"Failed to connect to the security device or encountered an error: <{e}>.")
+        #     sys.exit(1)
         
         # close the cursors used to connect to the database
         LandingDBcursor.close()

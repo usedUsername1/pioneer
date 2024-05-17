@@ -120,7 +120,7 @@ class FMCObject(Object):
         return port_objects_list
 
     @staticmethod
-    def convert_network_literals_to_objects(network_literals):
+    def convert_network_literal_to_object(ObjectContainer, network_literal):
         """
         Convert network literals to objects.
 
@@ -130,47 +130,44 @@ class FMCObject(Object):
         Returns:
             list: List of network object names.
         """
-        network_objects_list = []
+        general_logger.debug(f"Converting literal <{network_literal}> to object.")
 
-        # Loop through the network literals.
-        for network_literal in network_literals:
-            general_logger.debug(f"Converting literal {network_literal} to object.")
-            # Extract the value of the network literal
-            literal_value = network_literal['value']
+        # Extract the value of the network literal
+        literal_value = network_literal['value']
 
-            # Extract the type of the network literal. Can be either "Host" or "Network"
-            # The name of the converted object will depend on the network literal type
-            literal_type = network_literal['type']
+        # Extract the type of the network literal. Can be either "Host" or "Network"
+        # The name of the converted object will depend on the network literal type
+        literal_type = network_literal['type']
 
-            # The literal type can be either a host or a network
-            if literal_type == 'Network':
-                general_logger.debug(f"{network_literal} is of type Network.")
-                # Define the CIDR notation IP address
-                ip_cidr = literal_value
+        # The literal type can be either a host or a network
+        if literal_type == 'Network':
+            general_logger.debug(f"<{network_literal}> is of type Network.")
+            # Define the CIDR notation IP address
+            ip_cidr = literal_value
 
-                # Create an IPv4 network object
-                network = ipaddress.ip_network(ip_cidr, strict=False)
+            # Create an IPv4 network object
+            network = ipaddress.ip_network(ip_cidr, strict=False)
 
-                # Extract the network address and netmask
-                network_address = network.network_address
-                netmask = str(network.prefixlen)  # Extract the prefix length instead of the full netmask
+            # Extract the network address and netmask
+            network_address = network.network_address
+            netmask = str(network.prefixlen)  # Extract the prefix length instead of the full netmask
 
-            elif literal_type == 'Host':
-                general_logger.debug(f"{network_literal} is of type Host.")
-                netmask = '32'
-                network_address = literal_value  # Assuming literal_value is the host address
+        elif literal_type == 'Host':
+            general_logger.debug(f"<{network_literal}> is of type Host.")
+            netmask = '32'
+            network_address = literal_value  # Assuming literal_value is the host address
 
-            else:
-                general_logger.debug(f"Cannot determine type of {network_literal}. Presented type is {literal_type}.")
-                continue
+        else:
+            general_logger.debug(f"Cannot determine type of <{network_literal}>. Presented type is <{literal_type}>.")
 
-            # Create the name of the object (NL_networkaddress_netmask)
-            network_object_name = gvars.network_literal_prefix + str(network_address) + "_" + str(netmask)
-            general_logger.debug(f"Converted network literal {network_literal} to object {network_object_name}.")
-            network_objects_list.append(network_object_name)
+        # Create the name of the object (NL_networkaddress_netmask)
+        network_object_name = gvars.network_literal_prefix + str(network_address) + "_" + str(netmask)
+
+        # now all the info regarding the literal object is extracted, it is time to create
+        # the object_info dictionary
+        literal_object_info = {'name':network_object_name, 'value':literal_value, 'type':literal_type, 'description':gvars.literal_objects_description, 'overridable':False}
         
-        general_logger.debug(f"Finished converting all literals to objects. This is the list with converted literals {network_objects_list}.")
-        return network_objects_list
+        return FMCNetworkObject(ObjectContainer, literal_object_info)
 
     @staticmethod
     def convert_url_literals_to_objects(url_literals):
@@ -181,50 +178,6 @@ class FMCObject(Object):
             url_objects_list.append(url_object_name)
         
         return url_objects_list
-
-class FMCLiteral(Object):
-    def __init__(self, object_info) -> None:
-        super().__init__(object_info)
-
-    def set_name(self):
-        """
-        Set the name of the literal network object.
-
-        Returns:
-            str: The name of the object.
-        """
-        name = self._object_info
-        return super().set_name(name)
-
-    def set_description(self):
-        """
-        Set the description of the literal network object.
-
-        Returns:
-            str: The description of the object.
-        """
-        description = gvars.literal_objects_description
-        return super().set_description(description)
-
-    def set_object_container_name(self):
-        """
-        Set the name of the object container for the FMC object.
-
-        Returns:
-            str: The name of the object container.
-        """
-        container_name = 'virtual_object_container'
-        return super().set_object_container_name(container_name)
-
-    def set_override_bool(self):
-        """
-        Set the override boolean for the literal network object.
-
-        Returns:
-            bool: The override boolean value.
-        """
-        is_overridable = False
-        return super().set_override_bool(is_overridable)
 
 class FMCNetworkObject(FMCObject, NetworkObject):
     """
@@ -260,52 +213,6 @@ class FMCNetworkObject(FMCObject, NetworkObject):
         type = self._object_info['type']
         return super().set_network_address_type(type)
 
-class FMCNetworkLiteralObject(FMCLiteral, NetworkObject):
-    """
-    Class representing a literal network object in the Firepower Management Center (FMC).
-    Inherits from the NetworkObject class.
-    """
-
-    def __init__(self, object_info) -> None:
-        """
-        Initialize an FMCNetworkLiteralObject instance.
-
-        Parameters:
-        - object_info (dict): Information about the network object.
-        """
-        super().__init__(object_info)
-
-    def set_network_address_value(self):
-        """
-        Set the value of the network address for the literal network object.
-
-        Returns:
-            str: The network address value.
-        """
-        split_name = self._name.split('_')
-        subnet_id = split_name[1]
-        netmask = split_name[2]
-        value = subnet_id + '/' + netmask
-        return super().set_network_address_value(value)
-
-    def set_network_address_type(self):
-        """
-        Set the type of the network address for the literal network object.
-
-        Returns:
-            str: The type of the network address.
-        """
-        split_name = self._name.split('_')
-        netmask = split_name[2]
-        type = ''
-
-        if netmask == '32':
-            type = 'Host'
-        else:
-            type = 'Network'
-
-        return super().set_network_address_type(type)
-
 class FMCNetworkGroupObject(GroupObject, FMCObject):
     def __init__(self, ObjectContainer, object_info) -> None:
         """
@@ -316,6 +223,28 @@ class FMCNetworkGroupObject(GroupObject, FMCObject):
         """
         self._group_type = 'network'
         super().__init__(ObjectContainer, object_info, self._group_type)
+
+    def check_for_literals(self, ObjectContainer, Database):
+        general_logger.info(f"Checking network group <{self._name}> for literal members.")
+        # get the group object info
+        object_info = self.get_info()
+        converted_literal = ''
+        
+        # check for literals key in the object definition
+        try:
+            literal_members = object_info['literals']
+            # now loop through the literal_members
+            for literal_member in literal_members:
+                converted_literal = FMCObject.convert_network_literal_to_object(ObjectContainer, literal_member)
+                converted_literal.set_attributes()
+                converted_literal.save(Database)
+        except:
+            general_logger.info(f"No literal members found for network group <{self._name}>.")
+    def save(self, Database):
+        ObjectGroupsTable = Database.get_object_groups_table()
+        # now check for literals
+        self.check_for_literals(self.get_object_container(), Database)
+        ObjectGroupsTable.insert(self.get_uid(), self.get_name(), self.get_object_container().get_uid(), self.get_description(), self.get_override_bool(), self.get_group_type())   
 
 class FMCCountryObject(GeolocationObject):
     """
@@ -738,43 +667,6 @@ class FMCPortObject(FMCObject, PortObject):
         """
         protocol = self._object_info['protocol']
         return super().set_port_protocol(protocol)
-
-class FMCPortLiteralObject(FMCLiteral, PortObject):
-    """
-    Class representing a literal port object in the Firepower Management Center (FMC).
-    Inherits from the PortObject class.
-    """
-
-    def __init__(self, object_info) -> None:
-        """
-        Initialize an FMCPortLiteralObject instance.
-
-        Parameters:
-        - object_info (dict): Information about the port object.
-        """
-        super().__init__(object_info)
-    
-    def set_port_number(self):
-        """
-        Set the port number for the literal port object.
-
-        Returns:
-            str: The port number.
-        """
-        split_name = self._name.split('_')
-        port_number = split_name[2]
-        return super().set_port_number(port_number)
-    
-    def set_port_protocol(self):
-        """
-        Set the protocol for the literal port object.
-
-        Returns:
-            str: The port protocol.
-        """
-        split_name = self._name.split('_')
-        protocol = split_name[1]
-        return super().set_port_protocol(protocol)
     
 class FMCICMPObject(FMCObject, ICMPObject):
     """
@@ -810,86 +702,6 @@ class FMCICMPObject(FMCObject, ICMPObject):
         except KeyError:
             icmp_code = None
         return super().set_icmp_code(icmp_code)
-    
-class FMCLiteralICMPObject(ICMPObject):
-    """
-    Class representing a literal ICMP object in the Firepower Management Center (FMC).
-    Inherits from the ICMPObject class.
-    """
-
-    def __init__(self, object_info) -> None:
-        """
-        Initialize an FMCLiteralICMPObject instance.
-
-        Parameters:
-        - object_info (dict): Information about the ICMP object.
-        """
-        super().__init__(object_info)
-    
-    def set_name(self):
-        """
-        Set the name of the literal ICMP object.
-
-        Returns:
-            str: The name of the object.
-        """
-        name = self._object_info
-        return super().set_name(name)
-    
-    def set_description(self):
-        """
-        Set the description of the literal ICMP object.
-
-        Returns:
-            str: The description of the object.
-        """
-        description = gvars.literal_objects_description
-        return super().set_description(description)
-
-    def set_icmp_type(self):
-        """
-        Set the ICMP type for the literal ICMP object.
-
-        Returns:
-            str: The ICMP type.
-        """
-        split_name = self._name.split('_')
-        icmp_type = split_name[2]
-        return super().set_icmp_type(icmp_type)
-    
-    def set_icmp_code(self):
-        """
-        Set the ICMP code for the literal ICMP object.
-
-        Returns:
-            str: The ICMP code.
-        """
-        split_name = self._name.split('_')
-        try:
-            icmp_code = split_name[3]
-        except IndexError:
-            icmp_code = None
-        return super().set_icmp_code(icmp_code)
-
-    def set_object_container_name(self):
-        """
-        Set the name of the object container for the FMC object.
-
-        Returns:
-            str: The name of the object container.
-        """
-        container_name = 'virtual_object_container'
-        return super().set_object_container_name(container_name)
-
-    def set_override_bool(self):
-        """
-        Set the override boolean for the literal ICMP object.
-
-        Returns:
-            bool: The override boolean value.
-        """
-        is_overridable = False
-        return super().set_override_bool(is_overridable)
 
 class FMCPortGroupObject(GroupObject, FMCObject):
     def __init__(self, object_info) -> None:
@@ -903,7 +715,6 @@ class FMCPortGroupObject(GroupObject, FMCObject):
         None
         """
         super().__init__(object_info)
-
 
 #TODO: implement the classes and process URL objects
 class FMCURLObject(FMCObject, URLObject):
@@ -927,30 +738,6 @@ class FMCURLObject(FMCObject, URLObject):
         None
         """
         url_value = self._object_info['url']
-        return super().set_url_value(url_value)
-
-class FMCURLLiteral(FMCLiteral, URLObject):
-    def __init__(self, object_info) -> None:
-        """
-        Initialize an FMC URL Literal Object.
-
-        Parameters:
-        - object_info (dict): Information about the URL literal object.
-
-        Returns:
-        None
-        """
-        super().__init__(object_info)
-    
-    def set_url_value(self):
-        """
-        Set the URL value for the FMC URL Literal Object.
-
-        Returns:
-        None
-        """
-        split_info = self._object_info.split('_')
-        url_value = split_info[1]
         return super().set_url_value(url_value)
 
 class FMCURLGroupObject(GroupObject, FMCObject):

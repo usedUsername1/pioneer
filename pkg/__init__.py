@@ -171,7 +171,7 @@ class PioneerTable():
         # Construct placeholders for the values in the SQL query
         placeholders = ', '.join(['%s'] * len(values))
         
-        insert_command = f"INSERT INTO {self._name} ({columns}) VALUES ({placeholders});"
+        insert_command = f"INSERT INTO {self._name} ({columns}) VALUES ({placeholders}) ON CONFLICT DO NOTHING;"
         try:
             cursor = self._database.get_cursor()
             

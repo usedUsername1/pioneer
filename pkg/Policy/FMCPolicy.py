@@ -347,7 +347,7 @@ class FMCSecurityPolicy(SecurityPolicy):
             # Log debug information about the found literals
             general_logger.debug(f"Literals found {network_literals}.")
             # Convert network literals to network objects and add them to the extracted list
-            extracted_member_network_objects += FMCObject.convert_network_literals_to_objects(network_literals)
+            extracted_member_network_objects += FMCObject.convert_network_literal_to_object(network_literals)
         except KeyError:
             # If there are no network literals, log an informational message
             general_logger.info(f"It looks like there are no network literals on this policy.")

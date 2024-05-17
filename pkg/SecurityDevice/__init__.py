@@ -245,9 +245,7 @@ class SecurityDevice:
         
         return container_objects
 
-    # TODO: merge the get_policy_info function here as well, add the container_list parameter. this container_list will, by default, be
-    # should container_list be kept? should just a container name be used?
-    # the problem is that there are cases where objects belong to a container and cases where objects belong to a device?
+    #TODO: if the current object is group object, pass it to the "tie_relationship" function
     def get_object_info_from_device_conn(self, object_type, ObjectContainer):
         """
         Retrieve information about objects.
@@ -283,6 +281,10 @@ class SecurityDevice:
             SecurityDeviceObject.set_attributes()
             # save it in the database
             SecurityDeviceObject.save(self._Database)
+        
+        # now check the type of the objects that were processed.
+        # if the object is of type 'group', then the relationships between the group
+        # and is members must be created and stored in the database
 
     # these functions are overridden in the subclasses whenever needed/relevant
     def return_object_container_info(self):
