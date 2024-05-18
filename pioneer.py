@@ -160,7 +160,6 @@ def main():
                 general_logger.info(f"################## Getting the network group objects of device: <{security_device_name}>. Container: <{object_container_name}> ##################")
                 print("Import network group objects.")
                 SecurityDeviceObject.get_object_info_from_device_conn('network_group_object', ObjectContainer)
-
                 #TODO: geolocation objects support                
                 # general_logger.info(f"################## Getting the geolocation objects of device: <{security_device_name}>. Container: <{object_container_name}> ##################")
                 # SecurityDeviceObject.get_object_info_from_device_conn('geolocation_object', ObjectContainer)
@@ -174,9 +173,11 @@ def main():
                 SecurityDeviceObject.get_object_info_from_device_conn('port_group_object', ObjectContainer)
                 
                 general_logger.info(f"################## Getting the URL objects of device: <{security_device_name}>. Container: <{object_container_name}> ##################")
+                print("Import URL objects.")
                 SecurityDeviceObject.get_object_info_from_device_conn('url_object', ObjectContainer)
                 
                 general_logger.info(f"################## Getting the URL group objects of device: <{security_device_name}>. Container: <{object_container_name}> ##################")
+                print("Import URL group objects.")
                 SecurityDeviceObject.get_object_info_from_device_conn('url_group_object', ObjectContainer)
             
             for ZoneContainer in zone_containers_list:
@@ -205,6 +206,8 @@ def main():
         LandingDBcursor.close()
         SecurityDeviceDBcursor.close()
 
+    #TODO: before continuing with imports, check how you can create the relationships between
+    # objects in DB in a better way 
     # sub-if statements for various data the user wants to import
     # TODO: see how objects defined directly on policies (and all the L7 elements) will be imported and stored in the database
     if pioneer_args["device_name [device_name]"]:

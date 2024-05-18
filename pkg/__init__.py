@@ -62,69 +62,6 @@ class PioneerDatabase():
     @abstractmethod
     def table_factory(self):
         pass
-    
-    @staticmethod
-    #TODO: this should probabily be defined on the tables
-    # where the relationships are created, as it will scale very bad
-    def create_db_relationships(object_groups, object_type, Database):
-        members_dict_from_db = {}
-
-        match object_type:
-            case 'network_group_object':
-                network_address_table = Database.get_network_address_objects_table()
-                values_from_network_address_table_tuple_list = network_address_table.get(columns=['name', 'uid'])
-                values_from_network_address_table_dict = dict(values_from_network_address_table_tuple_list)
-                members_dict_from_db.update(values_from_network_address_table_dict)
-
-                object_groups_table = Database.get_object_groups_table()
-                values_from_object_groups_tuple_list = object_groups_table.get(columns=['name', 'uid'], name_col='group_type', val='network')
-                values_from_object_groups_table_dict = dict(values_from_object_groups_tuple_list)
-                members_dict_from_db.update(values_from_object_groups_table_dict)
-            
-            # check the port, icmp and port group tables for members
-            case 'port_group_object':
-                port_objects_table = Database.get_port_objects_table()
-                values_from_port_objects_table_tuple_list = port_objects_table.get(columns=['name', 'uid'])
-                values_from_port_objects_table_dict = dict(values_from_port_objects_table_tuple_list)
-                members_dict_from_db.update(values_from_port_objects_table_dict)
-
-                icmp_objects_table = Database.get_icmp_objects_table()
-                values_from_icmp_objects_table_tuple_list = icmp_objects_table.get(columns=['name', 'uid'])
-                values_from_icmp_objects_table_dict = dict(values_from_icmp_objects_table_tuple_list)
-                members_dict_from_db.update(values_from_icmp_objects_table_dict)
-
-                object_groups_table = Database.get_object_groups_table()
-                values_from_object_groups_tuple_list = object_groups_table.get(columns=['name', 'uid'], name_col='group_type', val='port')
-                values_from_object_groups_table_dict = dict(values_from_object_groups_tuple_list)
-                members_dict_from_db.update(values_from_object_groups_table_dict)
-
-            case 'url_group_object':
-                url_group_objects_table = Database.get_url_objects_table()
-                values_from_url_group_objects_table_tuple_list = url_group_objects_table.get(columns=['name', 'uid'])
-                values_from_url_group_objects_table_dict = dict(values_from_url_group_objects_table_tuple_list)
-                members_dict_from_db.update(values_from_url_group_objects_table_dict)
-
-                network_address_groups_table = Database.get_object_groups_table()
-                values_from_object_groups_tuple_list = network_address_groups_table.get(columns=['name', 'uid'], name_col='group_type', val='url')
-                values_from_object_groups_table_dict = dict(values_from_object_groups_tuple_list)
-                members_dict_from_db.update(values_from_object_groups_table_dict)
-
-        # retrieve the table storing the relationships between objects
-        object_group_members_table = Database.get_object_group_members_table()
-
-        # at this stage we assume that all the members of group objects for the current group type
-        # have been saved in the database.
-        # we can now retrieve the UIDs of members based on their names
-        # loop through the object_groups
-        for object_group in object_groups:
-            # get the member names of the current object
-            # for each member, retrieve its uid based on name
-            # insert the relationship between the group uid and members uid in the database
-            group_member_names = object_group.get_group_member_names()
-
-            for group_member_name in group_member_names:
-                group_member_uid = members_dict_from_db.get(group_member_name)
-                object_group_members_table.insert(object_group.get_uid(), group_member_uid)
 
     def create_database(self, name):
         # execute the request to create the database for the project. no need to specify the owner

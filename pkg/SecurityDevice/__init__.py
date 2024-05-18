@@ -116,10 +116,10 @@ class SecurityDeviceDatabase(PioneerDatabase):
     def get_network_group_objects_members_table(self):
         return self._NetworkGroupObjectsMembersTable
 
-    def return_port_group_objects_members_table(self):
+    def get_port_group_objects_members_table(self):
         return self._PortGroupObjectsMembersTable
 
-    def return_port_group_objects_members_table(self):
+    def get_url_group_objects_members_table(self):
         return self._URLGroupObjectsMembersTable
 
 class SecurityDevice:
@@ -303,18 +303,20 @@ class SecurityDevice:
                 # save it in the database
                 SecurityDeviceObject.save(self._Database)
         else:
-            object_groups = []
+            group_objects = []
             for object_entry in objects_info:
                 # return an object here for each of the entries
                 SecurityDeviceObject = self.create_py_object(object_type, object_entry, ObjectContainer)
                 # save it in the database
                 SecurityDeviceObject.save(self._Database)
-
-                object_groups.append(SecurityDeviceObject)
-
-            # form the relationships between groups and their member objects
+                group_objects.append(SecurityDeviceObject)
+            
+            # loop through the objects and for each of them
+            # create python objects based on the members name
+            #TODO later: caching here so that we don't do a database lookup everytime we need data
             Database = self.get_database()
-            # PioneerDatabase.create_db_relationships(object_groups, object_type, Database)
+            for GroupObject in group_objects:
+                GroupObject.create_relationships_in_db(Database)
 
     # these functions are overridden in the subclasses whenever needed/relevant
     def return_object_container_info(self):
@@ -329,6 +331,7 @@ class SecurityDevice:
     def return_security_policy_container_info(self):
         return ["container"]
 
+    #TODO: this can probably be removed 
     def get_policy_info_from_device_conn(self, policy_containers_list, policy_type):
         """
         Retrieve information about policies from the specified policy containers.
