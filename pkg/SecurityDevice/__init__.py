@@ -300,8 +300,6 @@ class SecurityDevice:
             for object_entry in objects_info:
                 # return an object here for each of the entries
                 SecurityDeviceObject = self.create_py_object(object_type, object_entry, ObjectContainer)
-                # set all the attributes of the object
-                SecurityDeviceObject.set_attributes()
                 # save it in the database
                 SecurityDeviceObject.save(self._Database)
         else:
@@ -309,8 +307,6 @@ class SecurityDevice:
             for object_entry in objects_info:
                 # return an object here for each of the entries
                 SecurityDeviceObject = self.create_py_object(object_type, object_entry, ObjectContainer)
-                # set all the attributes of the object
-                SecurityDeviceObject.set_attributes()
                 # save it in the database
                 SecurityDeviceObject.save(self._Database)
 
@@ -318,7 +314,7 @@ class SecurityDevice:
 
             # form the relationships between groups and their member objects
             Database = self.get_database()
-            PioneerDatabase.create_db_relationships(object_groups, object_type, Database)
+            # PioneerDatabase.create_db_relationships(object_groups, object_type, Database)
 
     # these functions are overridden in the subclasses whenever needed/relevant
     def return_object_container_info(self):

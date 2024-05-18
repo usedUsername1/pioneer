@@ -1,5 +1,6 @@
 import utils.helper as helper
-from pkg.DeviceObject import Object, NetworkObject, GroupObject, GeolocationObject, PortObject, ICMPObject, URLObject
+from pkg.DeviceObject import Object, NetworkObject, GeolocationObject, PortObject, ICMPObject, URLObject, \
+NetworkGroupObject, PortGroupObject, URLGroupObject, GroupObject
 import utils.gvars as gvars
 import ipaddress
 import utils.exceptions as PioneerExceptions
@@ -18,52 +19,11 @@ class FMCObject(Object):
         Args:
             object_info (dict): Information about the FMC object.
         """
-        super().__init__(ObjectContainer, object_info)
-    
-    def set_name(self):
-        """
-        Set the name of the FMC object.
-        
-        Returns:
-            str: The name of the FMC object.
-        """
-        name = self._object_info['name']
-        return super().set_name(name)
+        self._name = object_info['name']
+        self._description = object_info.get('description')
+        self._is_overridable = object_info['overridable']
+        super().__init__(ObjectContainer, object_info, self._name, self._description, self._is_overridable)
 
-    def set_description(self):
-        """
-        Set the description of the FMC object.
-
-        Returns:
-            str: The description of the FMC object.
-        """
-        try:
-            description = self._object_info['description']
-        except KeyError:
-            description = None
-        return super().set_description(description)
-
-    def set_object_container_name(self):
-        """
-        Set the name of the object container for the FMC object.
-
-        Returns:
-            str: The name of the object container.
-        """
-        container_name = 'virtual_object_container'
-        return super().set_object_container_name(container_name)
-    
-    def set_override_bool(self):
-        """
-        Set the override status of the FMC object.
-
-        Returns:
-            bool: The override status of the FMC object.
-        """
-        is_overridable = self._object_info['overridable']
-        return super().set_override_bool(is_overridable)
-
-    # maybe not the best place where to place this but
     def set_object_member_names(self):
         general_logger.info(f"Getting the names of object members of group <{self._name}>.")
         try:
@@ -196,29 +156,12 @@ class FMCNetworkObject(FMCObject, NetworkObject):
         Args:
             object_info (dict): Information about the network object.
         """
-        super().__init__(ObjectContainer, object_info)
-    
-    def set_network_address_value(self):
-        """
-        Set the value of the network address for the network object.
+        FMCObject.__init__(self, ObjectContainer, object_info)
+        self._network_address_value = object_info['value']
+        self._network_address_type = object_info['type']
+        NetworkObject.__init__(self, self._network_address_value, self._network_address_type)
 
-        Returns:
-            str: The value of the network address.
-        """
-        value = self._object_info['value']
-        return super().set_network_address_value(value)
-
-    def set_network_address_type(self):
-        """
-        Set the type of the network address for the network object.
-
-        Returns:
-            str: The type of the network address.
-        """
-        type = self._object_info['type']
-        return super().set_network_address_type(type)
-
-class FMCNetworkGroupObject(GroupObject, FMCObject):
+class FMCNetworkGroupObject(NetworkGroupObject, FMCObject):
     def __init__(self, ObjectContainer, object_info) -> None:
         """
         Initializes a new FMCNetworkGroupObject.
@@ -226,8 +169,7 @@ class FMCNetworkGroupObject(GroupObject, FMCObject):
         Args:
             object_info (dict): Information about the network group object.
         """
-        self._group_type = 'network'
-        super().__init__(ObjectContainer, object_info, self._group_type)
+        super().__init__(ObjectContainer, object_info)
 
     def check_for_literals(self, ObjectContainer, Database):
         general_logger.info(f"Checking network group <{self._name}> for literal members.")
@@ -259,8 +201,8 @@ class FMCNetworkGroupObject(GroupObject, FMCObject):
         self.set_object_member_names()
         # check for literals
         self.check_for_literals(self.get_object_container(), Database)
-        ObjectGroupsTable = Database.get_object_groups_table()
-        ObjectGroupsTable.insert(self.get_uid(), self.get_name(), self.get_object_container().get_uid(), self.get_description(), self.get_override_bool(), self.get_group_type())   
+        NetworkGroupObjectsTable = Database.get_network_group_objects_table()
+        NetworkGroupObjectsTable.insert(self.get_uid(), self.get_name(), self.get_object_container().get_uid(), self.get_description(), self.get_override_bool())   
 
 class FMCCountryObject(GeolocationObject):
     """
@@ -660,78 +602,20 @@ class FMCPortObject(FMCObject, PortObject):
         Parameters:
         - object_info (dict): Information about the port object.
         """
-        super().__init__(ObjectContainer, object_info)
-
-    def set_source_port(self):
-        """
-        Set the port number for the port object.
-
-        Returns:
-            str: The port number.
-        """
-        port_number = "1-65535"
-        return super().set_source_port(port_number)
-
-
-    def set_destination_port(self):
-        """
-        Set the port number for the port object.
-
-        Returns:
-            str: The port number.
-        """
-        try:
-            port_number = self._object_info['port']
-        except KeyError:
-            general_logger.info(f"<{self._name}> port object does not have a port number defined.")
-            port_number = "1-65535"
-        return super().set_destination_port(port_number)
-
-    def set_port_protocol(self):
-        """
-        Set the protocol for the port object.
-
-        Returns:
-            str: The port protocol.
-        """
-        protocol = self._object_info['protocol']
-        return super().set_port_protocol(protocol)
+        FMCObject.__init__(self, ObjectContainer, object_info)
+        self._source_port = "1-65535"
+        self._destination_port = object_info.get('port', "1-65535")
+        self._port_protocol = object_info['protocol']
+        PortObject.__init__(ObjectContainer, object_info, self._source_port, self._destination_port, self._port_protocol)
     
 class FMCICMPObject(FMCObject, ICMPObject):
-    """
-    Class representing an ICMP object in the Firepower Management Center (FMC).
-    Inherits from both FMCObject and ICMPObject classes.
-    """
+    def __init__(self, ObjectContainer, object_info) -> None:
+        FMCObject.__init__(self, ObjectContainer, object_info)
+        self._icmp_type = self._object_info.get('icmpType', "any")
+        self._icmp_code = self._object_info.get('code')
+        ICMPObject.__init__(self, ObjectContainer, object_info)
 
-    def set_icmp_type(self):
-        """
-        Set the ICMP type for the ICMP object.
-
-        Returns:
-            str: The ICMP type.
-        """
-        try:
-
-            icmp_type = self._object_info['icmpType']
-        except KeyError:
-            icmp_type = 'any'
-
-        return super().set_icmp_type(icmp_type)
-    
-    def set_icmp_code(self):
-        """
-        Set the ICMP code for the ICMP object.
-
-        Returns:
-            str: The ICMP code.
-        """
-        try:
-            icmp_code = self._object_info['code']
-        except KeyError:
-            icmp_code = None
-        return super().set_icmp_code(icmp_code)
-
-class FMCPortGroupObject(GroupObject, FMCObject):
+class FMCPortGroupObject(PortGroupObject, FMCObject):
     def __init__(self, ObjectContainer, object_info) -> None:
         """
         Initializes a new FMCNetworkGroupObject.
@@ -739,14 +623,13 @@ class FMCPortGroupObject(GroupObject, FMCObject):
         Args:
             object_info (dict): Information about the network group object.
         """
-        self._group_type = 'port'
-        super().__init__(ObjectContainer, object_info, self._group_type)
+        super().__init__(ObjectContainer, object_info)
 
     def save(self, Database):
         # set the names of the object members
         self.set_object_member_names()
-        ObjectGroupsTable = Database.get_object_groups_table()
-        ObjectGroupsTable.insert(self.get_uid(), self.get_name(), self.get_object_container().get_uid(), self.get_description(), self.get_override_bool(), self.get_group_type())   
+        PortGroupObjectsTable = Database.get_port_group_objects_table()
+        PortGroupObjectsTable.insert(self.get_uid(), self.get_name(), self.get_object_container().get_uid(), self.get_description(), self.get_override_bool())   
 
 class FMCURLObject(FMCObject, URLObject):
     def __init__(self, ObjectContainer, object_info) -> None:
@@ -771,7 +654,7 @@ class FMCURLObject(FMCObject, URLObject):
         url_value = self._object_info['url']
         return super().set_url_value(url_value)
 
-class FMCURLGroupObject(GroupObject, FMCObject):
+class FMCURLGroupObject(URLGroupObject, FMCObject):
     def __init__(self, ObjectContainer, object_info) -> None:
         """
         Initialize an FMC URL Group Object.
@@ -782,8 +665,7 @@ class FMCURLGroupObject(GroupObject, FMCObject):
         Returns:
         None
         """
-        self._group_type = 'url'
-        super().__init__(ObjectContainer, object_info, self._group_type)
+        super().__init__(ObjectContainer, object_info)
     
     def check_for_literals(self, ObjectContainer, Database):
         general_logger.info(f"Checking URL group <{self._name}> for literal members.")
@@ -797,7 +679,6 @@ class FMCURLGroupObject(GroupObject, FMCObject):
             # now loop through the literal_members
             for literal_member in literal_members:
                 converted_literal = FMCObject.convert_url_literal_to_objects(ObjectContainer, literal_member)
-                converted_literal.set_attributes()
 
                 # add the name of the literal object to the list tracking the member names of the object
                 self.add_group_member_name(converted_literal.get_name())
@@ -810,5 +691,5 @@ class FMCURLGroupObject(GroupObject, FMCObject):
         self.set_object_member_names()
         # check for literals
         self.check_for_literals(self.get_object_container(), Database)
-        ObjectGroupsTable = Database.get_object_groups_table()
-        ObjectGroupsTable.insert(self.get_uid(), self.get_name(), self.get_object_container().get_uid(), self.get_description(), self.get_override_bool(), self.get_group_type())   
+        URLGroupObjectsTable = Database.get_url_group_objects_table()
+        URLGroupObjectsTable.insert(self.get_uid(), self.get_name(), self.get_object_container().get_uid(), self.get_description(), self.get_override_bool())   

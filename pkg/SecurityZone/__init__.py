@@ -3,13 +3,19 @@ from abc import abstractmethod
 general_logger = helper.logging.getLogger('general')
 from pkg.DeviceObject import Object
 
-class SecurityZone(Object):
-    def __init__(self, ObjectContainer, object_info) -> None:
-        super().__init__(ObjectContainer, object_info)
+class SecurityZone():
+    def __init__(self, ObjectContainer, object_info, name) -> None:
+        self._ObjectContainer = ObjectContainer
+        self._object_info = object_info
+        self._name = name
+        self._uid = helper.generate_uid()
     
-    def set_attributes(self):
-        self.set_name()
-
+    def get_name(self):
+        return self._name
+    
+    def get_uid(self):
+        return self._uid
+    
     def save(self, Database):
         ZonesTable = Database.get_security_zones_table()
-        ZonesTable.insert(self.get_uid(), self.get_name(), self.get_object_container().get_uid()) 
+        ZonesTable.insert(self.get_uid(), self.get_name(), self._ObjectContainer().get_uid()) 
