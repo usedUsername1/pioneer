@@ -310,19 +310,12 @@ class SecurityDevice:
                 # save it in the database
                 SecurityDeviceObject.save(self._Database)
                 group_objects.append(SecurityDeviceObject)
-            
-            # TODO IDEA: use a flag so that whenever match statement matches a network group, for example
-            # you can call a function called "preload_data()"
-            # calling that function will return a dictionary with uid:name mapping with the necessary data
-            # to be used in the below loop
-            # removing the need for database lookups
 
-            # loop through the objects and for each of them
-            # create python objects based on the members name
-            #TODO later: caching here so that we don't do a database lookup everytime we need data
             Database = self.get_database()
+            # preload the data
+            preloaded_object_data = PioneerDatabase.preload_object_data(object_type, Database)
             for GroupObject in group_objects:
-                GroupObject.create_relationships_in_db(Database)
+                GroupObject.create_relationships_in_db(Database, preloaded_object_data)
 
     # these functions are overridden in the subclasses whenever needed/relevant
     def return_object_container_info(self):

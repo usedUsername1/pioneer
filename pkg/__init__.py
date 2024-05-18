@@ -138,6 +138,41 @@ class PioneerDatabase():
         general_logger.info(f"Connecting to device database: <{database}>.")
         cursor = DatabaseConnection.create_cursor()
         return cursor
+    
+    @staticmethod
+    def preload_object_data(object_type, Database):
+        def get_table_data(table, columns):
+            """
+            Helper function to get data from a table and convert it to a dictionary.
+            """
+            values_tuple_list = table.get(columns=columns)
+            return dict(values_tuple_list)
+
+        members_dict_from_db = {}
+
+        if object_type == 'network_group_object':
+            tables_to_fetch = [
+                Database.get_network_address_objects_table(),
+                Database.get_network_group_objects_table()
+            ]
+        elif object_type == 'port_group_object':
+            tables_to_fetch = [
+                Database.get_port_objects_table(),
+                Database.get_port_group_objects_table(),
+                Database.get_icmp_objects_table()
+            ]
+        elif object_type == 'url_group_object':
+            tables_to_fetch = [
+                Database.get_url_objects_table(),
+                Database.get_url_group_objects_table()
+            ]
+        else:
+            tables_to_fetch = []
+
+        for table in tables_to_fetch:
+            members_dict_from_db.update(get_table_data(table, ['name', 'uid']))
+
+        return members_dict_from_db
 
 #TODO: should all containers be stored in the same table actually and have an extra column for the parameter type?
 class PioneerTable():

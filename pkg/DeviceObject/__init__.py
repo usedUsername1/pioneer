@@ -198,23 +198,11 @@ class NetworkGroupObject(GroupObject):
         NetworkGroupObjectsTable = Database.get_network_group_objects_table()
         NetworkGroupObjectsTable.insert(self.get_uid(), self.get_name(), self.get_object_container().get_uid(), self.get_description(), self.get_override_bool())
     
-    def create_relationships_in_db(self, Database):
+    def create_relationships_in_db(self, Database, preloaded_data):
         member_names = self.get_group_member_names()
+        network_group_objects_members_table = Database.get_network_group_objects_members_table()
         for member_name in member_names:
-            # try to get the uid by member name from the network_objects table
-            # if you can't get it from there, try to get it from the network_objects_groups table
-            network_address_objects = Database.get_network_address_objects_table()
-            network_address_group_objects = Database.get_network_group_objects_table()
-            network_group_objects_members_table = Database.get_network_group_objects_members_table()
-
-            network_address_objects_lookup = network_address_objects.get('uid', 'name', member_name)
-            network_address_group_objects_lookup = network_address_group_objects.get('uid', 'name', member_name)
-
-            if network_address_objects_lookup:
-                group_member_uid = network_address_objects_lookup[0][0]
-            else:
-                group_member_uid = network_address_group_objects_lookup[0][0]
-
+            group_member_uid = preloaded_data.get(member_name)
             network_group_objects_members_table.insert(self.get_uid(), group_member_uid)
 # For simplicity, all geo data is going to be treated as a Geolocation object.
 # For example, in FMC, you have Geolocation objects (made out of countries and other continents), and then you have the countries and the continents. they are not object entities per se
@@ -585,25 +573,11 @@ class PortGroupObject(GroupObject):
         PortGroupObjectsTable = Database.get_port_group_objects_table()
         PortGroupObjectsTable.insert(self.get_uid(), self.get_name(), self.get_object_container().get_uid(), self.get_description(), self.get_override_bool())
 
-    def create_relationships_in_db(self, Database):
+    def create_relationships_in_db(self, Database, preloaded_data):
         member_names = self.get_group_member_names()
+        port_group_objects_members_table = Database.get_port_group_objects_members_table()
         for member_name in member_names:
-            port_address_objects = Database.get_port_objects_table()
-            port_address_group_objects = Database.get_port_group_objects_table()
-            icmp_objects = Database.get_icmp_objects_table()
-            port_group_objects_members_table = Database.get_port_group_objects_members_table()
-
-            port_address_objects_lookup = port_address_objects.get('uid', 'name', member_name)
-            port_address_group_objects_lookup = port_address_group_objects.get('uid', 'name', member_name)
-            icmp_objects_lookup = icmp_objects.get('uid', 'name', member_name)
-
-            if port_address_objects_lookup:
-                group_member_uid = port_address_objects_lookup[0][0]
-            elif port_address_group_objects_lookup:
-                group_member_uid = port_address_group_objects_lookup[0][0]
-            else:
-                group_member_uid = icmp_objects_lookup[0][0]
-
+            group_member_uid = preloaded_data.get(member_name)
             port_group_objects_members_table.insert(self.get_uid(), group_member_uid)
 
 class URLObject:
@@ -652,19 +626,9 @@ class URLGroupObject(GroupObject):
         URLGroupObjectsTable = Database.get_url_group_objects_table()
         URLGroupObjectsTable.insert(self.get_uid(), self.get_name(), self.get_object_container().get_uid(), self.get_description(), self.get_override_bool())
 
-    def create_relationships_in_db(self, Database):
+    def create_relationships_in_db(self, Database, preloaded_data):
         member_names = self.get_group_member_names()
+        url_group_objects_members_table = Database.get_url_group_objects_members_table()
         for member_name in member_names:
-            url_address_objects = Database.get_url_objects_table()
-            url_address_group_objects = Database.get_url_group_objects_table()
-            url_group_objects_members_table = Database.get_url_group_objects_members_table()
-
-            url_address_objects_lookup = url_address_objects.get('uid', 'name', member_name)
-            url_address_group_objects_lookup = url_address_group_objects.get('uid', 'name', member_name)
-
-            if url_address_objects_lookup:
-                group_member_uid = url_address_objects_lookup[0][0]
-            else:
-                group_member_uid = url_address_group_objects_lookup[0][0]
-
+            group_member_uid = preloaded_data.get(member_name)
             url_group_objects_members_table.insert(self.get_uid(), group_member_uid)
