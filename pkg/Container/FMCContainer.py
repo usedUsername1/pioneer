@@ -5,7 +5,6 @@ class FMCSecurityPolicyContainer(SecurityPolicyContainer):
     """
     Represents a policy container specific to the Firepower Management Center (FMC).
     """
-
     def __init__(self, SecurityDevice, container_info) -> None:
         """
         Initialize an FMCPolicyContainer instance.
@@ -13,36 +12,9 @@ class FMCSecurityPolicyContainer(SecurityPolicyContainer):
         Parameters:
             container_info (dict): Information about the policy container.
         """
-        super().__init__(SecurityDevice, container_info)
-
-    def set_name(self):
-        name = self._container_info['name']
-        return super().set_name(name)
-
-    def get_name(self):
-        """
-        Get the name of the policy container.
-
-        Returns:
-            str: Name of the policy container.
-        """
-        return self._name
-
-    def set_parent_name(self):
-        try:
-            parent_name = self._container_info['metadata']['parentPolicy']['name']
-        except KeyError:
-            parent_name = None
-        return super().set_parent_name(parent_name)
-
-    def is_child_container(self):
-        """
-        Check if the container is a child container.
-
-        Returns:
-            bool: True if the container is a child container, False otherwise.
-        """
-        return self._container_info['metadata']['inherit']
+        self._name = container_info['name']
+        self._parent_name = container_info['metadata'].get('parentPolicy', {}).get('name')
+        super().__init__(SecurityDevice, container_info, self._name, self._parent_name)
 
 class FMCObjectContainer(ObjectContainer, VirtualContainer):
     """

@@ -1,12 +1,12 @@
 from abc import abstractmethod
 from pkg import PioneerDatabase, GeneralDataTable, SecurityPolicyContainersTable, NATPolicyContainersTable, ObjectContainersTable, SecurityPoliciesTable, \
-PoliciesHitcountTable, SecurityZonesTable, URLObjectsTable, NetworkAddressObjectsTable, ObjectGroupMembersTable, ObjectGroupsTable, \
-GeolocationObjectsTable, PortObjectsTable, ICMPObjectsTable, ScheduleObjectsTable, ManagedDevicesTable, ManagedDeviceContainersTable, SecurityZoneContainersTable
+PoliciesHitcountTable, SecurityZonesTable, URLObjectsTable, NetworkAddressObjectsTable, \
+GeolocationObjectsTable, PortObjectsTable, ICMPObjectsTable, ScheduleObjectsTable, ManagedDevicesTable, ManagedDeviceContainersTable, SecurityZoneContainersTable, \
+NetworkGroupObjectsTable, PortGroupObjectsTable, URLGroupObjectsTable, NetworkGroupObjectsMembersTable, \
+PortGroupObjectsMembersTable, URLGroupObjectsMembersTable
 import utils.helper as helper
-import json
 import sys
 import utils.gvars as gvars
-from pkg.DeviceObject import NetworkObject, GroupObject, GeolocationObject, PortObject, ICMPObject, URLObject
 
 general_logger = helper.logging.getLogger('general')
 # TODO: instantiate the database table objects and create the tables in the database
@@ -35,10 +35,14 @@ class SecurityDeviceDatabase(PioneerDatabase):
         self._GeolocationObjectsTable = GeolocationObjectsTable(self)
         self._PortObjectsTable = PortObjectsTable(self)
         self._ICMPObjectsTable = ICMPObjectsTable(self)
-        self._ObjectGroupMembersTable = ObjectGroupMembersTable(self)
         self._ManagedDevicesTable = ManagedDevicesTable(self)
-        self._ObjectGroupsTable = ObjectGroupsTable(self)
-
+        self._NetworkGroupObjectsTable = NetworkGroupObjectsTable(self)
+        self._PortGroupObjectsTable = PortGroupObjectsTable(self)
+        self._URLGroupObjectsTable = URLGroupObjectsTable(self)
+        self._NetworkGroupObjectsMembersTable = NetworkGroupObjectsMembersTable(self)
+        self._PortGroupObjectsMembersTable = PortGroupObjectsMembersTable(self)
+        self._URLGroupObjectsMembersTable = URLGroupObjectsMembersTable(self)
+        
     def create_security_device_tables(self):
         general_logger.info(f"Creating the PostgreSQL tables in device database.")
         self._GeneralDataTable.create()
@@ -54,8 +58,12 @@ class SecurityDeviceDatabase(PioneerDatabase):
         self._PortObjectsTable.create()
         self._ICMPObjectsTable.create()
         self._ManagedDevicesTable.create()
-        self._ObjectGroupsTable.create()
-        self._ObjectGroupMembersTable.create()
+        self._NetworkGroupObjectsTable.create()
+        self._PortGroupObjectsTable.create()
+        self._URLGroupObjectsTable.create()
+        self._NetworkGroupObjectsMembersTable.create()
+        self._PortGroupObjectsMembersTable.create()
+        self._URLGroupObjectsMembersTable.create()
 
     def get_general_data_table(self):
         return self._GeneralDataTable
@@ -93,14 +101,26 @@ class SecurityDeviceDatabase(PioneerDatabase):
     def get_managed_devices_table(self):
         return self._ManagedDevicesTable
     
-    def get_object_group_members_table(self):
-        return self._ObjectGroupMembersTable
-    
-    def get_object_groups_table(self):
-        return self._ObjectGroupsTable
-    
     def get_security_zones_table(self):
         return self._SecurityZonesTable
+
+    def get_network_group_objects_table(self):
+        return self._NetworkGroupObjectsTable
+
+    def get_port_group_objects_table(self):
+        return self._PortGroupObjectsTable
+
+    def get_url_group_objects_table(self):
+        return self._URLGroupObjectsTable
+
+    def get_network_group_objects_members_table(self):
+        return self._NetworkGroupObjectsMembersTable
+
+    def return_port_group_objects_members_table(self):
+        return self._PortGroupObjectsMembersTable
+
+    def return_port_group_objects_members_table(self):
+        return self._URLGroupObjectsMembersTable
 
 class SecurityDevice:
     def __init__(self, uid, name, DeviceDatabase, DeviceConnection):
@@ -223,9 +243,6 @@ class SecurityDevice:
 
         for container_entry in containers_info:
             current_container = self.create_py_object(container_type, container_entry, ObjectContainer=None)
-
-            current_container.set_name()
-            current_container.set_parent_name()
 
             current_container_name = current_container.get_parent_name()
 

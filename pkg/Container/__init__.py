@@ -3,7 +3,7 @@ from abc import abstractmethod
 general_logger = helper.logging.getLogger('general')
 
 class Container:
-    def __init__(self, SecurityDevice, container_info) -> None:
+    def __init__(self, SecurityDevice, container_info, name, parent_name) -> None:
         """
         Initializes a Container object.
 
@@ -12,9 +12,8 @@ class Container:
         """
         self._container_info = container_info
         self._SecurityDevice = SecurityDevice
-        self._security_device_uid = SecurityDevice.get_uid()
-        self._name = None
-        self._parent_name = None
+        self._name = name
+        self._parent_name = parent_name
         self._parent = None
         self._uid = helper.generate_uid()
 
@@ -67,41 +66,24 @@ class Container:
         return self._parent_name
 
     def get_security_device_uid(self):
-        return self._security_device_uid
+        return self._SecurityDevice.get_uid()
     
     def get_security_device(self):
         return self._SecurityDevice
-
-    @abstractmethod
-    def process_container_info(self):
-        """
-        Processes the container information. Implemented in the children Container classes
-        """
-        pass
-
-    @abstractmethod
-    def is_child_container(self):
-        """
-        Checks if the container is a child container. Implemented in the device specific children Container classes.
-
-        Returns:
-            bool: True if the container is a child container, False otherwise.
-        """
-        pass
 
     @abstractmethod
     def save(self, Database):
         pass
 
 class SecurityPolicyContainer(Container):
-    def __init__(self, SecurityDevice, container_info) -> None:
+    def __init__(self, SecurityDevice, container_info, name, parent_name) -> None:
         """
         Initializes a SecurityPolicyContainer object.
 
         Args:
             container_info: Information related to the security policy container.
         """
-        super().__init__(SecurityDevice, container_info)
+        super().__init__(SecurityDevice, container_info, name, parent_name)
 
     def save(self, Database):
         SecurityPolicyContainerTable = Database.get_security_policy_containers_table()
@@ -129,44 +111,9 @@ class ObjectContainer(Container):
 
 class VirtualContainer(Container):
     def __init__(self, SecurityDevice, container_info) -> None:
-        super().__init__(SecurityDevice, container_info)
-    """
-    Represents a virtual container.
-    """
-    def __init__(self, SecurityDevice, container_info) -> None:
-        """
-        Initialize an Virtual Container instance.
-
-        Parameters:
-            container_info (dict): Information about the object container.
-        """
-        super().__init__(SecurityDevice, container_info)
-
-    def is_child_container(self):
-        """
-        Check if the container is a child container.
-
-        Returns:
-            bool: Always returns False for FMC object containers.
-        """
-        return False
-
-    def get_parent_name(self):
-        """
-        Get the name of the parent container.
-
-        Returns:
-            None: Since FMC object containers do not have parent containers, it returns None.
-        """
-        return None
-
-    def set_name(self):
-        name = "virtual_container"
-        return super().set_name(name)
-
-    def set_parent_name(self):
-        parent_name = None
-        return super().set_parent_name(parent_name)
+        self._name = 'virtual_container'
+        self._parent_name = None
+        super().__init__(SecurityDevice, container_info, self._name, self._parent_name)
 
 class ZoneContainer(Container):
     def __init__(self, SecurityDevice, container_info) -> None:
