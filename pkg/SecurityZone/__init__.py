@@ -1,7 +1,6 @@
 import utils.helper as helper
 from abc import abstractmethod
 general_logger = helper.logging.getLogger('general')
-from pkg.DeviceObject import Object
 
 class SecurityZone():
     def __init__(self, ObjectContainer, object_info, name) -> None:
@@ -18,4 +17,4 @@ class SecurityZone():
     
     def save(self, Database):
         ZonesTable = Database.get_security_zones_table()
-        ZonesTable.insert(self.get_uid(), self.get_name(), self._ObjectContainer().get_uid()) 
+        ZonesTable.insert(self._uid, self._name, self._ObjectContainer.get_uid()) 

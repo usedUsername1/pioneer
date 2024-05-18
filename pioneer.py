@@ -161,41 +161,41 @@ def main():
                 print("Import network group objects.")
                 SecurityDeviceObject.get_object_info_from_device_conn('network_group_object', ObjectContainer)
 
-            #     #TODO: geolocation objects support                
-            #     # general_logger.info(f"################## Getting the geolocation objects of device: <{security_device_name}>. Container: <{object_container_name}> ##################")
-            #     # SecurityDeviceObject.get_object_info_from_device_conn('geolocation_object', ObjectContainer)
+                #TODO: geolocation objects support                
+                # general_logger.info(f"################## Getting the geolocation objects of device: <{security_device_name}>. Container: <{object_container_name}> ##################")
+                # SecurityDeviceObject.get_object_info_from_device_conn('geolocation_object', ObjectContainer)
 
-            #     general_logger.info(f"################## Getting the port objects of device: <{security_device_name}>. Container: <{object_container_name}> ##################")
-            #     print("Import port objects.")
-            #     SecurityDeviceObject.get_object_info_from_device_conn('port_object', ObjectContainer)
+                general_logger.info(f"################## Getting the port objects of device: <{security_device_name}>. Container: <{object_container_name}> ##################")
+                print("Import port objects.")
+                SecurityDeviceObject.get_object_info_from_device_conn('port_object', ObjectContainer)
                 
-            #     general_logger.info(f"################## Getting the port group objects of device: <{security_device_name}>. Container: <{object_container_name}> ##################")
-            #     print("Import port group objects.")
-            #     SecurityDeviceObject.get_object_info_from_device_conn('port_group_object', ObjectContainer)
+                general_logger.info(f"################## Getting the port group objects of device: <{security_device_name}>. Container: <{object_container_name}> ##################")
+                print("Import port group objects.")
+                SecurityDeviceObject.get_object_info_from_device_conn('port_group_object', ObjectContainer)
                 
-            #     general_logger.info(f"################## Getting the URL objects of device: <{security_device_name}>. Container: <{object_container_name}> ##################")
-            #     SecurityDeviceObject.get_object_info_from_device_conn('url_object', ObjectContainer)
+                general_logger.info(f"################## Getting the URL objects of device: <{security_device_name}>. Container: <{object_container_name}> ##################")
+                SecurityDeviceObject.get_object_info_from_device_conn('url_object', ObjectContainer)
                 
-            #     general_logger.info(f"################## Getting the URL group objects of device: <{security_device_name}>. Container: <{object_container_name}> ##################")
-            #     SecurityDeviceObject.get_object_info_from_device_conn('url_group_object', ObjectContainer)
+                general_logger.info(f"################## Getting the URL group objects of device: <{security_device_name}>. Container: <{object_container_name}> ##################")
+                SecurityDeviceObject.get_object_info_from_device_conn('url_group_object', ObjectContainer)
             
-            # for ZoneContainer in zone_containers_list:
-            #     print("Importing the interfaces/zones data.")
-            #     SecurityDeviceObject.get_object_info_from_device_conn('security_zone', ZoneContainer)
+            for ZoneContainer in zone_containers_list:
+                print("Importing the interfaces/zones data.")
+                SecurityDeviceObject.get_object_info_from_device_conn('security_zone', ZoneContainer)
 
-        #     # # get the devices managed by the security device
-        #     # general_logger.info(f"################## Getting the managed devices of device: <{security_device_name}>. ##################")
-        #     # print("Importing the managed devices data.")
-        #     # for ManagedDeviceContainer in managed_devices_container_list:
-        #     #     SecurityDeviceObject.get_object_info_from_device_conn('managed_device', ManagedDeviceContainer)
+            # get the devices managed by the security device
+            general_logger.info(f"################## Getting the managed devices of device: <{security_device_name}>. ##################")
+            print("Importing the managed devices data.")
+            for ManagedDeviceContainer in managed_devices_container_list:
+                SecurityDeviceObject.get_object_info_from_device_conn('managed_device', ManagedDeviceContainer)
 
-        #     # # Retrieve the security policy containers along with the parents and insert them in the database
-        #     # print("Importing the security policy containers info.")
-        #     # SecurityDeviceObject.get_container_info_from_device_conn('security_policy_container')
+            # Retrieve the security policy containers along with the parents and insert them in the database
+            print("Importing the security policy containers info.")
+            SecurityDeviceObject.get_container_info_from_device_conn('security_policy_container')
 
-        # else:
-        #     general_logger.critical(f"Failed to retrieve version of the security device. Exiting...")
-        #     sys.exit(1)
+        else:
+            general_logger.critical(f"Failed to retrieve version of the security device. Exiting...")
+            sys.exit(1)
 
         # except Exception as e:
         #     general_logger.critical(f"Failed to connect to the security device or encountered an error: <{e}>.")

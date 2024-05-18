@@ -434,7 +434,7 @@ class PortObject:
     A class representing a port object.
     """
 
-    def __init__(self, ObjectContainer, object_info, source_port, destination_port, port_protocol) -> None:
+    def __init__(self, source_port, destination_port, port_protocol) -> None:
         """
         Initialize the PortObject instance.
 
@@ -508,16 +508,15 @@ class ICMPObject:
     Class representing an ICMP object in the system, inheriting from the base Object class.
     """
 
-    def __init__(self, ObjectContainer, object_info) -> None:
+    def __init__(self, icmp_type, icmp_code) -> None:
         """
         Initialize an ICMPObject instance.
 
         Parameters:
         - object_info (dict): Information about the ICMP object.
         """
-        super().__init__(ObjectContainer, object_info)
-        self._icmp_type = None
-        self._icmp_code = None
+        self._icmp_type = icmp_type
+        self._icmp_code = icmp_code
     
     def get_icmp_type(self):
         """
@@ -568,7 +567,7 @@ class PortGroupObject(GroupObject):
         PortGroupObjectsTable.insert(self.get_uid(), self.get_name(), self.get_object_container().get_uid(), self.get_description(), self.get_override_bool())
 
 class URLObject:
-    def __init__(self, ObjectContainer, object_info) -> None:
+    def __init__(self, url_value) -> None:
         """
         Initialize a URL Object.
 
@@ -578,8 +577,7 @@ class URLObject:
         Returns:
         None
         """
-        super().__init__(ObjectContainer, object_info)
-        self._url_value = None
+        self._url_value = url_value
     
     def get_url_value(self):
         """

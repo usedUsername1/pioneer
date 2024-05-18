@@ -183,8 +183,6 @@ class FMCNetworkGroupObject(NetworkGroupObject, FMCObject):
             # now loop through the literal_members
             for literal_member in literal_members:
                 converted_literal = FMCObject.convert_network_literal_to_object(ObjectContainer, literal_member)
-                converted_literal.set_attributes()
-
                 # add the name of the literal object to the list tracking the member names of the object
                 self.add_group_member_name(converted_literal.get_name())
                 converted_literal.save(Database)
@@ -606,14 +604,14 @@ class FMCPortObject(FMCObject, PortObject):
         self._source_port = "1-65535"
         self._destination_port = object_info.get('port', "1-65535")
         self._port_protocol = object_info['protocol']
-        PortObject.__init__(ObjectContainer, object_info, self._source_port, self._destination_port, self._port_protocol)
+        PortObject.__init__(self, self._source_port, self._destination_port, self._port_protocol)
     
 class FMCICMPObject(FMCObject, ICMPObject):
     def __init__(self, ObjectContainer, object_info) -> None:
         FMCObject.__init__(self, ObjectContainer, object_info)
         self._icmp_type = self._object_info.get('icmpType', "any")
         self._icmp_code = self._object_info.get('code')
-        ICMPObject.__init__(self, ObjectContainer, object_info)
+        ICMPObject.__init__(self, self._icmp_type, self._icmp_code)
 
 class FMCPortGroupObject(PortGroupObject, FMCObject):
     def __init__(self, ObjectContainer, object_info) -> None:
@@ -642,17 +640,9 @@ class FMCURLObject(FMCObject, URLObject):
         Returns:
         None
         """
-        super().__init__(ObjectContainer, object_info)
-    
-    def set_url_value(self):
-        """
-        Set the URL value for the FMC URL Object.
-
-        Returns:
-        None
-        """
-        url_value = self._object_info['url']
-        return super().set_url_value(url_value)
+        FMCObject.__init__(self, ObjectContainer, object_info)
+        self._url_value = object_info['url']
+        URLObject.__init__(self, self._url_value)
 
 class FMCURLGroupObject(URLGroupObject, FMCObject):
     def __init__(self, ObjectContainer, object_info) -> None:
