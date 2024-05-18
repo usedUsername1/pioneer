@@ -27,6 +27,7 @@ class SecurityDeviceDatabase(PioneerDatabase):
         self._SecurityPolicyContainersTable = SecurityPolicyContainersTable(self)
         self._ObjectContainersTable = ObjectContainersTable(self)
         self._ZoneContainersTable = SecurityZoneContainersTable(self)
+        self._SecurityZonesTable = SecurityZonesTable(self)
         self._ManagedDeviceContainersTable = ManagedDeviceContainersTable(self)
         self._SecurityPoliciesTable = SecurityPoliciesTable(self)
         self._URLObjectsTable = URLObjectsTable(self)
@@ -44,6 +45,7 @@ class SecurityDeviceDatabase(PioneerDatabase):
         self._SecurityPolicyContainersTable.create()
         self._ObjectContainersTable.create()
         self._ZoneContainersTable.create()
+        self._SecurityZonesTable.create()
         self._ManagedDeviceContainersTable.create()
         self._SecurityPoliciesTable.create()
         self._URLObjectsTable.create()
@@ -96,6 +98,9 @@ class SecurityDeviceDatabase(PioneerDatabase):
     
     def get_object_groups_table(self):
         return self._ObjectGroupsTable
+    
+    def get_security_zones_table(self):
+        return self._SecurityZonesTable
 
 class SecurityDevice:
     def __init__(self, uid, name, DeviceDatabase, DeviceConnection):
@@ -166,7 +171,7 @@ class SecurityDevice:
             case 'security_policy_container':
                 return self.return_security_policy_container(object_entry)
             case 'security_zone':
-                return self.return_security_zone(object_entry)
+                return self.return_security_zone(ObjectContainer, object_entry)
             case 'managed_device':
                 return self.return_managed_device(ObjectContainer, object_entry)
             case 'network_object':

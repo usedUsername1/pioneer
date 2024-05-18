@@ -64,6 +64,8 @@ class PioneerDatabase():
         pass
     
     @staticmethod
+    #TODO: this should probabily be defined on the tables
+    # where the relationships are created, as it will scale very bad
     def create_db_relationships(object_groups, object_type, Database):
         members_dict_from_db = {}
 
@@ -200,10 +202,7 @@ class PioneerDatabase():
         cursor = DatabaseConnection.create_cursor()
         return cursor
 
-# TODO: implement this class
-# each child of this object should be associated with a firewall object.
-# for example. if i get the data of a firewall object, i want to do something like object.insert(), and the
-# implementation of insert() for that object should be called
+#TODO: should all containers be stored in the same table actually and have an extra column for the parameter type?
 class PioneerTable():
     _table_columns = None
     def __init__(self, database):
@@ -225,7 +224,6 @@ class PioneerTable():
         table_columns_str = ", ".join(column_names)
         return table_columns_str
 
-    #TODO: verify duplicate
     def insert(self, *values):
         columns = self.get_columns()
         
@@ -433,8 +431,7 @@ class SecurityZonesTable(PioneerTable):
             ("uid", "TEXT PRIMARY KEY"),
             ("name", "TEXT NOT NULL"),
             ("zone_container_uid", "TEXT NOT NULL"),
-            ("description", "TEXT"),
-            ("CONSTRAINT fk_zone_container_uid FOREIGN KEY(zone_container_uid)", "REFERENCES zone_container_uid(uid)"),
+            ("CONSTRAINT fk_zone_container_uid FOREIGN KEY(zone_container_uid)", "REFERENCES security_zone_containers(uid)"),
             ("CONSTRAINT uc_zone_container_uid", "UNIQUE (name, zone_container_uid)")
         ]
 
@@ -515,7 +512,6 @@ class GeolocationObjectsTable(PioneerTable):
             ("CONSTRAINT uc_object_container_uid10", "UNIQUE (name, object_container_uid)")
         ]
 
-#TODO: source_port and destination_ports are needed here
 class PortObjectsTable(PioneerTable):
     def __init__(self, database):
         super().__init__(database)

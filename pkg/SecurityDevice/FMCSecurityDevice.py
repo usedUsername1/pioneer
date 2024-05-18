@@ -4,6 +4,7 @@ from pkg.DeviceObject.FMCDeviceObject import FMCObject, FMCNetworkGroupObject, F
 FMCPortObject, FMCICMPObject, FMCPortGroupObject, FMCGeolocationObject, \
 FMCContinentObject, FMCCountryObject, FMCURLObject, FMCURLGroupObject
 from pkg.Policy.FMCPolicy import FMCSecurityPolicy
+from pkg.SecurityZone.FMCSecurityZone import FMCSecurityZone
 from pkg.SecurityDevice import SecurityDevice 
 from pkg.ManagedDevice.FMCManagedDevice import FMCManagedDevice
 
@@ -84,8 +85,8 @@ class FMCSecurityDevice(SecurityDevice):
     def return_url_group_object_info(self):
         return self._SecurityDeviceConnection.object.urlgroup.get()
 
-    # def return_security_zone_info(self):
-    #     return self._SecurityDeviceConnection
+    def return_security_zone_info(self):
+        return self._SecurityDeviceConnection.object.securityzone.get()
     
     def return_security_policy_container(self, container_entry):
         return FMCSecurityPolicyContainer(self, container_entry)
@@ -96,7 +97,6 @@ class FMCSecurityDevice(SecurityDevice):
     def return_zone_container(self, container_entry):
         return FMCZoneContainer(self, container_entry)
     
-    #TODO: get the uid of the container 
     def return_managed_device_container(self, container_entry):
         return FMCManagedDeviceContainer(self, container_entry)
 
@@ -137,6 +137,9 @@ class FMCSecurityDevice(SecurityDevice):
 
     def return_url_group_object(self, ObjectContainer, url_group_object_entry):
         return FMCURLGroupObject(ObjectContainer, url_group_object_entry)
+    
+    def return_security_zone(self, ZoneContainer, zone_entry):
+        return FMCSecurityZone(ZoneContainer, zone_entry)
 
     def return_security_policies_info(self, policy_container_name):
         """

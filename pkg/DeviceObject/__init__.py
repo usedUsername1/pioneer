@@ -631,11 +631,4 @@ class URLObject(Object):
     def save(self, Database):
         URLObjectsTable = Database.get_url_objects_table()
         URLObjectsTable.insert(self.get_uid(), self.get_name(), self.get_object_container().get_uid(), self.get_url_value(), self.get_description(), self.get_override_bool())
-
-
-# class SecurityZone(Object):
-#     def __init__(self, name, description, is_overridable, object_container_name=None) -> None:
-#         super().__init__(name, description, is_overridable, object_container_name)
-
-
     
