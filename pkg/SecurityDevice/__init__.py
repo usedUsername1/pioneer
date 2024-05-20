@@ -208,6 +208,8 @@ class SecurityDevice:
                 return self.return_url_object(ObjectContainer, object_entry)
             case 'url_group_object':
                 return self.return_url_group_object(ObjectContainer, object_entry)
+            case 'security_policy_group':
+                return self.return_security_policy_object(ObjectContainer, object_entry)
 
     def get_container_info_from_device_conn(self, container_type):
         """
@@ -294,6 +296,12 @@ class SecurityDevice:
                 objects_info = self.return_url_object_info()
             case 'url_group_object':
                 objects_info = self.return_url_group_object_info()
+            # group is used here as a "flag" value. it marks the fact
+            # that the security policies will be processed as object groups
+            # also, only the security policies for a particular object container
+            # specified by the user will be returned
+            case 'security_policy_group':
+                objects_info = self.return_security_policy_info(ObjectContainer)
         
         # Iterate over each managed device entry in the retrieved objects info
         if 'group' not in object_type:
@@ -329,32 +337,6 @@ class SecurityDevice:
     
     def return_security_policy_container_info(self):
         return ["container"]
-
-    #TODO: this can probably be removed 
-    def get_policy_info_from_device_conn(self, policy_containers_list, policy_type):
-        """
-        Retrieve information about policies from the specified policy containers.
-
-        Args:
-            policy_containers_list (list): List of policy container names.
-
-        Returns:
-            list: List of dictionaries containing information about policies.
-        """
-        general_logger.info(f"################## Importing <{policy_type}>. ##################")
-        # Iterate over each policy container name in the provided list
-        for policy_container in policy_containers_list:
-            policy_info = self.get_policy_info(policy_container, policy_type)
-            # now loop through the policy info
-            for policy_entry in policy_info:
-                # and create the policy object
-                Policy = self.create_policy(policy_type, policy_entry)
-                
-                # set the attributes of the policy
-                Policy.set_attributes()
-
-                # save the policy data in the database
-                Policy.save(self._Database)
 
     #TODO: uncomment all when done testing
     def migrate_config(self, SourceDevice):

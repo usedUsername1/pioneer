@@ -129,6 +129,31 @@ class FMCSecurityDevice(SecurityDevice):
         else:
             return FMCPortObject(ObjectContainer, port_object_entry)
 
+    #TODO: for FMC devices, retrieving the policies of a child container, will also return the policies
+    # inherited from the parent.
+    # they need to be filtered out
+    def return_security_policy_info(self, SecurityPolicyContainer):
+        """
+        Retrieve information about security policies within a specified container.
+
+        Args:
+            policy_container_name (str): Name of the container containing the security policies.
+
+        Returns:
+            list: List of dictionaries containing information about security policies.
+        """
+        security_policy_container_name = SecurityPolicyContainer.get_name()
+        # Execute the request to retrieve information about the security policies
+        security_policies_info = self._SecurityDeviceConnection.policy.accesspolicy.accessrule.get(container_name=security_policy_container_name)
+        
+        # Filter out the security policies which are not part of the current container being processed
+        filtered_data_gen = (entry for entry in security_policies_info if entry['metadata']['accessPolicy']['name'] == security_policy_container_name)
+
+        # Convert generator to a list if needed
+        filtered_data = list(filtered_data_gen)
+
+        return filtered_data
+
     def return_port_group_object(self, ObjectContainer, port_group_object_entry):
         return FMCPortGroupObject(ObjectContainer, port_group_object_entry)
 
@@ -140,23 +165,11 @@ class FMCSecurityDevice(SecurityDevice):
     
     def return_security_zone(self, ZoneContainer, zone_entry):
         return FMCSecurityZone(ZoneContainer, zone_entry)
-
-    def return_security_policies_info(self, policy_container_name):
-        """
-        Retrieve information about security policies within a specified container.
-
-        Args:
-            policy_container_name (str): Name of the container containing the security policies.
-
-        Returns:
-            list: List of dictionaries containing information about security policies.
-        """
-        # Execute the request to retrieve information about the security policies
-        security_policies_info = self._SecurityDeviceConnection.policy.accesspolicy.accessrule.get(container_name=policy_container_name)
-        return security_policies_info
     
-    def create_security_policy(self, policy_entry):
-        return FMCSecurityPolicy(policy_entry)
+    def return_security_policy_object(self, SecurityPolicyContainer, policy_entry):
+        # return security policy object only if the current policy belongs to the current container,
+        # if it belongs to another parent, skip it
+        return FMCSecurityPolicy(SecurityPolicyContainer, policy_entry)
 
     def get_device_version(self):
         """

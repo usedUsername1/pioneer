@@ -102,21 +102,24 @@ def main():
 
         security_device_uuid = helper.generate_uid()
 
-        # Try connecting to the security device and retrieving the version
-       #try:
+    try:
         general_logger.info(f"Connecting to the security device: <{security_device_name}>.")
         # Attempt to create the security device object based on the device type
         if '-api' in security_device_type:
             general_logger.info(f"The device <{security_device_name}> is an API device. Its API will be used for interacting with it.")
-            SecurityDeviceObject = SecurityDeviceFactory.build_api_security_device(security_device_uuid, security_device_name, security_device_type, SecurityDeviceDB, security_device_hostname, security_device_username, security_device_secret, security_device_port, domain)
+            SecurityDeviceObject = SecurityDeviceFactory.build_api_security_device(
+                security_device_uuid, security_device_name, security_device_type, 
+                SecurityDeviceDB, security_device_hostname, security_device_username, 
+                security_device_secret, security_device_port, domain
+            )
         else:
             general_logger.critical(f"Provided device type <{security_device_type}> is invalid.")
             sys.exit(1)
-    
+        
         # Get the version of the security device
         general_logger.info(f"################## Getting the device version for device: <{security_device_name}>. ##################")
         security_device_version = SecurityDeviceObject.get_device_version_from_device_conn()
-    
+        
         # If version retrieval is successful, proceed with database creation and data insertion
         if security_device_version:
             # Create the database
@@ -135,7 +138,11 @@ def main():
 
             # Insert general device info into the database
             general_logger.info(f"Inserting general device info in the database.")
-            SecurityDeviceObject.save_general_info(SecurityDeviceObject.get_uid(), security_device_name, security_device_username, security_device_secret, security_device_hostname, security_device_type, security_device_port, security_device_version, domain)
+            SecurityDeviceObject.save_general_info(
+                SecurityDeviceObject.get_uid(), security_device_name, security_device_username, 
+                security_device_secret, security_device_hostname, security_device_type, 
+                security_device_port, security_device_version, domain
+            )
 
             # Retrieve the information about the containers, interfaces and objects
             print("Importing the object container data.")
@@ -147,7 +154,7 @@ def main():
             print("Importing managed devices container data.")
             managed_devices_container_list = SecurityDeviceObject.get_container_info_from_device_conn('managed_device_container')
             print("Importing the security policy containers info.")
-            SecurityDeviceObject.get_container_info_from_device_conn('security_policy_container')
+            security_policy_containers_list = SecurityDeviceObject.get_container_info_from_device_conn('security_policy_container')
 
             print("Importing the object data")
             general_logger.info(f"################## Getting the objects of device: <{security_device_name}>. ##################")
@@ -189,40 +196,36 @@ def main():
             print("Importing the managed devices data.")
             for ManagedDeviceContainer in managed_devices_container_list:
                 SecurityDeviceObject.get_object_info_from_device_conn('managed_device', ManagedDeviceContainer)
-
-            # Retrieve the security policy containers along with the parents and insert them in the database
-            print("Importing the security policy containers info.")
-            SecurityDeviceObject.get_container_info_from_device_conn('security_policy_container')
+            
+            # get the security policies from all containers
+            # TODO: create new tables for regions, applications and url categories
+            # make sure you store 'any' value in all the tables so that you don't violate foreign key constraints for security policies
+            
+            for SecurityPolicyContainer in security_policy_containers_list:
+                SecurityDeviceObject.get_object_info_from_device_conn('security_policy_group', SecurityPolicyContainer)
 
         else:
             general_logger.critical(f"Failed to retrieve version of the security device. Exiting...")
             sys.exit(1)
 
-        # except Exception as e:
-        #     general_logger.critical(f"Failed to connect to the security device or encountered an error: <{e}>.")
-        #     sys.exit(1)
-        
-        # close the cursors used to connect to the database
-        LandingDBcursor.close()
-        SecurityDeviceDBcursor.close()
+    except Exception as e:
+        general_logger.critical(f"Failed to connect to the security device or encountered an error: <{e}>.")
+        sys.exit(1)
 
-    #TODO: before continuing with imports, check how you can create the relationships between
-    # objects in DB in a better way 
-    # sub-if statements for various data the user wants to import
-    # TODO: see how objects defined directly on policies (and all the L7 elements) will be imported and stored in the database
+    # close the cursors used to connect to the database
+    LandingDBcursor.close()
+    SecurityDeviceDBcursor.close()
+
     if pioneer_args["device_name [device_name]"]:
         security_device_name = pioneer_args["device_name [device_name]"]
         SecurityDeviceObj = SecurityDeviceFactory.create_security_device(db_user, security_device_name, db_password, db_host, db_port)
 
         if pioneer_args["import_config"]:
-            # import the policy containers of the device.
             if(pioneer_args["security_policy_container [container_name]"]):
-                passed_container_names = pioneer_args["security_policy_container [container_name]"]
-                passed_container_names_list = []
-                passed_container_names_list.append(passed_container_names)
-                
+                security_policy_container_name = pioneer_args["security_policy_container [container_name]"]
+                # container object must be instantiated with info from the database
                 print("Importing the security policies.")
-                SecurityDeviceObj.get_policy_info_from_device_conn(passed_container_names_list, 'security_policy')
+                SecurityDeviceObj.get_object_info_from_device_conn('security_policy_group', SecurityPolicyContainer)
         
         # TODO: everything below this is shit and it's just supposed to work. need to re-do it
         # import the containers from the target device to the source device

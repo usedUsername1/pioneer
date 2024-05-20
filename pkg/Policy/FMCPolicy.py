@@ -1,279 +1,76 @@
 from pkg.Policy import SecurityPolicy
 import utils.helper as helper
 import utils.gvars as gvars
-from pkg.DeviceObject.FMCDeviceObject import FMCObject
+from pkg.DeviceObject.FMCDeviceObject import FMCObject, FMCObjectWithLiterals
 
 special_policies_logger = helper.logging.getLogger('special_policies')
 general_logger = helper.logging.getLogger('general')
 
-class FMCSecurityPolicy(SecurityPolicy):
+class FMCSecurityPolicy(SecurityPolicy, FMCObjectWithLiterals):
     """
     Represents a security policy specific to the Firepower Management Center (FMC).
     """
 
-    def __init__(self, policy_info_fmc) -> None:
+    def __init__(self, PolicyContainer, policy_info) -> None:
         """
         Initialize an FMCSecurityPolicy instance.
 
         Parameters:
             policy_info_fmc (dict): Information about the security policy.
         """
-        super().__init__(policy_info_fmc)
-
-    # Methods for setting various attributes of the security policy
-    def set_name(self):
-        """
-        Set the name of the security policy.
-        """
-        name = self._policy_info['name']
-        return super().set_name(name)
-
-    def set_container_name(self):
-        """
-        Set the name of the policy container.
-        """
-        container_name = self._policy_info['metadata']['accessPolicy']['name']
-        return super().set_container_name(container_name)
-
-    def set_container_index(self):
-        """
-        Set the index of the policy container.
-        """
-        index = self._policy_info['metadata']['ruleIndex']
-        return super().set_container_index(index)
-
-    def set_status(self):
-        """
-        Set the status of the security policy (enabled or disabled).
-        """
-        status = 'enabled' if self._policy_info.get('enabled', False) else 'disabled'
-        return super().set_status(status)
-
-    def set_category(self):
-        """
-        Set the category of the security policy.
-        """
-        category = self._policy_info['metadata']['category']
-        return super().set_category(category)
-
-    def set_source_zones(self):
-        """
-        Set the source zones for the security policy.
-
-        Returns:
-            list: List of source zones.
-        """
-        try:
-            raw_source_zones = self._policy_info['sourceZones']
-            source_zones = self.extract_security_zone_object_info(raw_source_zones)
-        except KeyError:
-            source_zones = ['any']
-        return super().set_source_zones(source_zones)
-
-    def set_destination_zones(self):
-        """
-        Set the destination zones for the security policy.
-
-        Returns:
-            list: List of destination zones.
-        """
-        try:
-            raw_destination_zones = self._policy_info['destinationZones']
-            destination_zones = self.extract_security_zone_object_info(raw_destination_zones)
-        except KeyError:
-            destination_zones = ['any']
-        return super().set_destination_zones(destination_zones)
-
-    def set_source_networks(self):
-        """
-        Set the source networks for the security policy.
-        """
-        try:
-            raw_source_networks = self._policy_info['sourceNetworks']
-            source_networks = self.extract_network_address_object_info(raw_source_networks)
-        except KeyError:
-            general_logger.info("It looks like there are no explicit source networks defined on this policy.")
-            source_networks = ['any']
-        return super().set_source_networks(source_networks)
-
-    def set_destination_networks(self):
-        """
-        Set the destination networks for the security policy.
-        """
-        try:
-            raw_destination_networks = self._policy_info['destinationNetworks']
-            destination_networks = self.extract_network_address_object_info(raw_destination_networks)
-        except KeyError:
-            general_logger.info("It looks like there are no explicit destination networks defined on this policy.")
-            destination_networks = ['any']
-        return super().set_destination_networks(destination_networks)
-
-    def set_source_ports(self):
-        """
-        Set the source ports for the security policy.
-        """
-        try:
-            raw_source_ports = self._policy_info['sourcePorts']
-            source_ports = self.extract_port_object_info(raw_source_ports)
-        except KeyError:
-            general_logger.info("It looks like there are no explicit source ports defined on this policy.")
-            source_ports = ['any']
-        return super().set_source_ports(source_ports)
-
-    def set_destination_ports(self):
-        """
-        Set the destination ports for the security policy.
-        """
-        try:
-            raw_destination_ports = self._policy_info['destinationPorts']
-            destination_ports = self.extract_port_object_info(raw_destination_ports)
-        except KeyError:
-            general_logger.info("It looks like there are no explicit destination ports defined on this policy.")
-            destination_ports = ['any']
-        return super().set_destination_ports(destination_ports)
-
-    def set_schedule_objects(self):
-        """
-        Set the schedule objects for the security policy.
-        """
-        try:
-            raw_schedule_objects = self._policy_info['timeRangeObjects']
-            schedule_objects = self.extract_schedule_object_info(raw_schedule_objects)
-        except KeyError:
-            general_logger.info("It looks like there are no explicit schedule objects defined on this policy.")
-            schedule_objects = ['any']
-        return super().set_schedule_objects(schedule_objects)
-
-    def set_users(self):
-        """
-        Set the users for the security policy.
-        """
-        try:
-            raw_users = self._policy_info['users']
-            users = self.extract_user_object_info(raw_users)
-        except KeyError:
-            general_logger.info("It looks like there are no explicit users defined on this policy.")
-            users = ['any']
-        return super().set_users(users)
-
-    def set_urls(self):
-        """
-        Set the URLs for the security policy.
-        """
-        try:
-            raw_urls = self._policy_info['urls']
-            urls = self.extract_url_object_info(raw_urls)
-        except KeyError:
-            general_logger.info("It looks like there are no explicit URLs defined on this policy.")
-            urls = ['any']
-        return super().set_urls(urls)
-
-    def set_policy_apps(self):
-        """
-        Set the applications for the security policy.
-        """
-        try:
-            raw_policy_apps = self._policy_info['applications']
-            policy_apps = self.extract_l7_app_object_info(raw_policy_apps)
-        except KeyError:
-            general_logger.info("It looks like there are no explicit applications defined on this policy.")
-            policy_apps = ['any']
-        return super().set_policy_apps(policy_apps)
-
-    def set_description(self):
-        """
-        Set the description for the security policy.
-        """
-        try:
-            description = self._policy_info['description']
-        except KeyError:
-            general_logger.info("It looks like there is no description defined on this policy.")
-            description = None
-        return super().set_description(description)
-
-    def set_comments(self):
-        """
-        Set the comments for the security policy.
-        """
-        try:
-            raw_comments = self._policy_info['commentHistoryList']
-            comments = self.extract_comments(raw_comments)
-        except KeyError:
-            general_logger.info("It looks like there are no comments defined on this policy.")
-            comments = None
-        return super().set_comments(comments)
-
-    def set_log_setting(self):
-        """
-        Set the log settings for the security policy.
-        """
-        try:
-            log_settings = ['FMC'] if self._policy_info['sendEventsToFMC'] else []
-            log_settings += ['Syslog'] if self._policy_info['enableSyslog'] else []
-        except KeyError:
-            general_logger.info("It looks like there are no log settings defined on this policy.")
-            log_settings = None
-        return super().set_log_setting(log_settings)
-
-    def set_log_start(self):
-        """
-        Set the start logging for the security policy.
-        """
-        log_start = self._policy_info['logBegin']
-        return super().set_log_start(log_start)
-
-    def set_log_end(self):
-        """
-        Set the end logging for the security policy.
-        """
-        log_end = self._policy_info['logEnd']
-        return super().set_log_end(log_end)
-
-    def set_section(self):
-        """
-        Set the section for the security policy.
-        """
-        section = self._policy_info['metadata']['section']
-        return super().set_section(section)
-
-    def set_action(self):
-        """
-        Set the action for the security policy.
-        """
-        action = self._policy_info['action']
-        return super().set_action(action)
-
-# #TODO: see if debugging is really necessary on these functions
-#     def extract_policy_object_info(self, raw_object, object_type):
-#         """
-#         Extract information about policy objects based on object type.
-
-#         Parameters:
-#             raw_object (dict): Information about the policy object.
-#             object_type (str): Type of the policy object.
-
-#         Returns:
-#             dict: Extracted information about the policy object.
-#         """
-#         general_logger.debug(f"Called FMCSecurityPolicy::extract_policy_object_info().")
-#         match object_type:
-#             case 'security_zone':
-#                 return self.extract_security_zone_object_info(raw_object)
-#             case 'network_address_object':
-#                 return self.extract_network_address_object_info(raw_object)
-#             case 'port_object':
-#                 return self.extract_port_object_info(raw_object)
-#             case 'user_object':
-#                 return self.extract_user_object_info(raw_object)
-#             case 'schedule_object':
-#                 return self.extract_schedule_object_info(raw_object)
-#             case 'url_object':
-#                 return self.extract_url_object_info(raw_object)
-#             case 'l7_app_object':
-#                 return self.extract_l7_app_object_info(raw_object)
-#             case 'comment':
-#                 return self.extract_comments(raw_object)
-                    
+        self._name = policy_info['name']
+        self._container_index = policy_info['metadata']['ruleIndex']
+        self._status = 'enabled' if policy_info.get('enabled', False) else 'disabled'
+        self._category = policy_info['metadata']['category']
+        self._source_zones = self.extract_security_zone_object_info(policy_info.get('sourceZones', ['any']))
+        self._destination_zones = self.extract_security_zone_object_info(policy_info.get('destinationZones', ['any']))
+        self._source_networks = self.extract_network_address_object_info(policy_info.get('sourceNetworks', ['any']))
+        self._destination_networks = self.extract_network_address_object_info(policy_info.get('destinationNetworks', ['any']))
+        self._source_ports = self.extract_port_object_info(policy_info.get('sourcePorts', ['any']))
+        self._destination_ports = self.extract_port_object_info(policy_info.get('destinationPorts', ['any']))
+        self._schedule_objects = self.extract_schedule_object_info(policy_info.get('destinationPorts', ['any']))
+        self._users = self.extract_user_object_info(policy_info.get('users', ['any']))
+        self._urls = self.extract_url_object_info(policy_info['urls'], ['any'])
+        self._policy_apps = self.extract_l7_app_object_info(policy_info['applications'], ['any'])
+        self._description = policy_info.get('description')
+        self._comments = self.extract_comments(policy_info['commentHistoryList'], ['any'])
+        self._log_to_manager = policy_info.get('sendEventsToFMC', False)
+        self._log_to_syslog = policy_info.get('enableSyslog', False)
+        self._log_start = policy_info['logBegin']
+        self._log_end = policy_info['logEnd']
+        self._section = policy_info['metadata']['section']
+        self._action = policy_info['action']
+        
+        super().__init__(
+            PolicyContainer,
+            policy_info,
+            self._name,
+            self._container_index,
+            self._status,
+            self._category,
+            self._source_zones,
+            self._destination_zones,
+            self._source_networks,
+            self._destination_networks,
+            self._source_ports,
+            self._destination_ports,
+            self._schedule_objects,
+            self._users,
+            self._urls,
+            self._policy_apps,
+            self._description,
+            self._comments,
+            self._log_to_manager,
+            self._log_to_syslog,
+            self._log_start,
+            self._log_end,
+            self._section,
+            self._action
+        )
+    
+    def save(self, Database):
+        pass
+  
     def extract_security_zone_object_info(self, security_zone_object_info):
         """
         Extract security zone information from the provided data structure.

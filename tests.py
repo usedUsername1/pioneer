@@ -2,9 +2,19 @@ import fireREST
 
 fmc = fireREST.FMC(hostname='10.2.196.131', username='admin', password='2wsx#EDC', domain='Global')
 
-policy = fmc.object.securityzone.get()
+# how to return only policies
+policy = fmc.policy.accesspolicy.accessrule.get(container_name='Parking1-child')
+# The value to match
+value_to_match = 'Parking1-child'
 
-print(policy)
+filtered_data_gen = (entry for entry in policy if entry['metadata']['accessPolicy']['name'] == value_to_match)
+
+# Convert generator to a list if needed
+filtered_data = list(filtered_data_gen)
+
+for entry in filtered_data:
+    print(entry)
+
 
 # from panos.panorama import Panorama
 # pano  = Panorama("10.2.196.196", "admin", "2wsx#EDC")

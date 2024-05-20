@@ -4,9 +4,6 @@ from abc import abstractmethod
 general_logger = helper.logging.getLogger('general')
 special_policies_logger = helper.logging.getLogger('special_policies')
 
-class Rule:
-    pass
-
 class Policy:
     """
     Class representing a policy.
@@ -14,6 +11,7 @@ class Policy:
     This class serves as a base class for different types of policies.
 
     Args:
+        PolicyContainer (type): The type of the policy container.
         policy_info (dict): Information about the policy.
 
     Attributes:
@@ -26,32 +24,46 @@ class Policy:
         _status (str): Status of the policy.
         _description (str): Description of the policy.
         _comments (str): Comments associated with the policy.
-        _log_start (datetime): Start time for logging.
-        _log_end (datetime): End time for logging.
-        _log_settings (str): Logging settings for the policy.
+        _log_start: Start logging at the beginning of the session.
+        _log_end: End logging at the beginning of the session.
+        _log_to_manager (bool): Log to mananger.
+        _log_to_syslog (bool): Log to syslog
     """
 
-    def __init__(self, policy_info) -> None:
+    def __init__(
+        self,
+        PolicyContainer,
+        policy_info,
+        name,
+        source_zones,
+        destination_zones,
+        container_index,
+        status,
+        description,
+        comments,
+        log_to_manager,
+        log_to_syslog
+    ) -> None:
         """
         Initialize a Policy object with the given policy information.
 
         Args:
+            PolicyContainer (type): The type of the policy container.
             policy_info (dict): Information about the policy.
         """
+        self._PolicyContainer = PolicyContainer
         self._policy_info = policy_info
-        self._name = None
-        self._source_zones = None
-        self._destination_zones = None
-        self._container_name = None
-        self._container_index = None
-        self._status = None
-        self._container = None
-        self._description = None
-        self._comments = None
-        self._log_start = None
-        self._log_end = None
-        self._log_settings = None
-    
+        self._name = name
+        self._source_zones = source_zones
+        self._destination_zones = destination_zones
+        self._container_name = PolicyContainer.get_name()
+        self._container_index = container_index
+        self._status = status
+        self._description = description
+        self._comments = comments
+        self._log_to_manager = log_to_manager
+        self._log_to_syslog = log_to_syslog
+
     def get_policy_info(self):
         """
         Retrieve the policy information stored in the object.
@@ -285,26 +297,54 @@ class SecurityPolicy(Policy):
 
     """
 
-    def __init__(self, policy_info) -> None:
+    def __init__(
+        self,
+        PolicyContainer,
+        policy_info,
+        name,
+        container_index,
+        status,
+        category,
+        source_zones,
+        destination_zones,
+        source_networks,
+        destination_networks,
+        source_ports,
+        destination_ports,
+        schedule_objects,
+        users,
+        urls,
+        policy_apps,
+        description,
+        comments,
+        log_to_manager,
+        log_to_syslog,
+        log_start,
+        log_end,
+        section,
+        action
+    ) -> None:
         """
         Initialize a SecurityPolicy object with the given policy information.
 
         Args:
             policy_info (dict): Information about the security policy.
         """
-        super().__init__(policy_info)
-        self._category = None
-        self._container_index = None
-        self._source_networks = None
-        self._destination_networks = None
-        self._source_ports = None
-        self._destination_ports = None
-        self._schedule_objects = None
-        self._users = None
-        self._url_objects = None
-        self._l7_apps = None
-        self._section = None
-        self._action = None
+        super().__init__(PolicyContainer, policy_info, name, source_zones, destination_zones, container_index, status, description, comments, log_to_manager, log_to_syslog)
+        self._category = category
+        self._container_index = container_index
+        self._source_networks = source_networks
+        self._destination_networks = destination_networks
+        self._source_ports = source_ports
+        self._destination_ports = destination_ports
+        self._schedule_objects = schedule_objects
+        self._users = users
+        self._url_objects = urls
+        self._l7_apps = policy_apps
+        self._section = section
+        self._action = action
+        self._log_start = log_start
+        self._log_end = log_end
 
     def set_category(self, category):
         """
@@ -503,31 +543,6 @@ class SecurityPolicy(Policy):
             str: The action of the security policy.
         """
         return self._action
-
-    def set_attributes(self):
-        self.set_name()
-        self.set_source_zones()
-        self.set_destination_zones()
-        self.set_container_name()
-        self.set_container_index()
-        self.set_status()
-        self.set_description()
-        self.set_comments()
-        self.set_log_start()
-        self.set_log_end()
-        self.set_log_setting()
-        self.set_category()
-        self.set_container_index()
-        self.set_source_networks()
-        self.set_destination_networks()
-        self.set_source_ports()
-        self.set_destination_ports()
-        self.set_schedule_objects()
-        self.set_urls()
-        self.set_users()
-        self.set_policy_apps()
-        self.set_section()
-        self.set_action()
 
     def save(self, Database):
         SecurityPoliciesTable = Database.get_security_policies_table()

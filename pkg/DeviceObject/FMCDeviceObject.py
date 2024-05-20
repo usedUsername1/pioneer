@@ -7,6 +7,53 @@ import utils.exceptions as PioneerExceptions
 from abc import abstractmethod
 general_logger = helper.logging.getLogger('general')
 
+class FMCObjectWithLiterals(Object):
+    def set_object_member_names(self):
+        general_logger.info(f"Getting the names of object members of group <{self._name}>.")
+        try:
+            object_members = self._object_info['objects']
+            for object_member in object_members:
+                self.add_group_member_name(object_member['name'])
+        except:
+            general_logger.info(f"There are no object members for group <{self._name}>.")
+
+    def check_for_network_literals(self, ObjectContainer, Database):
+        general_logger.info(f"Checking network group <{self._name}> for literal members.")
+        # get the group object info
+        object_info = self.get_info()
+        converted_literal = ''
+        
+        # check for literals key in the object definition
+        try:
+            literal_members = object_info['literals']
+            # now loop through the literal_members
+            for literal_member in literal_members:
+                converted_literal = FMCObject.convert_network_literal_to_object(ObjectContainer, literal_member)
+                # add the name of the literal object to the list tracking the member names of the object
+                self.add_group_member_name(converted_literal.get_name())
+                converted_literal.save(Database)
+        except:
+            general_logger.info(f"No literal members found for network group <{self._name}>.")
+
+    def check_for_url_literals(self, ObjectContainer, Database):
+        general_logger.info(f"Checking URL group <{self._name}> for literal members.")
+        # get the group object info
+        object_info = self.get_info()
+        converted_literal = ''
+        
+        # check for literals key in the object definition
+        try:
+            literal_members = object_info['literals']
+            # now loop through the literal_members
+            for literal_member in literal_members:
+                converted_literal = FMCObject.convert_url_literal_to_objects(ObjectContainer, literal_member)
+
+                # add the name of the literal object to the list tracking the member names of the object
+                self.add_group_member_name(converted_literal.get_name())
+                converted_literal.save(Database)
+        except:
+            general_logger.info(f"No literal members found for URL group <{self._name}>.")
+
 class FMCObject(Object):
     """
     A class representing a FMC object.
@@ -23,15 +70,6 @@ class FMCObject(Object):
         self._description = object_info.get('description')
         self._is_overridable = object_info['overridable']
         super().__init__(ObjectContainer, object_info, self._name, self._description, self._is_overridable)
-
-    def set_object_member_names(self):
-        general_logger.info(f"Getting the names of object members of group <{self._name}>.")
-        try:
-            object_members = self._object_info['objects']
-            for object_member in object_members:
-                self.add_group_member_name(object_member['name'])
-        except:
-            general_logger.info(f"There are no object members for group <{self._name}>.")
 
     @staticmethod
     def convert_port_literals_to_objects(port_literals):
@@ -161,7 +199,7 @@ class FMCNetworkObject(FMCObject, NetworkObject):
         self._network_address_type = object_info['type']
         NetworkObject.__init__(self, self._network_address_value, self._network_address_type)
 
-class FMCNetworkGroupObject(NetworkGroupObject, FMCObject):
+class FMCNetworkGroupObject(NetworkGroupObject, FMCObject, FMCObjectWithLiterals):
     def __init__(self, ObjectContainer, object_info) -> None:
         """
         Initializes a new FMCNetworkGroupObject.
@@ -170,24 +208,6 @@ class FMCNetworkGroupObject(NetworkGroupObject, FMCObject):
             object_info (dict): Information about the network group object.
         """
         super().__init__(ObjectContainer, object_info)
-
-    def check_for_literals(self, ObjectContainer, Database):
-        general_logger.info(f"Checking network group <{self._name}> for literal members.")
-        # get the group object info
-        object_info = self.get_info()
-        converted_literal = ''
-        
-        # check for literals key in the object definition
-        try:
-            literal_members = object_info['literals']
-            # now loop through the literal_members
-            for literal_member in literal_members:
-                converted_literal = FMCObject.convert_network_literal_to_object(ObjectContainer, literal_member)
-                # add the name of the literal object to the list tracking the member names of the object
-                self.add_group_member_name(converted_literal.get_name())
-                converted_literal.save(Database)
-        except:
-            general_logger.info(f"No literal members found for network group <{self._name}>.")
 
     # since we are dealing with a group object, there are a few operations that must be done
     # before the object is saved in the database
@@ -198,7 +218,7 @@ class FMCNetworkGroupObject(NetworkGroupObject, FMCObject):
         # set the names of the object members
         self.set_object_member_names()
         # check for literals
-        self.check_for_literals(self.get_object_container(), Database)
+        self.check_for_network_literals(self.get_object_container(), Database)
         NetworkGroupObjectsTable = Database.get_network_group_objects_table()
         NetworkGroupObjectsTable.insert(self.get_uid(), self.get_name(), self.get_object_container().get_uid(), self.get_description(), self.get_override_bool())   
 
@@ -613,7 +633,7 @@ class FMCICMPObject(FMCObject, ICMPObject):
         self._icmp_code = self._object_info.get('code')
         ICMPObject.__init__(self, self._icmp_type, self._icmp_code)
 
-class FMCPortGroupObject(PortGroupObject, FMCObject):
+class FMCPortGroupObject(PortGroupObject, FMCObject, FMCObjectWithLiterals):
     def __init__(self, ObjectContainer, object_info) -> None:
         """
         Initializes a new FMCNetworkGroupObject.
@@ -644,7 +664,7 @@ class FMCURLObject(FMCObject, URLObject):
         self._url_value = object_info['url']
         URLObject.__init__(self, self._url_value)
 
-class FMCURLGroupObject(URLGroupObject, FMCObject):
+class FMCURLGroupObject(URLGroupObject, FMCObject, FMCObjectWithLiterals):
     def __init__(self, ObjectContainer, object_info) -> None:
         """
         Initialize an FMC URL Group Object.
@@ -656,30 +676,11 @@ class FMCURLGroupObject(URLGroupObject, FMCObject):
         None
         """
         super().__init__(ObjectContainer, object_info)
-    
-    def check_for_literals(self, ObjectContainer, Database):
-        general_logger.info(f"Checking URL group <{self._name}> for literal members.")
-        # get the group object info
-        object_info = self.get_info()
-        converted_literal = ''
-        
-        # check for literals key in the object definition
-        try:
-            literal_members = object_info['literals']
-            # now loop through the literal_members
-            for literal_member in literal_members:
-                converted_literal = FMCObject.convert_url_literal_to_objects(ObjectContainer, literal_member)
-
-                # add the name of the literal object to the list tracking the member names of the object
-                self.add_group_member_name(converted_literal.get_name())
-                converted_literal.save(Database)
-        except:
-            general_logger.info(f"No literal members found for URL group <{self._name}>.")
 
     def save(self, Database):
         # set the names of the object members
         self.set_object_member_names()
         # check for literals
-        self.check_for_literals(self.get_object_container(), Database)
+        self.check_for_url_literals(self.get_object_container(), Database)
         URLGroupObjectsTable = Database.get_url_group_objects_table()
         URLGroupObjectsTable.insert(self.get_uid(), self.get_name(), self.get_object_container().get_uid(), self.get_description(), self.get_override_bool())   
