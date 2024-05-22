@@ -8,7 +8,7 @@ from pkg.SecurityDevice import SecurityDevice, SecurityDeviceDatabase
 from pkg.SecurityDevice.SecurityDeviceFactory import SecurityDeviceFactory
 import sys
 from datetime import datetime, timezone
-import psutil
+# import psutil
 
 import subprocess
 
@@ -155,7 +155,7 @@ def main():
             managed_devices_container_list = SecurityDeviceObject.get_container_info_from_device_conn('managed_device_container')
             print("Importing the security policy containers info.")
             security_policy_containers_list = SecurityDeviceObject.get_container_info_from_device_conn('security_policy_container')
-
+            #TODO: use properties instead of getters and setters in python
             print("Importing the object data")
             general_logger.info(f"################## Getting the objects of device: <{security_device_name}>. ##################")
             for ObjectContainer in object_containers_list:

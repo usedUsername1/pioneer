@@ -587,21 +587,106 @@ class ScheduleObjectsTable(PioneerTable):
             ("CONSTRAINT uc_object_container_uid15", "UNIQUE (name, object_container_uid)")
         ]
 
+class UserRealms(PioneerTable):
+    def __init__(self, database):
+        super().__init__(database)
+        self._name = "user_realms"
+        self._table_columns = [
+            ("uid", "TEXT PRIMARY KEY"),
+            ("name", "TEXT NOT NULL"),
+            ("object_container_uid", "TEXT NOT NULL"),
+            ("description", "TEXT"),
+            ("CONSTRAINT fk_object_container FOREIGN KEY(object_container_uid)", "REFERENCES object_containers(uid)"),
+            ("CONSTRAINT uc_object_container_uid18", "UNIQUE (name, object_container_uid)")
+        ]
 
-# import the zone data from the device. use an ID for the zones. ID will be primary key. import only the names for now
-# import all the object data from the security device. use an ID for all the objects. the ID will be primary key
-# don't forget that literals can also be used for defining object group data!
-# both zone and object data should be imported after importing the security device
+class PolicyUsersTable(PioneerTable):
+    def __init__(self, database):
+        super().__init__(database)
+        self._name = "policy_users"
+        self._table_columns = [
+            ("uid", "TEXT PRIMARY KEY"),
+            ("name", "TEXT NOT NULL"),
+            ("realm_uid", "TEXT NOT NULL")
+            ("description", "TEXT"),
+            ("CONSTRAINT fk_user_realms FOREIGN KEY(realm_uid)", "REFERENCES user_realms(uid)"),
+            ("CONSTRAINT uc_user_realms", "UNIQUE (name, realm_uid)")
+        ]
 
-# scan policy data. find all literals first and insert them in the tables storing the object info.
-# how to find all literals?
-# now insert the policy data in the tables containing policy data and the referenced objects.
+class L7Apps(PioneerTable):
+    def __init__(self, database):
+        super().__init__(database)
+        self._name = "l7_apps"
+        self._table_columns = [
+            ("uid", "TEXT PRIMARY KEY"),
+            ("name", "TEXT NOT NULL"),
+            ("object_container_uid", "TEXT NOT NULL"),
+            ("description", "TEXT"),
+            ("CONSTRAINT fk_object_container FOREIGN KEY(object_container_uid)", "REFERENCES object_containers(uid)"),
+            ("CONSTRAINT uc_object_container_uid19", "UNIQUE (name, object_container_uid)")
+        ]
+
+class L7AppFilters(PioneerTable):
+    def __init__(self, database):
+        super().__init__(database)
+        self._name = "l7_app_filters"
+        self._table_columns = [
+            ("uid", "TEXT PRIMARY KEY"),
+            ("name", "TEXT NOT NULL"),
+            ("object_container_uid", "TEXT NOT NULL"),
+            ("type", "TEXT NOT NULL")
+            ("description", "TEXT"),
+            ("overridable_object", "BOOLEAN NOT NULL"),
+            ("CONSTRAINT fk_object_container FOREIGN KEY(object_container_uid)", "REFERENCES object_containers(uid)"),
+            ("CONSTRAINT uc_object_container_uid20", "UNIQUE (name, object_container_uid)")
+        ]
+
+class L7AppGroups(PioneerTable):
+    def __init__(self, database):
+        super().__init__(database)
+        self._name = "l7_app_groups"
+        self._table_columns = [
+            ("uid", "TEXT PRIMARY KEY"),
+            ("name", "TEXT NOT NULL"),
+            ("object_container_uid", "TEXT NOT NULL"),
+            ("description", "TEXT"),
+            ("CONSTRAINT fk_object_container FOREIGN KEY(object_container_uid)", "REFERENCES object_containers(uid)"),
+            ("CONSTRAINT uc_object_container_uid9", "UNIQUE (name, object_container_uid)")
+        ]
+
+class L7AppGroupMembers(PioneerTable):
+    def __init__(self, database):
+        super().__init__(database)
+        self._name = "l7_app_groups"
+        self._name = "port_group_objects_members"
+        self._table_columns = [
+            ("group_uid", "TEXT NOT NULL"),
+            ("object_uid", "TEXT NOT NULL"),
+            ("CONSTRAINT fk_group FOREIGN KEY(group_uid)", "REFERENCES l7_app_groups(uid)"),
+            ("PRIMARY KEY(group_uid, object_uid)", "")
+        ]
+
+class URLCategories(PioneerTable):
+    def __init__(self, database):
+        super().__init__(database)
+        self._name = "url_categories"
+        self._table_columns = [
+            ("uid", "TEXT PRIMARY KEY"),
+            ("name", "TEXT NOT NULL"),
+            ("object_container_uid", "TEXT NOT NULL"),
+            ("reputation", "TEXT NOT NULL")
+            ("description", "TEXT"),
+            ("overridable_object", "BOOLEAN NOT NULL"),
+            ("CONSTRAINT fk_object_container FOREIGN KEY(object_container_uid)", "REFERENCES object_containers(uid)"),
+            ("CONSTRAINT uc_object_container_uid22", "UNIQUE (name, object_container_uid)")
+        ]
 
 # security policies tables
+#TODO: add (at some point) constraints to reference the objects the policies use
 class SecurityPolicyZones(PioneerTable):
     def __init__(self, database):
         super().__init__(database)
-        self._name = "policy_zones"
+        self._name = "security_policy_zones"
         self._table_columns = [
             ("uid", "TEXT PRIMARY KEY"),
             ("security_policy_uid", "TEXT"),
@@ -610,23 +695,34 @@ class SecurityPolicyZones(PioneerTable):
             ("CONSTRAINT fk_security_policy_uid FOREIGN KEY (security_policy_uid)", "REFERENCES security_policies (uid)")
         ]
 
-class SecurityPolicyObjects(PioneerTable):
+class SecurityPolicyNetworks(PioneerTable):
     def __init__(self, database):
         super().__init__(database)
-        self._name = "policy_networks"
+        self._name = "security_policy_networks"
         self._table_columns = [
             ("uid", "TEXT PRIMARY KEY"),
             ("security_policy_uid", "TEXT"),
             ("name", "TEXT NOT NULL"),
             ("flow", "TEXT"),
             ("CONSTRAINT fk_security_policy_uid FOREIGN KEY (security_policy_uid)", "REFERENCES security_policies (uid)")
-            
+        ]
+
+class SecurityPolicyRegions(PioneerTable):
+    def __init__(self, database):
+        super().__init__(database)
+        self._name = "security_policy_regions"
+        self._table_columns = [
+            ("uid", "TEXT PRIMARY KEY"),
+            ("security_policy_uid", "TEXT"),
+            ("name", "TEXT NOT NULL"),
+            ("flow", "TEXT"),
+            ("CONSTRAINT fk_security_policy_uid FOREIGN KEY (security_policy_uid)", "REFERENCES security_policies (uid)")
         ]
 
 class SecurityPolicyServices(PioneerTable):
     def __init__(self, database):
         super().__init__(database)
-        self._name = "policy_services"
+        self._name = "security_policy_services"
         self._table_columns = [
             ("uid", "TEXT PRIMARY KEY"),
             ("security_policy_uid", "TEXT"),
@@ -635,10 +731,10 @@ class SecurityPolicyServices(PioneerTable):
             ("CONSTRAINT fk_security_policy_uid FOREIGN KEY (security_policy_uid)", "REFERENCES security_policies (uid)")
         ]
 
-class PolicyUsers(PioneerTable):
+class SecurityPolicyUsers(PioneerTable):
     def __init__(self, database):
         super().__init__(database)
-        self._name = "policy_networks"
+        self._name = "security_policy_users"
         self._table_columns = [
             ("uid", "TEXT PRIMARY KEY"),
             ("name", "TEXT NOT NULL"),
@@ -646,10 +742,21 @@ class PolicyUsers(PioneerTable):
             ("CONSTRAINT fk_security_policy_uid FOREIGN KEY (security_policy_uid)", "REFERENCES security_policies (uid)")
         ]
 
-class SecurityPolicyURLS(PioneerTable):
+class SecurityPolicyURLs(PioneerTable):
     def __init__(self, database):
         super().__init__(database)
-        self._name = "policy_networks"
+        self._name = "security_policy_urls"
+        self._table_columns = [
+            ("uid", "TEXT PRIMARY KEY"),
+            ("name", "TEXT NOT NULL"),
+            ("security_policy_uid", "TEXT"),
+            ("CONSTRAINT fk_security_policy_uid FOREIGN KEY (security_policy_uid)", "REFERENCES security_policies (uid)")
+        ]
+
+class SecurityPolicyURLCategories(PioneerTable):
+    def __init__(self, database):
+        super().__init__(database)
+        self._name = "security_policy_url_categories"
         self._table_columns = [
             ("uid", "TEXT PRIMARY KEY"),
             ("name", "TEXT NOT NULL"),
@@ -660,30 +767,10 @@ class SecurityPolicyURLS(PioneerTable):
 class SecurityPolicyL7Apps(PioneerTable):
     def __init__(self, database):
         super().__init__(database)
-        self._name = "policy_networks"
+        self._name = "security_policy_l7_apps"
         self._table_columns = [
             ("uid", "TEXT PRIMARY KEY"),
             ("name", "TEXT NOT NULL"),
             ("security_policy_uid", "TEXT"),
             ("CONSTRAINT fk_security_policy_uid FOREIGN KEY (security_policy_uid)", "REFERENCES security_policies (uid)")
         ]
-
-# nat policies params
-
-    # # this function inserts the metadata regarding the pioneer projects. will be overridden with "pass" by sub-classes in order to "stop" it from being inherited
-    # def insert_into_projects_metadata(self, project_name, project_devices, project_description, creation_timestamp):
-    #     insert_command = """INSERT INTO projects_metadata (project_name, project_devices, project_description, project_creation_time)
-    #                                 VALUES ('{}', '{}', '{}', '{}')""".format(project_name, project_devices, project_description, creation_timestamp)
-
-    #     self.insert_table_value('projects_metadata', insert_command)
-        
-
-    # # this function inserts the metadata regarding the devices created in pioneer. will be overridden with "pass" by sub-classes in order to "stop" it from being inherited
-    # def insert_into_devices_metadata(self, device_name, device_type, device_description, creation_time):
-    #     self.insert_table_value('projects_metadata', insert_command)
-    #     insert_command = """INSERT INTO devices_metadata (project_name, project_devices, project_description, project_creation_time)
-    #                                 VALUES ('{}', '{}', '{}', '{}')""".format(device_name, device_type, device_description, creation_time)
-
-    #     self.insert_table_value('devices_metadata', insert_command)
-    
-
