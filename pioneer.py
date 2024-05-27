@@ -102,7 +102,7 @@ def main():
 
         security_device_uuid = helper.generate_uid()
 
-    try:
+#    try:
         general_logger.info(f"Connecting to the security device: <{security_device_name}>.")
         # Attempt to create the security device object based on the device type
         if '-api' in security_device_type:
@@ -197,20 +197,16 @@ def main():
             for ManagedDeviceContainer in managed_devices_container_list:
                 SecurityDeviceObject.get_object_info_from_device_conn('managed_device', ManagedDeviceContainer)
             
-            # get the security policies from all containers
-            # TODO: create new tables for regions, applications and url categories
-            # make sure you store 'any' value in all the tables so that you don't violate foreign key constraints for security policies
-            
-            for SecurityPolicyContainer in security_policy_containers_list:
-                SecurityDeviceObject.get_object_info_from_device_conn('security_policy_group', SecurityPolicyContainer)
+            # for SecurityPolicyContainer in security_policy_containers_list:
+            #     SecurityDeviceObject.get_object_info_from_device_conn('security_policy_group', SecurityPolicyContainer)
 
         else:
             general_logger.critical(f"Failed to retrieve version of the security device. Exiting...")
             sys.exit(1)
 
-    except Exception as e:
-        general_logger.critical(f"Failed to connect to the security device or encountered an error: <{e}>.")
-        sys.exit(1)
+    # except Exception as e:
+    #     general_logger.critical(f"Failed to connect to the security device or encountered an error: <{e}>.")
+    #     sys.exit(1)
 
     # close the cursors used to connect to the database
     LandingDBcursor.close()

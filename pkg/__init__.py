@@ -19,7 +19,7 @@ class DBConnection():
             port (int): The port number for connecting to the database server.
         """
         self._user = user,
-        self._database = database,
+        self._Database = database,
         self._password = password,
         self._host = host,
         self._port = port,
@@ -35,7 +35,7 @@ class DBConnection():
         try:
             postgres_conn = psycopg2.connect(
                 user = self._user[0],
-                database = self._database[0],
+                database = self._Database[0],
                 password = self._password[0],
                 host = self._host[0],
                 port = self._port[0]
@@ -174,16 +174,15 @@ class PioneerDatabase():
 
         return members_dict_from_db
 
-#TODO: should all containers be stored in the same table actually and have an extra column for the parameter type?
 class PioneerTable():
     _table_columns = None
-    def __init__(self, database):
+    def __init__(self, Database):
         self._name = None
         self._table_columns = None
-        self._database = database
+        self._Database = Database
 
     def create(self):
-        self._database.create_table(self._name, self.get_schema())
+        self._Database.create_table(self._name, self.get_schema())
     
     def get_schema(self):
         table_schema = ", ".join([f"{col[0]} {col[1]}" for col in self._table_columns])
@@ -204,7 +203,7 @@ class PioneerTable():
         
         insert_command = f"INSERT INTO {self._name} ({columns}) VALUES ({placeholders}) ON CONFLICT DO NOTHING;"
         try:
-            cursor = self._database.get_cursor()
+            cursor = self._Database.get_cursor()
             
             # Execute the insert command with the actual values
             cursor.execute(insert_command, values)
@@ -239,7 +238,7 @@ class PioneerTable():
             params = ()
 
         try:
-            cursor = self._database.get_cursor()
+            cursor = self._Database.get_cursor()
             
             # Execute the select command with the actual values
             cursor.execute(select_query, params)
@@ -261,11 +260,10 @@ class PioneerTable():
     #         general_logger.error(f"Failed to update values for: <{table_name}>. Reason: <{err}>")
     #         sys.exit(1)
 
-# the following are not supported, no need to create tables: policies_hitcount_table, nat_policies_table, user_source_table, policy_users_table
 # security_zones_table, urls_categories_table, l7_apps_table, schedule_objects_table
 class GeneralDataTable(PioneerTable):
-    def __init__(self, database):
-        super().__init__(database)
+    def __init__(self, Database):
+        super().__init__(Database)
         self._name = "general_security_device_data"
         self._table_columns = [
             ("uid", "TEXT PRIMARY KEY"),
@@ -280,8 +278,8 @@ class GeneralDataTable(PioneerTable):
         ]
 
 class SecurityPolicyContainersTable(PioneerTable):
-    def __init__(self, database):
-        super().__init__(database)
+    def __init__(self, Database):
+        super().__init__(Database)
         self._name = "security_policy_containers"
         self._table_columns = [
             ("uid", "TEXT PRIMARY KEY"),
@@ -292,8 +290,8 @@ class SecurityPolicyContainersTable(PioneerTable):
         ]
 
 class NATPolicyContainersTable(PioneerTable):
-    def __init__(self, database):
-        super().__init__(database)
+    def __init__(self, Database):
+        super().__init__(Database)
         self._name = "nat_policy_containers"
         self._table_columns = [
             ("uid", "TEXT PRIMARY KEY"),
@@ -304,8 +302,8 @@ class NATPolicyContainersTable(PioneerTable):
         ]
 
 class ObjectContainersTable(PioneerTable):
-    def __init__(self, database):
-        super().__init__(database)
+    def __init__(self, Database):
+        super().__init__(Database)
         self._name = "object_containers"
         self._table_columns = [
             ("uid", "TEXT PRIMARY KEY"),
@@ -316,8 +314,8 @@ class ObjectContainersTable(PioneerTable):
         ]
 
 class SecurityZoneContainersTable(PioneerTable):
-    def __init__(self, database):
-        super().__init__(database)
+    def __init__(self, Database):
+        super().__init__(Database)
         self._name = "security_zone_containers"
         self._table_columns = [
             ("uid", "TEXT PRIMARY KEY"),
@@ -328,8 +326,8 @@ class SecurityZoneContainersTable(PioneerTable):
         ]
 
 class ManagedDeviceContainersTable(PioneerTable):
-    def __init__(self, database):
-        super().__init__(database)
+    def __init__(self, Database):
+        super().__init__(Database)
         self._name = "managed_device_containers"
         self._table_columns = [
             ("uid", "TEXT PRIMARY KEY"),
@@ -339,8 +337,8 @@ class ManagedDeviceContainersTable(PioneerTable):
             ("CONSTRAINT fk_security_device FOREIGN KEY (security_device_uid)", "REFERENCES general_security_device_data (uid)"),
         ]
 class ManagedDevicesTable(PioneerTable):
-    def __init__(self, database):
-        super().__init__(database)
+    def __init__(self, Database):
+        super().__init__(Database)
         self._name = "managed_devices"
         self._table_columns = [
             ("uid", "TEXT PRIMARY KEY"),
@@ -354,10 +352,9 @@ class ManagedDevicesTable(PioneerTable):
             ("CONSTRAINT uc_managed_device_container_uid", "UNIQUE (name, managed_device_container_uid)")
         ]
 
-#TODO: find out what to do with regions and url categories.
 class SecurityPoliciesTable(PioneerTable):
-    def __init__(self, database):
-        super().__init__(database)
+    def __init__(self, Database):
+        super().__init__(Database)
         self._name = "security_policies"
         self._table_columns = [
             ("uid", "TEXT PRIMARY KEY"),
@@ -377,27 +374,27 @@ class SecurityPoliciesTable(PioneerTable):
             ("CONSTRAINT uc_security_policy_container_uid1", "UNIQUE (name, security_policy_container_uid)")
         ]
 
-class PoliciesHitcountTable(PioneerTable):
-    def __init__(self, database):
-        super().__init__(database)
-        self._name = "policies_hitcount"
-        self._table_columns = [
-            ("security_policy_name", "TEXT NOT NULL"),
-            ("security_policy_container_name", "TEXT NOT NULL"),
-            ("security_policy_hitcount", "INTEGER"),
-            ("security_policy_last_hit", "TIMESTAMP"),
-            ("nat_policy_name", "TEXT NOT NULL"),
-            ("nat_policy_container_name", "TEXT NOT NULL"),
-            ("nat_policy_hitcount", "INTEGER"),
-            ("nat_policy_last_hit", "TIMESTAMP"),
-            ("assigned_device_name", "TEXT NOT NULL"),
-            ("CONSTRAINT fk_security_policy_container FOREIGN KEY(security_policy_container_uid)", "REFERENCES security_policy_containers(uid"),
-            ("CONSTRAINT fk_nat_policy_container_uid FOREIGN KEY(nat_policy_container_uid)", "REFERENCES nat_policy_containers(uid)")
-        ]
+# class PoliciesHitcountTable(PioneerTable):
+#     def __init__(self, Database):
+#         super().__init__(Database)
+#         self._name = "policies_hitcount"
+#         self._table_columns = [
+#             ("security_policy_container_uid", "TEXT NOT NULL"),
+#             ("security_policy_container_name", "TEXT NOT NULL"),
+#             ("security_policy_hitcount", "INTEGER"),
+#             ("security_policy_last_hit", "TIMESTAMP"),
+#             ("nat_policy_name", "TEXT NOT NULL"),
+#             ("nat_policy_container_name", "TEXT NOT NULL"),
+#             ("nat_policy_hitcount", "INTEGER"),
+#             ("nat_policy_last_hit", "TIMESTAMP"),
+#             ("assigned_device_name", "TEXT NOT NULL"),
+#             ("CONSTRAINT fk_security_policy_container FOREIGN KEY(security_policy_container_uid)", "REFERENCES security_policy_containers(uid)"),
+#             ("CONSTRAINT fk_nat_policy_container_uid FOREIGN KEY(nat_policy_container_uid)", "REFERENCES nat_policy_containers(uid)")
+#         ]
 
 class SecurityZonesTable(PioneerTable):
-    def __init__(self, database):
-        super().__init__(database)
+    def __init__(self, Database):
+        super().__init__(Database)
         self._name = "security_zones"
         self._table_columns = [
             ("uid", "TEXT PRIMARY KEY"),
@@ -408,8 +405,8 @@ class SecurityZonesTable(PioneerTable):
         ]
 
 class URLObjectsTable(PioneerTable):
-    def __init__(self, database):
-        super().__init__(database)
+    def __init__(self, Database):
+        super().__init__(Database)
         self._name = "url_objects"
         self._table_columns = [
             ("uid", "TEXT PRIMARY KEY"),
@@ -423,8 +420,8 @@ class URLObjectsTable(PioneerTable):
         ]
 
 class NetworkAddressObjectsTable(PioneerTable):
-    def __init__(self, database):
-        super().__init__(database)
+    def __init__(self, Database):
+        super().__init__(Database)
         self._name = "network_address_objects"
         self._table_columns = [
             ("uid", "TEXT PRIMARY KEY"),
@@ -438,10 +435,9 @@ class NetworkAddressObjectsTable(PioneerTable):
             ("CONSTRAINT uc_object_container_uid8", "UNIQUE (name, object_container_uid)")
         ]
 
-#TODO: create different tables for all of types of groups
 class NetworkGroupObjectsTable(PioneerTable):
-    def __init__(self, database):
-        super().__init__(database)
+    def __init__(self, Database):
+        super().__init__(Database)
         self._name = "network_group_objects"
         self._table_columns = [
             ("uid", "TEXT PRIMARY KEY"),
@@ -454,8 +450,8 @@ class NetworkGroupObjectsTable(PioneerTable):
         ]
 
 class PortGroupObjectsTable(PioneerTable):
-    def __init__(self, database):
-        super().__init__(database)
+    def __init__(self, Database):
+        super().__init__(Database)
         self._name = "port_group_objects"
         self._table_columns = [
             ("uid", "TEXT PRIMARY KEY"),
@@ -468,8 +464,8 @@ class PortGroupObjectsTable(PioneerTable):
         ]
 
 class URLGroupObjectsTable(PioneerTable):
-    def __init__(self, database):
-        super().__init__(database)
+    def __init__(self, Database):
+        super().__init__(Database)
         self._name = "url_group_objects"
         self._table_columns = [
             ("uid", "TEXT PRIMARY KEY"),
@@ -482,41 +478,38 @@ class URLGroupObjectsTable(PioneerTable):
         ]
 
 class NetworkGroupObjectsMembersTable(PioneerTable):
-    def __init__(self, database):
-        super().__init__(database)
+    def __init__(self, Database):
+        super().__init__(Database)
         self._name = "network_group_objects_members"
         self._table_columns = [
             ("group_uid", "TEXT NOT NULL"),
             ("object_uid", "TEXT NOT NULL"),
-            ("CONSTRAINT fk_group FOREIGN KEY(group_uid)", "REFERENCES network_group_objects(uid)"),
-            ("PRIMARY KEY(group_uid, object_uid)", "")
+            ("CONSTRAINT fk_group FOREIGN KEY(group_uid)", "REFERENCES network_group_objects(uid)")
         ]
 
 class PortGroupObjectsMembersTable(PioneerTable):
-    def __init__(self, database):
-        super().__init__(database)
+    def __init__(self, Database):
+        super().__init__(Database)
         self._name = "port_group_objects_members"
         self._table_columns = [
             ("group_uid", "TEXT NOT NULL"),
             ("object_uid", "TEXT NOT NULL"),
-            ("CONSTRAINT fk_group FOREIGN KEY(group_uid)", "REFERENCES port_group_objects(uid)"),
-            ("PRIMARY KEY(group_uid, object_uid)", "")
+            ("CONSTRAINT fk_group FOREIGN KEY(group_uid)", "REFERENCES port_group_objects(uid)")
         ]
 
 class URLGroupObjectsMembersTable(PioneerTable):
-    def __init__(self, database):
-        super().__init__(database)
+    def __init__(self, Database):
+        super().__init__(Database)
         self._name = "url_group_objects_members"
         self._table_columns = [
             ("group_uid", "TEXT NOT NULL"),
             ("object_uid", "TEXT NOT NULL"),
-            ("CONSTRAINT fk_group FOREIGN KEY(group_uid)", "REFERENCES url_group_objects(uid)"),
-            ("PRIMARY KEY(group_uid, object_uid)", "")
+            ("CONSTRAINT fk_group FOREIGN KEY(group_uid)", "REFERENCES url_group_objects(uid)")
         ]
 
 class GeolocationObjectsTable(PioneerTable):
-    def __init__(self, database):
-        super().__init__(database)
+    def __init__(self, Database):
+        super().__init__(Database)
         self._name = "geolocation_objects"
         self._table_columns = [
             ("uid", "TEXT PRIMARY KEY"),
@@ -532,8 +525,8 @@ class GeolocationObjectsTable(PioneerTable):
         ]
 
 class PortObjectsTable(PioneerTable):
-    def __init__(self, database):
-        super().__init__(database)
+    def __init__(self, Database):
+        super().__init__(Database)
         self._name = "port_objects"
         self._table_columns = [
             ("uid", "TEXT PRIMARY KEY"),
@@ -549,8 +542,8 @@ class PortObjectsTable(PioneerTable):
         ]
 
 class ICMPObjectsTable(PioneerTable):
-    def __init__(self, database):
-        super().__init__(database)
+    def __init__(self, Database):
+        super().__init__(Database)
         self._name = "icmp_objects"
         self._table_columns = [
             ("uid", "TEXT PRIMARY KEY"),
@@ -565,14 +558,14 @@ class ICMPObjectsTable(PioneerTable):
         ]
 
 class ScheduleObjectsTable(PioneerTable):
-    def __init__(self, database):
-        super().__init__(database)
+    def __init__(self, Database):
+        super().__init__(Database)
         self._name = "schedule_objects"
         self._table_columns = [
             ("uid", "TEXT PRIMARY KEY"),
             ("name", "TEXT NOT NULL"),
             ("object_container_uid", "TEXT NOT NULL"),
-            ("recurring", "BOOLEAN NOT NULL"),
+            ("recurring", "BOOLEAN"),
             ("start_date", "TEXT"),
             ("start_time", "TEXT"),
             ("end_date", "TEXT"),
@@ -587,35 +580,35 @@ class ScheduleObjectsTable(PioneerTable):
             ("CONSTRAINT uc_object_container_uid15", "UNIQUE (name, object_container_uid)")
         ]
 
-class UserRealms(PioneerTable):
-    def __init__(self, database):
-        super().__init__(database)
-        self._name = "user_realms"
+# class UserRealms(PioneerTable):
+#     def __init__(self, Database):
+#         super().__init__(Database)
+#         self._name = "user_realms"
+#         self._table_columns = [
+#             ("uid", "TEXT PRIMARY KEY"),
+#             ("name", "TEXT NOT NULL"),
+#             ("object_container_uid", "TEXT NOT NULL"),
+#             ("description", "TEXT"),
+#             ("CONSTRAINT fk_object_container FOREIGN KEY(object_container_uid)", "REFERENCES object_containers(uid)"),
+#             ("CONSTRAINT uc_object_container_uid18", "UNIQUE (name, object_container_uid)")
+#         ]
+
+class PolicyUsersTable(PioneerTable):
+    def __init__(self, Database):
+        super().__init__(Database)
+        self._name = "policy_users"
         self._table_columns = [
             ("uid", "TEXT PRIMARY KEY"),
             ("name", "TEXT NOT NULL"),
             ("object_container_uid", "TEXT NOT NULL"),
             ("description", "TEXT"),
             ("CONSTRAINT fk_object_container FOREIGN KEY(object_container_uid)", "REFERENCES object_containers(uid)"),
-            ("CONSTRAINT uc_object_container_uid18", "UNIQUE (name, object_container_uid)")
+            ("CONSTRAINT uc_object_container_uid20", "UNIQUE (name, object_container_uid)")
         ]
 
-class PolicyUsersTable(PioneerTable):
-    def __init__(self, database):
-        super().__init__(database)
-        self._name = "policy_users"
-        self._table_columns = [
-            ("uid", "TEXT PRIMARY KEY"),
-            ("name", "TEXT NOT NULL"),
-            ("realm_uid", "TEXT NOT NULL")
-            ("description", "TEXT"),
-            ("CONSTRAINT fk_user_realms FOREIGN KEY(realm_uid)", "REFERENCES user_realms(uid)"),
-            ("CONSTRAINT uc_user_realms", "UNIQUE (name, realm_uid)")
-        ]
-
-class L7Apps(PioneerTable):
-    def __init__(self, database):
-        super().__init__(database)
+class L7AppsTable(PioneerTable):
+    def __init__(self, Database):
+        super().__init__(Database)
         self._name = "l7_apps"
         self._table_columns = [
             ("uid", "TEXT PRIMARY KEY"),
@@ -626,24 +619,24 @@ class L7Apps(PioneerTable):
             ("CONSTRAINT uc_object_container_uid19", "UNIQUE (name, object_container_uid)")
         ]
 
-class L7AppFilters(PioneerTable):
-    def __init__(self, database):
-        super().__init__(database)
+class L7AppFiltersTable(PioneerTable):
+    def __init__(self, Database):
+        super().__init__(Database)
         self._name = "l7_app_filters"
         self._table_columns = [
             ("uid", "TEXT PRIMARY KEY"),
             ("name", "TEXT NOT NULL"),
             ("object_container_uid", "TEXT NOT NULL"),
-            ("type", "TEXT NOT NULL")
+            ("type", "TEXT NOT NULL"),
             ("description", "TEXT"),
             ("overridable_object", "BOOLEAN NOT NULL"),
             ("CONSTRAINT fk_object_container FOREIGN KEY(object_container_uid)", "REFERENCES object_containers(uid)"),
-            ("CONSTRAINT uc_object_container_uid20", "UNIQUE (name, object_container_uid)")
+            ("CONSTRAINT uc_object_container_uid23", "UNIQUE (name, object_container_uid)")
         ]
 
-class L7AppGroups(PioneerTable):
-    def __init__(self, database):
-        super().__init__(database)
+class L7AppGroupsTable(PioneerTable):
+    def __init__(self, Database):
+        super().__init__(Database)
         self._name = "l7_app_groups"
         self._table_columns = [
             ("uid", "TEXT PRIMARY KEY"),
@@ -651,14 +644,13 @@ class L7AppGroups(PioneerTable):
             ("object_container_uid", "TEXT NOT NULL"),
             ("description", "TEXT"),
             ("CONSTRAINT fk_object_container FOREIGN KEY(object_container_uid)", "REFERENCES object_containers(uid)"),
-            ("CONSTRAINT uc_object_container_uid9", "UNIQUE (name, object_container_uid)")
+            ("CONSTRAINT uc_object_container_uid29", "UNIQUE (name, object_container_uid)")
         ]
 
-class L7AppGroupMembers(PioneerTable):
-    def __init__(self, database):
-        super().__init__(database)
-        self._name = "l7_app_groups"
-        self._name = "port_group_objects_members"
+class L7AppGroupMembersTable(PioneerTable):
+    def __init__(self, Database):
+        super().__init__(Database)
+        self._name = "l7_app_group_members"
         self._table_columns = [
             ("group_uid", "TEXT NOT NULL"),
             ("object_uid", "TEXT NOT NULL"),
@@ -666,15 +658,15 @@ class L7AppGroupMembers(PioneerTable):
             ("PRIMARY KEY(group_uid, object_uid)", "")
         ]
 
-class URLCategories(PioneerTable):
-    def __init__(self, database):
-        super().__init__(database)
+class URLCategoriesTable(PioneerTable):
+    def __init__(self, Database):
+        super().__init__(Database)
         self._name = "url_categories"
         self._table_columns = [
             ("uid", "TEXT PRIMARY KEY"),
             ("name", "TEXT NOT NULL"),
             ("object_container_uid", "TEXT NOT NULL"),
-            ("reputation", "TEXT NOT NULL")
+            ("reputation", "TEXT NOT NULL"),
             ("description", "TEXT"),
             ("overridable_object", "BOOLEAN NOT NULL"),
             ("CONSTRAINT fk_object_container FOREIGN KEY(object_container_uid)", "REFERENCES object_containers(uid)"),
@@ -682,95 +674,100 @@ class URLCategories(PioneerTable):
         ]
 
 # security policies tables
-#TODO: add (at some point) constraints to reference the objects the policies use
-class SecurityPolicyZones(PioneerTable):
-    def __init__(self, database):
-        super().__init__(database)
+class SecurityPolicyZonesTable(PioneerTable):
+    def __init__(self, Database):
+        super().__init__(Database)
         self._name = "security_policy_zones"
         self._table_columns = [
-            ("uid", "TEXT PRIMARY KEY"),
-            ("security_policy_uid", "TEXT"),
-            ("name", "TEXT NOT NULL"),
+            ("security_policy_uid", "TEXT NOT NULL"),
+            ("zone_uid", "TEXT"),
             ("flow", "TEXT"),
             ("CONSTRAINT fk_security_policy_uid FOREIGN KEY (security_policy_uid)", "REFERENCES security_policies (uid)")
         ]
 
-class SecurityPolicyNetworks(PioneerTable):
-    def __init__(self, database):
-        super().__init__(database)
+class SecurityPolicyNetworksTable(PioneerTable):
+    def __init__(self, Database):
+        super().__init__(Database)
         self._name = "security_policy_networks"
         self._table_columns = [
-            ("uid", "TEXT PRIMARY KEY"),
-            ("security_policy_uid", "TEXT"),
-            ("name", "TEXT NOT NULL"),
+            ("security_policy_uid", "TEXT NOT NULL"),
+            ("object_uid", "TEXT"),
+            ("group_object_uid", "TEXT"),
+            ("geolocation_object_uid", "TEXT"),
             ("flow", "TEXT"),
-            ("CONSTRAINT fk_security_policy_uid FOREIGN KEY (security_policy_uid)", "REFERENCES security_policies (uid)")
+            ("CONSTRAINT fk_security_policy_uid FOREIGN KEY (security_policy_uid)", "REFERENCES security_policies (uid)"),
+            ("CONSTRAINT fk_object_uid FOREIGN KEY (object_uid)", "REFERENCES network_address_objects (uid)"),
+            ("CONSTRAINT fk_group_object_uid FOREIGN KEY (group_object_uid)", "REFERENCES network_group_objects (uid)"),
+            ("CONSTRAINT fk_geolocation_object_uid FOREIGN KEY (geolocation_object_uid)", "REFERENCES geolocation_objects (uid)")
         ]
 
-class SecurityPolicyRegions(PioneerTable):
-    def __init__(self, database):
-        super().__init__(database)
-        self._name = "security_policy_regions"
+class SecurityPolicyPortsTable(PioneerTable):
+    def __init__(self, Database):
+        super().__init__(Database)
+        self._name = "security_policy_ports"
         self._table_columns = [
-            ("uid", "TEXT PRIMARY KEY"),
-            ("security_policy_uid", "TEXT"),
-            ("name", "TEXT NOT NULL"),
+            ("security_policy_uid", "TEXT NOT NULL"),
+            ("object_uid", "TEXT"),
+            ("icmp_object_uid", "TEXT"),
+            ("group_object_uid", "TEXT"),
             ("flow", "TEXT"),
-            ("CONSTRAINT fk_security_policy_uid FOREIGN KEY (security_policy_uid)", "REFERENCES security_policies (uid)")
+            ("CONSTRAINT fk_security_policy_uid FOREIGN KEY (security_policy_uid)", "REFERENCES security_policies (uid)"),
+            ("CONSTRAINT fk_object_uid FOREIGN KEY (object_uid)", "REFERENCES port_objects (uid)"),
+            ("CONSTRAINT fk_icmp_object_uid FOREIGN KEY (icmp_object_uid)", "REFERENCES icmp_objects (uid)"),
+            ("CONSTRAINT fk_group_object_uid FOREIGN KEY (group_object_uid)", "REFERENCES port_group_objects (uid)")
         ]
 
-class SecurityPolicyServices(PioneerTable):
-    def __init__(self, database):
-        super().__init__(database)
-        self._name = "security_policy_services"
-        self._table_columns = [
-            ("uid", "TEXT PRIMARY KEY"),
-            ("security_policy_uid", "TEXT"),
-            ("name", "TEXT NOT NULL"),
-            ("flow", "TEXT"),
-            ("CONSTRAINT fk_security_policy_uid FOREIGN KEY (security_policy_uid)", "REFERENCES security_policies (uid)")
-        ]
-
-class SecurityPolicyUsers(PioneerTable):
-    def __init__(self, database):
-        super().__init__(database)
+class SecurityPolicyUsersTable(PioneerTable):
+    def __init__(self, Database):
+        super().__init__(Database)
         self._name = "security_policy_users"
         self._table_columns = [
-            ("uid", "TEXT PRIMARY KEY"),
-            ("name", "TEXT NOT NULL"),
-            ("security_policy_uid", "TEXT"),
-            ("CONSTRAINT fk_security_policy_uid FOREIGN KEY (security_policy_uid)", "REFERENCES security_policies (uid)")
+            ("security_policy_uid", "TEXT NOT NULL"),
+            ("user_uid", "TEXT"),
+            ("CONSTRAINT fk_security_policy_uid FOREIGN KEY (security_policy_uid)", "REFERENCES security_policies (uid)"),
+            ("CONSTRAINT fk_user_uid FOREIGN KEY (user_uid)", "REFERENCES policy_users (uid)")
         ]
 
-class SecurityPolicyURLs(PioneerTable):
-    def __init__(self, database):
-        super().__init__(database)
+class SecurityPolicyURLsTable(PioneerTable):
+    def __init__(self, Database):
+        super().__init__(Database)
         self._name = "security_policy_urls"
         self._table_columns = [
-            ("uid", "TEXT PRIMARY KEY"),
-            ("name", "TEXT NOT NULL"),
-            ("security_policy_uid", "TEXT"),
-            ("CONSTRAINT fk_security_policy_uid FOREIGN KEY (security_policy_uid)", "REFERENCES security_policies (uid)")
+            ("security_policy_uid", "TEXT NOT NULL"),
+            ("object_uid", "TEXT"),
+            ("group_object_uid", "TEXT"),
+            ("url_category_uid", "TEXT"),
+            ("CONSTRAINT fk_security_policy_uid FOREIGN KEY (security_policy_uid)", "REFERENCES security_policies (uid)"),
+            ("CONSTRAINT fk_object_uid FOREIGN KEY (object_uid)", "REFERENCES url_objects (uid)"),
+            ("CONSTRAINT fk_group_object_uid FOREIGN KEY (group_object_uid)", "REFERENCES url_group_objects (uid)"),
+            ("CONSTRAINT fk_url_category_uid FOREIGN KEY (url_category_uid)", "REFERENCES url_categories (uid)")
         ]
 
-class SecurityPolicyURLCategories(PioneerTable):
-    def __init__(self, database):
-        super().__init__(database)
-        self._name = "security_policy_url_categories"
-        self._table_columns = [
-            ("uid", "TEXT PRIMARY KEY"),
-            ("name", "TEXT NOT NULL"),
-            ("security_policy_uid", "TEXT"),
-            ("CONSTRAINT fk_security_policy_uid FOREIGN KEY (security_policy_uid)", "REFERENCES security_policies (uid)")
-        ]
-
-class SecurityPolicyL7Apps(PioneerTable):
-    def __init__(self, database):
-        super().__init__(database)
+class SecurityPolicyL7AppsTable(PioneerTable):
+    def __init__(self, Database):
+        super().__init__(Database)
         self._name = "security_policy_l7_apps"
         self._table_columns = [
-            ("uid", "TEXT PRIMARY KEY"),
-            ("name", "TEXT NOT NULL"),
             ("security_policy_uid", "TEXT"),
-            ("CONSTRAINT fk_security_policy_uid FOREIGN KEY (security_policy_uid)", "REFERENCES security_policies (uid)")
+            ("l7_app_uid", "TEXT"),
+            ("l7_app_filter_uid", "TEXT"),
+            ("l7_app_group_uid", "TEXT"),
+            ("CONSTRAINT fk_security_policy_uid FOREIGN KEY (security_policy_uid)", "REFERENCES security_policies (uid)"),
+            ("CONSTRAINT fk_l7_app_uid FOREIGN KEY (l7_app_uid)", "REFERENCES l7_apps (uid)"),
+            ("CONSTRAINT fk_l7_app_filter_uid FOREIGN KEY (l7_app_filter_uid)", "REFERENCES l7_app_filters (uid)"),
+            ("CONSTRAINT fk_l7_app_group_uid FOREIGN KEY (l7_app_group_uid)", "REFERENCES l7_app_groups (uid)")
+        ]
+
+class SecurityPolicyScheduleTable(PioneerTable):
+    def __init__(self, Database):
+        super().__init__(Database)
+        self._name = "security_policy_schedule"
+        self._table_columns = [
+            ("security_policy_uid", "TEXT"),
+            ("schedule_uid", "TEXT"),
+            ("l7_app_uid", "TEXT"),
+            ("l7_app_filter_uid", "TEXT"),
+            ("l7_app_group_uid", "TEXT"),
+            ("CONSTRAINT fk_security_policy_uid FOREIGN KEY (security_policy_uid)", "REFERENCES security_policies (uid)"),
+            ("CONSTRAINT fk_schedule_uid FOREIGN KEY (l7_app_uid)", "REFERENCES schedule_objects (uid)")
         ]

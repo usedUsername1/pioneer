@@ -1,15 +1,15 @@
 from abc import abstractmethod
 from pkg import PioneerDatabase, GeneralDataTable, SecurityPolicyContainersTable, NATPolicyContainersTable, ObjectContainersTable, SecurityPoliciesTable, \
-PoliciesHitcountTable, SecurityZonesTable, URLObjectsTable, NetworkAddressObjectsTable, \
+SecurityZonesTable, URLObjectsTable, NetworkAddressObjectsTable, \
 GeolocationObjectsTable, PortObjectsTable, ICMPObjectsTable, ScheduleObjectsTable, ManagedDevicesTable, ManagedDeviceContainersTable, SecurityZoneContainersTable, \
-NetworkGroupObjectsTable, PortGroupObjectsTable, URLGroupObjectsTable, NetworkGroupObjectsMembersTable, \
-PortGroupObjectsMembersTable, URLGroupObjectsMembersTable
+NetworkGroupObjectsTable, PortGroupObjectsTable, URLGroupObjectsTable, NetworkGroupObjectsMembersTable, PortGroupObjectsMembersTable, URLGroupObjectsMembersTable, \
+PolicyUsersTable, L7AppsTable, L7AppFiltersTable, L7AppGroupsTable, L7AppGroupMembersTable, URLCategoriesTable, SecurityPolicyZonesTable, SecurityPolicyNetworksTable, \
+SecurityPolicyPortsTable, SecurityPolicyUsersTable, SecurityPolicyURLsTable, SecurityPolicyL7AppsTable, SecurityPolicyScheduleTable
 import utils.helper as helper
 import sys
 import utils.gvars as gvars
 
 general_logger = helper.logging.getLogger('general')
-# TODO: instantiate the database table objects and create the tables in the database
 class SecurityDeviceDatabase(PioneerDatabase):
     """
     A class representing a database for security devices.
@@ -25,46 +25,77 @@ class SecurityDeviceDatabase(PioneerDatabase):
         super().__init__(cursor)
         self._GeneralDataTable = GeneralDataTable(self)
         self._SecurityPolicyContainersTable = SecurityPolicyContainersTable(self)
-        self._ObjectContainersTable = ObjectContainersTable(self)
-        self._ZoneContainersTable = SecurityZoneContainersTable(self)
         self._NATPolicyContainersTable = NATPolicyContainersTable(self)
+        self._ObjectContainersTable = ObjectContainersTable(self)
+        self._SecurityZoneContainersTable = SecurityZoneContainersTable(self)
         self._ManagedDeviceContainersTable = ManagedDeviceContainersTable(self)
         self._ManagedDevicesTable = ManagedDevicesTable(self)
         self._SecurityPoliciesTable = SecurityPoliciesTable(self)
-        self._PoliciesHitcountTable = PoliciesHitcountTable(self)
+        # self._PoliciesHitcountTable = PoliciesHitcountTable(self)
         self._SecurityZonesTable = SecurityZonesTable(self)
         self._URLObjectsTable = URLObjectsTable(self)
         self._NetworkAddressObjectsTable = NetworkAddressObjectsTable(self)
         self._NetworkGroupObjectsTable = NetworkGroupObjectsTable(self)
         self._PortGroupObjectsTable = PortGroupObjectsTable(self)
         self._URLGroupObjectsTable = URLGroupObjectsTable(self)
+        self._NetworkGroupObjectsMembersTable = NetworkGroupObjectsMembersTable(self)
+        self._PortGroupObjectsMembersTable = PortGroupObjectsMembersTable(self)
+        self._URLGroupObjectsMembersTable = URLGroupObjectsMembersTable(self)
         self._GeolocationObjectsTable = GeolocationObjectsTable(self)
         self._PortObjectsTable = PortObjectsTable(self)
         self._ICMPObjectsTable = ICMPObjectsTable(self)
-        self._PortGroupObjectsMembersTable = PortGroupObjectsMembersTable(self)
-        self._URLGroupObjectsMembersTable = URLGroupObjectsMembersTable(self)
-        
+        self._ScheduleObjectsTable = ScheduleObjectsTable(self)
+        self._PolicyUsersTable = PolicyUsersTable(self)
+        self._L7AppsTable = L7AppsTable(self)
+        self._L7AppFiltersTable = L7AppFiltersTable(self)
+        self._L7AppGroupsTable = L7AppGroupsTable(self)
+        self._L7AppGroupMembersTable = L7AppGroupMembersTable(self)
+        self._URLCategoriesTable = URLCategoriesTable(self)
+        self._SecurityPolicyZonesTable = SecurityPolicyZonesTable(self)
+        self._SecurityPolicyNetworksTable = SecurityPolicyNetworksTable(self)
+        self._SecurityPolicyPortsTable = SecurityPolicyPortsTable(self)
+        self._SecurityPolicyUsersTable = SecurityPolicyUsersTable(self)
+        self._SecurityPolicyURLsTable = SecurityPolicyURLsTable(self)
+        self._SecurityPolicyL7AppsTable = SecurityPolicyL7AppsTable(self)
+        self._SecurityPolicyScheduleTable = SecurityPolicyScheduleTable(self)
+
     def create_security_device_tables(self):
-        general_logger.info(f"Creating the PostgreSQL tables in device database.")
+        general_logger.info("Creating the PostgreSQL tables in device database.")
         self._GeneralDataTable.create()
         self._SecurityPolicyContainersTable.create()
+        self._NATPolicyContainersTable.create()
         self._ObjectContainersTable.create()
-        self._ZoneContainersTable.create()
-        self._SecurityZonesTable.create()
+        self._SecurityZoneContainersTable.create()
         self._ManagedDeviceContainersTable.create()
+        self._ManagedDevicesTable.create()
         self._SecurityPoliciesTable.create()
+        # self._PoliciesHitcountTable.create()
+        self._SecurityZonesTable.create()
         self._URLObjectsTable.create()
         self._NetworkAddressObjectsTable.create()
-        self._GeolocationObjectsTable.create()
-        self._PortObjectsTable.create()
-        self._ICMPObjectsTable.create()
-        self._ManagedDevicesTable.create()
         self._NetworkGroupObjectsTable.create()
         self._PortGroupObjectsTable.create()
         self._URLGroupObjectsTable.create()
         self._NetworkGroupObjectsMembersTable.create()
         self._PortGroupObjectsMembersTable.create()
         self._URLGroupObjectsMembersTable.create()
+        self._GeolocationObjectsTable.create()
+        self._PortObjectsTable.create()
+        self._ICMPObjectsTable.create()
+        self._ScheduleObjectsTable.create()
+        self._PolicyUsersTable.create()
+        self._L7AppsTable.create()
+        self._L7AppFiltersTable.create()
+        self._L7AppGroupsTable.create()
+        self._L7AppGroupMembersTable.create()
+        self._URLCategoriesTable.create()
+        self._SecurityPolicyZonesTable.create()
+        self._SecurityPolicyNetworksTable.create()
+        self._SecurityPolicyPortsTable.create()
+        self._SecurityPolicyUsersTable.create()
+        self._SecurityPolicyURLsTable.create()
+        self._SecurityPolicyL7AppsTable.create()
+        self._SecurityPolicyScheduleTable.create()
 
     def get_general_data_table(self):
         return self._GeneralDataTable
@@ -76,7 +107,7 @@ class SecurityDeviceDatabase(PioneerDatabase):
         return self._ObjectContainersTable
 
     def get_zone_containers_table(self):
-        return self._ZoneContainersTable
+        return self._SecurityZoneContainersTable
     
     def get_managed_device_containers_table(self):
         return self._ManagedDeviceContainersTable
@@ -270,7 +301,6 @@ class SecurityDevice:
         
         return container_objects
 
-    #TODO: if the current object is group object, pass it to the "tie_relationship" function
     def get_object_info_from_device_conn(self, object_type, ObjectContainer):
         """
         Retrieve information about objects.
