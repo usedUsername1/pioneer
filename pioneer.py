@@ -1,5 +1,5 @@
 # git ls-files | xargs wc -l
-#TODO: the entire database structure must be redone, stop using arrays
+#TODO: use properties instead of getters and setters in python
 import utils.helper as helper
 import utils.gvars as gvars
 import pkg.MigrationProject as MigrationProject
@@ -8,6 +8,7 @@ from pkg.SecurityDevice import SecurityDevice, SecurityDeviceDatabase
 from pkg.SecurityDevice.SecurityDeviceFactory import SecurityDeviceFactory
 import sys
 from datetime import datetime, timezone
+import time
 # import psutil
 
 import subprocess
@@ -145,6 +146,11 @@ def main():
             )
 
             # Retrieve the information about the containers, interfaces and objects
+            start_time = time.time()
+            cpu_usage, ram_usage = helper.get_usage()
+            print(f"CPU usage before: {cpu_usage}%")
+            print(f"RAM usage before: {ram_usage}%")
+
             print("Importing the object container data.")
             # import and insert the object container first!
             general_logger.info(f"################## Getting the object containers of device: <{security_device_name}>. ##################")
@@ -155,7 +161,6 @@ def main():
             managed_devices_container_list = SecurityDeviceObject.get_container_info_from_device_conn('managed_device_container')
             print("Importing the security policy containers info.")
             security_policy_containers_list = SecurityDeviceObject.get_container_info_from_device_conn('security_policy_container')
-            #TODO: use properties instead of getters and setters in python
             print("Importing the object data")
             general_logger.info(f"################## Getting the objects of device: <{security_device_name}>. ##################")
             for ObjectContainer in object_containers_list:
@@ -186,6 +191,10 @@ def main():
                 general_logger.info(f"################## Getting the URL group objects of device: <{security_device_name}>. Container: <{object_container_name}> ##################")
                 print("Import URL group objects.")
                 SecurityDeviceObject.get_object_info_from_device_conn('url_group_object', ObjectContainer)
+
+                general_logger.info(f"################## Getting the schedule objects of device: <{security_device_name}>. Container: <{object_container_name}> ##################")
+                print("Import the schedule objects.")
+                SecurityDeviceObject.get_object_info_from_device_conn('schedule_object', ObjectContainer)
             
             for ZoneContainer in zone_containers_list:
                 print("Importing the interfaces/zones data.")
@@ -197,9 +206,13 @@ def main():
             for ManagedDeviceContainer in managed_devices_container_list:
                 SecurityDeviceObject.get_object_info_from_device_conn('managed_device', ManagedDeviceContainer)
             
-            # for SecurityPolicyContainer in security_policy_containers_list:
-            #     SecurityDeviceObject.get_object_info_from_device_conn('security_policy_group', SecurityPolicyContainer)
+            print("Importing security policies.")
+            for SecurityPolicyContainer in security_policy_containers_list:
+                SecurityDeviceObject.get_object_info_from_device_conn('security_policy_group', SecurityPolicyContainer)
 
+            end_time = time.time()
+            execution_time = end_time - start_time
+            print(f"Execution time: {execution_time} seconds")
         else:
             general_logger.critical(f"Failed to retrieve version of the security device. Exiting...")
             sys.exit(1)
@@ -212,37 +225,27 @@ def main():
     LandingDBcursor.close()
     SecurityDeviceDBcursor.close()
 
-    if pioneer_args["device_name [device_name]"]:
-        security_device_name = pioneer_args["device_name [device_name]"]
-        SecurityDeviceObj = SecurityDeviceFactory.create_security_device(db_user, security_device_name, db_password, db_host, db_port)
-
-        if pioneer_args["import_config"]:
-            if(pioneer_args["security_policy_container [container_name]"]):
-                security_policy_container_name = pioneer_args["security_policy_container [container_name]"]
-                # container object must be instantiated with info from the database
-                print("Importing the security policies.")
-                SecurityDeviceObj.get_object_info_from_device_conn('security_policy_group', SecurityPolicyContainer)
         
-        # TODO: everything below this is shit and it's just supposed to work. need to re-do it
-        # import the containers from the target device to the source device
-        if pioneer_args["migrate_config"]:
-        # get the target security device's name
-            target_security_device_name = pioneer_args["target_device [target_device_name]"]
-            TargetSecurityDevice = SecurityDeviceFactory.create_security_device(db_user, target_security_device_name, db_password, db_host, db_port)
-                        
-            # print the compatibility issues
-            # SpecificTargetSecurityDeviceObject.print_compatibility_issues()
+    # # TODO: everything below this is shit and it's just supposed to work. need to re-do it
+    # # import the containers from the target device to the source device
+    # if pioneer_args["migrate_config"]:
+    # # get the target security device's name
+    #     target_security_device_name = pioneer_args["target_device [target_device_name]"]
+    #     TargetSecurityDevice = SecurityDeviceFactory.create_security_device(db_user, target_security_device_name, db_password, db_host, db_port)
+                    
+    #     # print the compatibility issues
+    #     # SpecificTargetSecurityDeviceObject.print_compatibility_issues()
 
-            # ask the user to : map the security policies container to its counter part in the target device
-                # map only the child container and let the
-                # program map all the other containers based on the hierarchy. a new table is needed for this
-                # all containers will be mapped in the map_containers_function
-                # mapping will be saved in the database table of the target device
-            object_container, container_hierarchy_map = TargetSecurityDevice.map_containers()
-            interface_map = TargetSecurityDevice.map_zones()
-            
-            TargetSecurityDevice.adapt_config(object_container, container_hierarchy_map, interface_map, SecurityDeviceObj)
-            TargetSecurityDevice.migrate_config(SecurityDeviceObj)
+    #     # ask the user to : map the security policies container to its counter part in the target device
+    #         # map only the child container and let the
+    #         # program map all the other containers based on the hierarchy. a new table is needed for this
+    #         # all containers will be mapped in the map_containers_function
+    #         # mapping will be saved in the database table of the target device
+    #     object_container, container_hierarchy_map = TargetSecurityDevice.map_containers()
+    #     interface_map = TargetSecurityDevice.map_zones()
+        
+    #     TargetSecurityDevice.adapt_config(object_container, container_hierarchy_map, interface_map, SecurityDeviceObj)
+    #     TargetSecurityDevice.migrate_config(SecurityDeviceObj)
 
 if __name__ == "__main__":
     main()

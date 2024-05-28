@@ -54,15 +54,19 @@ class Policy:
         self._PolicyContainer = PolicyContainer
         self._policy_info = policy_info
         self._name = name
+        self._uid = helper.generate_uid()
         self._source_zones = source_zones
         self._destination_zones = destination_zones
-        self._container_name = PolicyContainer.get_name()
+        self._container_uid = PolicyContainer.get_uid()
         self._container_index = container_index
         self._status = status
         self._description = description
         self._comments = comments
         self._log_to_manager = log_to_manager
         self._log_to_syslog = log_to_syslog
+
+    def get_uid(self):
+        return self._uid
 
     def get_policy_info(self):
         """
@@ -100,14 +104,14 @@ class Policy:
         """
         self._container_name = name
 
-    def get_container_name(self):
+    def get_container_uid(self):
         """
-        Retrieve the name of the container holding the policy.
+        Retrieve the uid of the container holding the policy.
 
         Returns:
-            str: The name of the container.
+            str: The uid of the container.
         """
-        return self._container_name
+        return self._container_uid
 
     def set_container_index(self, index):
         """
@@ -337,7 +341,7 @@ class SecurityPolicy(Policy):
         self._destination_networks = destination_networks
         self._source_ports = source_ports
         self._destination_ports = destination_ports
-        self._schedule_objects = schedule_objects
+        self._schedule = schedule_objects
         self._users = users
         self._url_objects = urls
         self._l7_apps = policy_apps
@@ -436,23 +440,23 @@ class SecurityPolicy(Policy):
         """
         return self._destination_ports
 
-    def set_schedule_objects(self, schedule_objects):
+    def set_schedule_objects(self, schedule):
         """
         Set the schedule objects for the security policy.
 
         Args:
             schedule_objects (list): List of schedule objects to set.
         """
-        self._schedule_objects = schedule_objects
+        self._schedule = schedule
 
-    def get_schedule_objects(self):
+    def get_schedule(self):
         """
         Retrieve the schedule objects associated with the security policy.
 
         Returns:
             list: List of schedule objects.
         """
-        return self._schedule_objects
+        return self._schedule
 
     def set_users(self, users):
         """
@@ -546,12 +550,21 @@ class SecurityPolicy(Policy):
 
     def save(self, Database):
         SecurityPoliciesTable = Database.get_security_policies_table()
-        SecurityPoliciesTable.insert(self.get_name(), self.get_container_name(), self.get_container_index(), self.get_category(),
-        self.get_status(), self.get_source_zones(), self.get_destination_zones(), self.get_source_networks(),
-        self.get_destination_networks(), self.get_source_ports(), self.get_destination_ports(), self.get_schedule_objects(), self.get_users(),
-        self.get_urls(), self.get_policy_apps(), self.get_description(),
-        self.get_comments(), self.get_log_settings(), self.get_log_start(), self.get_log_end(),
-        self.get_section(), self.get_action())
+        SecurityPoliciesTable.insert(
+            self.get_uid(),
+            self.get_name(),
+            self.get_container_uid(),
+            self.get_container_index(),
+            self.get_category(),
+            self.get_schedule(),
+            self.get_status(),
+            self.get_log_start(),
+            self.get_log_end(),
+            self.get_section(),
+            self.get_action(),
+            self.get_comments(),
+            self.get_description()
+        )
 
 class NATPolicy:
     pass

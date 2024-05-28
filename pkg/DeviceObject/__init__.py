@@ -2,6 +2,8 @@ import utils.helper as helper
 from abc import abstractmethod
 general_logger = helper.logging.getLogger('general')
 
+#TODO: there is a big problem with how the uid is generated right now as it is initialized
+# when the object is initialized.
 class Object:
     """
     Base class for representing objects in the system.
@@ -632,3 +634,9 @@ class URLGroupObject(GroupObject):
         for member_name in member_names:
             group_member_uid = preloaded_data.get(member_name)
             url_group_objects_members_table.insert(self.get_uid(), group_member_uid)
+
+#TODO: proper support for schedule objects
+class ScheduleObject:
+    def save(self, Database):
+        ScheduleObjectsTable = Database.get_schedule_objects_table()
+        ScheduleObjectsTable.insert(self.get_uid(), self.get_name(), self.get_object_container().get_uid(), self.get_description())

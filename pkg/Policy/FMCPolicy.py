@@ -22,18 +22,18 @@ class FMCSecurityPolicy(SecurityPolicy, FMCObjectWithLiterals):
         self._container_index = policy_info['metadata']['ruleIndex']
         self._status = 'enabled' if policy_info.get('enabled', False) else 'disabled'
         self._category = policy_info['metadata']['category']
-        self._source_zones = self.extract_security_zone_object_info(policy_info.get('sourceZones', ['any']))
-        self._destination_zones = self.extract_security_zone_object_info(policy_info.get('destinationZones', ['any']))
-        self._source_networks = self.extract_network_address_object_info(policy_info.get('sourceNetworks', ['any']))
-        self._destination_networks = self.extract_network_address_object_info(policy_info.get('destinationNetworks', ['any']))
-        self._source_ports = self.extract_port_object_info(policy_info.get('sourcePorts', ['any']))
-        self._destination_ports = self.extract_port_object_info(policy_info.get('destinationPorts', ['any']))
-        self._schedule_objects = self.extract_schedule_object_info(policy_info.get('destinationPorts', ['any']))
-        self._users = self.extract_user_object_info(policy_info.get('users', ['any']))
-        self._urls = self.extract_url_object_info(policy_info['urls'], ['any'])
-        self._policy_apps = self.extract_l7_app_object_info(policy_info['applications'], ['any'])
+        self._source_zones = None # self.extract_security_zone_object_info(policy_info.get('sourceZones'))
+        self._destination_zones = None # self.extract_security_zone_object_info(policy_info.get('destinationZones'))
+        self._source_networks = None # self.extract_network_address_object_info(policy_info.get('sourceNetworks'))
+        self._destination_networks = None # self.extract_network_address_object_info(policy_info.get('destinationNetworks'))
+        self._source_ports = None # self.extract_port_object_info(policy_info.get('sourcePorts'))
+        self._destination_ports = None # self.extract_port_object_info(policy_info.get('destinationPorts'))
+        self._schedule_objects = None # self.extract_schedule_object_info(policy_info.get('timeRangeObjects'))
+        self._users = None # self.extract_user_object_info(policy_info.get('users'))
+        self._urls = None # self.extract_url_object_info(policy_info['urls'])
+        self._policy_apps = None # self.extract_l7_app_object_info(policy_info['applications'])
         self._description = policy_info.get('description')
-        self._comments = self.extract_comments(policy_info['commentHistoryList'], ['any'])
+        self._comments = self.extract_comments(policy_info.get('commentHistoryList'))
         self._log_to_manager = policy_info.get('sendEventsToFMC', False)
         self._log_to_syslog = policy_info.get('enableSyslog', False)
         self._log_start = policy_info['logBegin']
@@ -68,8 +68,8 @@ class FMCSecurityPolicy(SecurityPolicy, FMCObjectWithLiterals):
             self._action
         )
     
-    def save(self, Database):
-        pass
+    # def save(self, Database):
+    #     pass
   
     def extract_security_zone_object_info(self, security_zone_object_info):
         """
@@ -83,15 +83,16 @@ class FMCSecurityPolicy(SecurityPolicy, FMCObjectWithLiterals):
         Returns:
             list: A list of security zone names extracted from the provided data structure.
         """
-        # Log a debug message indicating the function call
-        
         # Initialize an empty list to store the extracted security zone names
         extracted_security_zones = []
 
         # Iterate through each security zone entry in the provided data structure
-        for security_zone_entry in security_zone_object_info['objects']:
-            # Extract the name of the security zone and append it to the list
-            extracted_security_zones.append(security_zone_entry['name'])
+        if security_zone_object_info is not None:
+            for security_zone_entry in security_zone_object_info['objects']:
+                # Extract the name of the security zone and append it to the list
+                extracted_security_zones.append(security_zone_entry['name'])
+        else:
+            extracted_security_zones = None
         
         # Return the list of extracted security zone names
         return extracted_security_zones
@@ -409,30 +410,23 @@ class FMCSecurityPolicy(SecurityPolicy, FMCObjectWithLiterals):
         """
         Extract comments from the provided data structure.
 
-        This method extracts comments from the given data structure and returns a list of dictionaries containing user and comment content.
+        This method extracts comments from the given data structure and returns a string containing user and comment content.
 
         Parameters:
             comment_info (list): Information about comments.
 
         Returns:
-            list: A list of dictionaries containing user and comment content extracted from the provided data structure.
+            str: A string containing user and comment content extracted from the provided data structure, separated by newlines.
         """
-        # Log a debug message indicating the function call
-        general_logger.info(f"Found comments on this policy.")
-        # Initialize an empty list to store the processed comments
-        processed_comment_list = []
+        # Check if comment_info is None
+        if comment_info is None:
+            processed_comments = None
+        else:
+            # Create a string with all comments, each separated by a newline
+            processed_comments = "\n".join(
+                f"User: <{comment_entry['user']['name']}> commented: <{comment_entry['comment']}>"
+                for comment_entry in comment_info
+            )
 
-        # Iterate over each comment entry
-        for comment_entry in comment_info:
-            # Extract the user's name and comment content
-            comment_user = comment_entry['user']['name']
-            comment_content = comment_entry['comment']
-            comment_string = f"User: <{comment_user}> commented: <{comment_content}>\n"
-            # Store the user and comment content in a dictionary and append it to the list
-            processed_comment_list.append(comment_string)
-
-        # Log a debug message indicating the completion of comment processing
-        general_logger.debug(f"Finished processing comments. This is the list: {processed_comment_list}.")
-        
-        # Return the list of processed comments
-        return processed_comment_list
+        # Return the combined string of processed comments
+        return processed_comments

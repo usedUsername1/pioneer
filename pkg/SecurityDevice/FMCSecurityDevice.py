@@ -2,7 +2,7 @@ from abc import abstractmethod
 from pkg.Container.FMCContainer import FMCSecurityPolicyContainer, FMCObjectContainer, FMCZoneContainer, FMCManagedDeviceContainer
 from pkg.DeviceObject.FMCDeviceObject import FMCObject, FMCNetworkGroupObject, FMCNetworkObject, \
 FMCPortObject, FMCICMPObject, FMCPortGroupObject, FMCGeolocationObject, \
-FMCContinentObject, FMCCountryObject, FMCURLObject, FMCURLGroupObject
+FMCContinentObject, FMCCountryObject, FMCURLObject, FMCURLGroupObject, FMCScheduleObject
 from pkg.Policy.FMCPolicy import FMCSecurityPolicy
 from pkg.SecurityZone.FMCSecurityZone import FMCSecurityZone
 from pkg.SecurityDevice import SecurityDevice 
@@ -88,6 +88,9 @@ class FMCSecurityDevice(SecurityDevice):
     def return_security_zone_info(self):
         return self._SecurityDeviceConnection.object.securityzone.get()
     
+    def return_schedule_object_info(self):
+        return self._SecurityDeviceConnection.object.timerange.get()
+    
     def return_security_policy_container(self, container_entry):
         return FMCSecurityPolicyContainer(self, container_entry)
 
@@ -129,7 +132,7 @@ class FMCSecurityDevice(SecurityDevice):
         else:
             return FMCPortObject(ObjectContainer, port_object_entry)
 
-    #TODO: for FMC devices, retrieving the policies of a child container, will also return the policies
+    # for FMC devices, retrieving the policies of a child container, will also return the policies
     # inherited from the parent.
     # they need to be filtered out
     def return_security_policy_info(self, SecurityPolicyContainer):
@@ -165,7 +168,10 @@ class FMCSecurityDevice(SecurityDevice):
     
     def return_security_zone(self, ZoneContainer, zone_entry):
         return FMCSecurityZone(ZoneContainer, zone_entry)
-    
+
+    def return_schedule_object(self, ObjectContainer, schedule_object_entry):
+        return FMCScheduleObject(ObjectContainer, schedule_object_entry)
+
     def return_security_policy_object(self, SecurityPolicyContainer, policy_entry):
         # return security policy object only if the current policy belongs to the current container,
         # if it belongs to another parent, skip it

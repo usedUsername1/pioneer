@@ -153,6 +153,9 @@ class SecurityDeviceDatabase(PioneerDatabase):
 
     def get_url_group_objects_members_table(self):
         return self._URLGroupObjectsMembersTable
+    
+    def get_schedule_objects_table(self):
+        return self._ScheduleObjectsTable
 
 class SecurityDevice:
     def __init__(self, uid, name, DeviceDatabase, DeviceConnection):
@@ -240,6 +243,8 @@ class SecurityDevice:
                 return self.return_url_object(ObjectContainer, object_entry)
             case 'url_group_object':
                 return self.return_url_group_object(ObjectContainer, object_entry)
+            case 'schedule_object':
+                return self.return_schedule_object(ObjectContainer, object_entry)
             case 'security_policy_group':
                 return self.return_security_policy_object(ObjectContainer, object_entry)
 
@@ -327,6 +332,8 @@ class SecurityDevice:
                 objects_info = self.return_url_object_info()
             case 'url_group_object':
                 objects_info = self.return_url_group_object_info()
+            case 'schedule_object':
+                objects_info = self.return_schedule_object_info()
             # group is used here as a "flag" value. it marks the fact
             # that the security policies will be processed as object groups
             # also, only the security policies for a particular object container
@@ -334,6 +341,9 @@ class SecurityDevice:
             case 'security_policy_group':
                 objects_info = self.return_security_policy_info(ObjectContainer)
         
+        # cpu_usage, ram_usage = helper.get_usage()
+        # print(f"CPU usage during retrieving objects <{object_type}>: {cpu_usage}%")
+        # print(f"RAM usage during retrieving objects <{object_type}>: {ram_usage}%")
         # Iterate over each managed device entry in the retrieved objects info
         if 'group' not in object_type:
             for object_entry in objects_info:
@@ -350,11 +360,11 @@ class SecurityDevice:
                 SecurityDeviceObject.save(self._Database)
                 group_objects.append(SecurityDeviceObject)
 
-            Database = self.get_database()
-            # preload the data
-            preloaded_object_data = PioneerDatabase.preload_object_data(object_type, Database)
-            for GroupObject in group_objects:
-                GroupObject.create_relationships_in_db(Database, preloaded_object_data)
+            # Database = self.get_database()
+            # # preload the data
+            # preloaded_object_data = PioneerDatabase.preload_object_data(object_type, Database)
+            # for GroupObject in group_objects:
+            #     GroupObject.create_relationships_in_db(Database, preloaded_object_data)
 
     # these functions are overridden in the subclasses whenever needed/relevant
     def return_object_container_info(self):

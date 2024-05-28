@@ -557,6 +557,7 @@ class ICMPObjectsTable(PioneerTable):
             ("CONSTRAINT uc_object_container_uid14", "UNIQUE (name, object_container_uid)")
         ]
 
+#TODO: proper support for schedule objects
 class ScheduleObjectsTable(PioneerTable):
     def __init__(self, Database):
         super().__init__(Database)
@@ -565,17 +566,18 @@ class ScheduleObjectsTable(PioneerTable):
             ("uid", "TEXT PRIMARY KEY"),
             ("name", "TEXT NOT NULL"),
             ("object_container_uid", "TEXT NOT NULL"),
-            ("recurring", "BOOLEAN"),
-            ("start_date", "TEXT"),
-            ("start_time", "TEXT"),
-            ("end_date", "TEXT"),
-            ("end_time", "TEXT"),
-            ("reccurence_type", "TEXT"),
-            ("daily_start", "TEXT"),
-            ("daily_end", "TEXT"),
-            ("week_day", "TEXT"),
-            ("week_day_start", "TEXT"),
-            ("week_day_end", "TEXT"),
+            ("description", "TEXT"),
+            # ("recurring", "BOOLEAN"),
+            # ("start_date", "TEXT"),
+            # ("start_time", "TEXT"),
+            # ("end_date", "TEXT"),
+            # ("end_time", "TEXT"),
+            # ("reccurence_type", "TEXT"),
+            # ("daily_start", "TEXT"),
+            # ("daily_end", "TEXT"),
+            # ("week_day", "TEXT"),
+            # ("week_day_start", "TEXT"),
+            # ("week_day_end", "TEXT"),
             ("CONSTRAINT fk_object_container FOREIGN KEY(object_container_uid)", "REFERENCES object_containers(uid)"),
             ("CONSTRAINT uc_object_container_uid15", "UNIQUE (name, object_container_uid)")
         ]

@@ -1,6 +1,6 @@
 import utils.helper as helper
 from pkg.DeviceObject import Object, NetworkObject, GeolocationObject, PortObject, ICMPObject, URLObject, \
-NetworkGroupObject, PortGroupObject, URLGroupObject, GroupObject
+NetworkGroupObject, PortGroupObject, URLGroupObject, ScheduleObject
 import utils.gvars as gvars
 import ipaddress
 import utils.exceptions as PioneerExceptions
@@ -54,6 +54,8 @@ class FMCObjectWithLiterals(Object):
         except:
             general_logger.info(f"No literal members found for URL group <{self._name}>.")
 
+#TODO: see what to do with the overridable parameter, it looks kind of wrong at the moment
+# since multiple FMC objects that intherit from this class don't have this attribute
 class FMCObject(Object):
     """
     A class representing a FMC object.
@@ -66,9 +68,9 @@ class FMCObject(Object):
         Args:
             object_info (dict): Information about the FMC object.
         """
-        self._name = object_info['name']
+        self._name = object_info.get('name')
         self._description = object_info.get('description')
-        self._is_overridable = object_info['overridable']
+        self._is_overridable = object_info.get('overridable')
         super().__init__(ObjectContainer, object_info, self._name, self._description, self._is_overridable)
 
     @staticmethod
@@ -683,4 +685,9 @@ class FMCURLGroupObject(URLGroupObject, FMCObject, FMCObjectWithLiterals):
         # check for literals
         self.check_for_url_literals(self.get_object_container(), Database)
         URLGroupObjectsTable = Database.get_url_group_objects_table()
-        URLGroupObjectsTable.insert(self.get_uid(), self.get_name(), self.get_object_container().get_uid(), self.get_description(), self.get_override_bool())   
+        URLGroupObjectsTable.insert(self.get_uid(), self.get_name(), self.get_object_container().get_uid(), self.get_description(), self.get_override_bool())
+
+class FMCScheduleObject(FMCObject, ScheduleObject):
+    def __init__(self, ObjectContainer, object_info) -> None:
+        FMCObject.__init__(self, ObjectContainer, object_info)
+        ScheduleObject.__init__(self)

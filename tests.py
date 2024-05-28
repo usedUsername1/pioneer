@@ -3,23 +3,24 @@ import fireREST
 fmc = fireREST.FMC(hostname='10.2.196.131', username='admin', password='2wsx#EDC', domain='Global')
 
 # how to return only policies
-policy = fmc.policy.accesspolicy.accessrule.get(container_name='Parking1-child')
-# The value to match
-value_to_match = 'Parking1-child'
+policy = fmc.object.timerange.get()
 
-filtered_data_gen = (entry for entry in policy if entry['metadata']['accessPolicy']['name'] == value_to_match)
-
-# Convert generator to a list if needed
-filtered_data = list(filtered_data_gen)
-
-for entry in filtered_data:
-    print(entry)
+print(policy)
 
 
 # from panos.panorama import Panorama
+# from panos.panorama import Panorama, DeviceGroup
+# from panos.objects import ServiceObject
+# from panos.policies import SecurityRule, Rulebase, PreRulebase
 # pano  = Panorama("10.2.196.196", "admin", "2wsx#EDC")
-# test = pano.refresh_devices(devices=["Parking"])
+# test = pano.refresh_devices()
+# dg = DeviceGroup("Parking")
+# pano.add(dg)
 
+# rulebase = dg.add(PreRulebase())
+# rule = rulebase.add(SecurityRule("test-me"))
+# rule.refresh()
+# print(rule.about('destination'))
 # print(test)
 # Access the OPSTATES attribute to get the hierarchy class
 # hierarchy_class = pano.OPSTATES['dg_hierarchy']
