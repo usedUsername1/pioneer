@@ -3,7 +3,7 @@ import fireREST
 fmc = fireREST.FMC(hostname='10.2.196.131', username='admin', password='2wsx#EDC', domain='Global')
 
 # how to return only policies
-policy = fmc.object.timerange.get()
+policy = fmc.policy.accesspolicy.accessrule.get(container_name="Parking1-child", name="dummy-child")
 
 print(policy)
 

@@ -172,7 +172,8 @@ def main():
                 general_logger.info(f"################## Getting the network group objects of device: <{security_device_name}>. Container: <{object_container_name}> ##################")
                 print("Import network group objects.")
                 SecurityDeviceObject.get_object_info_from_device_conn('network_group_object', ObjectContainer)
-                #TODO: geolocation objects support                
+                # TODO: geolocation objects support
+                # print("Importing geolocation objects.")
                 # general_logger.info(f"################## Getting the geolocation objects of device: <{security_device_name}>. Container: <{object_container_name}> ##################")
                 # SecurityDeviceObject.get_object_info_from_device_conn('geolocation_object', ObjectContainer)
 

@@ -22,7 +22,7 @@ class FMCSecurityPolicy(SecurityPolicy, FMCObjectWithLiterals):
         self._container_index = policy_info['metadata']['ruleIndex']
         self._status = 'enabled' if policy_info.get('enabled', False) else 'disabled'
         self._category = policy_info['metadata']['category']
-        self._source_zones = None # self.extract_security_zone_object_info(policy_info.get('sourceZones'))
+        self._source_zones = self.extract_security_zone_object_info(policy_info.get('sourceZones'))
         self._destination_zones = None # self.extract_security_zone_object_info(policy_info.get('destinationZones'))
         self._source_networks = None # self.extract_network_address_object_info(policy_info.get('sourceNetworks'))
         self._destination_networks = None # self.extract_network_address_object_info(policy_info.get('destinationNetworks'))
@@ -96,7 +96,9 @@ class FMCSecurityPolicy(SecurityPolicy, FMCObjectWithLiterals):
         
         # Return the list of extracted security zone names
         return extracted_security_zones
-        
+    
+    #TODO: find network literals, regions, and save them to the database as well upon extraction
+    # to continue the import, you must create classes for fmc geolocation objects, url categories,l7 applications, users
     def extract_network_address_object_info(self, network_object_info):
         """
         Extract network address object information from the provided data structure.
@@ -125,12 +127,13 @@ class FMCSecurityPolicy(SecurityPolicy, FMCObjectWithLiterals):
                 # Extract the name and type of the network object
                 network_object_name = network_object_entry['name']
                 network_object_type = network_object_entry['type']
-                
+                #TODO: check for geolocation type as well
                 # Append the network object name to the list
                 if network_object_type == 'Country':
                     # If the network object is of type 'Country', prepend its ID before the name
                     network_object_name = network_object_entry['id'] + gvars.separator_character + network_object_name
                 extracted_member_network_objects.append(network_object_name)
+
         except KeyError:
             # If there are no network objects, log an informational message
             general_logger.info(f"It looks like there are no network objects on this policy.")

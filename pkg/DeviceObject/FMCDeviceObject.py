@@ -1,6 +1,7 @@
 import utils.helper as helper
 from pkg.DeviceObject import Object, NetworkObject, GeolocationObject, PortObject, ICMPObject, URLObject, \
-NetworkGroupObject, PortGroupObject, URLGroupObject, ScheduleObject
+NetworkGroupObject, PortGroupObject, URLGroupObject, ScheduleObject, PolicyUserObject, URLCategoryObject, \
+L7AppObject, L7AppFilterObject
 import utils.gvars as gvars
 import ipaddress
 import utils.exceptions as PioneerExceptions
@@ -224,388 +225,6 @@ class FMCNetworkGroupObject(NetworkGroupObject, FMCObject, FMCObjectWithLiterals
         NetworkGroupObjectsTable = Database.get_network_group_objects_table()
         NetworkGroupObjectsTable.insert(self.get_uid(), self.get_name(), self.get_object_container().get_uid(), self.get_description(), self.get_override_bool())   
 
-class FMCCountryObject(GeolocationObject):
-    """
-    A class representing a FMC country object.
-    """
-
-    def __init__(self, object_info) -> None:
-        """
-        Initialize the FMCCountryObject instance.
-
-        Args:
-            object_info (dict): Information about the country object.
-        """
-        super().__init__(object_info)
-    
-    def set_name(self):
-        """
-        Set the name of the country object.
-
-        Returns:
-            str: The name of the country object.
-        """
-        try:
-            name = self._object_info['name']
-        except KeyError:
-            name = None
-        return super().set_name(name)
-
-    def set_object_container_name(self):
-        """
-        Set the name of the object container for the country object.
-
-        Returns:
-            str: The name of the object container.
-        """
-        object_container_name = 'virtual_object_container'
-        return super().set_object_container_name(object_container_name)
-    
-    def set_continents(self):
-        """
-        Set the continents associated with the country object.
-
-        Returns:
-            None
-        """
-        return super().set_continents(None)
-    
-    def set_countries(self):
-        """
-        Set the countries associated with the country object.
-
-        Returns:
-            None
-        """
-        pass
-
-    def set_member_alpha2_codes(self):
-        """
-        Set the member alpha-2 code of the country object.
-
-        Returns:
-            str: The alpha-2 code of the country.
-        """
-        alpha2_code = self._object_info['iso2']
-        return super().set_member_alpha2_codes(alpha2_code)
-    
-    def set_member_alpha3_codes(self):
-        """
-        Set the member alpha-3 code of the country object.
-
-        Returns:
-            str: The alpha-3 code of the country.
-        """
-        alpha3_code = self._object_info['iso3']
-        return super().set_member_alpha3_codes(alpha3_code)
-    
-    def set_member_numeric_codes(self):
-        """
-        Set the member numeric code of the country object.
-
-        Returns:
-            int: The numeric code of the country.
-        """
-        numeric_code = self._object_info['id']
-        return super().set_member_numeric_codes(numeric_code)
-    
-    def get_member_country_names(self):
-        """
-        Get the name of the country.
-
-        Returns:
-            str: The name of the country.
-        """
-        return self._name
-
-    def get_member_alpha2_codes(self):
-        """
-        Get the alpha-2 code of the country.
-
-        Returns:
-            str: The alpha-2 code of the country.
-        """
-        return self._country_alpha2_codes
-    
-    def get_member_alpha3_codes(self):
-        """
-        Get the alpha-3 code of the country.
-
-        Returns:
-            str: The alpha-3 code of the country.
-        """
-        return self._country_alpha3_codes
-    
-    def get_member_numeric_codes(self):
-        """
-        Get the numeric code of the country.
-
-        Returns:
-            int: The numeric code of the country.
-        """
-        return self._country_numeric_codes
-
-class FMCContinentObject(GeolocationObject):
-    """
-    A class representing an FMC continent object.
-    """
-
-    def __init__(self, object_info) -> None:
-        """
-        Initialize the FMCContinentObject instance.
-
-        Args:
-            object_info (dict): Information about the continent object.
-        """
-        super().__init__(object_info)
-        
-    def set_name(self):
-        """
-        Set the name of the continent object.
-        
-        Returns:
-            str: The name of the continent object.
-        """
-        name = self._object_info['name']
-        return super().set_name(name)
-
-    def set_object_container_name(self):
-        """
-        Set the name of the object container for the continent object.
-
-        Returns:
-            str: The name of the object container.
-        """
-        object_container_name = 'virtual_object_container'
-        return super().set_object_container_name(object_container_name)
-    
-    def set_continents(self):
-        """
-        Set the continents associated with the continent object.
-
-        Returns:
-            None
-        """
-        self._continents = None
-    
-    def get_member_continent_names(self):
-        """
-        Get the name of the continent.
-
-        Returns:
-            str: The name of the continent.
-        """
-        return self._object_info['name']
-    
-    @abstractmethod
-    def set_continents(self):
-        """
-        Abstract method to set the continents associated with the continent object.
-        """
-        pass
-
-    def set_countries(self):
-        """
-        Set the countries associated with the continent object.
-
-        This method retrieves information about the countries associated with the continent from the object's information.
-        It constructs a list of FMCCountryObject instances based on the retrieved country information.
-        If there are no countries associated with the continent, the method sets the countries list to None.
-
-        Returns:
-            None
-        """
-        # Debugging message to indicate that the method is being called
-        
-        # Initialize an empty list to store country objects
-        countries_objects_list = []
-        
-        try:
-            # Attempt to retrieve country information from the object's information
-            country_info = self._object_info['countries']
-            
-            # Iterate over each country information entry
-            for country_info_entry in country_info:
-                # Create an FMCCountryObject instance for each country and append it to the list
-                countries_objects_list.append(FMCCountryObject(country_info_entry))
-        
-        except KeyError:
-            # If there is no country information, set the countries list to None
-            countries_objects_list = None
-            
-        # Call the superclass method to set the countries list
-        return super().set_countries(countries_objects_list)
-
-    def set_member_alpha2_codes(self):
-        """
-        Set the member alpha-2 codes of the continent object.
-
-        Returns:
-            None
-        """
-        pass
-
-    def set_member_alpha3_codes(self):
-        """
-        Set the member alpha-3 codes of the continent object.
-
-        Returns:
-            None
-        """
-        pass
-
-    def set_member_numeric_codes(self):
-        """
-        Set the member numeric codes of the continent object.
-
-        Returns:
-            None
-        """
-        pass
-
-    #TODO: move this
-    def get_continent_info(self):
-        """
-        Get information about the continent.
-
-        Returns:
-            dict: Information about the continent.
-        """
-        return self._object_info
-
-class FMCGeolocationObject(GeolocationObject):
-    """
-    A class representing a FMC geolocation object
-    """
-
-    def __init__(self, object_info) -> None:
-        """
-        Initialize the FMCGeolocationObject instance.
-
-        Args:
-            object_info (dict): Information about the geolocation object.
-        """
-        general_logger.debug(f"Called FMCGeolocationObject::__init__()")
-        super().__init__(object_info)
-
-    def set_name(self):
-        """
-        Set the name of the geolocation object.
-        
-        Returns:
-            str: The name of the geolocation object.
-        """
-        name = self._object_info['name']
-        return super().set_name(name)
-
-    def set_description(self):
-        """
-        Set the description of the geolocation object.
-
-        Returns:
-            None
-        """
-        value = None
-        return super().set_description(value)
-
-    def set_object_container_name(self):
-        """
-        Set the name of the object container for the geolocation object.
-
-        Returns:
-            str: The name of the object container.
-        """
-        object_container_name = 'virtual_object_container'
-        return super().set_object_container_name(object_container_name)
-
-    def set_continents(self):
-        """
-        Set the continents associated with the geolocation object.
-
-        This method sets the continents associated with the geolocation object by creating instances of
-        FMCContinentObject for each continent retrieved from the object's information.
-        If there are no continents associated with the geolocation object, it sets the continents list to None.
-
-        Returns:
-            list: A list of FMCContinentObject instances representing continents.
-        """
-        # Debugging message to indicate that the method is being called
-        
-        # Initialize an empty list to store continent objects
-        continent_objects_list = []
-        
-        try:
-            # Attempt to retrieve continent information from the object's information
-            continents_info = self._object_info['continents']
-            
-            # Iterate over each continent information entry
-            for continent_info in continents_info:
-                # Create an FMCContinentObject instance for each continent and append it to the list
-                continent_objects_list.append(FMCContinentObject(continent_info))
-        
-        except KeyError:
-            # If there is no continent information, set the continents list to None
-            continent_objects_list = None
-        
-        # Call the superclass method to set the continents list
-        return super().set_continents(continent_objects_list)
-
-    #TODO: maybe make this method static?
-    def set_countries(self):
-        """
-        Set the countries associated with the geolocation object.
-
-        This method sets the countries associated with the geolocation object by creating instances of
-        FMCCountryObject for each country retrieved from the object's information.
-        It also adds countries of the continents associated with the geolocation object.
-
-        Returns:
-            list: A list of FMCCountryObject instances representing countries.
-        """
-        # Debugging message to indicate that the method is being called
-        
-        # Initialize an empty list to store country objects
-        countries_objects_list = []
-        
-        # Attempt to retrieve country information from the object's information
-        country_info = self._object_info.get('countries', [])
-        
-        # Iterate over each country information entry
-        for country_entry in country_info:
-            # Create an FMCCountryObject instance for each country and append it to the list
-            countries_objects_list.append(FMCCountryObject(country_entry))
-        
-        # Add countries of the continents associated with the geolocation object
-        for continent in self._continents:
-            for country_info in continent.get_continent_info().get('countries', []):
-                countries_objects_list.append(FMCCountryObject(country_info))
-        
-        # Call the superclass method to set the countries list
-        return super().set_countries(countries_objects_list)
-
-    # Don't delete this. They need to be here, otherwise GeolocationObject::process_policy_info() will throw an error since the method
-    # called in there doesn't have parameters, however, the method definition of the class includes parameters.
-    @abstractmethod
-    def set_member_alpha2_codes(self):
-        """
-        Abstract method to set the member alpha-2 codes.
-        """
-        pass
-
-    @abstractmethod
-    def set_member_alpha3_codes(self):
-        """
-        Abstract method to set the member alpha-3 codes.
-        """
-        pass
-
-    @abstractmethod
-    def set_member_numeric_codes(self):
-        """
-        Abstract method to set the member numeric codes.
-        """
-        pass
-
 #TODO: the problem is ICMP objects and port objects are treated the same by FMC, there is no distinction between them.
 # we need to determine the type of the object and then call the right 
 class FMCPortObject(FMCObject, PortObject):
@@ -691,3 +310,28 @@ class FMCScheduleObject(FMCObject, ScheduleObject):
     def __init__(self, ObjectContainer, object_info) -> None:
         FMCObject.__init__(self, ObjectContainer, object_info)
         ScheduleObject.__init__(self)
+
+class FMCGeolocationObject(FMCObject, GeolocationObject):
+    def __init__(self, ObjectContainer, object_info) -> None:
+        FMCObject.__init__(self, ObjectContainer, object_info)
+        GeolocationObject.__init__(self)
+
+class FMCPolicyUserObject(FMCObject, PolicyUserObject):
+    def __init__(self, ObjectContainer, object_info) -> None:
+        FMCObject.__init__(self, ObjectContainer, object_info)
+        PolicyUserObject.__init__(self)
+
+class FMCURLCategoryObject(FMCObject, URLCategoryObject):
+    def __init__(self, ObjectContainer, object_info) -> None:
+        FMCObject.__init__(self, ObjectContainer, object_info)
+        URLCategoryObject.__init__(self)
+
+class FMCL7AppObject(FMCObject, L7AppObject):
+    def __init__(self, ObjectContainer, object_info) -> None:
+        FMCObject.__init__(self, ObjectContainer, object_info)
+        L7AppObject.__init__(self)
+
+class FMCL7AppFilterObject(FMCObject, L7AppFilterObject):
+    def __init__(self, ObjectContainer, object_info) -> None:
+        FMCObject.__init__(self, ObjectContainer, object_info)
+        L7AppFilterObject.__init__(self)

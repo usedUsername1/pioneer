@@ -68,8 +68,8 @@ class FMCSecurityDevice(SecurityDevice):
         return self._SecurityDeviceConnection.object.networkgroup.get()
     
     #TODO: should contintents and countries be imported here as well?
-    def return_geolocation_object_info(self):
-        return self._SecurityDeviceConnection.object.geolocation.get()
+    # def return_geolocation_object_info(self):
+    #     return self._SecurityDeviceConnection.object.geolocation.get()
         # return self._SecurityDeviceConnection.object.country.get()
         # self._SecurityDeviceConnection.object.continent.get()
     

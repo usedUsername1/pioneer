@@ -206,237 +206,6 @@ class NetworkGroupObject(GroupObject):
         for member_name in member_names:
             group_member_uid = preloaded_data.get(member_name)
             network_group_objects_members_table.insert(self.get_uid(), group_member_uid)
-# For simplicity, all geo data is going to be treated as a Geolocation object.
-# For example, in FMC, you have Geolocation objects (made out of countries and other continents), and then you have the countries and the continents. they are not object entities per se
-# but can be treated as such
-# There is a problem with treating all the entities (Geolocation, Continent and Country) as the same Python object, however.
-# Geolocation can have continents (which can also be made out of multiple countries) or countries. All the information is retrieved at the country object level!
-# All objects can have member alpha2, alpha3 and numeric codes, but only country objects have these actual values defined on them.
-# Hence, there are getters and setters for both the actual values and for the members.
-# This can be certainly done in a smarter way. So at some point, this might change, especially because you can use the set_continetns and set_countries from the FMC geolocation objects
-# logic for all the security devices. However, this will change at some point later.
-class GeolocationObject(Object):
-    """
-    A class representing a geolocation object.
-    """
-
-    def __init__(self, object_info) -> None:
-        """
-        Initialize the GeolocationObject instance.
-
-        Args:
-            object_info (dict): Information about the geolocation object.
-        """
-        super().__init__(object_info)
-        self._continents = None
-        self._countries = None
-        self._country_alpha2_codes = None
-        self._country_alpha3_codes = None
-        self._country_numeric_codes = None
-
-    def set_continents(self, value):
-        """
-        Set the continents associated with the geolocation object.
-
-        Args:
-            value (list): List of continents.
-        """
-        self._continents = value
-
-    def get_continents(self):
-        """
-        Get the continents associated with the geolocation object.
-
-        Returns:
-            list: List of continents.
-        """
-        return self._continents
-
-    def set_countries(self, value):
-        """
-        Set the countries associated with the geolocation object.
-
-        Args:
-            value (list): List of countries.
-        """
-        self._countries = value
-
-    def get_countries(self):
-        """
-        Get the countries associated with the geolocation object.
-
-        Returns:
-            list: List of countries.
-        """
-        return self._countries
-
-    def set_member_alpha2_codes(self, value):
-        """
-        Set the member alpha-2 codes of the geolocation object.
-
-        Args:
-            value (list): List of alpha-2 codes.
-        """
-        self._country_alpha2_codes = value
-
-    def get_alpha2_codes(self):
-        """
-        Get the member alpha-2 codes of the geolocation object.
-
-        Returns:
-            list: List of alpha-2 codes.
-        """
-        return self._country_alpha2_codes
-
-    def set_member_alpha3_codes(self, value):
-        """
-        Set the member alpha-3 codes of the geolocation object.
-
-        Args:
-            value (list): List of alpha-3 codes.
-        """
-        self._country_alpha3_codes = value
-
-    def get_alpha3_codes(self):
-        """
-        Get the member alpha-3 codes of the geolocation object.
-
-        Returns:
-            list: List of alpha-3 codes.
-        """
-        return self._country_alpha3_codes
-
-    def set_member_numeric_codes(self, value):
-        """
-        Set the member numeric codes of the geolocation object.
-
-        Args:
-            value (list): List of numeric codes.
-        """
-        self._country_numeric_codes = value
-
-    def get_numeric_codes(self):
-        """
-        Get the member numeric codes of the geolocation object.
-
-        Returns:
-            list: List of numeric codes.
-        """
-        return self._country_numeric_codes
-
-    def get_member_continent_names(self):
-        """
-        Get the names of the continents associated with the geolocation object.
-
-        Returns:
-            list: List of continent names.
-        """
-        if self._continents is None:
-            return None
-        
-        continent_member_names = []
-        for continent in self._continents:
-            continent.set_name()
-            continent_member_names.append(continent.get_name())
-        
-        return continent_member_names
-
-    def get_member_country_names(self):
-        """
-        Get the names of the countries associated with the geolocation object.
-
-        Returns:
-            list: List of country names.
-        """
-        if self._countries is None:
-            return None
-        
-        country_member_names = []
-        for country in self._countries:
-            country.set_name()
-            country_member_names.append(country.get_name())
-        
-        return country_member_names
-
-    def get_member_alpha2_codes(self):
-        """
-        Get the alpha-2 codes of the countries associated with the geolocation object.
-
-        Returns:
-            list: List of alpha-2 codes.
-        """
-        if self._countries is None:
-            return None
-        
-        country_alpha2_codes = []
-        for country in self._countries:
-            country.set_member_alpha2_codes()
-            country_alpha2_codes.append(country.get_alpha2_codes())
-
-        return country_alpha2_codes
-
-    def get_member_alpha3_codes(self):
-        """
-        Get the alpha-3 codes of the countries associated with the geolocation object.
-
-        Returns:
-            list: List of alpha-3 codes.
-        """
-        if self._countries is None:
-            return None
-        
-        country_alpha3_codes = []
-        for country in self._countries:
-            country.set_member_alpha3_codes()
-            country_alpha3_codes.append(country.get_alpha3_codes())
-
-        return country_alpha3_codes
-
-    def get_member_numeric_codes(self):
-        """
-        Get the numeric codes of the countries associated with the geolocation object.
-
-        Returns:
-            list: List of numeric codes.
-        """
-        if self._countries is None:
-            return None
-        
-        country_numeric_codes = []
-        for country in self._countries:
-            country.set_member_numeric_codes()
-            country_numeric_codes.append(country.get_numeric_codes())
-
-        return country_numeric_codes
-
-    def process_object(self):
-        """
-        Process the geolocation object.
-
-        Returns:
-            dict: Processed information about the geolocation object.
-        """
-        # Setters are necessary because the objects' attributes are not set upon their creation. We can only get this data after we construct the object with the data from the security device.
-
-        self.set_name()
-        self.set_object_container_name()
-        self.set_continents()
-        self.set_countries()
-        self.set_member_alpha2_codes()
-        self.set_member_alpha3_codes()
-        self.set_member_numeric_codes()
-
-        processed_geolocation_object_info = {
-            "geolocation_object_name": self.get_name(),
-            "object_container_name": self.get_object_container_name(),
-            "continent_member_names": self.get_member_continent_names(),
-            "country_member_names": self.get_member_country_names(),
-            "country_member_alpha2_codes": self.get_member_alpha2_codes(),
-            "country_member_alpha3_codes": self.get_member_alpha3_codes(),
-            "country_member_numeric_codes": self.get_member_numeric_codes(),           
-        }
-
-        return processed_geolocation_object_info
 
 class PortObject:
     """
@@ -635,8 +404,34 @@ class URLGroupObject(GroupObject):
             group_member_uid = preloaded_data.get(member_name)
             url_group_objects_members_table.insert(self.get_uid(), group_member_uid)
 
-#TODO: proper support for schedule objects
+#TODO later: proper support for the following objects
+#TODO: add the necessary parameters to insert, based on the object type
 class ScheduleObject:
     def save(self, Database):
         ScheduleObjectsTable = Database.get_schedule_objects_table()
         ScheduleObjectsTable.insert(self.get_uid(), self.get_name(), self.get_object_container().get_uid(), self.get_description())
+
+class GeolocationObject:
+    def save(self, Database):
+        GeolocationObjectsTable = Database.get_geolocation_objects_table()
+        GeolocationObjectsTable.insert(self.get_uid(), self.get_name(), self.get_object_container().get_uid(), self.get_description())
+
+class PolicyUserObject:
+    def save(self, Database):
+        PolicyUserObjectsTable = Database.get_policy_user_objects_table()
+        PolicyUserObjectsTable.insert(self.get_uid(), self.get_name(), self.get_object_container().get_uid(), self.get_description())
+
+class URLCategoryObject:
+    def save(self, Database):
+        URLCategoryObjectsTable = Database.get_url_category_objects_table()
+        URLCategoryObjectsTable.insert(self.get_uid(), self.get_name(), self.get_object_container().get_uid(), self.get_description())
+
+class L7AppObject:
+    def save(self, Database):
+        L7AppObjectsTable = Database.get_l7_app_objects_table()
+        L7AppObjectsTable.insert(self.get_uid(), self.get_name(), self.get_object_container().get_uid(), self.get_description())
+
+class L7AppFilterObject:
+    def save(self, Database):
+        L7AppFilterObjectsTable = Database.get_l7_app_filter_objects_table()
+        L7AppFilterObjectsTable.insert(self.get_uid(), self.get_name(), self.get_object_container().get_uid(), self.get_description())

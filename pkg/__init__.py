@@ -507,6 +507,7 @@ class URLGroupObjectsMembersTable(PioneerTable):
             ("CONSTRAINT fk_group FOREIGN KEY(group_uid)", "REFERENCES url_group_objects(uid)")
         ]
 
+#TODO: proper support for this
 class GeolocationObjectsTable(PioneerTable):
     def __init__(self, Database):
         super().__init__(Database)
@@ -515,11 +516,7 @@ class GeolocationObjectsTable(PioneerTable):
             ("uid", "TEXT PRIMARY KEY"),
             ("name", "TEXT NOT NULL"),
             ("object_container_uid", "TEXT NOT NULL"),
-            ("continents", "TEXT[]"),
-            ("countries", "TEXT[]"),
-            ("countries_alpha2_codes", "TEXT[]"),
-            ("countries_alpha3_codes", "TEXT[]"),
-            ("countries_numeric_codes", "TEXT[]"),
+            ("type", "TEXT NOT NULL"),
             ("CONSTRAINT fk_object_container FOREIGN KEY(object_container_uid)", "REFERENCES object_containers(uid)"),
             ("CONSTRAINT uc_object_container_uid13", "UNIQUE (name, object_container_uid)")
         ]
