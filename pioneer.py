@@ -207,6 +207,7 @@ def main():
             for ManagedDeviceContainer in managed_devices_container_list:
                 SecurityDeviceObject.get_object_info_from_device_conn('managed_device', ManagedDeviceContainer)
             
+            #TODO should objectcontainer list and database be passed here?
             print("Importing security policies.")
             for SecurityPolicyContainer in security_policy_containers_list:
                 SecurityDeviceObject.get_object_info_from_device_conn('security_policy_group', SecurityPolicyContainer)

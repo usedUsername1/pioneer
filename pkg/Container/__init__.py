@@ -17,6 +17,9 @@ class Container:
         self._parent = None
         self._uid = helper.generate_uid()
 
+    def set_uid(self, uid):
+        self._uid = uid
+
     def set_name(self, name):
         """
         Sets the name of the container.

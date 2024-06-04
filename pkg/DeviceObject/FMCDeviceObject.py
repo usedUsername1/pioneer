@@ -29,7 +29,7 @@ class FMCObjectWithLiterals(Object):
             literal_members = object_info['literals']
             # now loop through the literal_members
             for literal_member in literal_members:
-                converted_literal = FMCObject.convert_network_literal_to_object(ObjectContainer, literal_member)
+                converted_literal = FMCObjectWithLiterals.convert_network_literal_to_object(ObjectContainer, literal_member)
                 # add the name of the literal object to the list tracking the member names of the object
                 self.add_group_member_name(converted_literal.get_name())
                 converted_literal.save(Database)
@@ -47,32 +47,13 @@ class FMCObjectWithLiterals(Object):
             literal_members = object_info['literals']
             # now loop through the literal_members
             for literal_member in literal_members:
-                converted_literal = FMCObject.convert_url_literal_to_objects(ObjectContainer, literal_member)
+                converted_literal = FMCObjectWithLiterals.convert_url_literal_to_objects(ObjectContainer, literal_member)
 
                 # add the name of the literal object to the list tracking the member names of the object
                 self.add_group_member_name(converted_literal.get_name())
                 converted_literal.save(Database)
         except:
             general_logger.info(f"No literal members found for URL group <{self._name}>.")
-
-#TODO: see what to do with the overridable parameter, it looks kind of wrong at the moment
-# since multiple FMC objects that intherit from this class don't have this attribute
-class FMCObject(Object):
-    """
-    A class representing a FMC object.
-    """
-
-    def __init__(self, ObjectContainer, object_info) -> None:
-        """
-        Initialize the FMCObject instance.
-
-        Args:
-            object_info (dict): Information about the FMC object.
-        """
-        self._name = object_info.get('name')
-        self._description = object_info.get('description')
-        self._is_overridable = object_info.get('overridable')
-        super().__init__(ObjectContainer, object_info, self._name, self._description, self._is_overridable)
 
     @staticmethod
     def convert_port_literals_to_objects(port_literals):
@@ -185,6 +166,36 @@ class FMCObject(Object):
         object_info = {'name':url_object_name, 'url':literal_value, 'description':gvars.literal_objects_description, 'overridable':False}
         return FMCURLObject(ObjectContainer, object_info)
 
+    #TODO: fix this. does the try/except make sense here?
+    @staticmethod
+    def convert_policy_region_to_object(ObjectContainer, region_info):
+        try:
+            region_name = region_info['name']
+            region_type = region_info['type']
+            object_info = {'name':region_name, 'type':region_type}
+        except:
+            print(region_info)
+        return FMCGeolocationObject(ObjectContainer, object_info, region_type)
+
+#TODO: see what to do with the overridable parameter, it looks kind of wrong at the moment
+# since multiple FMC objects that intherit from this class don't have this attribute
+class FMCObject(Object):
+    """
+    A class representing a FMC object.
+    """
+
+    def __init__(self, ObjectContainer, object_info) -> None:
+        """
+        Initialize the FMCObject instance.
+
+        Args:
+            object_info (dict): Information about the FMC object.
+        """
+        self._name = object_info.get('name')
+        self._description = object_info.get('description')
+        self._is_overridable = object_info.get('overridable')
+        super().__init__(ObjectContainer, object_info, self._name, self._description, self._is_overridable)
+
 class FMCNetworkObject(FMCObject, NetworkObject):
     """
     A class representing a network object in Firepower Management Center (FMC).
@@ -226,7 +237,8 @@ class FMCNetworkGroupObject(NetworkGroupObject, FMCObject, FMCObjectWithLiterals
         NetworkGroupObjectsTable.insert(self.get_uid(), self.get_name(), self.get_object_container().get_uid(), self.get_description(), self.get_override_bool())   
 
 #TODO: the problem is ICMP objects and port objects are treated the same by FMC, there is no distinction between them.
-# we need to determine the type of the object and then call the right 
+# we need to determine the type of the object and then call the right
+#TODO: remove the self._ parameters as they can be passed to the constructor directly. they are redundant
 class FMCPortObject(FMCObject, PortObject):
     """
     Class representing a port object in the Firepower Management Center (FMC).
@@ -312,9 +324,9 @@ class FMCScheduleObject(FMCObject, ScheduleObject):
         ScheduleObject.__init__(self)
 
 class FMCGeolocationObject(FMCObject, GeolocationObject):
-    def __init__(self, ObjectContainer, object_info) -> None:
+    def __init__(self, ObjectContainer, object_info, type) -> None:
         FMCObject.__init__(self, ObjectContainer, object_info)
-        GeolocationObject.__init__(self)
+        GeolocationObject.__init__(self, type)
 
 class FMCPolicyUserObject(FMCObject, PolicyUserObject):
     def __init__(self, ObjectContainer, object_info) -> None:

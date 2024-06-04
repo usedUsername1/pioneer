@@ -96,6 +96,24 @@ class SecurityDeviceDatabase(PioneerDatabase):
         self._SecurityPolicyURLsTable.create()
         self._SecurityPolicyL7AppsTable.create()
         self._SecurityPolicyScheduleTable.create()
+    
+    def get_policy_user_objects_table(self):
+        return self._PolicyUsersTable
+    
+    def get_url_category_objects_table(self):
+        return self._URLCategoriesTable
+    
+    def get_l7_app_objects_table(self):
+        return self._L7AppsTable
+    
+    def get_l7_app_filter_objects_table(self):
+        return self._L7AppFiltersTable
+    
+    def get_l7_app_group_objects_table(self):
+        return self._L7AppGroupsTable
+    
+    def get_l7_app_group_members_table(self):
+        return self._L7AppGroupMembersTable
 
     def get_general_data_table(self):
         return self._GeneralDataTable
@@ -170,6 +188,10 @@ class SecurityDevice:
         self._name = name
         self._Database = DeviceDatabase
         self._DeviceConnection = DeviceConnection
+    
+
+    def get_database(self):
+        return self._Database
     
     def set_DeviceConnection(self, Connection):
         self._DeviceConnection = Connection

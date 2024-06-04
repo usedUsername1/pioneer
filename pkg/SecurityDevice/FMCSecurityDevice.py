@@ -1,8 +1,7 @@
 from abc import abstractmethod
 from pkg.Container.FMCContainer import FMCSecurityPolicyContainer, FMCObjectContainer, FMCZoneContainer, FMCManagedDeviceContainer
 from pkg.DeviceObject.FMCDeviceObject import FMCObject, FMCNetworkGroupObject, FMCNetworkObject, \
-FMCPortObject, FMCICMPObject, FMCPortGroupObject, FMCGeolocationObject, \
-FMCContinentObject, FMCCountryObject, FMCURLObject, FMCURLGroupObject, FMCScheduleObject
+FMCPortObject, FMCICMPObject, FMCPortGroupObject, FMCGeolocationObject, FMCURLObject, FMCURLGroupObject, FMCScheduleObject
 from pkg.Policy.FMCPolicy import FMCSecurityPolicy
 from pkg.SecurityZone.FMCSecurityZone import FMCSecurityZone
 from pkg.SecurityDevice import SecurityDevice 

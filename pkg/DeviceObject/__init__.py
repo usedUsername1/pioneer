@@ -412,19 +412,25 @@ class ScheduleObject:
         ScheduleObjectsTable.insert(self.get_uid(), self.get_name(), self.get_object_container().get_uid(), self.get_description())
 
 class GeolocationObject:
+    def __init__(self, type) -> None:
+        self._type = type
+    
     def save(self, Database):
         GeolocationObjectsTable = Database.get_geolocation_objects_table()
-        GeolocationObjectsTable.insert(self.get_uid(), self.get_name(), self.get_object_container().get_uid(), self.get_description())
+        GeolocationObjectsTable.insert(self.get_uid(), self.get_name(), self.get_object_container().get_uid(), self._type)
 
 class PolicyUserObject:
     def save(self, Database):
         PolicyUserObjectsTable = Database.get_policy_user_objects_table()
-        PolicyUserObjectsTable.insert(self.get_uid(), self.get_name(), self.get_object_container().get_uid(), self.get_description())
+        PolicyUserObjectsTable.insert(self.get_uid(), self.get_name(), self.get_object_container().get_uid())
 
 class URLCategoryObject:
+    def __init__(self, reputation) -> None:
+        self._reputation = reputation
+
     def save(self, Database):
         URLCategoryObjectsTable = Database.get_url_category_objects_table()
-        URLCategoryObjectsTable.insert(self.get_uid(), self.get_name(), self.get_object_container().get_uid(), self.get_description())
+        URLCategoryObjectsTable.insert(self.get_uid(), self.get_name(), self.get_object_container().get_uid(), self.get_reputation(), self.get_description())
 
 class L7AppObject:
     def save(self, Database):
@@ -432,6 +438,14 @@ class L7AppObject:
         L7AppObjectsTable.insert(self.get_uid(), self.get_name(), self.get_object_container().get_uid(), self.get_description())
 
 class L7AppFilterObject:
+    def __init__(self, type) -> None:
+        self._type = type
+
     def save(self, Database):
         L7AppFilterObjectsTable = Database.get_l7_app_filter_objects_table()
-        L7AppFilterObjectsTable.insert(self.get_uid(), self.get_name(), self.get_object_container().get_uid(), self.get_description())
+        L7AppFilterObjectsTable.insert(self.get_uid(), self.get_name(), self.get_object_container().get_uid(), self.get_type())
+
+class L7AppGroupObject:
+    def save(self, Database):
+        L7AppGroupObjectsTable = Database.get_l7_app_group_objects_table()
+        L7AppGroupObjectsTable.insert(self.get_uid(), self.get_name(), self.get_object_container().get_uid(), self.get_description())

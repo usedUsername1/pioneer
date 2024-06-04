@@ -554,7 +554,7 @@ class ICMPObjectsTable(PioneerTable):
             ("CONSTRAINT uc_object_container_uid14", "UNIQUE (name, object_container_uid)")
         ]
 
-#TODO: proper support for schedule objects
+#TODO: proper support for schedule objects and all objects below
 class ScheduleObjectsTable(PioneerTable):
     def __init__(self, Database):
         super().__init__(Database)
@@ -600,7 +600,6 @@ class PolicyUsersTable(PioneerTable):
             ("uid", "TEXT PRIMARY KEY"),
             ("name", "TEXT NOT NULL"),
             ("object_container_uid", "TEXT NOT NULL"),
-            ("description", "TEXT"),
             ("CONSTRAINT fk_object_container FOREIGN KEY(object_container_uid)", "REFERENCES object_containers(uid)"),
             ("CONSTRAINT uc_object_container_uid20", "UNIQUE (name, object_container_uid)")
         ]
@@ -627,8 +626,6 @@ class L7AppFiltersTable(PioneerTable):
             ("name", "TEXT NOT NULL"),
             ("object_container_uid", "TEXT NOT NULL"),
             ("type", "TEXT NOT NULL"),
-            ("description", "TEXT"),
-            ("overridable_object", "BOOLEAN NOT NULL"),
             ("CONSTRAINT fk_object_container FOREIGN KEY(object_container_uid)", "REFERENCES object_containers(uid)"),
             ("CONSTRAINT uc_object_container_uid23", "UNIQUE (name, object_container_uid)")
         ]
@@ -667,7 +664,6 @@ class URLCategoriesTable(PioneerTable):
             ("object_container_uid", "TEXT NOT NULL"),
             ("reputation", "TEXT NOT NULL"),
             ("description", "TEXT"),
-            ("overridable_object", "BOOLEAN NOT NULL"),
             ("CONSTRAINT fk_object_container FOREIGN KEY(object_container_uid)", "REFERENCES object_containers(uid)"),
             ("CONSTRAINT uc_object_container_uid22", "UNIQUE (name, object_container_uid)")
         ]

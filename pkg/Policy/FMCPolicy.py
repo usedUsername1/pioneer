@@ -2,6 +2,7 @@ from pkg.Policy import SecurityPolicy
 import utils.helper as helper
 import utils.gvars as gvars
 from pkg.DeviceObject.FMCDeviceObject import FMCObject, FMCObjectWithLiterals
+from pkg.Container import Container
 
 special_policies_logger = helper.logging.getLogger('special_policies')
 general_logger = helper.logging.getLogger('general')
@@ -10,6 +11,25 @@ class FMCSecurityPolicy(SecurityPolicy, FMCObjectWithLiterals):
     """
     Represents a security policy specific to the Firepower Management Center (FMC).
     """
+    # duct tape solution :(
+    # Class variables
+    _VirtualObjectContainer = None
+    _Database = None
+    _initialized = False  # Initialization flag
+
+    @classmethod
+    def initialize_class_variables(cls, PolicyContainer):
+        """
+        Initialize class variables if they are not already initialized.
+        """
+        if not cls._initialized:
+            security_device = PolicyContainer.get_security_device()
+            cls._Database = security_device.get_database()
+            cls._VirtualObjectContainer = Container(security_device, "", "virtual_object_container", None)
+            cls._VirtualObjectContainer.set_uid(
+                cls._Database.get_object_containers_table().get('uid', 'name', 'virtual_container')[0][0]
+            )
+            cls._initialized = True
 
     def __init__(self, PolicyContainer, policy_info) -> None:
         """
@@ -18,14 +38,21 @@ class FMCSecurityPolicy(SecurityPolicy, FMCObjectWithLiterals):
         Parameters:
             policy_info_fmc (dict): Information about the security policy.
         """
+        self._PolicyContainer = PolicyContainer
+
+        # Initialize class variables if not already done
+        FMCSecurityPolicy.initialize_class_variables(PolicyContainer)
+
         self._name = policy_info['name']
         self._container_index = policy_info['metadata']['ruleIndex']
         self._status = 'enabled' if policy_info.get('enabled', False) else 'disabled'
         self._category = policy_info['metadata']['category']
         self._source_zones = self.extract_security_zone_object_info(policy_info.get('sourceZones'))
-        self._destination_zones = None # self.extract_security_zone_object_info(policy_info.get('destinationZones'))
-        self._source_networks = None # self.extract_network_address_object_info(policy_info.get('sourceNetworks'))
-        self._destination_networks = None # self.extract_network_address_object_info(policy_info.get('destinationNetworks'))
+        self._destination_zones = self.extract_security_zone_object_info(policy_info.get('destinationZones'))
+
+        self._source_networks = self.extract_network_address_object_info(policy_info.get('sourceNetworks'), self._VirtualObjectContainer, self._Database)
+        self._destination_networks = self.extract_network_address_object_info(policy_info.get('destinationNetworks'), self._VirtualObjectContainer, self._Database)
+
         self._source_ports = None # self.extract_port_object_info(policy_info.get('sourcePorts'))
         self._destination_ports = None # self.extract_port_object_info(policy_info.get('destinationPorts'))
         self._schedule_objects = None # self.extract_schedule_object_info(policy_info.get('timeRangeObjects'))
@@ -40,9 +67,9 @@ class FMCSecurityPolicy(SecurityPolicy, FMCObjectWithLiterals):
         self._log_end = policy_info['logEnd']
         self._section = policy_info['metadata']['section']
         self._action = policy_info['action']
-        
+
         super().__init__(
-            PolicyContainer,
+            self._PolicyContainer,
             policy_info,
             self._name,
             self._container_index,
@@ -67,9 +94,6 @@ class FMCSecurityPolicy(SecurityPolicy, FMCObjectWithLiterals):
             self._section,
             self._action
         )
-    
-    # def save(self, Database):
-    #     pass
   
     def extract_security_zone_object_info(self, security_zone_object_info):
         """
@@ -97,64 +121,35 @@ class FMCSecurityPolicy(SecurityPolicy, FMCObjectWithLiterals):
         # Return the list of extracted security zone names
         return extracted_security_zones
     
-    #TODO: find network literals, regions, and save them to the database as well upon extraction
-    # to continue the import, you must create classes for fmc geolocation objects, url categories,l7 applications, users
-    def extract_network_address_object_info(self, network_object_info):
-        """
-        Extract network address object information from the provided data structure.
+    #TODO: prettify this
+    def extract_network_address_object_info(self, network_object_info, VirtualObjectContainer, Database):
+        extracted_network_objects = []
 
-        This method extracts the names of network address objects from the given data structure.
-
-        Parameters:
-            network_object_info (dict): Information about network address objects.
-
-        Returns:
-            list: A list of network address object names extracted from the provided data structure.
-        """
-        # Log a debug message indicating the function call
-
-        # Initialize an empty list to store the extracted network address object names
-        extracted_member_network_objects = []
-
-        # Extract information from proper network objects
-        try:
-            general_logger.info(f"Found network objects on this policy.")
-            # Retrieve the list of network objects from the provided data structure
-            network_object_info_objects = network_object_info['objects']
+        if network_object_info is not None:
+            network_objects = network_object_info.get('objects')
+            if network_objects is not None:
+                for network_object_entry in network_objects:
+                    # Extract the name and type of the network object
+                    network_object_name = network_object_entry['name']
+                    network_object_type = network_object_entry['type']
+                    # Append the network object name to the list
+                    if network_object_type == 'Country' or network_object_type == 'Geolocation':
+                        # If the network object is of type 'Country', prepend its ID before the name
+                        PolicyRegion = FMCObjectWithLiterals.convert_policy_region_to_object(VirtualObjectContainer, network_object_entry)
+                        PolicyRegion.save(Database)
+                        extracted_network_objects.append(PolicyRegion.get_name())
+                    extracted_network_objects.append(network_object_name)
             
-            # Iterate through each network object entry
-            for network_object_entry in network_object_info_objects:
-                # Extract the name and type of the network object
-                network_object_name = network_object_entry['name']
-                network_object_type = network_object_entry['type']
-                #TODO: check for geolocation type as well
-                # Append the network object name to the list
-                if network_object_type == 'Country':
-                    # If the network object is of type 'Country', prepend its ID before the name
-                    network_object_name = network_object_entry['id'] + gvars.separator_character + network_object_name
-                extracted_member_network_objects.append(network_object_name)
-
-        except KeyError:
-            # If there are no network objects, log an informational message
-            general_logger.info(f"It looks like there are no network objects on this policy.")
-
-        # Extract information from network literals
-        try:
-            general_logger.info(f"Found network literals on this policy.")
-            # Retrieve the list of network literals from the provided data structure
-            network_literals = network_object_info['literals']
-            # Log an informational message indicating the search for literals
-            general_logger.info(f"I am looking for literals.")
-            # Log debug information about the found literals
-            general_logger.debug(f"Literals found {network_literals}.")
-            # Convert network literals to network objects and add them to the extracted list
-            extracted_member_network_objects += FMCObject.convert_network_literal_to_object(network_literals)
-        except KeyError:
-            # If there are no network literals, log an informational message
-            general_logger.info(f"It looks like there are no network literals on this policy.")
-
-        # Return the list of extracted network address object names
-        return extracted_member_network_objects
+            network_literals = network_object_info.get('literals')
+            if network_literals is not None:
+                for network_literal_entry in network_literals:
+                    ConvertedLiteral = FMCObjectWithLiterals.convert_network_literal_to_object(VirtualObjectContainer, network_literal_entry)
+                    ConvertedLiteral.save(Database)
+                    extracted_network_objects.append(ConvertedLiteral.get_name())
+        else:
+            extracted_network_objects = None
+        
+        return extracted_network_objects
     
     def extract_port_object_info(self, port_object_info):
         """
