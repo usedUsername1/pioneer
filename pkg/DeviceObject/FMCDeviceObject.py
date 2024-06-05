@@ -1,7 +1,7 @@
 import utils.helper as helper
 from pkg.DeviceObject import Object, NetworkObject, GeolocationObject, PortObject, ICMPObject, URLObject, \
 NetworkGroupObject, PortGroupObject, URLGroupObject, ScheduleObject, PolicyUserObject, URLCategoryObject, \
-L7AppObject, L7AppFilterObject
+L7AppObject, L7AppFilterObject, L7AppGroupObject
 import utils.gvars as gvars
 import ipaddress
 import utils.exceptions as PioneerExceptions
@@ -47,7 +47,7 @@ class FMCObjectWithLiterals(Object):
             literal_members = object_info['literals']
             # now loop through the literal_members
             for literal_member in literal_members:
-                converted_literal = FMCObjectWithLiterals.convert_url_literal_to_objects(ObjectContainer, literal_member)
+                converted_literal = FMCObjectWithLiterals.convert_url_literal_to_object(ObjectContainer, literal_member)
 
                 # add the name of the literal object to the list tracking the member names of the object
                 self.add_group_member_name(converted_literal.get_name())
@@ -56,58 +56,77 @@ class FMCObjectWithLiterals(Object):
             general_logger.info(f"No literal members found for URL group <{self._name}>.")
 
     @staticmethod
-    def convert_port_literals_to_objects(port_literals):
+    def convert_port_literals_to_objects(ObjectContainer, port_literal, polinfo):
         """
         Convert port literals to port object names.
 
         Args:
-            port_literals (list): List of port literals.
+            port_literal (dict): A port literal.
 
         Returns:
             list: List of port object names.
         """
-        port_objects_list = []
+        general_logger.debug(f"Converting literal <{port_literal}> to object.")
 
-        # Process each port literal
-        for port_literal in port_literals:
-            # Extract protocol and initialize port number
-            literal_protocol = port_literal['protocol']
+        # Extract protocol and initialize port number
+        literal_protocol = port_literal['protocol']
+        try:
+            literal_port_nr = port_literal['port']
+        except KeyError:
+            literal_port_nr = "1-65535"
+
+        try:
+            # Convert protocol number to its corresponding keyword
+            literal_protocol_keyword = helper.protocol_number_to_keyword(literal_protocol)
+        
+        #TODO: make sure you track all of these as well
+        except PioneerExceptions.UnknownProtocolNumber:
+            # Log error if protocol number cannot be converted
+            general_logger.warn(f"Protocol number: <{literal_protocol}> cannot be converted to a known IANA keyword.")
+            literal_protocol_keyword = "ALL_PROTOCOLS"
+
+        # Handle ICMP literals separately
+        if literal_protocol in ["1", "58"]:
+            # Log info for encountered ICMP literals
+            general_logger.info(f"I have encountered an ICMP literal: {port_literal['type']}.")
+            
+            # Extract ICMP type
+            literal_port_nr = port_literal['icmpType']
+            
+            # Check for ICMP code
             try:
-                literal_port_nr = port_literal['port']
-            except:
-                literal_port_nr = "1-65535"
-            
-            try:
-                # Convert protocol number to its corresponding keyword
-                literal_protocol_keyword = helper.protocol_number_to_keyword(literal_protocol)
-            except PioneerExceptions.UnknownProtocolNumber:
-                # Log error if protocol number cannot be converted
-                general_logger.error(f"Protocol number: {literal_protocol} cannot be converted to a known IANA keyword.")
-            
-            # Handle ICMP literals separately
-            if literal_protocol in ["1", "58"]:
-                # Log info for encountered ICMP literals
-                general_logger.info(f"I have encountered an ICMP literal: {port_literal['type']}.")
-                
-                # Extract ICMP type
-                literal_port_nr = port_literal['icmpType']
-                
-                # Check for ICMP code
-                try:
-                    icmp_code = port_literal['code']
-                    port_object_name = f"{gvars.port_literal_prefix}{literal_protocol_keyword}_{literal_port_nr}_{icmp_code}"
-                    port_objects_list.append(port_object_name)
-                except KeyError:
-                    # If no ICMP code, continue without it
-                    general_logger.debug(f"No ICMP code for the following port literal: {port_literal['type']}.")
-            
+                icmp_code = port_literal['code']
+                port_object_name = f"{gvars.port_literal_prefix}{literal_protocol_keyword}_{literal_port_nr}_{icmp_code}"
+            except KeyError:
+                # If no ICMP code, create the port object name without it
+                general_logger.debug(f"No ICMP code for the following port literal: {port_literal['type']}.")
+                port_object_name = f"{gvars.port_literal_prefix}{literal_protocol_keyword}_{literal_port_nr}"
+                icmp_code = None
+
+            icmp_object_info = {'name': port_object_name,
+                                'icmpType': literal_port_nr,
+                                'code': icmp_code,
+                                'description':gvars.literal_objects_description,
+                                'overridable':False}
+
+            return FMCICMPObject(ObjectContainer, icmp_object_info)
+        
+        else:
             # Create the name of the port object
             port_object_name = f"{gvars.port_literal_prefix}{literal_protocol_keyword}_{literal_port_nr}"
-            port_objects_list.append(port_object_name)
 
-        # Log completion and return port objects list
-        general_logger.debug(f"Finished converting all literals to objects. This is the list with converted literals {port_objects_list}.")
-        return port_objects_list
+            # Create the port object information dictionary
+            port_object_info = {
+                'name': port_object_name,
+                'protocol': literal_protocol_keyword,
+                'source_port_number': '1-65535',
+                'port': literal_port_nr,
+                'description': gvars.literal_objects_description,
+                'overridable': False
+            }
+
+            # Create and return the FMCObject with the provided information
+            return FMCPortObject(ObjectContainer, port_object_info)
 
     @staticmethod
     def convert_network_literal_to_object(ObjectContainer, network_literal):
@@ -160,7 +179,7 @@ class FMCObjectWithLiterals(Object):
         return FMCNetworkObject(ObjectContainer, literal_object_info)
 
     @staticmethod
-    def convert_url_literal_to_objects(ObjectContainer, url_literal):
+    def convert_url_literal_to_object(ObjectContainer, url_literal):
         literal_value = url_literal['url']
         url_object_name = gvars.url_literal_prefix + literal_value
         object_info = {'name':url_object_name, 'url':literal_value, 'description':gvars.literal_objects_description, 'overridable':False}
@@ -331,12 +350,12 @@ class FMCGeolocationObject(FMCObject, GeolocationObject):
 class FMCPolicyUserObject(FMCObject, PolicyUserObject):
     def __init__(self, ObjectContainer, object_info) -> None:
         FMCObject.__init__(self, ObjectContainer, object_info)
-        PolicyUserObject.__init__(self)
+        PolicyUserObject.__init__(self, object_info['name'])
 
 class FMCURLCategoryObject(FMCObject, URLCategoryObject):
     def __init__(self, ObjectContainer, object_info) -> None:
         FMCObject.__init__(self, ObjectContainer, object_info)
-        URLCategoryObject.__init__(self)
+        URLCategoryObject.__init__(self, object_info['reputation'])
 
 class FMCL7AppObject(FMCObject, L7AppObject):
     def __init__(self, ObjectContainer, object_info) -> None:
@@ -346,4 +365,9 @@ class FMCL7AppObject(FMCObject, L7AppObject):
 class FMCL7AppFilterObject(FMCObject, L7AppFilterObject):
     def __init__(self, ObjectContainer, object_info) -> None:
         FMCObject.__init__(self, ObjectContainer, object_info)
-        L7AppFilterObject.__init__(self)
+        L7AppFilterObject.__init__(self, object_info['type'])
+
+class FMCL7AppGroupObject(FMCObject, L7AppGroupObject):
+    def __init__(self, ObjectContainer, object_info) -> None:
+        FMCObject.__init__(self, ObjectContainer, object_info)
+        L7AppGroupObject.__init__(self)

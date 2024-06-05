@@ -612,7 +612,6 @@ class L7AppsTable(PioneerTable):
             ("uid", "TEXT PRIMARY KEY"),
             ("name", "TEXT NOT NULL"),
             ("object_container_uid", "TEXT NOT NULL"),
-            ("description", "TEXT"),
             ("CONSTRAINT fk_object_container FOREIGN KEY(object_container_uid)", "REFERENCES object_containers(uid)"),
             ("CONSTRAINT uc_object_container_uid19", "UNIQUE (name, object_container_uid)")
         ]
@@ -638,7 +637,6 @@ class L7AppGroupsTable(PioneerTable):
             ("uid", "TEXT PRIMARY KEY"),
             ("name", "TEXT NOT NULL"),
             ("object_container_uid", "TEXT NOT NULL"),
-            ("description", "TEXT"),
             ("CONSTRAINT fk_object_container FOREIGN KEY(object_container_uid)", "REFERENCES object_containers(uid)"),
             ("CONSTRAINT uc_object_container_uid29", "UNIQUE (name, object_container_uid)")
         ]
@@ -662,8 +660,7 @@ class URLCategoriesTable(PioneerTable):
             ("uid", "TEXT PRIMARY KEY"),
             ("name", "TEXT NOT NULL"),
             ("object_container_uid", "TEXT NOT NULL"),
-            ("reputation", "TEXT NOT NULL"),
-            ("description", "TEXT"),
+            ("reputation", "TEXT"),
             ("CONSTRAINT fk_object_container FOREIGN KEY(object_container_uid)", "REFERENCES object_containers(uid)"),
             ("CONSTRAINT uc_object_container_uid22", "UNIQUE (name, object_container_uid)")
         ]

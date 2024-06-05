@@ -171,6 +171,7 @@ class FMCSecurityDevice(SecurityDevice):
     def return_schedule_object(self, ObjectContainer, schedule_object_entry):
         return FMCScheduleObject(ObjectContainer, schedule_object_entry)
 
+    #TODO is there anyway to put the virtual object container here?
     def return_security_policy_object(self, SecurityPolicyContainer, policy_entry):
         # return security policy object only if the current policy belongs to the current container,
         # if it belongs to another parent, skip it

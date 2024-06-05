@@ -219,9 +219,9 @@ class PortObject:
         Args:
             object_info (dict): Information about the port object.
         """
-        self._port_protocol = source_port
-        self._source_port = destination_port
-        self._destination_port = port_protocol
+        self._port_protocol = port_protocol
+        self._source_port = source_port
+        self._destination_port = destination_port
 
     def get_port_protocol(self):
         """
@@ -330,8 +330,6 @@ class ICMPObject:
         Parameters:
             icmp_code (str): ICMP code.
         """
-        self._icmp_code = icmp_code
-
     def save(self, Database):
         ICMPObjectsTable = Database.get_icmp_objects_table()
         ICMPObjectsTable.insert(self.get_uid(), self.get_name(), self.get_object_container().get_uid(), self.get_icmp_type(), self.get_icmp_code(), self.get_description(), self.get_override_bool())
@@ -420,6 +418,9 @@ class GeolocationObject:
         GeolocationObjectsTable.insert(self.get_uid(), self.get_name(), self.get_object_container().get_uid(), self._type)
 
 class PolicyUserObject:
+    def __init__(self, name) -> None:
+        self._name = name
+
     def save(self, Database):
         PolicyUserObjectsTable = Database.get_policy_user_objects_table()
         PolicyUserObjectsTable.insert(self.get_uid(), self.get_name(), self.get_object_container().get_uid())
@@ -430,22 +431,21 @@ class URLCategoryObject:
 
     def save(self, Database):
         URLCategoryObjectsTable = Database.get_url_category_objects_table()
-        URLCategoryObjectsTable.insert(self.get_uid(), self.get_name(), self.get_object_container().get_uid(), self.get_reputation(), self.get_description())
+        URLCategoryObjectsTable.insert(self.get_uid(), self.get_name(), self.get_object_container().get_uid(), self._reputation)
 
 class L7AppObject:
     def save(self, Database):
         L7AppObjectsTable = Database.get_l7_app_objects_table()
-        L7AppObjectsTable.insert(self.get_uid(), self.get_name(), self.get_object_container().get_uid(), self.get_description())
+        L7AppObjectsTable.insert(self.get_uid(), self.get_name(), self.get_object_container().get_uid())
 
 class L7AppFilterObject:
     def __init__(self, type) -> None:
         self._type = type
-
     def save(self, Database):
         L7AppFilterObjectsTable = Database.get_l7_app_filter_objects_table()
-        L7AppFilterObjectsTable.insert(self.get_uid(), self.get_name(), self.get_object_container().get_uid(), self.get_type())
+        L7AppFilterObjectsTable.insert(self.get_uid(), self.get_name(), self.get_object_container().get_uid(), self._type)
 
 class L7AppGroupObject:
     def save(self, Database):
         L7AppGroupObjectsTable = Database.get_l7_app_group_objects_table()
-        L7AppGroupObjectsTable.insert(self.get_uid(), self.get_name(), self.get_object_container().get_uid(), self.get_description())
+        L7AppGroupObjectsTable.insert(self.get_uid(), self.get_name(), self.get_object_container().get_uid())
