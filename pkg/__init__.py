@@ -166,6 +166,25 @@ class PioneerDatabase():
                 Database.get_url_objects_table(),
                 Database.get_url_group_objects_table()
             ]
+
+        #TODO: stuff might be duplicated here (names of the objects, elements should be retrieved individually, not in the same place)
+        elif object_type == 'security_policy_group':
+            tables_to_fetch = [
+                Database.get_security_zones_table(),
+                Database.get_network_address_objects_table(),
+                Database.get_network_group_objects_table(),
+                Database.get_geolocation_objects_table(),
+                Database.get_port_objects_table(),
+                Database.get_port_group_objects_table(),
+                Database.get_icmp_objects_table(),
+                Database.get_url_objects_table(),
+                Database.get_url_group_objects_table(),
+                Database.get_schedule_objects_table(),
+                Database.get_policy_user_objects_table(),
+                Database.get_l7_app_objects_table(),
+                Database.get_l7_app_filter_objects_table(),
+                Database.get_l7_app_group_objects_table()
+            ]
         else:
             tables_to_fetch = []
 

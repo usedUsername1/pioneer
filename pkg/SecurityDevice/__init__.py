@@ -189,7 +189,6 @@ class SecurityDevice:
         self._Database = DeviceDatabase
         self._DeviceConnection = DeviceConnection
     
-
     def get_database(self):
         return self._Database
     
@@ -381,12 +380,15 @@ class SecurityDevice:
                 # save it in the database
                 SecurityDeviceObject.save(self._Database)
                 group_objects.append(SecurityDeviceObject)
-
-            # Database = self.get_database()
-            # # preload the data
-            # preloaded_object_data = PioneerDatabase.preload_object_data(object_type, Database)
-            # for GroupObject in group_objects:
-            #     GroupObject.create_relationships_in_db(Database, preloaded_object_data)
+            
+            preloaded_data = SecurityDeviceObject.preload_data() # for security policies, this should return a list of dictionaries with key being
+            # the object type and the dictionary with name uid mapping being the value of the key
+            Database = self.get_database()
+            # preload the data
+            # TODO: object data should be preloaded on an object level and not glbally
+            preloaded_object_data = PioneerDatabase.preload_object_data(object_type, Database)
+            for GroupObject in group_objects:
+                GroupObject.create_relationships_in_db(Database, preloaded_object_data)
 
     # these functions are overridden in the subclasses whenever needed/relevant
     def return_object_container_info(self):

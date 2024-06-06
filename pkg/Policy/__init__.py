@@ -566,5 +566,14 @@ class SecurityPolicy(Policy):
             self.get_description()
         )
 
+    # TODO get the names of the paramteres defined on the policies and put everything in a dict
+    # do the lookup by name and find the uid
+    def create_relationships_in_db(self, Database, preloaded_data):
+        member_names = self.get_group_member_names()
+        url_group_objects_members_table = Database.get_url_group_objects_members_table()
+        for member_name in member_names:
+            group_member_uid = preloaded_data.get(member_name)
+            url_group_objects_members_table.insert(self.get_uid(), group_member_uid)
+
 class NATPolicy:
     pass
