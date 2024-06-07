@@ -140,6 +140,8 @@ class PioneerDatabase():
         return cursor
     
     #TODO: should this be made a class method for objects which need to have their data preloaded?
+    # make sure that you preload the data for a specific container, not for all of them!
+    # objects and policies have container scope
     @staticmethod
     def preload_object_data(object_type, Database):
             def get_table_data(table, columns):
@@ -174,6 +176,7 @@ class PioneerDatabase():
                     'security_zones': Database.get_security_zones_table(),
                     'network_objects': Database.get_network_address_objects_table(),
                     'network_group_objects': Database.get_network_group_objects_table(),
+                    'country_objects':Database.get_get_country_objects_table(),
                     'geolocation_objects': Database.get_geolocation_objects_table(),
                     'port_objects': Database.get_port_objects_table(),
                     'port_group_objects': Database.get_port_group_objects_table(),
@@ -723,6 +726,7 @@ class SecurityPolicyNetworksTable(PioneerTable):
             ("security_policy_uid", "TEXT NOT NULL"),
             ("object_uid", "TEXT"),
             ("group_object_uid", "TEXT"),
+            ("country_object_uid", "TEXT")
             ("geolocation_object_uid", "TEXT"),
             ("flow", "TEXT"),
             ("CONSTRAINT fk_security_policy_uid FOREIGN KEY (security_policy_uid)", "REFERENCES security_policies (uid)"),

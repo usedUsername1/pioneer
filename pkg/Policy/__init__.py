@@ -566,8 +566,10 @@ class SecurityPolicy(Policy):
     # TODO get the names of the paramteres defined on the policies and put everything in a dict
     # do the lookup by name and find the uid
     def create_relationships_in_db(self, Database, preloaded_data):
-        source_zone_names = self.get_source_zones()
-        destination_zone_names = self.get_destination_zones()
+        uid = self.get_uid()
+        # Insert source and destination zones
+        insert_zones(self.get_source_zones(), 'source')
+        insert_zones(self.get_destination_zones(), 'destination')
         source_networks_names = self.get_source_networks()
         destination_networks_names = self.get_destination_networks()
         source_port_names = self.get_source_ports()
@@ -585,11 +587,37 @@ class SecurityPolicy(Policy):
         category = self.get_category()
         action = self.get_action()
         
-        for souce_zone_name in source_zone_names:
-            source_zone_uid = preloaded_data['source_zones'].get(souce_zone_name)
-            SecurityPolicyZonesTable = Database.get_url_group_objects_table()
-            # also insert flow
-            SecurityPolicyZonesTable.insert()
+        # Insert source and destination zones
+        insert_zones(self.get_source_zones(), 'source')
+        insert_zones(self.get_destination_zones(), 'destination')
+        
+        # Insert source and destination networks
+        insert_networks(self.get_source_networks(), 'source')
+        insert_networks(self.get_destination_networks(), 'destination')  
+
+        # Helper function to insert zone data
+        def insert_zones(zone_names, zone_type):
+            SecurityPolicyZonesTable = Database.get_security_zones_table()
+            if not zone_names:
+                SecurityPolicyZonesTable.insert(uid, None, zone_type)
+            else:
+                for zone_name in zone_names:
+                    zone_uid = preloaded_data['security_zones'].get(zone_name)
+                    SecurityPolicyZonesTable.insert(uid, zone_uid, zone_type)
+        
+        # Helper function to insert network data
+        def insert_networks(network_names, network_type):
+            SecurityPolicyNetworksTable = Database.get_security_policy_networks_table()
+            if not network_names:
+                SecurityPolicyNetworksTable.insert(uid, None, None, None, None, network_type)
+            else:
+                for network_name in network_names:
+                    object_uid = preloaded_data['network_objects'].get(network_name)
+                    group_uid = preloaded_data['network_group_objects'].get(network_name)
+                    country_uid = preloaded_data['country_objects'].get(network_name)
+                    geolocation_uid = preloaded_data['geolocation_objects'].get(network_name)
+                    SecurityPolicyNetworksTable.insert(uid, object_uid, group_uid, country_uid, geolocation_uid, network_type)
+
 
 
 class NATPolicy:
