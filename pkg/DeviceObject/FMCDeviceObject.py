@@ -1,5 +1,5 @@
 import utils.helper as helper
-from pkg.DeviceObject import Object, NetworkObject, GeolocationObject, PortObject, ICMPObject, URLObject, \
+from pkg.DeviceObject import Object, NetworkObject, GeolocationObject, CountryObject, PortObject, ICMPObject, URLObject, \
 NetworkGroupObject, PortGroupObject, URLGroupObject, ScheduleObject, PolicyUserObject, URLCategoryObject, \
 L7AppObject, L7AppFilterObject, L7AppGroupObject
 import utils.gvars as gvars
@@ -190,11 +190,19 @@ class FMCObjectWithLiterals(Object):
     def convert_policy_region_to_object(ObjectContainer, region_info):
         try:
             region_name = region_info['name']
-            region_type = region_info['type']
-            object_info = {'name':region_name, 'type':region_type}
+            object_info = {'name':region_name}
         except:
             print(region_info)
-        return FMCGeolocationObject(ObjectContainer, object_info, region_type)
+        return FMCGeolocationObject(ObjectContainer, object_info)
+
+    @staticmethod
+    def convert_policy_country_to_object(ObjectContainer, region_info):
+        try:
+            region_name = region_info['name']
+            object_info = {'name':region_name}
+        except:
+            print(region_info)
+        return FMCCountryObject(ObjectContainer, object_info)
 
 #TODO: see what to do with the overridable parameter, it looks kind of wrong at the moment
 # since multiple FMC objects that intherit from this class don't have this attribute
@@ -334,7 +342,7 @@ class FMCURLGroupObject(URLGroupObject, FMCObject, FMCObjectWithLiterals):
         self.set_object_member_names()
         # check for literals
         self.check_for_url_literals(self.get_object_container(), Database)
-        URLGroupObjectsTable = Database.get_url_group_objects_table()
+        URLGroupObjectsTable = Database.get_security_policy_zones_table()
         URLGroupObjectsTable.insert(self.get_uid(), self.get_name(), self.get_object_container().get_uid(), self.get_description(), self.get_override_bool())
 
 class FMCScheduleObject(FMCObject, ScheduleObject):
@@ -343,9 +351,14 @@ class FMCScheduleObject(FMCObject, ScheduleObject):
         ScheduleObject.__init__(self)
 
 class FMCGeolocationObject(FMCObject, GeolocationObject):
-    def __init__(self, ObjectContainer, object_info, type) -> None:
+    def __init__(self, ObjectContainer, object_info) -> None:
         FMCObject.__init__(self, ObjectContainer, object_info)
-        GeolocationObject.__init__(self, type)
+        GeolocationObject.__init__(self)
+
+class FMCCountryObject(FMCObject, CountryObject):
+    def __init__(self, ObjectContainer, object_info) -> None:
+        FMCObject.__init__(self, ObjectContainer, object_info)
+        CountryObject.__init__(self)
 
 class FMCPolicyUserObject(FMCObject, PolicyUserObject):
     def __init__(self, ObjectContainer, object_info) -> None:

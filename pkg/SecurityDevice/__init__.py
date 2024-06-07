@@ -1,7 +1,7 @@
 from abc import abstractmethod
 from pkg import PioneerDatabase, GeneralDataTable, SecurityPolicyContainersTable, NATPolicyContainersTable, ObjectContainersTable, SecurityPoliciesTable, \
 SecurityZonesTable, URLObjectsTable, NetworkAddressObjectsTable, \
-GeolocationObjectsTable, PortObjectsTable, ICMPObjectsTable, ScheduleObjectsTable, ManagedDevicesTable, ManagedDeviceContainersTable, SecurityZoneContainersTable, \
+GeolocationObjectsTable, CountryObjectsTable, PortObjectsTable, ICMPObjectsTable, ScheduleObjectsTable, ManagedDevicesTable, ManagedDeviceContainersTable, SecurityZoneContainersTable, \
 NetworkGroupObjectsTable, PortGroupObjectsTable, URLGroupObjectsTable, NetworkGroupObjectsMembersTable, PortGroupObjectsMembersTable, URLGroupObjectsMembersTable, \
 PolicyUsersTable, L7AppsTable, L7AppFiltersTable, L7AppGroupsTable, L7AppGroupMembersTable, URLCategoriesTable, SecurityPolicyZonesTable, SecurityPolicyNetworksTable, \
 SecurityPolicyPortsTable, SecurityPolicyUsersTable, SecurityPolicyURLsTable, SecurityPolicyL7AppsTable, SecurityPolicyScheduleTable
@@ -42,6 +42,7 @@ class SecurityDeviceDatabase(PioneerDatabase):
         self._PortGroupObjectsMembersTable = PortGroupObjectsMembersTable(self)
         self._URLGroupObjectsMembersTable = URLGroupObjectsMembersTable(self)
         self._GeolocationObjectsTable = GeolocationObjectsTable(self)
+        self._CountryObjectsTable = CountryObjectsTable(self)
         self._PortObjectsTable = PortObjectsTable(self)
         self._ICMPObjectsTable = ICMPObjectsTable(self)
         self._ScheduleObjectsTable = ScheduleObjectsTable(self)
@@ -80,6 +81,7 @@ class SecurityDeviceDatabase(PioneerDatabase):
         self._PortGroupObjectsMembersTable.create()
         self._URLGroupObjectsMembersTable.create()
         self._GeolocationObjectsTable.create()
+        self._CountryObjectsTable.create()
         self._PortObjectsTable.create()
         self._ICMPObjectsTable.create()
         self._ScheduleObjectsTable.create()
@@ -96,6 +98,31 @@ class SecurityDeviceDatabase(PioneerDatabase):
         self._SecurityPolicyURLsTable.create()
         self._SecurityPolicyL7AppsTable.create()
         self._SecurityPolicyScheduleTable.create()
+    
+    # Getter methods for each attribute
+    def get_security_policy_zones_table(self):
+        return self._SecurityPolicyZonesTable
+
+    def get_security_policy_networks_table(self):
+        return self._SecurityPolicyNetworksTable
+
+    def get_security_policy_ports_table(self):
+        return self._SecurityPolicyPortsTable
+
+    def get_security_policy_users_table(self):
+        return self._SecurityPolicyUsersTable
+
+    def get_security_policy_urls_table(self):
+        return self._SecurityPolicyURLsTable
+
+    def get_security_policy_l7_apps_table(self):
+        return self._SecurityPolicyL7AppsTable
+
+    def get_security_policy_schedule_table(self):
+        return self._SecurityPolicyScheduleTable
+
+    def get_country_objects_table(self):
+        return self._CountryObjectsTable
     
     def get_policy_user_objects_table(self):
         return self._PolicyUsersTable
@@ -381,12 +408,11 @@ class SecurityDevice:
                 SecurityDeviceObject.save(self._Database)
                 group_objects.append(SecurityDeviceObject)
             
-            preloaded_data = SecurityDeviceObject.preload_data() # for security policies, this should return a list of dictionaries with key being
             # the object type and the dictionary with name uid mapping being the value of the key
             Database = self.get_database()
             # preload the data
-            # TODO: object data should be preloaded on an object level and not glbally
             preloaded_object_data = PioneerDatabase.preload_object_data(object_type, Database)
+
             for GroupObject in group_objects:
                 GroupObject.create_relationships_in_db(Database, preloaded_object_data)
 

@@ -208,6 +208,8 @@ def main():
                 SecurityDeviceObject.get_object_info_from_device_conn('managed_device', ManagedDeviceContainer)
             
             print("Importing security policies.")
+            #TODO: there is a problem, data gets preloaded every single time for a new container.
+            # preload it only once
             for SecurityPolicyContainer in security_policy_containers_list:
                 SecurityDeviceObject.get_object_info_from_device_conn('security_policy_group', SecurityPolicyContainer)
 

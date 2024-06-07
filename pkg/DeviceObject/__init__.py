@@ -199,7 +199,7 @@ class NetworkGroupObject(GroupObject):
     def save(self, Database):
         NetworkGroupObjectsTable = Database.get_network_group_objects_table()
         NetworkGroupObjectsTable.insert(self.get_uid(), self.get_name(), self.get_object_container().get_uid(), self.get_description(), self.get_override_bool())
-    
+
     def create_relationships_in_db(self, Database, preloaded_data):
         member_names = self.get_group_member_names()
         network_group_objects_members_table = Database.get_network_group_objects_members_table()
@@ -401,7 +401,7 @@ class URLGroupObject(GroupObject):
         for member_name in member_names:
             group_member_uid = preloaded_data.get(member_name)
             url_group_objects_members_table.insert(self.get_uid(), group_member_uid)
-
+    
 #TODO later: proper support for the following objects
 #TODO: add the necessary parameters to insert, based on the object type
 class ScheduleObject:
@@ -410,12 +410,14 @@ class ScheduleObject:
         ScheduleObjectsTable.insert(self.get_uid(), self.get_name(), self.get_object_container().get_uid(), self.get_description())
 
 class GeolocationObject:
-    def __init__(self, type) -> None:
-        self._type = type
-    
     def save(self, Database):
         GeolocationObjectsTable = Database.get_geolocation_objects_table()
-        GeolocationObjectsTable.insert(self.get_uid(), self.get_name(), self.get_object_container().get_uid(), self._type)
+        GeolocationObjectsTable.insert(self.get_uid(), self.get_name(), self.get_object_container().get_uid())
+
+class CountryObject:
+    def save(self, Database):
+        CountryObjectsTable = Database.get_country_objects_table()
+        CountryObjectsTable.insert(self.get_uid(), self.get_name(), self.get_object_container().get_uid())
 
 class PolicyUserObject:
     def __init__(self, name) -> None:

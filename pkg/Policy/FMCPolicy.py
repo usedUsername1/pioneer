@@ -140,9 +140,15 @@ class FMCSecurityPolicy(SecurityPolicy, FMCObjectWithLiterals):
             network_object_type = network_object_entry['type']
             
             # If the network object is of type 'Country' or 'Geolocation'
-            if network_object_type in {'Country', 'Geolocation'}:
+            if network_object_type == 'Geolocation':
                 # Convert the policy region to an object and save it
                 PolicyRegion = FMCObjectWithLiterals.convert_policy_region_to_object(VirtualObjectContainer, network_object_entry)
+            elif network_object_type == 'Country':
+                PolicyRegion = FMCObjectWithLiterals.convert_policy_country_to_object(VirtualObjectContainer, network_object_entry)
+            else:
+                PolicyRegion = None
+
+            if PolicyRegion:
                 PolicyRegion.save(Database)
                 # Append the name of the PolicyRegion to the list
                 extracted_network_objects.append(PolicyRegion.get_name())

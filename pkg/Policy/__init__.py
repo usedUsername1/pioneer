@@ -257,14 +257,11 @@ class Policy:
         """
         self._log_end = log_end
 
-    def get_log_settings(self):
-        """
-        Retrieve the logging settings for the policy.
+    def get_log_to_manager(self):
+        return self._log_to_manager
 
-        Returns:
-            str: The logging settings for the policy.
-        """
-        return self._log_settings
+    def get_log_to_syslog(self):
+        return self._log_to_syslog
 
     def set_log_setting(self, log_settings):
         """
@@ -569,11 +566,31 @@ class SecurityPolicy(Policy):
     # TODO get the names of the paramteres defined on the policies and put everything in a dict
     # do the lookup by name and find the uid
     def create_relationships_in_db(self, Database, preloaded_data):
-        member_names = self.get_group_member_names()
-        url_group_objects_members_table = Database.get_url_group_objects_members_table()
-        for member_name in member_names:
-            group_member_uid = preloaded_data.get(member_name)
-            url_group_objects_members_table.insert(self.get_uid(), group_member_uid)
+        source_zone_names = self.get_source_zones()
+        destination_zone_names = self.get_destination_zones()
+        source_networks_names = self.get_source_networks()
+        destination_networks_names = self.get_destination_networks()
+        source_port_names = self.get_source_ports()
+        destination_port_names = self.get_destination_ports()
+        schedule_names = self.get_schedule()
+        policy_user_names = self.get_users()
+        url_names = self.get_urls()
+        l7_app_names = self.get_policy_apps()
+        description = self.get_description()
+        comments = self.get_comments()
+        log_to_manager = self.get_log_to_manager()
+        log_to_syslog = self.get_log_to_syslog()
+        log_start = self.get_log_start()
+        log_end = self.get_log_end()
+        category = self.get_category()
+        action = self.get_action()
+        
+        for souce_zone_name in source_zone_names:
+            source_zone_uid = preloaded_data['source_zones'].get(souce_zone_name)
+            SecurityPolicyZonesTable = Database.get_url_group_objects_table()
+            # also insert flow
+            SecurityPolicyZonesTable.insert()
+
 
 class NATPolicy:
     pass

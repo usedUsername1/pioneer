@@ -139,59 +139,66 @@ class PioneerDatabase():
         cursor = DatabaseConnection.create_cursor()
         return cursor
     
+    #TODO: should this be made a class method for objects which need to have their data preloaded?
     @staticmethod
     def preload_object_data(object_type, Database):
-        def get_table_data(table, columns):
-            """
-            Helper function to get data from a table and convert it to a dictionary.
-            """
-            values_tuple_list = table.get(columns=columns)
-            return dict(values_tuple_list)
+            def get_table_data(table, columns):
+                """
+                Helper function to get data from a table and convert it to a dictionary.
+                """
+                values_tuple_list = table.get(columns=columns)
+                return dict(values_tuple_list)
 
-        members_dict_from_db = {}
+            members_dict_from_db = {}
 
-        if object_type == 'network_group_object':
-            tables_to_fetch = [
-                Database.get_network_address_objects_table(),
-                Database.get_network_group_objects_table()
-            ]
-        elif object_type == 'port_group_object':
-            tables_to_fetch = [
-                Database.get_port_objects_table(),
-                Database.get_port_group_objects_table(),
-                Database.get_icmp_objects_table()
-            ]
-        elif object_type == 'url_group_object':
-            tables_to_fetch = [
-                Database.get_url_objects_table(),
-                Database.get_url_group_objects_table()
-            ]
+            if object_type == 'network_group_object':
+                tables_to_fetch = [
+                    Database.get_network_address_objects_table(),
+                    Database.get_network_group_objects_table()
+                ]
+            elif object_type == 'port_group_object':
+                tables_to_fetch = [
+                    Database.get_port_objects_table(),
+                    Database.get_port_group_objects_table(),
+                    Database.get_icmp_objects_table()
+                ]
+            elif object_type == 'url_group_object':
+                tables_to_fetch = [
+                    Database.get_url_objects_table(),
+                    Database.get_url_group_objects_table()
+                ]
 
-        #TODO: stuff might be duplicated here (names of the objects, elements should be retrieved individually, not in the same place)
-        elif object_type == 'security_policy_group':
-            tables_to_fetch = [
-                Database.get_security_zones_table(),
-                Database.get_network_address_objects_table(),
-                Database.get_network_group_objects_table(),
-                Database.get_geolocation_objects_table(),
-                Database.get_port_objects_table(),
-                Database.get_port_group_objects_table(),
-                Database.get_icmp_objects_table(),
-                Database.get_url_objects_table(),
-                Database.get_url_group_objects_table(),
-                Database.get_schedule_objects_table(),
-                Database.get_policy_user_objects_table(),
-                Database.get_l7_app_objects_table(),
-                Database.get_l7_app_filter_objects_table(),
-                Database.get_l7_app_group_objects_table()
-            ]
-        else:
-            tables_to_fetch = []
+            #TODO: stuff might be duplicated here (names of the objects, elements should be retrieved individually, not in the same place)
+            elif object_type == 'security_policy_group':
+                tables_to_fetch = {
+                    'security_zones': Database.get_security_zones_table(),
+                    'network_objects': Database.get_network_address_objects_table(),
+                    'network_group_objects': Database.get_network_group_objects_table(),
+                    'geolocation_objects': Database.get_geolocation_objects_table(),
+                    'port_objects': Database.get_port_objects_table(),
+                    'port_group_objects': Database.get_port_group_objects_table(),
+                    'icmp_objects': Database.get_icmp_objects_table(),
+                    'url_objects': Database.get_url_objects_table(),
+                    'url_group_objects': Database.get_url_group_objects_table(),
+                    'schedule_objects': Database.get_schedule_objects_table(),
+                    'policy_user_objects': Database.get_policy_user_objects_table(),
+                    'l7_app_objects': Database.get_l7_app_objects_table(),
+                    'l7_app_filter_objects': Database.get_l7_app_filter_objects_table(),
+                    'l7_app_group_objects': Database.get_l7_app_group_objects_table()
+                }
+                # Fetch data for each table and store it in members_dict_from_db with the table name as key
+                for table_name, table in tables_to_fetch.items():
+                    members_dict_from_db[table_name] = get_table_data(table, ['name', 'uid'])
+                return members_dict_from_db
+            
+            else:
+                tables_to_fetch = []
 
-        for table in tables_to_fetch:
-            members_dict_from_db.update(get_table_data(table, ['name', 'uid']))
-
-        return members_dict_from_db
+            for table in tables_to_fetch:
+                members_dict_from_db.update(get_table_data(table, ['name', 'uid']))
+            
+            print(members_dict_from_db)
+            return members_dict_from_db
 
 class PioneerTable():
     _table_columns = None
@@ -535,9 +542,21 @@ class GeolocationObjectsTable(PioneerTable):
             ("uid", "TEXT PRIMARY KEY"),
             ("name", "TEXT NOT NULL"),
             ("object_container_uid", "TEXT NOT NULL"),
-            ("type", "TEXT NOT NULL"),
             ("CONSTRAINT fk_object_container FOREIGN KEY(object_container_uid)", "REFERENCES object_containers(uid)"),
             ("CONSTRAINT uc_object_container_uid13", "UNIQUE (name, object_container_uid)")
+        ]
+
+#Fuck you, Cisco and fuck you, Firepower Management Center
+class CountryObjectsTable(PioneerTable):
+    def __init__(self, Database):
+        super().__init__(Database)
+        self._name = "country_objects"
+        self._table_columns = [
+            ("uid", "TEXT PRIMARY KEY"),
+            ("name", "TEXT NOT NULL"),
+            ("object_container_uid", "TEXT NOT NULL"),
+            ("CONSTRAINT fk_object_container FOREIGN KEY(object_container_uid)", "REFERENCES object_containers(uid)"),
+            ("CONSTRAINT uc_object_container_uid34", "UNIQUE (name, object_container_uid)")
         ]
 
 class PortObjectsTable(PioneerTable):
