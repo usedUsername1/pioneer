@@ -342,7 +342,7 @@ class FMCURLGroupObject(URLGroupObject, FMCObject, FMCObjectWithLiterals):
         self.set_object_member_names()
         # check for literals
         self.check_for_url_literals(self.get_object_container(), Database)
-        URLGroupObjectsTable = Database.get_security_policy_zones_table()
+        URLGroupObjectsTable = Database.get_url_group_objects_table()
         URLGroupObjectsTable.insert(self.get_uid(), self.get_name(), self.get_object_container().get_uid(), self.get_description(), self.get_override_bool())
 
 class FMCScheduleObject(FMCObject, ScheduleObject):

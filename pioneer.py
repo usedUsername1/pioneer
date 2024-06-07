@@ -163,6 +163,9 @@ def main():
             security_policy_containers_list = SecurityDeviceObject.get_container_info_from_device_conn('security_policy_container')
             print("Importing the object data")
             general_logger.info(f"################## Getting the objects of device: <{security_device_name}>. ##################")
+            
+            #TODO: when preloading data for creating the db relationships, make sure you preload the data from the current container!
+            # as objects have container scope
             for ObjectContainer in object_containers_list:
                 object_container_name = ObjectContainer.get_name()
                 general_logger.info(f"################## Getting the network objects of device: <{security_device_name}>. Container: <{object_container_name}> ##################")
@@ -208,8 +211,6 @@ def main():
                 SecurityDeviceObject.get_object_info_from_device_conn('managed_device', ManagedDeviceContainer)
             
             print("Importing security policies.")
-            #TODO: there is a problem, data gets preloaded every single time for a new container.
-            # preload it only once
             for SecurityPolicyContainer in security_policy_containers_list:
                 SecurityDeviceObject.get_object_info_from_device_conn('security_policy_group', SecurityPolicyContainer)
 

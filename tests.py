@@ -6,17 +6,6 @@ import fireREST
 # policy = fmc.policy.accesspolicy.operational.hitcount.get(container_uuid="005056AB-6282-0ed3-0000-004295047368", device_id="3282fe0e-62af-11ee-ba12-f4c3e13450ec")
 # policy = fmc.policy.accesspolicy.accessrule.get(container_name="Parking1-child", name="dummy-child")
 
-fmc = fireREST.FMC(hostname='172.25.196.100', username='vzlate', password='L33tp@ss1337muiesteaua!', domain='Global')
-
-# how to return only policies
-policy = fmc.policy.accesspolicy.operational.hitcount.get(container_uuid="005056B3-AFED-0ed3-0000-111669237945", device_id="267d6332-40ab-11ed-ad50-c6c08dcae387")
-
-for i in policy:
-    if i['name'] == "DE-BER Allow specific AKS":
-        print(i)
-
-print(policy)
-
 
 # from panos.panorama import Panorama
 # from panos.panorama import Panorama, DeviceGroup

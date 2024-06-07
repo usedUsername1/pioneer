@@ -176,13 +176,14 @@ class PioneerDatabase():
                     'security_zones': Database.get_security_zones_table(),
                     'network_objects': Database.get_network_address_objects_table(),
                     'network_group_objects': Database.get_network_group_objects_table(),
-                    'country_objects':Database.get_get_country_objects_table(),
+                    'country_objects':Database.get_country_objects_table(),
                     'geolocation_objects': Database.get_geolocation_objects_table(),
                     'port_objects': Database.get_port_objects_table(),
                     'port_group_objects': Database.get_port_group_objects_table(),
                     'icmp_objects': Database.get_icmp_objects_table(),
                     'url_objects': Database.get_url_objects_table(),
                     'url_group_objects': Database.get_url_group_objects_table(),
+                    'url_category_objects':Database.get_url_category_objects_table(),
                     'schedule_objects': Database.get_schedule_objects_table(),
                     'policy_user_objects': Database.get_policy_user_objects_table(),
                     'l7_app_objects': Database.get_l7_app_objects_table(),
@@ -200,7 +201,6 @@ class PioneerDatabase():
             for table in tables_to_fetch:
                 members_dict_from_db.update(get_table_data(table, ['name', 'uid']))
             
-            print(members_dict_from_db)
             return members_dict_from_db
 
 class PioneerTable():
@@ -391,10 +391,11 @@ class SecurityPoliciesTable(PioneerTable):
             ("security_policy_container_uid", "TEXT NOT NULL"),
             ("index", "INT"),
             ("category", "TEXT"),
-            ("schedule", "TEXT"),
             ("status", "TEXT NOT NULL"),
             ("log_start", "BOOLEAN NOT NULL"),
             ("log_end", "BOOLEAN NOT NULL"),
+            ("log_to_manager", "BOOLEAN NOT NULL"),
+            ("log_to_syslog", "BOOLEAN NOT NULL"),
             ("section", "TEXT"),
             ("action", "TEXT"),
             ("comments", "TEXT"),
@@ -726,7 +727,7 @@ class SecurityPolicyNetworksTable(PioneerTable):
             ("security_policy_uid", "TEXT NOT NULL"),
             ("object_uid", "TEXT"),
             ("group_object_uid", "TEXT"),
-            ("country_object_uid", "TEXT")
+            ("country_object_uid", "TEXT"),
             ("geolocation_object_uid", "TEXT"),
             ("flow", "TEXT"),
             ("CONSTRAINT fk_security_policy_uid FOREIGN KEY (security_policy_uid)", "REFERENCES security_policies (uid)"),
@@ -799,9 +800,6 @@ class SecurityPolicyScheduleTable(PioneerTable):
         self._table_columns = [
             ("security_policy_uid", "TEXT"),
             ("schedule_uid", "TEXT"),
-            ("l7_app_uid", "TEXT"),
-            ("l7_app_filter_uid", "TEXT"),
-            ("l7_app_group_uid", "TEXT"),
             ("CONSTRAINT fk_security_policy_uid FOREIGN KEY (security_policy_uid)", "REFERENCES security_policies (uid)"),
-            ("CONSTRAINT fk_schedule_uid FOREIGN KEY (l7_app_uid)", "REFERENCES schedule_objects (uid)")
+            ("CONSTRAINT fk_schedule_uid FOREIGN KEY (schedule_uid)", "REFERENCES schedule_objects (uid)")
         ]

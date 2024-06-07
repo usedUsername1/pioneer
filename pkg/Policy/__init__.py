@@ -553,10 +553,11 @@ class SecurityPolicy(Policy):
             self.get_container_uid(),
             self.get_container_index(),
             self.get_category(),
-            self.get_schedule(),
             self.get_status(),
             self.get_log_start(),
             self.get_log_end(),
+            self.get_log_to_manager(),
+            self.get_log_to_syslog(),
             self.get_section(),
             self.get_action(),
             self.get_comments(),
@@ -566,59 +567,95 @@ class SecurityPolicy(Policy):
     # TODO get the names of the paramteres defined on the policies and put everything in a dict
     # do the lookup by name and find the uid
     def create_relationships_in_db(self, Database, preloaded_data):
-        uid = self.get_uid()
-        # Insert source and destination zones
-        insert_zones(self.get_source_zones(), 'source')
-        insert_zones(self.get_destination_zones(), 'destination')
-        source_networks_names = self.get_source_networks()
-        destination_networks_names = self.get_destination_networks()
-        source_port_names = self.get_source_ports()
-        destination_port_names = self.get_destination_ports()
-        schedule_names = self.get_schedule()
-        policy_user_names = self.get_users()
-        url_names = self.get_urls()
-        l7_app_names = self.get_policy_apps()
-        description = self.get_description()
-        comments = self.get_comments()
-        log_to_manager = self.get_log_to_manager()
-        log_to_syslog = self.get_log_to_syslog()
-        log_start = self.get_log_start()
-        log_end = self.get_log_end()
-        category = self.get_category()
-        action = self.get_action()
-        
-        # Insert source and destination zones
-        insert_zones(self.get_source_zones(), 'source')
-        insert_zones(self.get_destination_zones(), 'destination')
-        
-        # Insert source and destination networks
-        insert_networks(self.get_source_networks(), 'source')
-        insert_networks(self.get_destination_networks(), 'destination')  
-
         # Helper function to insert zone data
-        def insert_zones(zone_names, zone_type):
+        uid = self.get_uid()
+        def insert_zones(zone_names, flow):
             SecurityPolicyZonesTable = Database.get_security_zones_table()
             if not zone_names:
-                SecurityPolicyZonesTable.insert(uid, None, zone_type)
+                SecurityPolicyZonesTable.insert(uid, None, flow)
             else:
                 for zone_name in zone_names:
                     zone_uid = preloaded_data['security_zones'].get(zone_name)
-                    SecurityPolicyZonesTable.insert(uid, zone_uid, zone_type)
+                    SecurityPolicyZonesTable.insert(uid, zone_uid, flow)
         
         # Helper function to insert network data
-        def insert_networks(network_names, network_type):
+        def insert_networks(network_names, flow):
             SecurityPolicyNetworksTable = Database.get_security_policy_networks_table()
             if not network_names:
-                SecurityPolicyNetworksTable.insert(uid, None, None, None, None, network_type)
+                SecurityPolicyNetworksTable.insert(uid, None, None, None, None, flow)
             else:
                 for network_name in network_names:
                     object_uid = preloaded_data['network_objects'].get(network_name)
                     group_uid = preloaded_data['network_group_objects'].get(network_name)
                     country_uid = preloaded_data['country_objects'].get(network_name)
                     geolocation_uid = preloaded_data['geolocation_objects'].get(network_name)
-                    SecurityPolicyNetworksTable.insert(uid, object_uid, group_uid, country_uid, geolocation_uid, network_type)
+                    SecurityPolicyNetworksTable.insert(uid, object_uid, group_uid, country_uid, geolocation_uid, flow)
 
+        def insert_ports(port_names, flow):
+            SecurityPolicyPortsTable = Database.get_security_policy_ports_table()
+            if not port_names:
+                SecurityPolicyPortsTable.insert(uid, None, None, None, flow)
+            else:
+                for port_name in port_names:
+                    object_uid = preloaded_data['port_objects'].get(port_name)
+                    icmp_uid = preloaded_data['icmp_objects'].get(port_name)
+                    group_uid = preloaded_data['port_group_objects'].get(port_name)
+                    SecurityPolicyPortsTable.insert(uid, object_uid, icmp_uid, group_uid, flow)
 
+        def insert_users(user_names):
+            SecurityPolicyUsersTable = Database.get_security_policy_users_table()
+            if not user_names:
+                SecurityPolicyUsersTable.insert(uid, None)
+            else:
+                for user_name in user_names:
+                    user_uid = preloaded_data['user_objects'].get(user_name)
+                    SecurityPolicyUsersTable.insert(uid, user_uid)
+
+        def insert_urls(url_names):
+            SecurityPolicyURLsTable = Database.get_security_policy_urls_table()
+            if not url_names:
+                SecurityPolicyURLsTable.insert(uid, None, None, None)
+            else:
+                for url_name in url_names:
+                    object_uid = preloaded_data['url_objects'].get(url_name)
+                    group_uid = preloaded_data['url_group_objects'].get(url_name)
+                    category_uid = preloaded_data['url_category_objects'].get(url_name)
+                    SecurityPolicyURLsTable.insert(uid, object_uid, group_uid, category_uid)
+
+        def insert_l7_apps(app_names):
+            SecurityPolicyAppsTable = Database.get_security_policy_urls_table()
+            if not app_names:
+                SecurityPolicyAppsTable.insert(uid, None, None, None)
+            else:
+                for app_name in app_names:
+                    app_uid = preloaded_data['l7_app_objects'].get(app_name)
+                    app_filter_uid = preloaded_data['l7_app_filter_objects'].get(app_name)
+                    app_group_uid = preloaded_data['l7_app_group_objects'].get(app_name)
+                    SecurityPolicyAppsTable.insert(uid, app_uid, app_filter_uid, app_group_uid)
+
+        def insert_schedule(schedule_name):
+            SecurityPolicyScheduleTable = Database.get_security_policy_schedule_table()
+            if not schedule_name:
+                SecurityPolicyScheduleTable.insert(uid, None)
+                user_uid = preloaded_data['schedule_objects'].get(schedule_name)
+                SecurityPolicyScheduleTable.insert(uid, user_uid)
+
+        # Insert source and destination zones
+        insert_zones(self.get_source_zones(), 'source')
+        insert_zones(self.get_destination_zones(), 'destination')
+
+        # Insert source and destination networks
+        insert_networks(self.get_source_networks(), 'source')
+        insert_networks(self.get_destination_networks(), 'destination')
+        
+        insert_ports(self.get_source_ports(), 'source')
+        insert_ports(self.get_destination_ports(), 'destination')
+
+        insert_users(self.get_users())
+        insert_urls(self.get_urls())
+
+        insert_l7_apps(self.get_policy_apps())
+        insert_schedule(self.get_schedule())
 
 class NATPolicy:
     pass
