@@ -545,8 +545,11 @@ class SecurityPolicy(Policy):
         """
         return self._action
 
+    # why does the uid change before saving the policy????
+    # is it because a policy with the same name?
     def save(self, Database):
         SecurityPoliciesTable = Database.get_security_policies_table()
+        # print("saving policy: ", self.get_name(), " ", self.get_uid())
         SecurityPoliciesTable.insert(
             self.get_uid(),
             self.get_name(),
@@ -564,13 +567,20 @@ class SecurityPolicy(Policy):
             self.get_description()
         )
 
-    # TODO get the names of the paramteres defined on the policies and put everything in a dict
-    # do the lookup by name and find the uid
+    # there is only one policy for which this happens: SD-2695239
+    # sometimes, UIDs of policies during the execution of the program are different from what it is in the database
+# 2024-06-08 00:26:19,656 - ERROR - Failed to insert values <('c2f5c354-de8b-4807-adf6-e26f7415209b', '19ebd5a9-fd98-454b-8977-60dbe7a44b30', 'source')> into: <security_policy_zones>. Reason: insert or update on table "security_policy_zones" violates foreign key constraint "fk_security_policy_uid"
+# DETAIL:  Key (security_policy_uid)=(c2f5c354-de8b-4807-adf6-e26f7415209b) is not present in table "security_policies".
+    # the problem is that policies are having the same name and they are recognized to be in the same container for some reason????
+    # Azure PROD: EUN VPN Access Policy - ok this is extremly retarded
+
     def create_relationships_in_db(self, Database, preloaded_data):
         # Helper function to insert zone data
         uid = self.get_uid()
+
         def insert_zones(zone_names, flow):
-            SecurityPolicyZonesTable = Database.get_security_zones_table()
+
+            SecurityPolicyZonesTable = Database.get_security_policy_zones_table()
             if not zone_names:
                 SecurityPolicyZonesTable.insert(uid, None, flow)
             else:
@@ -608,7 +618,7 @@ class SecurityPolicy(Policy):
                 SecurityPolicyUsersTable.insert(uid, None)
             else:
                 for user_name in user_names:
-                    user_uid = preloaded_data['user_objects'].get(user_name)
+                    user_uid = preloaded_data['policy_user_objects'].get(user_name)
                     SecurityPolicyUsersTable.insert(uid, user_uid)
 
         def insert_urls(url_names):
@@ -618,12 +628,16 @@ class SecurityPolicy(Policy):
             else:
                 for url_name in url_names:
                     object_uid = preloaded_data['url_objects'].get(url_name)
+
                     group_uid = preloaded_data['url_group_objects'].get(url_name)
+
                     category_uid = preloaded_data['url_category_objects'].get(url_name)
+
                     SecurityPolicyURLsTable.insert(uid, object_uid, group_uid, category_uid)
+                    
 
         def insert_l7_apps(app_names):
-            SecurityPolicyAppsTable = Database.get_security_policy_urls_table()
+            SecurityPolicyAppsTable = Database.get_security_policy_l7_apps_table()
             if not app_names:
                 SecurityPolicyAppsTable.insert(uid, None, None, None)
             else:
@@ -637,14 +651,15 @@ class SecurityPolicy(Policy):
             SecurityPolicyScheduleTable = Database.get_security_policy_schedule_table()
             if not schedule_name:
                 SecurityPolicyScheduleTable.insert(uid, None)
-                user_uid = preloaded_data['schedule_objects'].get(schedule_name)
-                SecurityPolicyScheduleTable.insert(uid, user_uid)
+            else:
+                schedule_uid = preloaded_data['schedule_objects'].get(schedule_name[0])
+                SecurityPolicyScheduleTable.insert(uid, schedule_uid)
 
         # Insert source and destination zones
         insert_zones(self.get_source_zones(), 'source')
         insert_zones(self.get_destination_zones(), 'destination')
 
-        # Insert source and destination networks
+        # # Insert source and destination networks
         insert_networks(self.get_source_networks(), 'source')
         insert_networks(self.get_destination_networks(), 'destination')
         

@@ -404,7 +404,7 @@ class SecurityDevice:
             for object_entry in objects_info:
                 # return an object here for each of the entries
                 SecurityDeviceObject = self.create_py_object(object_type, object_entry, ObjectContainer)
-                # save it in the database
+                # save it in the database)
                 SecurityDeviceObject.save(self._Database)
                 group_objects.append(SecurityDeviceObject)
             

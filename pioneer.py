@@ -165,7 +165,9 @@ def main():
             general_logger.info(f"################## Getting the objects of device: <{security_device_name}>. ##################")
             
             #TODO: when preloading data for creating the db relationships, make sure you preload the data from the current container!
+            # make sure that the user is warned if he has duplicate policies by name - how tf is this even possible?
             # as objects have container scope
+            # there are still problem with the url group objects and url objects
             for ObjectContainer in object_containers_list:
                 object_container_name = ObjectContainer.get_name()
                 general_logger.info(f"################## Getting the network objects of device: <{security_device_name}>. Container: <{object_container_name}> ##################")
