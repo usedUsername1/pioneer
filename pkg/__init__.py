@@ -312,7 +312,7 @@ class SecurityPolicyContainersTable(PioneerTable):
         self._name = "security_policy_containers"
         self._table_columns = [
             ("uid", "TEXT PRIMARY KEY"),
-            ("name", "TEXT UNIQUE NOT NULL"),
+            ("name", "TEXT NOT NULL"),
             ("security_device_uid", "TEXT"),
             ("parent", "TEXT"),
             ("CONSTRAINT fk_security_device FOREIGN KEY (security_device_uid)", "REFERENCES general_security_device_data (uid)"),
@@ -324,7 +324,7 @@ class NATPolicyContainersTable(PioneerTable):
         self._name = "nat_policy_containers"
         self._table_columns = [
             ("uid", "TEXT PRIMARY KEY"),
-            ("name", "TEXT UNIQUE NOT NULL"),
+            ("name", "TEXT NOT NULL"),
             ("security_device_uid", "TEXT"),
             ("parent", "TEXT"),
             ("CONSTRAINT fk_security_device FOREIGN KEY (security_device_uid)", "REFERENCES general_security_device_data (uid)"),
@@ -336,7 +336,7 @@ class ObjectContainersTable(PioneerTable):
         self._name = "object_containers"
         self._table_columns = [
             ("uid", "TEXT PRIMARY KEY"),
-            ("name", "TEXT UNIQUE NOT NULL"),
+            ("name", "TEXT NOT NULL"),
             ("security_device_uid", "TEXT"),
             ("parent", "TEXT"),
             ("CONSTRAINT fk_security_device FOREIGN KEY (security_device_uid)", "REFERENCES general_security_device_data (uid)"),
@@ -348,7 +348,7 @@ class SecurityZoneContainersTable(PioneerTable):
         self._name = "security_zone_containers"
         self._table_columns = [
             ("uid", "TEXT PRIMARY KEY"),
-            ("name", "TEXT UNIQUE NOT NULL"),
+            ("name", "TEXT NOT NULL"),
             ("security_device_uid", "TEXT"),
             ("parent", "TEXT"),
             ("CONSTRAINT fk_security_device FOREIGN KEY (security_device_uid)", "REFERENCES general_security_device_data (uid)"),
@@ -360,7 +360,7 @@ class ManagedDeviceContainersTable(PioneerTable):
         self._name = "managed_device_containers"
         self._table_columns = [
             ("uid", "TEXT PRIMARY KEY"),
-            ("name", "TEXT UNIQUE NOT NULL"),
+            ("name", "TEXT NOT NULL"),
             ("security_device_uid", "TEXT"),
             ("parent", "TEXT"),
             ("CONSTRAINT fk_security_device FOREIGN KEY (security_device_uid)", "REFERENCES general_security_device_data (uid)"),
@@ -803,3 +803,47 @@ class SecurityPolicyScheduleTable(PioneerTable):
             ("CONSTRAINT fk_security_policy_uid FOREIGN KEY (security_policy_uid)", "REFERENCES security_policies (uid)"),
             ("CONSTRAINT fk_schedule_uid FOREIGN KEY (schedule_uid)", "REFERENCES schedule_objects (uid)")
         ]
+
+# migration projects table
+class MigrationProjectGeneralDataTable(PioneerTable):
+    def __init__(self, Database) -> None:
+        super().__init__(Database)
+        self._name = "migration_project_general_data"
+        self._table_columns = [
+            ("name", "TEXT NOT NULL"),
+            ("description", "TEXT"),
+            ("creation_date", "TIMESTAMP")
+        ]
+
+class MigrationProjectDevicesTable(PioneerTable):
+    def __init__(self, Database):
+        super().__init__(Database)
+        self._name = "migration_project_devices"
+        self._table_columns = [
+            ("source_device_uid", "TEXT NOT NULL"),
+            ("target_device_uid", "TEXT NOT NULL"),
+            ("PRIMARY KEY (source_device_uid, target_device_uid)", "")
+        ]
+
+class SecurityDeviceInterfaceMap(PioneerTable):
+    def __init__(self, Database) -> None:
+        super().__init__(Database)
+        self._name = "security_zones_map"
+        self._table_columns = [
+            ("source_security_zone", "TEXT"),
+            ("target_security_zone", "TEXT"),
+            ("CONSTRAINT fk_source_security_zone FOREIGN KEY (source_security_zone)", "REFERENCES security_zones (uid)"),
+            ("CONSTRAINT fk_target_security_zone FOREIGN KEY (target_security_zone)", "REFERENCES security_zones (uid)")
+        ]
+
+class SecurityPolicyContainersMapTable(PioneerTable):
+    def __init__(self, Database) -> None:
+        super().__init__(Database)
+        self._name = "security_policy_containers_map"
+        self._table_columns = [
+            ("source_security_policy_container_uid", "TEXT"),
+            ("target_security_policy_container_uid", "TEXT"),
+            ("CONSTRAINT fk_source_security_policy_container FOREIGN KEY (source_security_policy_container_uid)", "REFERENCES security_policy_containers (uid)"),
+            ("CONSTRAINT fk_target_security_policy_container FOREIGN KEY (target_security_policy_container_uid)", "REFERENCES security_policy_containers (uid)")
+        ]
+

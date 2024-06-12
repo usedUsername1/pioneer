@@ -23,35 +23,57 @@ class SecurityDeviceDatabase(PioneerDatabase):
             cursor: The cursor object for database operations.
         """
         super().__init__(cursor)
+        # General Data Table
         self._GeneralDataTable = GeneralDataTable(self)
+        
+        # Containers
         self._SecurityPolicyContainersTable = SecurityPolicyContainersTable(self)
         self._NATPolicyContainersTable = NATPolicyContainersTable(self)
         self._ObjectContainersTable = ObjectContainersTable(self)
         self._SecurityZoneContainersTable = SecurityZoneContainersTable(self)
         self._ManagedDeviceContainersTable = ManagedDeviceContainersTable(self)
+        
+        # Managed Devices
         self._ManagedDevicesTable = ManagedDevicesTable(self)
+        
+        # Security Policies
         self._SecurityPoliciesTable = SecurityPoliciesTable(self)
-        # self._PoliciesHitcountTable = PoliciesHitcountTable(self)
+        
+        # Zones
         self._SecurityZonesTable = SecurityZonesTable(self)
+        
+        # Objects
         self._URLObjectsTable = URLObjectsTable(self)
         self._NetworkAddressObjectsTable = NetworkAddressObjectsTable(self)
+        self._PortObjectsTable = PortObjectsTable(self)
+        self._ICMPObjectsTable = ICMPObjectsTable(self)
+        self._GeolocationObjectsTable = GeolocationObjectsTable(self)
+        self._CountryObjectsTable = CountryObjectsTable(self)
+        self._ScheduleObjectsTable = ScheduleObjectsTable(self)
+        
+        # Groups
         self._NetworkGroupObjectsTable = NetworkGroupObjectsTable(self)
         self._PortGroupObjectsTable = PortGroupObjectsTable(self)
         self._URLGroupObjectsTable = URLGroupObjectsTable(self)
+        
+        # Group Members
         self._NetworkGroupObjectsMembersTable = NetworkGroupObjectsMembersTable(self)
         self._PortGroupObjectsMembersTable = PortGroupObjectsMembersTable(self)
         self._URLGroupObjectsMembersTable = URLGroupObjectsMembersTable(self)
-        self._GeolocationObjectsTable = GeolocationObjectsTable(self)
-        self._CountryObjectsTable = CountryObjectsTable(self)
-        self._PortObjectsTable = PortObjectsTable(self)
-        self._ICMPObjectsTable = ICMPObjectsTable(self)
-        self._ScheduleObjectsTable = ScheduleObjectsTable(self)
+        
+        # Policy Users
         self._PolicyUsersTable = PolicyUsersTable(self)
+        
+        # Layer 7 Applications
         self._L7AppsTable = L7AppsTable(self)
         self._L7AppFiltersTable = L7AppFiltersTable(self)
         self._L7AppGroupsTable = L7AppGroupsTable(self)
         self._L7AppGroupMembersTable = L7AppGroupMembersTable(self)
+        
+        # URL Categories
         self._URLCategoriesTable = URLCategoriesTable(self)
+        
+        # Security Policy Details
         self._SecurityPolicyZonesTable = SecurityPolicyZonesTable(self)
         self._SecurityPolicyNetworksTable = SecurityPolicyNetworksTable(self)
         self._SecurityPolicyPortsTable = SecurityPolicyPortsTable(self)

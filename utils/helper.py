@@ -28,7 +28,8 @@ def create_parser():
     exclusive_arg_group.add_argument("--delete-project [name]", help="Delete a migration project.")
     exclusive_arg_group.add_argument("--list-projects", help="Print a list with all the projects.")
     exclusive_arg_group.add_argument("--project [name]", help="Specify the migration project where you make the changes.")
-    exclusive_arg_group.add_argument("--import-security-device --device [name]", help="Import a security device into a project.")
+    parser.add_argument("--set-source-device [name]", help="Set the source device of the project")
+    parser.add_argument("--set-target-device [name]", help="Set the target device of the project")
 
     # arguments related to devices
     exclusive_arg_group.add_argument("--delete-security-device [name]", help="Delete a security device.")
