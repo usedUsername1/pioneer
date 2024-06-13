@@ -239,6 +239,7 @@ def main():
         
         # create the necessary mappings before migrating
             # mapping will do what?
+            # store mapping in database and retrieve it on the fly?
         if pioneer_args['map']:
             if pioneer_args['containers'] and pioneer_args['source_container [name]'] and pioneer_args['target_container [name]']:
                 source_container = pioneer_args['source_container [name]']
@@ -253,6 +254,7 @@ def main():
         if pioneer_args['migrate']:
             # generate incomaptibilites report
             # execute the migration of a security policy container
+            # where should the configuration be adapted? in the database or on the fly?
             if pioneer_args['source_security_policy_container [name]']:
                 # generate a report with the L7 policies for this particular policy container
                 source_security_policy_container = pioneer_args['source_security_policy_container [name]']
