@@ -226,6 +226,7 @@ def main():
     # the source and security device objects must be created here
     # exceptions for when user tries to use names of devices that
     # make sure there can only be two security devices in a project and make sure stuff can't get imported multiple times
+    #TODO:
     if pioneer_args['project [name]']:
         project_name = pioneer_args['project [name]']
         MigrationProjectObject = MigrationProject.create_migration_project(db_user, project_name, db_password, db_host, db_port)
@@ -234,31 +235,30 @@ def main():
             print("setting devices in project")
             SourceSecurityDevice = SecurityDeviceFactory.create_security_device(db_user, pioneer_args['set_source_device [name]'], db_password, db_host, db_port)
             TargetSecurityDevice = SecurityDeviceFactory.create_security_device(db_user, pioneer_args['set_target_device [name]'], db_password, db_host, db_port)
-            
+            #TODO: when importing data, zones and containers names might be duplicated. if there are duplicates, then what?
             MigrationProjectObject.import_data(SourceSecurityDevice, TargetSecurityDevice)
         
-        # create the necessary mappings before migrating
-            # mapping will do what?
-            # store mapping in database and retrieve it on the fly?
         if pioneer_args['map']:
             if pioneer_args['containers'] and pioneer_args['source_container [name]'] and pioneer_args['target_container [name]']:
-                source_container = pioneer_args['source_container [name]']
-                target_container = pioneer_args['target_container [name]']
-                MigrationProjectObject.map_containers(source_container, target_container)
+                MigrationProjectObject.map_containers(pioneer_args['source_container [name]'], pioneer_args['target_container [name]'])
             
             if pioneer_args['zones'] and pioneer_args['source_zone [name]'] and pioneer_args['target_zone [name]']:
-                source_zone = pioneer_args['source_zone [name]']
-                target_zone = pioneer_args['target_zone [name]']
-                MigrationProjectObject.map_zones(source_zone, target_zone)
+                MigrationProjectObject.map_zones(pioneer_args['source_zone [name]'], target_zone = pioneer_args['target_zone [name]'])
         
         if pioneer_args['migrate']:
+            MigrationProjectObject = MigrationProjectObject.build_migration_project()
+            MigrationProjectObject.execute_migration()
             # generate incomaptibilites report
             # execute the migration of a security policy container
             # where should the configuration be adapted? in the database or on the fly?
-            if pioneer_args['source_security_policy_container [name]']:
-                # generate a report with the L7 policies for this particular policy container
-                source_security_policy_container = pioneer_args['source_security_policy_container [name]']
-                MigrationProjectObject.execute_migration(source_security_policy_container)
+            # if pioneer_args['security_policy_container [name]']:
+            #     # get the migration object according to the target device
+            #     MigrationProjectObject = MigrationProjectObject.build_migration_project()
+
+            #     # generate a report with the L7 policies for this particular policy container
+            #     source_security_policy_container = pioneer_args['source_security_policy_container [name]']
+
+                # MigrationProjectObject.execute_migration(source_security_policy_container)
         
 if __name__ == "__main__":
     main()

@@ -245,7 +245,7 @@ class PioneerTable():
     # move the get_table_value code here. the code must be rewritten in such a way
     # to permit multiple select queries
     # this function doesn't need an override
-    def get(self, columns, name_col=None, val=None, order_param=None):
+    def get(self, columns, name_col=None, val=None, order_param=None, join=None):
         # Ensure columns is either a string (single column) or a list/tuple (multiple columns)
         if isinstance(columns, str):
             columns_str = columns
@@ -254,16 +254,20 @@ class PioneerTable():
         else:
             raise ValueError("columns parameter must be a string, list, or tuple of column names")
 
+        join_clause = ""
+        if join:
+            join_clause = f" JOIN {join['table']} ON {join['condition']}"
+
         if name_col and val:
             # Construct the SELECT query with a WHERE clause
-            select_query = f"SELECT {columns_str} FROM {self._name} WHERE {name_col} = %s;"
+            select_query = f"SELECT {columns_str} FROM {self._name}{join_clause} WHERE {name_col} = %s;"
             params = (val,)
         else:
             # Construct the SELECT query without a WHERE clause
             if order_param:
-                select_query = f"SELECT {columns_str} FROM {self._name} ORDER BY {order_param};"
+                select_query = f"SELECT {columns_str} FROM {self._name}{join_clause} ORDER BY {order_param};"
             else:
-                select_query = f"SELECT {columns_str} FROM {self._name};"
+                select_query = f"SELECT {columns_str} FROM {self._name}{join_clause};"
             params = ()
 
         try:
@@ -271,6 +275,7 @@ class PioneerTable():
             
             # Execute the select command with the actual values
             cursor.execute(select_query, params)
+            # print(select_query)
         except psycopg2.Error as err:
             general_logger.error(f"Failed to select values from table: <{self._name}>. Reason: {err}")
             # sys.exit(1) or raise an exception if needed
