@@ -1,9 +1,11 @@
 from .FMCSecurityDevice import FMCSecurityDevice
+from .PANMCSecurityDevice import PANMCSecurityDevice
 # from .PANMCSecurityDevice import PANMCSecurityDevice
 import utils.helper as helper
 from pkg import PioneerDatabase
 from pkg.SecurityDevice import SecurityDevice, SecurityDeviceDatabase
 import fireREST
+from panos.panorama import Panorama
 import sys
 
 general_logger = helper.logging.getLogger('general')
@@ -44,9 +46,10 @@ class SecurityDeviceFactory:
                 Connection = FMCDeviceConnection(security_device_username, security_device_secret, security_device_hostname, security_device_port, domain).connect_to_security_device()
                 SecurityDeviceObj = FMCSecurityDevice(security_device_uid, security_device_name, SecurityDeviceDB, Connection)
 
-            # case "panmc-api":
-            #     general_logger.info(f"Device <{security_device_name}> is a Panorama Management Center.")
-            #     return PANMCSecurityDevice(security_device_name, SecurityDeviceDB, security_device_username, security_device_secret, security_device_hostname, security_device_port)
+            case "panmc-api":
+                general_logger.info(f"Device <{security_device_name}> is a Panorama Management Center.")
+                Connection = PANMCDeviceConnection(security_device_username, security_device_secret, security_device_hostname, security_device_port).connect_to_security_device()
+                return PANMCSecurityDevice(security_device_uid, security_device_name, SecurityDeviceDB, Connection)
             
             # default case
             case _:
@@ -129,9 +132,9 @@ class APISecurityDeviceConnection(SecurityDeviceConnection):
     def return_security_device_conn_object(self):
         try:
             general_logger.info(f"I am trying to connect to the Security Device using username {self._api_username}, hostname {self._api_hostname}, port {self._api_port}.")
-            device_conn = self.connect_to_security_device()
-            general_logger.info(f"I have successfully connected to the device. {device_conn}")
-            return device_conn
+            DeviceConnection = self.connect_to_security_device()
+            general_logger.info(f"I have successfully connected to the device. {DeviceConnection}")
+            return DeviceConnection
         except Exception as err:
             general_logger.critical(f"Could not connect to Security Device. Reason: {err}")
             sys.exit(1)
@@ -139,6 +142,15 @@ class APISecurityDeviceConnection(SecurityDeviceConnection):
     def connect_to_security_device(self):
         # This method is a placeholder and should be implemented by subclasses
         raise NotImplementedError("Subclasses must implement connect_to_security_device method")
+
+class PANMCDeviceConnection(APISecurityDeviceConnection):
+    def __init__(self, api_username, api_secret, api_hostname, api_port):
+        super().__init__(api_username, api_secret, api_hostname, api_port)
+        self._device_connection = self.return_security_device_conn_object()
+    
+    def connect_to_security_device(self):
+        PANMCConnection = Panorama(self._api_hostname, self._api_username, self._api_secret)
+        return PANMCConnection
 
 class FMCDeviceConnection(APISecurityDeviceConnection):
     """
@@ -168,5 +180,5 @@ class FMCDeviceConnection(APISecurityDeviceConnection):
             fireREST.FMC: An FMC connection object.
         """
         # Implement connection to FMC specific to FMCDeviceConnection
-        fmc_conn = fireREST.FMC(hostname=self._api_hostname, username=self._api_username, password=self._api_secret, domain=self._domain, protocol=self._api_port, timeout=30)
-        return fmc_conn
+        FMCConnection = fireREST.FMC(hostname=self._api_hostname, username=self._api_username, password=self._api_secret, domain=self._domain, protocol=self._api_port, timeout=30)
+        return FMCConnection

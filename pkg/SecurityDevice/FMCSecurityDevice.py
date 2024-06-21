@@ -44,15 +44,6 @@ class FMCSecurityDevice(SecurityDevice):
         """
         super().__init__(uid, name, SecurityDeviceDatabase, SecurityDeviceConnection)
         self._SecurityDeviceConnection = SecurityDeviceConnection
-        self._network_address_objects_info = None
-        self._network_group_objects_info = None
-        self._geolocation_objects_info = None
-        self._countries_info = None
-        self._continents_info = None
-        self._port_objects_info = None
-        self._port_group_objects_info = None
-        self._url_objects_info = None
-        self._url_object_groups_info = None
 
     def return_security_policy_container_info(self):
         return self._SecurityDeviceConnection.policy.accesspolicy.get()

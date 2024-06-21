@@ -167,6 +167,7 @@ class MigrationProject():
 
         self._SecurityDeviceInterfaceMap.insert(source_zone_uid, target_zone_uid)
     
+    #TODO: maybe be more specific when creating migration project, make sure you account for both source and target device.
     def build_migration_project(self):
         # Retrieve the target_device_uid
         target_device_uid = self._Database.get_migration_project_devices_table().get(columns='target_device_uid')[0]
@@ -198,5 +199,7 @@ class PANMCMigrationProject(MigrationProject):
     def __init__(self, name, Database):
         super().__init__(name, Database)
     
-    def execute_migration(self):
-        print("looks alright")
+    def execute_migration(self, migration_type, container_name):
+        match migration_type:
+            case 'security_policy_container':
+                print("looks alright")
