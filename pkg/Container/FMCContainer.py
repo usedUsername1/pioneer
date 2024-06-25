@@ -16,7 +16,7 @@ class FMCSecurityPolicyContainer(SecurityPolicyContainer):
         self._parent_name = container_info['metadata'].get('parentPolicy', {}).get('name')
         super().__init__(SecurityDevice, container_info, self._name, self._parent_name)
 
-class FMCObjectContainer(ObjectContainer, VirtualContainer):
+class FMCObjectContainer(ObjectContainer):
     """
     Represents an object container specific to the Firepower Management Center (FMC).
     """
@@ -27,7 +27,7 @@ class FMCObjectContainer(ObjectContainer, VirtualContainer):
         Parameters:
             container_info (dict): Information about the object container.
         """
-        super().__init__(SecurityDevice, container_info)
+        super().__init__(SecurityDevice, container_info, 'virtual_container', None)
 
 class FMCZoneContainer(ZoneContainer, VirtualContainer):
     def __init__(self, SecurityDevice, container_info) -> None:

@@ -96,14 +96,14 @@ class SecurityPolicyContainer(Container):
             SecurityPolicyContainerTable.insert(self.get_uid(), self.get_name(), self.get_security_device_uid(), None)
 
 class ObjectContainer(Container):
-    def __init__(self, SecurityDevice, container_info) -> None:
+    def __init__(self, SecurityDevice, container_info, name, parent_name) -> None:
         """
         Initializes an ObjectPolicyContainer object.
 
         Args:
             container_info: Information related to the object policy container.
         """
-        super().__init__(SecurityDevice, container_info)
+        super().__init__(SecurityDevice, container_info, name, parent_name)
 
     def save(self, Database):
         ObjectContainersTable = Database.get_object_containers_table()

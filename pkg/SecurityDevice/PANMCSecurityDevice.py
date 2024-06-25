@@ -1,5 +1,5 @@
 from pkg.SecurityDevice import SecurityDevice
-from pkg.Container.PANMCContainer import PANMCDeviceGroup, PANMCSecurityPolicyContainer, PANMCObjectContainer
+from pkg.Container.PANMCContainer import PANMCSecurityPolicyContainer, PANMCObjectContainer
 from panos.panorama import Panorama, DeviceGroup
 from panos.objects import AddressObject, AddressGroup, ServiceObject, ServiceGroup, CustomUrlCategory, Tag
 from panos.policies import PreRulebase, PostRulebase, SecurityRule
@@ -45,8 +45,8 @@ class PANMCSecurityDevice(SecurityDevice):
             raise InexistentContainer
         
         match container_type:
-            case 'security_policies_container':
-                return PANMCPolicyContainer(dg_info)
+            # case 'security_policies_container':
+            #     return PANMCPolicyContainer(dg_info)
             case 'object_container':
                 return PANMCObjectContainer(dg_info)
 
@@ -457,25 +457,4 @@ PA treats ping as an application. The second rule will keep the exact same sourc
             return True
         else:
             return False
-
-
-class PANMCPolicyContainer(SecurityPolicyContainer):
-    def __init__(self, container_info) -> None:
-        super().__init__(container_info)
-
-    def get_parent_name(self):
-        return self._container_info['parent_device_group']
-    
-    def is_child_container(self):
-        is_child = True
-        if self._container_info['parent_device_group'] == 'Shared':
-            is_child = False
         
-        return is_child
-
-    def get_name(self):
-        return self._container_info['device_group_name']
-
-class PANMCObjectContainer(ObjectContainer, PANMCPolicyContainer):
-    def __init__(self, container_info) -> None:
-        super().__init__(container_info)
