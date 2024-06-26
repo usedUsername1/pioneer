@@ -21,7 +21,7 @@ class FMCObjectWithLiterals(Object):
     def check_for_network_literals(self, ObjectContainer, Database):
         general_logger.info(f"Checking network group <{self._name}> for literal members.")
         # get the group object info
-        object_info = self.get_info()
+        object_info = self.get_object_info()
         converted_literal = ''
         
         # check for literals key in the object definition
@@ -39,7 +39,7 @@ class FMCObjectWithLiterals(Object):
     def check_for_url_literals(self, ObjectContainer, Database):
         general_logger.info(f"Checking URL group <{self._name}> for literal members.")
         # get the group object info
-        object_info = self.get_info()
+        object_info = self.get_object_info()
         converted_literal = ''
         
         # check for literals key in the object definition
@@ -218,10 +218,11 @@ class FMCObject(Object):
         Args:
             object_info (dict): Information about the FMC object.
         """
-        self._name = object_info.get('name')
-        self._description = object_info.get('description')
-        self._is_overridable = object_info.get('overridable')
-        super().__init__(ObjectContainer, object_info, self._name, self._description, self._is_overridable)
+        self._object_info = object_info
+        super().__init__(ObjectContainer, object_info.get('name'), object_info.get('description'), object_info.get('overridable'))
+
+    def get_object_info(self):
+        return self._object_info
 
 class FMCNetworkObject(FMCObject, NetworkObject):
     """
@@ -236,11 +237,9 @@ class FMCNetworkObject(FMCObject, NetworkObject):
             object_info (dict): Information about the network object.
         """
         FMCObject.__init__(self, ObjectContainer, object_info)
-        self._network_address_value = object_info['value']
-        self._network_address_type = object_info['type']
-        NetworkObject.__init__(self, self._network_address_value, self._network_address_type)
+        NetworkObject.__init__(self, object_info['value'], object_info['type'] )
 
-class FMCNetworkGroupObject(NetworkGroupObject, FMCObject, FMCObjectWithLiterals):
+class FMCNetworkGroupObject(NetworkGroupObject, FMCObjectWithLiterals, FMCObject):
     def __init__(self, ObjectContainer, object_info) -> None:
         """
         Initializes a new FMCNetworkGroupObject.
@@ -248,8 +247,8 @@ class FMCNetworkGroupObject(NetworkGroupObject, FMCObject, FMCObjectWithLiterals
         Args:
             object_info (dict): Information about the network group object.
         """
-        super().__init__(ObjectContainer, object_info)
-
+        FMCObject.__init__(self, ObjectContainer, object_info)
+        NetworkGroupObject.__init__(self)
     # since we are dealing with a group object, there are a few operations that must be done
     # before the object is saved in the database
     # we need to get the names of the objects that are members of the group objects and track them
@@ -281,17 +280,12 @@ class FMCPortObject(FMCObject, PortObject):
         - object_info (dict): Information about the port object.
         """
         FMCObject.__init__(self, ObjectContainer, object_info)
-        self._source_port = "1-65535"
-        self._destination_port = object_info.get('port', "1-65535")
-        self._port_protocol = object_info['protocol']
-        PortObject.__init__(self, self._source_port, self._destination_port, self._port_protocol)
+        PortObject.__init__(self, "1-65535", object_info.get('port', "1-65535"), object_info['protocol'])
     
 class FMCICMPObject(FMCObject, ICMPObject):
     def __init__(self, ObjectContainer, object_info) -> None:
         FMCObject.__init__(self, ObjectContainer, object_info)
-        self._icmp_type = self._object_info.get('icmpType', "any")
-        self._icmp_code = self._object_info.get('code')
-        ICMPObject.__init__(self, self._icmp_type, self._icmp_code)
+        ICMPObject.__init__(self, object_info.get('icmpType', "any"), object_info.get('code'))
 
 class FMCPortGroupObject(PortGroupObject, FMCObject, FMCObjectWithLiterals):
     def __init__(self, ObjectContainer, object_info) -> None:
@@ -301,7 +295,8 @@ class FMCPortGroupObject(PortGroupObject, FMCObject, FMCObjectWithLiterals):
         Args:
             object_info (dict): Information about the network group object.
         """
-        super().__init__(ObjectContainer, object_info)
+        FMCObject.__init__(self, ObjectContainer, object_info)
+        PortGroupObject.__init__(self)
 
     def save(self, Database):
         # set the names of the object members
@@ -321,8 +316,7 @@ class FMCURLObject(FMCObject, URLObject):
         None
         """
         FMCObject.__init__(self, ObjectContainer, object_info)
-        self._url_value = object_info['url']
-        URLObject.__init__(self, self._url_value)
+        URLObject.__init__(self, object_info['url'])
 
 class FMCURLGroupObject(URLGroupObject, FMCObject, FMCObjectWithLiterals):
     def __init__(self, ObjectContainer, object_info) -> None:
@@ -335,7 +329,8 @@ class FMCURLGroupObject(URLGroupObject, FMCObject, FMCObjectWithLiterals):
         Returns:
         None
         """
-        super().__init__(ObjectContainer, object_info)
+        FMCObject.__init__(self, ObjectContainer, object_info)
+        URLGroupObject.__init__(self)
 
     def save(self, Database):
         # set the names of the object members

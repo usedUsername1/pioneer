@@ -3,9 +3,8 @@ from abc import abstractmethod
 general_logger = helper.logging.getLogger('general')
 
 class SecurityZone():
-    def __init__(self, ObjectContainer, object_info, name) -> None:
+    def __init__(self, ObjectContainer, name) -> None:
         self._ObjectContainer = ObjectContainer
-        self._object_info = object_info
         self._name = name
         self._uid = helper.generate_uid()
     

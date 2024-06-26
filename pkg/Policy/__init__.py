@@ -33,7 +33,6 @@ class Policy:
     def __init__(
         self,
         PolicyContainer,
-        policy_info,
         name,
         source_zones,
         destination_zones,
@@ -52,7 +51,6 @@ class Policy:
             policy_info (dict): Information about the policy.
         """
         self._PolicyContainer = PolicyContainer
-        self._policy_info = policy_info
         self._name = name
         self._uid = helper.generate_uid()
         self._source_zones = source_zones
@@ -301,7 +299,6 @@ class SecurityPolicy(Policy):
     def __init__(
         self,
         PolicyContainer,
-        policy_info,
         name,
         container_index,
         status,
@@ -331,7 +328,7 @@ class SecurityPolicy(Policy):
         Args:
             policy_info (dict): Information about the security policy.
         """
-        super().__init__(PolicyContainer, policy_info, name, source_zones, destination_zones, container_index, status, description, comments, log_to_manager, log_to_syslog)
+        super().__init__(PolicyContainer, name, source_zones, destination_zones, container_index, status, description, comments, log_to_manager, log_to_syslog)
         self._category = category
         self._container_index = container_index
         self._source_networks = source_networks

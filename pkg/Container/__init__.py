@@ -3,14 +3,13 @@ from abc import abstractmethod
 general_logger = helper.logging.getLogger('general')
 
 class Container:
-    def __init__(self, SecurityDevice, container_info, name, parent_name) -> None:
+    def __init__(self, SecurityDevice, name, parent_name) -> None:
         """
         Initializes a Container object.
 
         Args:
             container_info: Information related to the container.
         """
-        self._container_info = container_info
         self._SecurityDevice = SecurityDevice
         self._name = name
         self._parent_name = parent_name
@@ -79,14 +78,14 @@ class Container:
         pass
 
 class SecurityPolicyContainer(Container):
-    def __init__(self, SecurityDevice, container_info, name, parent_name) -> None:
+    def __init__(self, SecurityDevice, name, parent_name) -> None:
         """
         Initializes a SecurityPolicyContainer object.
 
         Args:
             container_info: Information related to the security policy container.
         """
-        super().__init__(SecurityDevice, container_info, name, parent_name)
+        super().__init__(SecurityDevice, name, parent_name)
 
     def save(self, Database):
         SecurityPolicyContainerTable = Database.get_security_policy_containers_table()
@@ -96,14 +95,14 @@ class SecurityPolicyContainer(Container):
             SecurityPolicyContainerTable.insert(self.get_uid(), self.get_name(), self.get_security_device_uid(), None)
 
 class ObjectContainer(Container):
-    def __init__(self, SecurityDevice, container_info, name, parent_name) -> None:
+    def __init__(self, SecurityDevice, name, parent_name) -> None:
         """
         Initializes an ObjectPolicyContainer object.
 
         Args:
             container_info: Information related to the object policy container.
         """
-        super().__init__(SecurityDevice, container_info, name, parent_name)
+        super().__init__(SecurityDevice, name, parent_name)
 
     def save(self, Database):
         ObjectContainersTable = Database.get_object_containers_table()
@@ -112,15 +111,9 @@ class ObjectContainer(Container):
         except AttributeError:
             ObjectContainersTable.insert(self.get_uid(), self.get_name(), self.get_security_device_uid(), None)
 
-class VirtualContainer(Container):
-    def __init__(self, SecurityDevice, container_info) -> None:
-        self._name = 'virtual_container'
-        self._parent_name = None
-        super().__init__(SecurityDevice, container_info, self._name, self._parent_name)
-
 class ZoneContainer(Container):
-    def __init__(self, SecurityDevice, container_info) -> None:
-        super().__init__(SecurityDevice, container_info)
+    def __init__(self, SecurityDevice, name, parent_name) -> None:
+        super().__init__(SecurityDevice, name, parent_name)
     
     def save(self, Database):
         ZoneContainersTable = Database.get_zone_containers_table()
@@ -130,8 +123,8 @@ class ZoneContainer(Container):
             ZoneContainersTable.insert(self.get_uid(), self.get_name(), self.get_security_device_uid(), None)
 
 class ManagedDeviceContainer(Container):
-    def __init__(self, SecurityDevice, container_info) -> None:
-        super().__init__(SecurityDevice, container_info)
+    def __init__(self, SecurityDevice, name, parent_name) -> None:
+        super().__init__(SecurityDevice, name, parent_name)
     
     def save(self, Database):
         ManagedDeviceContainersTable = Database.get_managed_device_containers_table()

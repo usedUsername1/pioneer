@@ -1,4 +1,4 @@
-from pkg.Container import SecurityPolicyContainer, ObjectContainer, VirtualContainer, ZoneContainer, ManagedDeviceContainer, Container
+from pkg.Container import SecurityPolicyContainer, ObjectContainer, ZoneContainer, ManagedDeviceContainer, Container
 
 # for PANMC, all containers are actually the same device group (except for security zones, which are stored in templates)
 # create a DeviceGroup class and make all the containers inherit from it
@@ -14,7 +14,7 @@ class PANMCSecurityPolicyContainer(SecurityPolicyContainer):
         Parameters:
             container_info (dict): Information about the policy container.
         """
-        SecurityPolicyContainer().__init__(SecurityDevice, container_info, self._name, self._parent_name)
+        super().__init__(SecurityDevice, container_info['name'], container_info['parent'])
 
 class PANMCObjectContainer(ObjectContainer):
     """
@@ -27,4 +27,4 @@ class PANMCObjectContainer(ObjectContainer):
         Parameters:
             container_info (dict): Information about the object container.
         """
-        super().__init__(SecurityDevice, container_info, container_info['name'], container_info['parent'])
+        super().__init__(SecurityDevice, container_info['name'], container_info['parent'])

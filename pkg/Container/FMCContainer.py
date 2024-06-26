@@ -1,4 +1,4 @@
-from pkg.Container import SecurityPolicyContainer, ObjectContainer, VirtualContainer, ZoneContainer, ManagedDeviceContainer
+from pkg.Container import SecurityPolicyContainer, ObjectContainer, ZoneContainer, ManagedDeviceContainer
 
 #TODO: maybe use setters for setting the values in here, and use the getters from the parent class to retrieve the info. just like you do for objects
 class FMCSecurityPolicyContainer(SecurityPolicyContainer):
@@ -14,7 +14,7 @@ class FMCSecurityPolicyContainer(SecurityPolicyContainer):
         """
         self._name = container_info['name']
         self._parent_name = container_info['metadata'].get('parentPolicy', {}).get('name')
-        super().__init__(SecurityDevice, container_info, self._name, self._parent_name)
+        super().__init__(SecurityDevice, self._name, self._parent_name)
 
 class FMCObjectContainer(ObjectContainer):
     """
@@ -27,12 +27,12 @@ class FMCObjectContainer(ObjectContainer):
         Parameters:
             container_info (dict): Information about the object container.
         """
-        super().__init__(SecurityDevice, container_info, 'virtual_container', None)
+        super().__init__(SecurityDevice, 'virtual_container', None)
 
-class FMCZoneContainer(ZoneContainer, VirtualContainer):
-    def __init__(self, SecurityDevice, container_info) -> None:
-        super().__init__(SecurityDevice, container_info)
+class FMCZoneContainer(ZoneContainer):
+    def __init__(self, SecurityDevice, container_entry) -> None:
+        super().__init__(SecurityDevice, 'virtual_container', None)
 
-class FMCManagedDeviceContainer(ManagedDeviceContainer, VirtualContainer):
-    def __init__(self, SecurityDevice, container_info) -> None:
-        super().__init__(SecurityDevice, container_info)
+class FMCManagedDeviceContainer(ManagedDeviceContainer):
+    def __init__(self, SecurityDevice, container_entry) -> None:
+        super().__init__(SecurityDevice, 'virtual_container', None)

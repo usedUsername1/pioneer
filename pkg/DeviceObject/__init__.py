@@ -9,16 +9,13 @@ class Object:
     Base class for representing objects in the system.
     """
 
-    def __init__(self, ObjectContainer, object_info, name, description, is_overridable) -> None:
+    def __init__(self, ObjectContainer, name, description, is_overridable) -> None:
         """
         Initialize an Object instance.
 
         Parameters:
         - object_info (dict): Information about the object.
         """
-        # Store the provided object information
-        self._object_info = object_info
-        
         # Initialize attributes
         self._uid = helper.generate_uid()
         self._ObjectContainer = ObjectContainer
@@ -104,15 +101,6 @@ class Object:
         """
         self._object_container = value
 
-    def get_info(self):
-        """
-        Get information about the object.
-
-        Returns:
-            dict: Information about the object.
-        """
-        return self._object_info
-
     def add_group_member_name(self, group_member_name):
         self._group_member_names.append(group_member_name)
           
@@ -122,7 +110,7 @@ class GroupObject(Object):
     A class representing a group object.
     """
 
-    def __init__(self, ObjectContainer, object_info) -> None:
+    def __init__(self) -> None:
         """
         Initialize the GroupObject instance.
 
@@ -130,7 +118,6 @@ class GroupObject(Object):
             object_info (dict): Information about the group object.
         """
         self._group_member_names = []
-        super().__init__(ObjectContainer, object_info)
     
     def get_group_member_names(self):
         return self._group_member_names
@@ -193,9 +180,6 @@ class NetworkObject:
         NetworkAddressObjectsTable.insert(self.get_uid(), self.get_name(), self.get_object_container().get_uid(), self.get_network_address_value(), self.get_description(), self.get_network_address_type(), self.get_override_bool())  
 
 class NetworkGroupObject(GroupObject):
-    def __init__(self, ObjectContainer, object_info) -> None:
-        super().__init__(ObjectContainer, object_info)
-
     def save(self, Database):
         NetworkGroupObjectsTable = Database.get_network_group_objects_table()
         NetworkGroupObjectsTable.insert(self.get_uid(), self.get_name(), self.get_object_container().get_uid(), self.get_description(), self.get_override_bool())
@@ -335,9 +319,6 @@ class ICMPObject:
         ICMPObjectsTable.insert(self.get_uid(), self.get_name(), self.get_object_container().get_uid(), self.get_icmp_type(), self.get_icmp_code(), self.get_description(), self.get_override_bool())
 
 class PortGroupObject(GroupObject):
-    def __init__(self, ObjectContainer, object_info) -> None:
-        super().__init__(ObjectContainer, object_info)
-
     def save(self, Database):
         PortGroupObjectsTable = Database.get_port_group_objects_table()
         PortGroupObjectsTable.insert(self.get_uid(), self.get_name(), self.get_object_container().get_uid(), self.get_description(), self.get_override_bool())
@@ -388,9 +369,6 @@ class URLObject:
         URLObjectsTable.insert(self.get_uid(), self.get_name(), self.get_object_container().get_uid(), self.get_url_value(), self.get_description(), self.get_override_bool())
 
 class URLGroupObject(GroupObject):
-    def __init__(self, ObjectContainer, object_info) -> None:
-        super().__init__(ObjectContainer, object_info)
-
     def save(self, Database):
         URLGroupObjectsTable = Database.get_url_group_objects_table()
         URLGroupObjectsTable.insert(self.get_uid(), self.get_name(), self.get_object_container().get_uid(), self.get_description(), self.get_override_bool())

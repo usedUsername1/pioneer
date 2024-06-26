@@ -1,7 +1,6 @@
 import utils.helper as helper
 class ManagedDevice():
-    def __init__(self, ManagedDevicesContainer, managed_device_info, name, assigned_security_policy_container_name, hostname, cluster) -> None:
-        self._managed_device_info = managed_device_info
+    def __init__(self, ManagedDevicesContainer, name, assigned_security_policy_container_name, hostname, cluster) -> None:
         self._uid = helper.generate_uid()
         self._name = name
         self._managed_devices_container_uid = ManagedDevicesContainer.get_uid()

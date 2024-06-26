@@ -25,7 +25,7 @@ class FMCSecurityPolicy(SecurityPolicy, FMCObjectWithLiterals):
         if not cls._initialized:
             security_device = PolicyContainer.get_security_device()
             cls._Database = security_device.get_database()
-            cls._VirtualObjectContainer = Container(security_device, "", "virtual_object_container", None)
+            cls._VirtualObjectContainer = Container(security_device, "virtual_object_container", None)
             cls._VirtualObjectContainer.set_uid(
                 cls._Database.get_object_containers_table().get('uid', 'name', 'virtual_container')[0][0]
             )
@@ -73,7 +73,6 @@ class FMCSecurityPolicy(SecurityPolicy, FMCObjectWithLiterals):
 
         super().__init__(
             self._PolicyContainer,
-            policy_info,
             self._name,
             self._container_index,
             self._status,
