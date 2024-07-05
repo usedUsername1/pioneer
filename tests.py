@@ -8,11 +8,22 @@ fmc = fireREST.FMC(hostname='10.2.196.131', username='admin', password='2wsx#EDC
 # print(policy)
 
 from panos.panorama import Panorama
-from panos.panorama import Panorama, DeviceGroup
+from panos.panorama import Panorama, DeviceGroup, Template
+from panos.network import Zone
 from panos.objects import ServiceObject
 from panos.policies import SecurityRule, Rulebase, PreRulebase
 pano  = Panorama("10.2.196.196", "admin", "2wsx#EDC")
 device_groups = pano.refresh_devices(include_device_groups=True)
+
+# Retrieve all templates
+templates = Template.refreshall(parent=pano)
+
+# Print the retrieved templates
+for template in templates:
+    zones = Zone.refreshall(template)
+        # Print the retrieved zones
+    for zone in zones:
+        print(zone)
 
 # for dg in device_groups:
 #     print(dg.child)
@@ -23,18 +34,18 @@ device_groups = pano.refresh_devices(include_device_groups=True)
 # print(rule.about('destination'))
 # print(test)
 # Access the OPSTATES attribute to get the hierarchy class
-hierarchy_class = pano.OPSTATES['dg_hierarchy']
+# hierarchy_class = pano.OPSTATES['dg_hierarchy']
 
-# Create an instance of PanoramaDeviceGroupHierarchy
-hierarchy_instance = hierarchy_class(pano)
+# # Create an instance of PanoramaDeviceGroupHierarchy
+# hierarchy_instance = hierarchy_class(pano)
 
-# Call the fetch method on the instance
-hierarchy_data = hierarchy_instance.fetch()
+# # Call the fetch method on the instance
+# hierarchy_data = hierarchy_instance.fetch()
 
-# Print the fetched hierarchy data
-# print(hierarchy_data)
-for key, value in hierarchy_data.items():
-    print("PARENT:", value, "CHILD:",key)
+# # Print the fetched hierarchy data
+# # print(hierarchy_data)
+# for key, value in hierarchy_data.items():
+#     print("PARENT:", value, "CHILD:",key)
 
 
 # from panos.panorama import Panorama, DeviceGroup

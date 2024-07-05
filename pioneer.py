@@ -226,7 +226,6 @@ def main():
     # the source and security device objects must be created here
     # exceptions for when user tries to use names of devices that
     # make sure there can only be two security devices in a project and make sure stuff can't get imported multiple times
-    #TODO:
     if pioneer_args['project [name]']:
         project_name = pioneer_args['project [name]']
         MigrationProjectObject = MigrationProject.create_migration_project(db_user, project_name, db_password, db_host, db_port)
@@ -236,11 +235,15 @@ def main():
             SourceSecurityDevice = SecurityDeviceFactory.create_security_device(db_user, pioneer_args['set_source_device [name]'], db_password, db_host, db_port)
             TargetSecurityDevice = SecurityDeviceFactory.create_security_device(db_user, pioneer_args['set_target_device [name]'], db_password, db_host, db_port)
             #TODO: when importing data, zones and containers names might be duplicated. if there are duplicates, then what?
+            #TODO: proper import of PANMC containers and zones
             MigrationProjectObject.import_data(SourceSecurityDevice, TargetSecurityDevice)
         
+        #TODO: for now, mapping can be done between any values. in the feature, make sure that all the mapped
+        # interfaces are referencing entries in the database and not just some random values
+
         if pioneer_args['map']:
-            if pioneer_args['containers'] and pioneer_args['source_container [name]'] and pioneer_args['target_container [name]']:
-                MigrationProjectObject.map_containers(pioneer_args['source_container [name]'], pioneer_args['target_container [name]'])
+            if pioneer_args['containers'] and pioneer_args['source_container_name'] and pioneer_args['target_container_name']:
+                MigrationProjectObject.map_containers(pioneer_args['source_container_name'], pioneer_args['target_container_name'])
             
             if pioneer_args['zones'] and pioneer_args['source_zone [name]'] and pioneer_args['target_zone [name]']:
                 MigrationProjectObject.map_zones(pioneer_args['source_zone [name]'], target_zone = pioneer_args['target_zone [name]'])

@@ -66,6 +66,10 @@ class PANMCSecurityDevice(SecurityDevice):
 
         return device_group_info
     
+    #TODO: implement this. use info from test.py
+    def return_template_info(self):
+        pass
+
     def return_object_container(self, container_entry):
         return PANMCObjectContainer(self, container_entry)
 
@@ -79,7 +83,7 @@ class PANMCSecurityDevice(SecurityDevice):
         return self.return_device_group_info()
 
     def return_zone_container_info(self):
-        pass
+        return self.return_template_info(self)
 
     def return_managed_device_container_info(self):
         pass

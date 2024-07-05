@@ -44,8 +44,11 @@ def create_parser():
 
     parser.add_argument("--device-name [device_name]", help="Specify the security device where you make the changes.")
     parser.add_argument("--migrate", nargs='?', const=True, default=False, help="Specify the security device where you make the changes.")
-    parser.add_argument("--map")
-    parser.add_argument("--target-device [target_device_name]", help="Specify the security device where you make the changes.")
+    parser.add_argument("--map", action='store_true', help="Specify if you want to map containers.")
+    parser.add_argument("--containers", action='store_true', help="Specify if you want to work with containers.")
+    parser.add_argument("--source-container", dest='source_container_name', help="Specify the source container name.")
+    parser.add_argument("--target-container", dest='target_container_name', help="Specify the target container name.")
+    parser.add_argument("--target-device", dest='target_device_name', help="Specify the security device where you make the changes.")
 
     parser.add_argument("--import-config", nargs='?', const=True, default=False, help="Flag to import configuration. Imports the configuration from the target device.")
     parser.add_argument("--security-policy-container [container_name]", help="Imports a security policy container.")

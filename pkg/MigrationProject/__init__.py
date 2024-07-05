@@ -26,6 +26,9 @@ class MigrationProjectDatabase(SecurityDeviceDatabase):
     
     def get_migration_project_devices_table(self):
         return self._MigrationProjectDevicesTable
+    
+    def get_security_policy_containers_table(self):
+        return self._SecurityPolicyContainersMapTable
 
 #TODO: should there be different migration classes based on the type of the target device?
 class MigrationProject():
@@ -146,15 +149,14 @@ class MigrationProject():
     
     def map_containers(self, source_container_name, target_container_name):
         GeneralDataTable = self._Database.get_general_data_table()
-        
         # get source uid
-        source_container_uid = GeneralDataTable.get('uid', 'name', source_container_name)[0]
+        source_container_uid = GeneralDataTable.get('uid', 'name', source_container_name)
 
         # get destination uid
-        target_container_uid = GeneralDataTable.get('uid', 'name', target_container_name)[0]
+        target_container_uid = GeneralDataTable.get('uid', 'name', target_container_name)
 
         # insert the data in the table
-        self._SecurityPolicyContainersMapTable.insert(source_container_uid, target_container_uid)
+        self._Database.get_security_policy_containers_table().insert(source_container_uid, target_container_uid)
     
     def map_zones(self, source_zone_name, target_zone_name):
         SecurityZonesTable = self._Database.get_security_zones_table()
