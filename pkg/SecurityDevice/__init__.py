@@ -350,31 +350,32 @@ class SecurityDevice:
 
         container_objects = set()
 
-        for container_entry in containers_info:
-            current_container = self.create_py_object(container_type, container_entry, ObjectContainer=None)
+        if containers_info is not None:
+            for container_entry in containers_info:
+                current_container = self.create_py_object(container_type, container_entry, ObjectContainer=None)
 
-            current_container_name = current_container.get_parent_name()
+                current_container_name = current_container.get_parent_name()
 
-            general_logger.info(f"Processing <{container_type}> container. Name: <{current_container_name}>")
+                general_logger.info(f"Processing <{container_type}> container. Name: <{current_container_name}>")
 
-            parent_container_name = current_container.get_parent_name()
-            general_logger.info(f"<{current_container_name}> is a child container. Its parent is: <{parent_container_name}>.")
+                parent_container_name = current_container.get_parent_name()
+                general_logger.info(f"<{current_container_name}> is a child container. Its parent is: <{parent_container_name}>.")
 
-            container_objects.add(current_container)
+                container_objects.add(current_container)
 
-        general_logger.info(f"Finished processing all containers of type <{container_type}>. I will now start inserting them in the database.")
-        parent_name_to_object = {container.get_name(): container for container in container_objects}
+            general_logger.info(f"Finished processing all containers of type <{container_type}>. I will now start inserting them in the database.")
+            parent_name_to_object = {container.get_name(): container for container in container_objects}
 
-        for Container in container_objects:
-            parent_name = Container.get_parent_name()
-            if parent_name:
-                ParentContainer = parent_name_to_object.get(parent_name)
-                if ParentContainer:
-                    Container.set_parent(ParentContainer)
+            for Container in container_objects:
+                parent_name = Container.get_parent_name()
+                if parent_name:
+                    ParentContainer = parent_name_to_object.get(parent_name)
+                    if ParentContainer:
+                        Container.set_parent(ParentContainer)
 
-            Container.save(self._Database)
-        
-        return container_objects
+                Container.save(self._Database)
+            
+            return container_objects
 
     def get_object_info_from_device_conn(self, object_type, ObjectContainer):
         """
@@ -415,28 +416,29 @@ class SecurityDevice:
         # print(f"CPU usage during retrieving objects <{object_type}>: {cpu_usage}%")
         # print(f"RAM usage during retrieving objects <{object_type}>: {ram_usage}%")
         # Iterate over each managed device entry in the retrieved objects info
-        if 'group' not in object_type:
-            for object_entry in objects_info:
-                # return an object here for each of the entries
-                SecurityDeviceObject = self.create_py_object(object_type, object_entry, ObjectContainer)
-                # save it in the database
-                SecurityDeviceObject.save(self._Database)
-        else:
-            group_objects = []
-            for object_entry in objects_info:
-                # return an object here for each of the entries
-                SecurityDeviceObject = self.create_py_object(object_type, object_entry, ObjectContainer)
-                # save it in the database)
-                SecurityDeviceObject.save(self._Database)
-                group_objects.append(SecurityDeviceObject)
-            
-            # the object type and the dictionary with name uid mapping being the value of the key
-            Database = self.get_database()
-            # preload the data
-            preloaded_object_data = PioneerDatabase.preload_object_data(object_type, Database)
+        if objects_info is not None:
+            if 'group' not in object_type:
+                for object_entry in objects_info:
+                    # return an object here for each of the entries
+                    SecurityDeviceObject = self.create_py_object(object_type, object_entry, ObjectContainer)
+                    # save it in the database
+                    SecurityDeviceObject.save(self._Database)
+            else:
+                group_objects = []
+                for object_entry in objects_info:
+                    # return an object here for each of the entries
+                    SecurityDeviceObject = self.create_py_object(object_type, object_entry, ObjectContainer)
+                    # save it in the database)
+                    SecurityDeviceObject.save(self._Database)
+                    group_objects.append(SecurityDeviceObject)
+                
+                # the object type and the dictionary with name uid mapping being the value of the key
+                Database = self.get_database()
+                # preload the data
+                preloaded_object_data = PioneerDatabase.preload_object_data(object_type, Database)
 
-            for GroupObject in group_objects:
-                GroupObject.create_relationships_in_db(Database, preloaded_object_data)
+                for GroupObject in group_objects:
+                    GroupObject.create_relationships_in_db(Database, preloaded_object_data)
 
     # these functions are overridden in the subclasses whenever needed/relevant
     def return_object_container_info(self):

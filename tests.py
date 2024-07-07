@@ -20,10 +20,11 @@ templates = Template.refreshall(parent=pano)
 
 # Print the retrieved templates
 for template in templates:
-    zones = Zone.refreshall(template)
+    print(template.name)
+    zones = Zone.refreshall(template.name)
         # Print the retrieved zones
     for zone in zones:
-        print(zone)
+        print(zone.mode)
 
 # for dg in device_groups:
 #     print(dg.child)

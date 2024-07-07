@@ -169,8 +169,11 @@ def main():
             # get the devices managed by the security device
             general_logger.info(f"################## Getting the managed devices of device: <{security_device_name}>. ##################")
             print("Importing the managed devices data.")
-            for ManagedDeviceContainer in managed_devices_container_list:
-                SecurityDeviceObject.get_object_info_from_device_conn('managed_device', ManagedDeviceContainer)
+            if managed_devices_container_list is None:
+                pass
+            else:
+                for ManagedDeviceContainer in managed_devices_container_list:
+                    SecurityDeviceObject.get_object_info_from_device_conn('managed_device', ManagedDeviceContainer)
             
             print("Importing security policies.")
             for SecurityPolicyContainer in security_policy_containers_list:
@@ -237,19 +240,19 @@ def main():
             #TODO: when importing data, zones and containers names might be duplicated. if there are duplicates, then what?
             #TODO: proper import of PANMC containers and zones
             MigrationProjectObject.import_data(SourceSecurityDevice, TargetSecurityDevice)
-        
-        #TODO: for now, mapping can be done between any values. in the feature, make sure that all the mapped
-        # interfaces are referencing entries in the database and not just some random values
 
-        if pioneer_args['map']:
-            if pioneer_args['containers'] and pioneer_args['source_container_name'] and pioneer_args['target_container_name']:
+        if pioneer_args['map_containers']:
+            if pioneer_args['source_container_name'] and pioneer_args['target_container_name']:
                 MigrationProjectObject.map_containers(pioneer_args['source_container_name'], pioneer_args['target_container_name'])
-            
-            if pioneer_args['zones'] and pioneer_args['source_zone [name]'] and pioneer_args['target_zone [name]']:
-                MigrationProjectObject.map_zones(pioneer_args['source_zone [name]'], target_zone = pioneer_args['target_zone [name]'])
         
+        if pioneer_args.get('map_zones'):
+            if pioneer_args.get('source_zone_name') and pioneer_args.get('target_zone_name'):
+                MigrationProjectObject.map_zones(
+                    pioneer_args['source_zone_name'], pioneer_args['target_zone_name'])
         if pioneer_args['migrate']:
-            # generate incomaptibilites report (only once)
+            #TODO: generate incomaptibilites report (only once) for the policies in the container that is going to be migrated.
+            # adapt the config of objects(here, at this step? or on the fly?)
+            # import all the groups and objects (objects used by policies and the objects used by groups which are used by policies)
             MigrationProjectObject = MigrationProjectObject.build_migration_project()
             if pioneer_args['security_policy_container [name]']:
                 MigrationProjectObject.execute_migration('security_policy_container', pioneer_args['security_policy_container [name]'])

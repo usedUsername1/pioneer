@@ -11,7 +11,7 @@ class MigrationProjectDatabase(SecurityDeviceDatabase):
         self._SecurityPolicyContainersMapTable = SecurityPolicyContainersMapTable(self)
         self._MigrationProjectGeneralDataTable = MigrationProjectGeneralDataTable(self)
         self._MigrationProjectDevicesTable = MigrationProjectDevicesTable(self)
-        self._SecurityDeviceInterfaceMap = SecurityDeviceInterfaceMap(self)
+        self._SecurityDeviceInterfaceMapTable = SecurityDeviceInterfaceMap(self)
 
     def create_migration_project_tables(self):
         # create the security device tables needed to store the data from the imported security devices
@@ -19,7 +19,7 @@ class MigrationProjectDatabase(SecurityDeviceDatabase):
         self._SecurityPolicyContainersMapTable.create()
         self._MigrationProjectGeneralDataTable.create()
         self._MigrationProjectDevicesTable.create()
-        self._SecurityDeviceInterfaceMap.create()
+        self._SecurityDeviceInterfaceMapTable.create()
     
     def get_migration_project_general_data_table(self):
         return self._MigrationProjectGeneralDataTable
@@ -27,8 +27,11 @@ class MigrationProjectDatabase(SecurityDeviceDatabase):
     def get_migration_project_devices_table(self):
         return self._MigrationProjectDevicesTable
     
-    def get_security_policy_containers_table(self):
+    def get_security_policy_containers_map_table(self):
         return self._SecurityPolicyContainersMapTable
+    
+    def get_security_device_interface_map_table(self):
+        return self._SecurityDeviceInterfaceMapTable
 
 #TODO: should there be different migration classes based on the type of the target device?
 class MigrationProject():
@@ -148,15 +151,15 @@ class MigrationProject():
         return MigrationProjectObject
     
     def map_containers(self, source_container_name, target_container_name):
-        GeneralDataTable = self._Database.get_general_data_table()
+        GeneralDataTable = self._Database.get_security_policy_containers_table()
         # get source uid
-        source_container_uid = GeneralDataTable.get('uid', 'name', source_container_name)
+        source_container_uid = GeneralDataTable.get('uid', 'name', source_container_name)[0]
 
         # get destination uid
-        target_container_uid = GeneralDataTable.get('uid', 'name', target_container_name)
+        target_container_uid = GeneralDataTable.get('uid', 'name', target_container_name)[0]
 
         # insert the data in the table
-        self._Database.get_security_policy_containers_table().insert(source_container_uid, target_container_uid)
+        self._Database.get_security_policy_containers_map_table().insert(source_container_uid, target_container_uid)
     
     def map_zones(self, source_zone_name, target_zone_name):
         SecurityZonesTable = self._Database.get_security_zones_table()
@@ -167,7 +170,7 @@ class MigrationProject():
         # get the source zone uid
         target_zone_uid = SecurityZonesTable.get('uid', 'name', target_zone_name)[0]
 
-        self._SecurityDeviceInterfaceMap.insert(source_zone_uid, target_zone_uid)
+        self._Database.get_security_device_interface_map_table().insert(source_zone_uid, target_zone_uid)
     
     #TODO: maybe be more specific when creating migration project, make sure you account for both source and target device.
     def build_migration_project(self):

@@ -28,3 +28,7 @@ class PANMCObjectContainer(ObjectContainer):
             container_info (dict): Information about the object container.
         """
         super().__init__(SecurityDevice, container_info['name'], container_info['parent'])
+
+class PANMCSecurityZoneContainer(ZoneContainer):
+    def __init__(self, SecurityDevice, container_info) -> None:
+        super().__init__(SecurityDevice, container_info['name'], container_info['parent'])

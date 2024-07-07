@@ -44,10 +44,17 @@ def create_parser():
 
     parser.add_argument("--device-name [device_name]", help="Specify the security device where you make the changes.")
     parser.add_argument("--migrate", nargs='?', const=True, default=False, help="Specify the security device where you make the changes.")
-    parser.add_argument("--map", action='store_true', help="Specify if you want to map containers.")
-    parser.add_argument("--containers", action='store_true', help="Specify if you want to work with containers.")
+    
+    # Container mapping arguments
+    parser.add_argument("--map-containers", action='store_true', help="Specify if you want to map containers.")
     parser.add_argument("--source-container", dest='source_container_name', help="Specify the source container name.")
     parser.add_argument("--target-container", dest='target_container_name', help="Specify the target container name.")
+
+    # Zone mapping arguments
+    parser.add_argument("--map-zones", action='store_true', help="Specify if you want to map zones.")
+    parser.add_argument("--source-zone", dest='source_zone_name', help="Specify the source zone name.")
+    parser.add_argument("--target-zone", dest='target_zone_name', help="Specify the target zone name.")
+    
     parser.add_argument("--target-device", dest='target_device_name', help="Specify the security device where you make the changes.")
 
     parser.add_argument("--import-config", nargs='?', const=True, default=False, help="Flag to import configuration. Imports the configuration from the target device.")

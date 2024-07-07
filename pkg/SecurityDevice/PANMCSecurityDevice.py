@@ -1,6 +1,8 @@
 from pkg.SecurityDevice import SecurityDevice
-from pkg.Container.PANMCContainer import PANMCSecurityPolicyContainer, PANMCObjectContainer
-from panos.panorama import Panorama, DeviceGroup
+from pkg.Container.PANMCContainer import PANMCSecurityPolicyContainer, PANMCObjectContainer, PANMCSecurityZoneContainer
+from pkg.SecurityZone.PANMCSecurityZone import PANMCSecurityZone
+from panos.panorama import DeviceGroup, Template
+from panos.network import Zone
 from panos.objects import AddressObject, AddressGroup, ServiceObject, ServiceGroup, CustomUrlCategory, Tag
 from panos.policies import PreRulebase, PostRulebase, SecurityRule
 import utils.helper as helper
@@ -65,10 +67,6 @@ class PANMCSecurityDevice(SecurityDevice):
             device_group_info.append({"name": key, "parent": value})
 
         return device_group_info
-    
-    #TODO: implement this. use info from test.py
-    def return_template_info(self):
-        pass
 
     def return_object_container(self, container_entry):
         return PANMCObjectContainer(self, container_entry)
@@ -78,45 +76,80 @@ class PANMCSecurityDevice(SecurityDevice):
 
     def return_security_policy_container(self, container_entry):
         return PANMCSecurityPolicyContainer(self, container_entry)
+    
+    #TODO: implement this
+    def return_zone_container(self, container_entry):
+        return PANMCSecurityZoneContainer(self, container_entry)
+    
+    #TODO: implement this
+    def return_security_zone(self, ZoneContainer, zone_entry):
+        return PANMCSecurityZone(ZoneContainer, zone_entry)
 
     def return_security_policy_container_info(self):
         return self.return_device_group_info()
 
+    def return_template_info(self):
+        templates_info = []
+        templates = Template.refreshall(parent=self._DeviceConnection)
+        for template in templates:
+            templates_info.append({'name':template.name, 'parent':None})
+        
+        return templates_info
+
     def return_zone_container_info(self):
-        return self.return_template_info(self)
+        return self.return_template_info()
 
     def return_managed_device_container_info(self):
-        pass
+        print("Importing managed device containers not supported yet for PANMC.")
+        return None
     
     def return_security_zone_info(self):
-        pass
+        zones_info = []
+        templates = Template.refreshall(parent=self._DeviceConnection)
+        for template in templates:
+            zones = Zone.refreshall(template)
+            for zone in zones:
+                zones_info.append({'name':zone.name})
+        return zones_info
         
     def return_managed_device_info(self):
         pass
 
     def return_network_object_info(self):
-        pass
+        print("Importing this object is not supported yet for PANMC.")
+        return None
 
     def return_network_group_object_info(self):
-        pass
+        print("Importing this object is not supported yet for PANMC.")
+        return None
 
     def return_geolocation_object_info(self):
-        pass
+        print("Importing this object is not supported yet for PANMC.")
+        return None
 
     def return_port_object_info(self):
-        pass
+        print("Importing this object is not supported yet for PANMC.")
+        return None
 
     def return_port_group_object_info(self):
-        pass
+        print("Importing this object is not supported yet for PANMC.")
+        return None
 
     def return_url_object_info(self):
-        pass
+        print("Importing this object is not supported yet for PANMC.")
+        return None
 
     def return_url_group_object_info(self):
-        pass
+        print("Importing this object is not supported yet for PANMC.")
+        return None
 
     def return_schedule_object_info(self):
-        pass
+        print("Importing this object is not supported yet for PANMC.")
+        return None
+    
+    def return_security_policy_info(self, ObjectContainer):
+        print("Importing this object is not supported yet for PANMC.")
+        return None
     
     def print_compatibility_issues(self):
         print("""You are migrating to a Panorama Management Center device. The following is a list with compatibility issues and how they will be fixed:
