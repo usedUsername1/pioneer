@@ -6,6 +6,7 @@ from pkg.MigrationProject import MigrationProject, MigrationProjectDatabase
 from pkg import PioneerDatabase
 from pkg.SecurityDevice import SecurityDevice, SecurityDeviceDatabase 
 from pkg.SecurityDevice.SecurityDeviceFactory import SecurityDeviceFactory
+from pkg.MigrationProject import MigrationProjectFactory
 import sys
 from datetime import datetime, timezone
 import time
@@ -231,7 +232,7 @@ def main():
     # make sure there can only be two security devices in a project and make sure stuff can't get imported multiple times
     if pioneer_args['project [name]']:
         project_name = pioneer_args['project [name]']
-        MigrationProjectObject = MigrationProject.create_migration_project(db_user, project_name, db_password, db_host, db_port)
+        MigrationProjectObject = MigrationProjectFactory.create_migration_project(db_user, project_name, db_password, db_host, db_port)
         # create migration project object here
         if pioneer_args['set_source_device [name]'] and pioneer_args['set_target_device [name]']:
             print("setting devices in project")
@@ -251,11 +252,17 @@ def main():
                     pioneer_args['source_zone_name'], pioneer_args['target_zone_name'])
         if pioneer_args['migrate']:
             #TODO: generate incomaptibilites report (only once) for the policies in the container that is going to be migrated.
+                # find all the special parameters and put them in a text file
             # adapt the config of objects(here, at this step? or on the fly?)
+                # change everything in the DB (besides the containers UIDs, they will be retrieved on the fly)
             # import all the groups and objects (objects used by policies and the objects used by groups which are used by policies)
-            MigrationProjectObject = MigrationProjectObject.build_migration_project()
-            if pioneer_args['security_policy_container [name]']:
-                MigrationProjectObject.execute_migration('security_policy_container', pioneer_args['security_policy_container [name]'])
+            
+            # pass the database of the project here
+            MigrationProjectDB = MigrationProjectObject.get_database()
+            migration_project_name = MigrationProjectObject.get_name()
+            MigrationProjectObject = MigrationProjectFactory.build_migration_project(migration_project_name, MigrationProjectDB)
+            if pioneer_args['security_policy_container [container_name]']:
+                MigrationProjectObject.execute_migration('security_policy_container', pioneer_args['security_policy_container [container_name]'])
 
         
 if __name__ == "__main__":

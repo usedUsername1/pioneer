@@ -45,6 +45,9 @@ class MigrationProject():
     
     def get_database(self):
         return self._Database
+    
+    def get_name(self):
+        return self._name
 
     def import_data(self, SourceSecurityDevice, TargetSecurityDevice):
         # Insert the UIDs of the source and target device
@@ -129,26 +132,6 @@ class MigrationProject():
                 target_table.insert(*row)
             for row in target_data:
                 target_table.insert(*row)
-
-    @staticmethod
-    def create_migration_project(db_user, migration_project_name, db_password, db_host, db_port):
-        # Define the logging settings for general logging
-        general_log_folder = helper.os.path.join('log', f'device_{migration_project_name}')
-        helper.setup_logging(general_log_folder, {'general': 'general.log'})
-        general_logger = helper.logging.getLogger('general')
-        general_logger.info("################## Migration Project ##################")
-
-        migration_project_db_name = migration_project_name + "_db"
-        # Connect to the database of the security device
-        MigrationProjectDBcursor = PioneerDatabase.connect_to_db(db_user, migration_project_db_name, db_password, db_host, db_port)
-
-        # instantiate and extract all the data from a generic security device
-        # the data will be used further for creating the specific security device object
-        MigrationProjectDB = MigrationProjectDatabase(MigrationProjectDBcursor)
-
-        MigrationProjectObject = MigrationProject(migration_project_name, MigrationProjectDB)
-
-        return MigrationProjectObject
     
     def map_containers(self, source_container_name, target_container_name):
         GeneralDataTable = self._Database.get_security_policy_containers_table()
@@ -171,40 +154,21 @@ class MigrationProject():
         target_zone_uid = SecurityZonesTable.get('uid', 'name', target_zone_name)[0]
 
         self._Database.get_security_device_interface_map_table().insert(source_zone_uid, target_zone_uid)
-    
-    #TODO: maybe be more specific when creating migration project, make sure you account for both source and target device.
-    def build_migration_project(self):
-        # Retrieve the target_device_uid
-        target_device_uid = self._Database.get_migration_project_devices_table().get(columns='target_device_uid')[0]
 
-        # Define the join condition
-        join_condition = {
-            'table': 'general_security_device_data',
-            'condition': 'migration_project_devices.target_device_uid = general_security_device_data.uid'
-        }
+    #TODO retrieve the special parameters of the policy from the passed container
+    def get_special_policy_parameters(self, container_name):
+        # get regions
+        # get users
+        # get schedules
+        # get URL categories
+        # get L7 apps, app groups, inline filters
+        # store everything in a text file in the dir of the project log
+        print("this one")
 
-        # Get the target device type
-        target_device_info = self._Database.get_migration_project_devices_table().get(
-            columns=['general_security_device_data.type'],
-            name_col='migration_project_devices.target_device_uid',
-            val=target_device_uid,
-            join=join_condition
-        )
-
-        target_device_type = target_device_info[0][0]
-
-        match target_device_type:
-            case 'panmc-api':
-                return PANMCMigrationProject(self._name, self._Database)
-            case _:
-                # Default case, return None or raise an error
-                raise ValueError(f"Unsupported target device type: {target_device_type}")
-
-class PANMCMigrationProject(MigrationProject):
-    def __init__(self, name, Database):
-        super().__init__(name, Database)
-    
     def execute_migration(self, migration_type, container_name):
         match migration_type:
             case 'security_policy_container':
+                self.get_special_policy_parameters(container_name)
+                self.adapt_security_container_config(container_name)
                 print("looks alright")
+    
