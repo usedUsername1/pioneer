@@ -155,8 +155,12 @@ class MigrationProject():
 
         self._Database.get_security_device_interface_map_table().insert(source_zone_uid, target_zone_uid)
 
-    #TODO retrieve the special parameters of the policy from the passed container
-    def get_special_policy_parameters(self, container_name):
+    #TODO retrieve the special parameters of the policy being currently processed
+    # it makes more sense to retrieve stuff on the fly rather than beforehand
+    def get_special_policy_parameters(self, policy):
+        # retrieve all the policies of a container and loop through tem
+            # query : select * from security_policies where security_policy_container_uid = '{}' order by index;
+        # 
         # get regions
         # get users
         # get schedules
@@ -165,10 +169,31 @@ class MigrationProject():
         # store everything in a text file in the dir of the project log
         print("this one")
 
+    # all stuff can be loaded from the db, stored in dictionaries and processed there
+    # should the policy info be stored in JSON format?
     def execute_migration(self, migration_type, container_name):
+        print("MIGRATION LOOK BELOW")
         match migration_type:
             case 'security_policy_container':
-                self.get_special_policy_parameters(container_name)
-                self.adapt_security_container_config(container_name)
-                print("looks alright")
+                SecurityPolicyContainersTable = self._Database.get_security_policy_containers_table()
+                # make absolutely sure you select the container_uid of the source security device here
+                join = {
+                    "table": "migration_project_devices",
+                    "condition": "security_policy_containers.security_device_uid = migration_project_devices.source_device_uid"
+                }
+                
+                container_uid = SecurityPolicyContainersTable.get(
+                    columns=['*'],
+                    name_col='security_policy_containers.name',
+                    val=container_name,
+                    join=join
+                )[0][0]
+                
+                # retrieve all the policies of a container and loop through them
+                SecurityPoliciesTable = self._Database.get_security_policies_table()
+                security_policies = SecurityPoliciesTable.get('*', 'security_policy_container_uid', container_uid, 'index')
+                print(security_policies)
+
+                # now retrieve all the networks, ports, etc...
+                    # store these in JSON format in lists. these lists will be used later to create the objects
     

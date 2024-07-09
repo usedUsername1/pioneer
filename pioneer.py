@@ -177,6 +177,8 @@ def main():
                     SecurityDeviceObject.get_object_info_from_device_conn('managed_device', ManagedDeviceContainer)
             
             print("Importing security policies.")
+            #TODO: not sure if all the security devices return the index of the security policy as well
+            # if not, make sure you keep track of every policy index here
             for SecurityPolicyContainer in security_policy_containers_list:
                 SecurityDeviceObject.get_object_info_from_device_conn('security_policy_group', SecurityPolicyContainer)
 

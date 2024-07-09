@@ -274,8 +274,8 @@ class PioneerTable():
             cursor = self._Database.get_cursor()
             
             # Execute the select command with the actual values
-            cursor.execute(select_query, params)
             # print(select_query, params)
+            cursor.execute(select_query, params)
         except psycopg2.Error as err:
             general_logger.error(f"Failed to select values from table: <{self._name}>. Reason: {err}")
             # sys.exit(1) or raise an exception if needed
