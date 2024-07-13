@@ -245,7 +245,7 @@ class PioneerTable():
     # move the get_table_value code here. the code must be rewritten in such a way
     # to permit multiple select queries
     # this function doesn't need an override
-    def get(self, columns, name_col=None, val=None, order_param=None, join=None):
+    def get(self, columns, name_col=None, val=None, order_param=None, join=None, not_null_condition=False, multiple_where=False):
         # Ensure columns is either a string (single column) or a list/tuple (multiple columns)
         if isinstance(columns, str):
             columns_str = columns
@@ -260,8 +260,19 @@ class PioneerTable():
 
         if name_col and val:
             # Construct the SELECT query with a WHERE clause
-            select_query = f"SELECT {columns_str} FROM {self._name}{join_clause} WHERE {name_col} = %s;"
-            params = (val,)
+            if multiple_where:
+                where_conditions = " AND ".join(f"{col} = %s" for col in name_col)
+                if not_null_condition:
+                    select_query = f"SELECT {columns_str} FROM {self._name}{join_clause} WHERE {where_conditions} AND {columns_str} IS NOT NULL;"
+                else:
+                    select_query = f"SELECT {columns_str} FROM {self._name}{join_clause} WHERE {where_conditions};"
+                params = tuple(val)
+            else:
+                if not_null_condition:
+                    select_query = f"SELECT {columns_str} FROM {self._name}{join_clause} WHERE {name_col} = %s AND {columns_str} IS NOT NULL;"
+                else:
+                    select_query = f"SELECT {columns_str} FROM {self._name}{join_clause} WHERE {name_col} = %s;"
+                params = (val,)
         else:
             # Construct the SELECT query without a WHERE clause
             if order_param:
@@ -272,19 +283,15 @@ class PioneerTable():
 
         try:
             cursor = self._Database.get_cursor()
-            
-            # Execute the select command with the actual values
-            # print(select_query, params)
+            # print(select_query, val)
             cursor.execute(select_query, params)
+            
         except psycopg2.Error as err:
             general_logger.error(f"Failed to select values from table: <{self._name}>. Reason: {err}")
-            # sys.exit(1) or raise an exception if needed
 
-        # Fetch the returned query values
         postgres_cursor_data = cursor.fetchall()
         general_logger.info(f"Successfully retrieved values from table: <{self._name}>.")
         return postgres_cursor_data
-
     # this function updates values into a table
     # def update(self, table_name, update_command):
     #     try:

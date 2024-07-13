@@ -10,6 +10,7 @@ from pkg.MigrationProject import MigrationProjectFactory
 import sys
 from datetime import datetime, timezone
 import time
+from pkg.Container.PioneerContainer import PioneerContainer
 # import psutil
 
 import subprocess
@@ -241,7 +242,6 @@ def main():
             SourceSecurityDevice = SecurityDeviceFactory.create_security_device(db_user, pioneer_args['set_source_device [name]'], db_password, db_host, db_port)
             TargetSecurityDevice = SecurityDeviceFactory.create_security_device(db_user, pioneer_args['set_target_device [name]'], db_password, db_host, db_port)
             #TODO: when importing data, zones and containers names might be duplicated. if there are duplicates, then what?
-            #TODO: proper import of PANMC containers and zones
             MigrationProjectObject.import_data(SourceSecurityDevice, TargetSecurityDevice)
 
         if pioneer_args['map_containers']:
@@ -252,19 +252,19 @@ def main():
             if pioneer_args.get('source_zone_name') and pioneer_args.get('target_zone_name'):
                 MigrationProjectObject.map_zones(
                     pioneer_args['source_zone_name'], pioneer_args['target_zone_name'])
+        
         if pioneer_args['migrate']:
-            #TODO: generate incomaptibilites report (only once) for the policies in the container that is going to be migrated.
-                # find all the special parameters and put them in a text file
-            # adapt the config of objects(here, at this step? or on the fly?)
-                # change everything in the DB (besides the containers UIDs, they will be retrieved on the fly)
-            # import all the groups and objects (objects used by policies and the objects used by groups which are used by policies)
-            
             # pass the database of the project here
             MigrationProjectDB = MigrationProjectObject.get_database()
             migration_project_name = MigrationProjectObject.get_name()
             MigrationProjectObject = MigrationProjectFactory.build_migration_project(migration_project_name, MigrationProjectDB)
+            
             if pioneer_args['security_policy_container [container_name]']:
-                MigrationProjectObject.execute_migration('security_policy_container', pioneer_args['security_policy_container [container_name]'])
+                # what if i build an intermediary type of object? such as PioneerContainer and have it migrated based on the migration project target's device?
+                #TODO: at some point, maybe get the parent of the container on which the Pioneer container is based on
+                SecurityPolicyContainer = PioneerContainer(MigrationProjectObject, pioneer_args['security_policy_container [container_name]'], None)
+                SecurityPolicyContainer.rename_migrate_when_done_implementing()
+
 
         
 if __name__ == "__main__":
@@ -273,3 +273,7 @@ if __name__ == "__main__":
 
 # python3 pioneer.py --create-security-device 'name' --device-type 'type' --hostname 'ip/dns' --username 'user' --secret 'pass'
 # python3 pioneer.py --project 'test_prj' --set-source-device 'test_sfmc' --set-target-device 'test_sfmc1'   
+
+#TODO:
+    # at some point, fix generating UIDs upon init of objects as it is a bad practice
+    # don't forget to refactor the SecurityPolicy subclasses to remove the redundancy of attributes

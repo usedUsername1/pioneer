@@ -1,14 +1,9 @@
 from pkg.MigrationProject import MigrationProject
+from pkg.Container.PANMCContainer import PANMCSecurityPolicyContainer
 class PANMCMigrationProject(MigrationProject):
     def __init__(self, name, Database):
         super().__init__(name, Database)
     
-    def adapt_security_container_config(self):
-        # adapt the config by applying name constraints, URL name constraints and by
-        # converting the URLs in URL groups to URL categories - this might be a problem
-        # change the interfaces 
-        pass
-
     # save it to the file file, don't print it
     def print_compatibility_issues(self):
         print("""You are migrating to a Panorama Management Center device. The following is a list with compatibility issues and how they will be fixed:

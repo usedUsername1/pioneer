@@ -1,5 +1,6 @@
 import utils.helper as helper
 from abc import abstractmethod
+from pkg.Policy import SecurityPolicy
 general_logger = helper.logging.getLogger('general')
 
 class Container:
@@ -132,7 +133,6 @@ class ManagedDeviceContainer(Container):
             ManagedDeviceContainersTable.insert(self.get_uid(), self.get_name(), self.get_security_device_uid(), self.get_parent().get_uid())
         except:
             ManagedDeviceContainersTable.insert(self.get_uid(), self.get_name(), self.get_security_device_uid(), None)
-
 
 class NATPolicyContainer:
     pass

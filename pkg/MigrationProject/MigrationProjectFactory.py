@@ -2,13 +2,15 @@ from pkg.MigrationProject.PANMCMigrationProject import PANMCMigrationProject
 from pkg.MigrationProject import MigrationProject, MigrationProjectDatabase
 
 import utils.helper as helper
+import utils.gvars as gvars
 from pkg import PioneerDatabase
 
 @staticmethod
 def create_migration_project(db_user, migration_project_name, db_password, db_host, db_port):
     # Define the logging settings for general logging
-    general_log_folder = helper.os.path.join('log', f'device_{migration_project_name}')
-    helper.setup_logging(general_log_folder, {'general': 'general.log'})
+    log_folder = helper.os.path.join('log', f'device_{migration_project_name}')
+    helper.setup_logging(log_folder, {gvars.general_logger: gvars.general_log_file,
+                                        gvars.special_policies_logger: gvars.special_policies_logger_file})
     general_logger = helper.logging.getLogger('general')
     general_logger.info("################## Migration Project ##################")
 
@@ -28,8 +30,17 @@ def create_migration_project(db_user, migration_project_name, db_password, db_ho
 @staticmethod
 def build_migration_project(name, Database):
     # Retrieve the target_device_uid
-    target_device_uid = Database.get_migration_project_devices_table().get(columns='target_device_uid')[0]
+    target_device_type = get_target_device_type_by_uid(Database)
+    match target_device_type:
+        case 'panmc-api':
+            return PANMCMigrationProject(name, Database)
+        case _:
+            # Default case, return None or raise an error
+            raise ValueError(f"Unsupported target device type: <{target_device_type}>.")
 
+@staticmethod
+def get_target_device_type_by_uid(Database):
+    target_device_uid = Database.get_migration_project_devices_table().get(columns='target_device_uid')[0]
     # Define the join condition
     join_condition = {
         'table': 'general_security_device_data',
@@ -45,10 +56,4 @@ def build_migration_project(name, Database):
     )
 
     target_device_type = target_device_info[0][0]
-
-    match target_device_type:
-        case 'panmc-api':
-            return PANMCMigrationProject(name, Database)
-        case _:
-            # Default case, return None or raise an error
-            raise ValueError(f"Unsupported target device type: {target_device_type}")
+    return target_device_type

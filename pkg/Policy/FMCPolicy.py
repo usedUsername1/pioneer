@@ -13,6 +13,7 @@ class FMCSecurityPolicy(SecurityPolicy, FMCObjectWithLiterals):
     """
     # duct tape solution :(
     # Class variables
+    # why the fuck did I do this?
     _VirtualObjectContainer = None
     _Database = None
     _initialized = False  # Initialization flag
