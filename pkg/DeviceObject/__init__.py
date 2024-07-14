@@ -26,6 +26,9 @@ class Object:
     def get_uid(self):
         return self._uid
     
+    def set_uid(self, uid):
+        self._uid = uid
+    
     def get_object_container(self):
         return self._ObjectContainer
 

@@ -263,7 +263,7 @@ def main():
                 # what if i build an intermediary type of object? such as PioneerContainer and have it migrated based on the migration project target's device?
                 #TODO: at some point, maybe get the parent of the container on which the Pioneer container is based on
                 SecurityPolicyContainer = PioneerContainer(MigrationProjectObject, pioneer_args['security_policy_container [container_name]'], None)
-                SecurityPolicyContainer.rename_migrate_when_done_implementing()
+                SecurityPolicyContainer.process_and_migrate()
 
 
         
