@@ -121,9 +121,31 @@ class GroupObject(Object):
             object_info (dict): Information about the group object.
         """
         self._group_member_names = []
-    
+        self._object_members = []
+        self._group_object_members = []
+        # no better idea of where to put it at the moment :(
+        self._icmp_object_members = []
+
     def get_group_member_names(self):
         return self._group_member_names
+
+    def get_object_members(self):
+        return self._object_members
+
+    def get_group_object_members(self):
+        return self._group_object_members
+    
+    def set_object_members(self, object_members):
+        self._object_members = object_members
+
+    def set_group_object_members(self, group_object_members):
+        self._object_members = group_object_members
+    
+    def set_icmp_members(self, icmp_members):
+        self._icmp_members = icmp_members
+
+    def get_icmp_members(self):
+        return self._icmp_members
 
 class NetworkObject:
     """

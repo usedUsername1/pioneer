@@ -35,6 +35,7 @@ class PioneerSecurityPolicyContainer(SecurityPolicyContainer):
         # when the object is initialized, all the data about objects attached to it will be collected
         # multiple lists need to be kept, in case the target device supports bulk object creation
         # the list with the objects must be passed to it
+        #TODO: maybe use a different data type here idk
         network_objects = set()
         network_group_objects = set()
         port_objects = set()
@@ -56,7 +57,11 @@ class PioneerSecurityPolicyContainer(SecurityPolicyContainer):
 
             network_group_objects.update(PioneerSecurityPolicyObject.get_source_network_group_objects())
             network_group_objects.update(PioneerSecurityPolicyObject.get_destination_network_group_objects())
-            # loop through the groups here, retrieve their members and update the network_objects set. it is the only way
+            # there is a problem with adding data RuntimeError: Set changed size during iteration
+            # # loop through the groups here, retrieve their members and update the network_objects set. it is the only way
+            # for NetworkGroup in network_group_objects:
+            #     network_group_objects.update(NetworkGroup.get_object_members())
+            #     network_group_objects.update(NetworkGroup.get_group_object_members())
 
             port_objects.update(PioneerSecurityPolicyObject.get_source_port_objects())
             port_objects.update(PioneerSecurityPolicyObject.get_destination_port_objects())
@@ -71,5 +76,5 @@ class PioneerSecurityPolicyContainer(SecurityPolicyContainer):
             url_objects.update(PioneerSecurityPolicyObject.get_url_objects_from_pioneer_policy())
             url_group_objects.update(PioneerSecurityPolicyObject.get_url_group_objects())
 
-            # how the fuck do I get the MEMBER OBJECTS PROPERLY?
-            # stuff should be retrieved beforehand and added to the sets tracking the objects
+            # ok, all the members of all the groups have been extracted. next question, how do you update
+            # all the sets with the elements of the list and not with the array itself?

@@ -25,7 +25,6 @@ class PioneerObject(Object):
 # python object representations of the member objects?
     # if so, should members be retrieved upon the instantiation of the group object?
 
-
 class PioneerNetworkObject(PioneerObject, NetworkObject):
     def __init__(self, ObjectContainer, object_info) -> None:
         object_uid = object_info[0]
@@ -47,7 +46,72 @@ class PioneerNetworkGroupObject(NetworkGroupObject, PioneerObject):
         PioneerObject.__init__(self, ObjectContainer, object_name, object_description, overridable_object)
         NetworkGroupObject.__init__(self)
         self.set_uid(object_uid)
+    
+    def extract_members(self, type, object_cache, NetworkGroupObjectsMembersTable):
+        if type == 'object':
+            columns = [
+                "network_address_objects.uid",
+                "network_address_objects.name",
+                "network_address_objects.object_container_uid",
+                "network_address_objects.value",
+                "network_address_objects.description",
+                "network_address_objects.type",
+                "network_address_objects.overridable_object"
+            ]
+            obj_class = PioneerNetworkObject
+            join_conditions = [
+                {
+                    "table": "network_address_objects",
+                    "condition": "network_group_objects_members.object_uid = network_address_objects.uid"
+                }
+            ]
+            name_col = 'network_group_objects_members.group_uid'
 
+        elif type == 'group':
+            columns = [
+                "network_group_objects.uid",
+                "network_group_objects.name",
+                "network_group_objects.object_container_uid",
+                "network_group_objects.description",
+                "network_group_objects.overridable_object"
+            ]
+            obj_class = PioneerNetworkGroupObject
+            join_conditions = [
+                {
+                    "table": "network_group_objects",
+                    "condition": "network_group_objects_members.object_uid = network_group_objects.uid"
+                }
+            ]
+            name_col = 'network_group_objects_members.group_uid'
+
+        # Fetch members information
+        members_info = NetworkGroupObjectsMembersTable.get(
+            columns=columns,
+            name_col=name_col,
+            val=self.get_uid(),
+            join=join_conditions,  # Pass the list of joins
+            not_null_condition=False,  # Adjust if necessary
+            multiple_where=False  # Adjust if necessary
+        )
+
+        # Create and cache objects based on the fetched data
+        for member_info in members_info:
+            uid = member_info[0]
+            name = member_info[1]
+            key = (uid, name)
+
+            member = object_cache.get_or_create(
+                key,
+                lambda: obj_class(None, member_info)
+            )
+            if type == 'object':
+                self._object_members.append(member)
+            elif type == 'group':
+                self._group_object_members.append(member)
+                # If needed, extract members of nested groups
+                member.extract_members('object', object_cache, NetworkGroupObjectsMembersTable)
+                member.extract_members('group', object_cache, NetworkGroupObjectsMembersTable)
+        
 class PioneerPortObject(PortObject, PioneerObject):
     def __init__(self, ObjectContainer, object_info) -> None:
         object_uid = object_info[0]
@@ -83,6 +147,97 @@ class PioneerPortGroupObject(PortGroupObject, PioneerObject):
         PortGroupObject.__init__(self)
         self.set_uid(object_uid)
 
+    def extract_members(self, type, object_cache, PortGroupObjectsMembersTable):
+        if type == 'port_object':
+            columns = [
+                "port_objects.uid",
+                "port_objects.name",
+                "port_objects.object_container_uid",
+                "port_objects.protocol",
+                "port_objects.source_port_number",
+                "port_objects.destination_port_number",
+                "port_objects.description",
+                "port_objects.overridable_object"
+            ]
+            obj_class = PioneerPortObject
+            join_conditions = [
+                {
+                    "table": "port_objects",
+                    "condition": "port_group_objects_members.object_uid = port_objects.uid"
+                }
+            ]
+            name_col = 'port_group_objects_members.group_uid'
+
+        elif type == 'icmp_object':
+            columns = [
+                "icmp_objects.uid",
+                "icmp_objects.name",
+                "icmp_objects.object_container_uid",
+                "icmp_objects.type",
+                "icmp_objects.code",
+                "icmp_objects.description",
+                "icmp_objects.overridable_object"
+            ]
+            obj_class = PioneerICMPObject
+            join_conditions = [
+                {
+                    "table": "icmp_objects",
+                    "condition": "port_group_objects_members.object_uid = icmp_objects.uid"
+                }
+            ]
+            name_col = 'port_group_objects_members.group_uid'
+
+        elif type == 'group':
+            columns = [
+                "port_group_objects.uid",
+                "port_group_objects.name",
+                "port_group_objects.object_container_uid",
+                "port_group_objects.description",
+                "port_group_objects.overridable_object"
+            ]
+            obj_class = PioneerPortGroupObject
+            join_conditions = [
+                {
+                    "table": "port_group_objects",
+                    "condition": "port_group_objects_members.object_uid = port_group_objects.uid"
+                }
+            ]
+            name_col = 'port_group_objects.group_uid'
+
+        else:
+            raise ValueError(f"Unknown type: {type}")
+
+        # Fetch members information
+        members_info = PortGroupObjectsMembersTable.get(
+            columns=columns,
+            name_col=name_col,
+            val=self.get_uid(),
+            join=join_conditions,
+            not_null_condition=False,
+            multiple_where=False
+        )
+
+        # Create and cache objects based on the fetched data
+        for member_info in members_info:
+            uid = member_info[0]
+            name = member_info[1]
+            key = (uid, name)
+
+            member = object_cache.get_or_create(
+                key,
+                lambda: obj_class(None, member_info)
+            )
+            if type == 'port_object':
+                self._object_members.append(member)
+            elif type == 'icmp_object':
+                self._icmp_object_members.append(member)
+            elif type == 'group':
+                self._group_object_members.append(member)
+                # If needed, extract members of nested groups
+                member.extract_members('port_object', object_cache, PortGroupObjectsMembersTable)
+                member.extract_members('icmp_object', object_cache, PortGroupObjectsMembersTable)
+                member.extract_members('group', object_cache, PortGroupObjectsMembersTable)
+
 class PioneerURLObject(URLObject, PioneerObject):
     def __init__(self, ObjectContainer, object_info) -> None:
         object_uid = object_info[0]
@@ -103,3 +258,70 @@ class PioneerURLGroupObject(URLGroupObject, PioneerObject):
         PioneerObject.__init__(self, ObjectContainer, object_name, object_description, overridable_object)
         URLGroupObject.__init__(self)
         self.set_uid(object_uid)
+
+    def extract_members(self, type, object_cache, URLGroupObjectsMembersTable):
+        if type == 'object':
+            columns = [
+                "url_objects.uid",
+                "url_objects.name",
+                "url_objects.object_container_uid",
+                "url_objects.url_value",
+                "url_objects.description",
+                "url_objects.overridable_object"
+            ]
+            obj_class = PioneerURLObject
+            join_conditions = [
+                {
+                    "table": "url_objects",
+                    "condition": "url_group_objects_members.object_uid = url_objects.uid"
+                }
+            ]
+            name_col = 'url_group_objects_members.group_uid'
+
+        elif type == 'group':
+            columns = [
+                "url_group_objects.uid",
+                "url_group_objects.name",
+                "url_group_objects.object_container_uid",
+                "url_group_objects.description",
+                "url_group_objects.overridable_object"
+            ]
+            obj_class = PioneerURLGroupObject
+            join_conditions = [
+                {
+                    "table": "url_group_objects",
+                    "condition": "url_group_objects_members.object_uid = url_group_objects.uid"
+                }
+            ]
+            name_col = 'url_group_objects_members.group_uid'
+
+        else:
+            raise ValueError(f"Unknown type: {type}")
+
+        # Fetch members information
+        members_info = URLGroupObjectsMembersTable.get(
+            columns=columns,
+            name_col=name_col,
+            val=self.get_uid(),
+            join=join_conditions,
+            not_null_condition=False,
+            multiple_where=False
+        )
+
+        # Create and cache objects based on the fetched data
+        for member_info in members_info:
+            uid = member_info[0]
+            name = member_info[1]
+            key = (uid, name)
+
+            member = object_cache.get_or_create(
+                key,
+                lambda: obj_class(None, member_info)
+            )
+            if type == 'url_object':
+                self._object_members.append(member)
+            elif type == 'url_group':
+                self._group_object_members.append(member)
+                # If needed, extract members of nested groups
+                member.extract_members('url_object', object_cache, URLGroupObjectsMembersTable)
+                member.extract_members('url_group', object_cache, URLGroupObjectsMembersTable)

@@ -18,7 +18,10 @@ class PioneerSecurityPolicy(SecurityPolicy):
     _SecurityPolicyUsersTable = None
     _SecurityPolicyURLsTable = None
     _SecurityPolicyL7AppsTable = None
-    
+    _NetworkGroupObjectsMembersTable = None
+    _PortGroupObjectsMembersTable = None
+    _URLGroupObjectsMembersTable = None
+
     _CountryObjectsTable = None
     _GeolocationObjectsTable = None
     _ScheduleObjectsTable = None
@@ -57,7 +60,9 @@ class PioneerSecurityPolicy(SecurityPolicy):
             cls._L7AppsTable = cls._Database.get_l7_app_objects_table()
             cls._L7AppFiltersTable = cls._Database.get_l7_app_filter_objects_table()
             cls._L7AppGroupsTable = cls._Database.get_l7_app_group_objects_table()
-
+            cls._NetworkGroupObjectsMembersTable = cls._Database.get_network_group_objects_members_table()
+            cls._PortGroupObjectsMembersTable = cls._Database.get_port_group_objects_members_table()
+            cls._URLGroupObjectsMembersTable = cls._Database.get_url_group_objects_members_table()
             cls._initialized = True
 
     def __init__(self, PolicyContainer, policy_info) -> None:
@@ -151,6 +156,8 @@ class PioneerSecurityPolicy(SecurityPolicy):
     # the problem is that whenever info is extracted, a new object is created with that data. if the same data object gets extracted 10 times
     # then there will be 10 objects, all having the same data!
     # caching is implemented to avoid this
+    
+    #TODO: use sets for storing objects and whatsoever
     def extract_network_address_object_info(self, object_type, flow):
         security_policy_networks = []
 
@@ -201,6 +208,9 @@ class PioneerSecurityPolicy(SecurityPolicy):
                     
                     # Use cache to avoid creating duplicate objects
                     NetworkObject = self._object_cache.get_or_create(key, lambda: PioneerNetworkGroupObject(None, object_info))
+                    
+                    NetworkObject.extract_members('object', self._object_cache, self._NetworkGroupObjectsMembersTable)
+                    NetworkObject.extract_members('group', self._object_cache, self._NetworkGroupObjectsMembersTable)
                     security_policy_networks.append(NetworkObject)
 
             case 'country_object_uid':
@@ -259,8 +269,10 @@ class PioneerSecurityPolicy(SecurityPolicy):
                     uid = object_info[0]
                     name = object_info[1]
                     key = (uid, name)
-                    port_group_object = self._object_cache.get_or_create(key, lambda: PioneerPortGroupObject(None, object_info))
-                    security_policy_ports_info.append(port_group_object)
+                    PortGroupObject = self._object_cache.get_or_create(key, lambda: PioneerPortGroupObject(None, object_info))
+                    PortGroupObject.extract_members('object', self._object_cache, self._PortGroupObjectsMembersTable)
+                    PortGroupObject.extract_members('group', self._object_cache, self._PortGroupObjectsMembersTable)
+                    security_policy_ports_info.append(PortGroupObject)
 
         return security_policy_ports_info
     
@@ -323,8 +335,11 @@ class PioneerSecurityPolicy(SecurityPolicy):
                     uid = object_info[0]
                     name = object_info[1]
                     key = (uid, name)
-                    url_group_object = self._object_cache.get_or_create(key, lambda: PioneerURLGroupObject(None, object_info))
-                    security_policy_urls.append(url_group_object)
+                    URLGroupObject = self._object_cache.get_or_create(key, lambda: PioneerURLGroupObject(None, object_info))
+                    URLGroupObject.extract_members('object', self._object_cache, self._URLGroupObjectsMembersTable)
+                    URLGroupObject.extract_members('group', self._object_cache, self._URLGroupObjectsMembersTable)
+                    security_policy_urls.append(URLGroupObject)
+
 
             case 'url_category_uid':
                 join = {

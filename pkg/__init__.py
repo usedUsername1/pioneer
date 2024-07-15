@@ -254,44 +254,52 @@ class PioneerTable():
         else:
             raise ValueError("columns parameter must be a string, list, or tuple of column names")
 
+        # Construct the JOIN clause if joins are provided
         join_clause = ""
         if join:
-            join_clause = f" JOIN {join['table']} ON {join['condition']}"
+            if isinstance(join, dict):
+                join = [join]  # Convert to list if single join is provided as a dict
 
+            join_clauses = []
+            for join in join:
+                join_clauses.append(f"JOIN {join['table']} ON {join['condition']}")
+            join_clause = " ".join(join_clauses)
+
+        # Construct the WHERE clause
         if name_col and val:
-            # Construct the SELECT query with a WHERE clause
             if multiple_where:
                 where_conditions = " AND ".join(f"{col} = %s" for col in name_col)
                 if not_null_condition:
-                    select_query = f"SELECT {columns_str} FROM {self._name}{join_clause} WHERE {where_conditions} AND {columns_str} IS NOT NULL;"
+                    select_query = f"SELECT {columns_str} FROM {self._name} {join_clause} WHERE {where_conditions} AND {columns_str} IS NOT NULL;"
                 else:
-                    select_query = f"SELECT {columns_str} FROM {self._name}{join_clause} WHERE {where_conditions};"
+                    select_query = f"SELECT {columns_str} FROM {self._name} {join_clause} WHERE {where_conditions};"
                 params = tuple(val)
             else:
                 if not_null_condition:
-                    select_query = f"SELECT {columns_str} FROM {self._name}{join_clause} WHERE {name_col} = %s AND {columns_str} IS NOT NULL;"
+                    select_query = f"SELECT {columns_str} FROM {self._name} {join_clause} WHERE {name_col} = %s AND {columns_str} IS NOT NULL;"
                 else:
-                    select_query = f"SELECT {columns_str} FROM {self._name}{join_clause} WHERE {name_col} = %s;"
+                    select_query = f"SELECT {columns_str} FROM {self._name} {join_clause} WHERE {name_col} = %s;"
                 params = (val,)
         else:
             # Construct the SELECT query without a WHERE clause
             if order_param:
-                select_query = f"SELECT {columns_str} FROM {self._name}{join_clause} ORDER BY {order_param};"
+                select_query = f"SELECT {columns_str} FROM {self._name} {join_clause} ORDER BY {order_param};"
             else:
-                select_query = f"SELECT {columns_str} FROM {self._name}{join_clause};"
+                select_query = f"SELECT {columns_str} FROM {self._name} {join_clause};"
             params = ()
 
+        # Execute the query
         try:
             cursor = self._Database.get_cursor()
-            # print(select_query, val)
+            # print(select_query, params)
             cursor.execute(select_query, params)
-            
-        except psycopg2.Error as err:
-            general_logger.error(f"Failed to select values from table: <{self._name}>. Reason: {err}")
+            # Fetch the results
+            results = cursor.fetchall()
+            return results
+        except Exception as e:
+            print(f"Failed to select values from table: {self._name}. Reason: {e}")
+            raise
 
-        postgres_cursor_data = cursor.fetchall()
-        general_logger.info(f"Successfully retrieved values from table: <{self._name}>.")
-        return postgres_cursor_data
     # this function updates values into a table
     # def update(self, table_name, update_command):
     #     try:
@@ -377,6 +385,7 @@ class ManagedDeviceContainersTable(PioneerTable):
             ("parent", "TEXT"),
             ("CONSTRAINT fk_security_device FOREIGN KEY (security_device_uid)", "REFERENCES general_security_device_data (uid)"),
         ]
+
 class ManagedDevicesTable(PioneerTable):
     def __init__(self, Database):
         super().__init__(Database)
