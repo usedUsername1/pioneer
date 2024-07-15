@@ -10,7 +10,7 @@ from pkg.MigrationProject import MigrationProjectFactory
 import sys
 from datetime import datetime, timezone
 import time
-from pkg.Container.PioneerContainer import PioneerContainer
+from pkg.Container.PioneerContainer import PioneerSecurityPolicyContainer
 # import psutil
 
 import subprocess
@@ -262,7 +262,7 @@ def main():
             if pioneer_args['security_policy_container [container_name]']:
                 # what if i build an intermediary type of object? such as PioneerContainer and have it migrated based on the migration project target's device?
                 #TODO: at some point, maybe get the parent of the container on which the Pioneer container is based on
-                SecurityPolicyContainer = PioneerContainer(MigrationProjectObject, pioneer_args['security_policy_container [container_name]'], None)
+                SecurityPolicyContainer = PioneerSecurityPolicyContainer(MigrationProjectObject, pioneer_args['security_policy_container [container_name]'], None)
                 SecurityPolicyContainer.process_and_migrate()
 
 

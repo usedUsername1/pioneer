@@ -1,10 +1,12 @@
-from pkg.Container import Container
+from pkg.Container import Container, SecurityPolicyContainer
+
+            # don't forget to check if groups should be sorted based on depdendencies
 
 # a Pioneer object belongs to a MigrationProject object so SecurityDevice is the MigrationProject
 #TODO: at some point, get the uid of the source container
 from pkg.Policy.PioneerPolicy import PioneerSecurityPolicy
 
-class PioneerContainer(Container):
+class PioneerSecurityPolicyContainer(SecurityPolicyContainer):
     def __init__(self, SecurityDevice, name, parent_name) -> None:
         super().__init__(SecurityDevice, name, parent_name)
         self.set_uid(self.get_source_security_policy_container_uid())
@@ -31,6 +33,8 @@ class PioneerContainer(Container):
         
         # create the PioneerSecurityPolicy object with data extracted from the database
         # when the object is initialized, all the data about objects attached to it will be collected
+        # multiple lists need to be kept, in case the target device supports bulk object creation
+        # the list with the objects must be passed to it
         network_objects = set()
         network_group_objects = set()
         port_objects = set()
@@ -52,6 +56,7 @@ class PioneerContainer(Container):
 
             network_group_objects.update(PioneerSecurityPolicyObject.get_source_network_group_objects())
             network_group_objects.update(PioneerSecurityPolicyObject.get_destination_network_group_objects())
+            # loop through the groups here, retrieve their members and update the network_objects set. it is the only way
 
             port_objects.update(PioneerSecurityPolicyObject.get_source_port_objects())
             port_objects.update(PioneerSecurityPolicyObject.get_destination_port_objects())
@@ -62,8 +67,9 @@ class PioneerContainer(Container):
             port_group_objects.update(PioneerSecurityPolicyObject.get_source_port_group_objects())
             port_group_objects.update(PioneerSecurityPolicyObject.get_destination_port_group_objects())
 
-        # at this point, all the policies will have been processed and all the data
-        # process the groups first, by getting all the member objects and adding them to the lists containgin objects and groups
-        # for NetworkGroupObject in network_group_objects:
-        #     NetworkGroupObject.process_and_migrate()
-        # loop through the set with collected UIDs
+            # there is something very weird going on with this function
+            url_objects.update(PioneerSecurityPolicyObject.get_url_objects_from_pioneer_policy())
+            url_group_objects.update(PioneerSecurityPolicyObject.get_url_group_objects())
+
+            # how the fuck do I get the MEMBER OBJECTS PROPERLY?
+            # stuff should be retrieved beforehand and added to the sets tracking the objects

@@ -96,10 +96,10 @@ class PioneerSecurityPolicy(SecurityPolicy):
         self._schedule_objects = self.extract_schedule_object_info()
         self._users = self.extract_user_object_info()
 
-        self._url_objects = self.extract_url_object_info('object_uid')
+        self._url_objects_pioneer = self.extract_url_object_info('object_uid')
         self._url_groups = self.extract_url_object_info('group_object_uid')
         self._url_categories = self.extract_url_object_info('url_category_uid')
-        self._urls = [self._url_objects, self._url_groups]
+        self._urls = [self._url_objects_pioneer, self._url_groups]
 
         self._policy_apps = self.extract_l7_app_object_info('l7_app_uid')
         self._policy_app_filters = self.extract_l7_app_object_info('l7_app_filter_uid')
@@ -281,28 +281,23 @@ class PioneerSecurityPolicy(SecurityPolicy):
             return security_policy_users
 
     def extract_url_object_info(self, object_type):
+        security_policy_urls = []
+        
         match object_type:
-            case 'url_category_uid':
-                # Existing handling for 'url_category_uid'
-                join = {
-                    "table": "security_policy_urls",
-                    "condition": "url_categories.uid = security_policy_urls.url_category_uid"
-                }
-                security_policy_urls = self._URLCategoriesTable.get(columns='name', name_col='security_policy_uid', val=self._uid, join=join)
-
             case 'object_uid':
-                # Define the join condition
                 join = {
                     "table": "url_objects",
                     "condition": "security_policy_urls.object_uid = url_objects.uid"
                 }
-
-                # Define the columns to retrieve
                 columns = "url_objects.uid, url_objects.name, url_objects.object_container_uid, url_objects.url_value, url_objects.description, url_objects.overridable_object"
-                data = self._SecurityPolicyURLsTable.get(columns=columns, name_col='security_policy_uid', val=self._uid, join=join, not_null_condition=False)
+                data = self._SecurityPolicyURLsTable.get(
+                    columns=columns,
+                    name_col='security_policy_uid',
+                    val=self._uid,
+                    join=join,
+                    not_null_condition=False
+                )
 
-                # Use cache to avoid creating duplicate objects
-                security_policy_urls = []
                 for object_info in data:
                     uid = object_info[0]
                     name = object_info[1]
@@ -311,24 +306,37 @@ class PioneerSecurityPolicy(SecurityPolicy):
                     security_policy_urls.append(url_object)
 
             case 'group_object_uid':
-                # Define the join condition
                 join = {
                     "table": "url_group_objects",
                     "condition": "security_policy_urls.group_object_uid = url_group_objects.uid"
                 }
-
-                # Define the columns to retrieve
                 columns = "url_group_objects.uid, url_group_objects.name, url_group_objects.object_container_uid, url_group_objects.description, url_group_objects.overridable_object"
-                data = self._SecurityPolicyURLsTable.get(columns=columns, name_col='security_policy_uid', val=self._uid, join=join, not_null_condition=False)
+                data = self._SecurityPolicyURLsTable.get(
+                    columns=columns,
+                    name_col='security_policy_uid',
+                    val=self._uid,
+                    join=join,
+                    not_null_condition=False
+                )
 
-                # Use cache to avoid creating duplicate objects
-                security_policy_urls = []
                 for object_info in data:
                     uid = object_info[0]
                     name = object_info[1]
                     key = (uid, name)
                     url_group_object = self._object_cache.get_or_create(key, lambda: PioneerURLGroupObject(None, object_info))
                     security_policy_urls.append(url_group_object)
+
+            case 'url_category_uid':
+                join = {
+                    "table": "security_policy_urls",
+                    "condition": "url_categories.uid = security_policy_urls.url_category_uid"
+                }
+                security_policy_urls = self._URLCategoriesTable.get(
+                    columns='name',
+                    name_col='security_policy_uid',
+                    val=self._uid,
+                    join=join
+                )
 
         return security_policy_urls
     
@@ -403,8 +411,12 @@ class PioneerSecurityPolicy(SecurityPolicy):
     def get_destination_port_group_objects(self):
         return self._destination_port_group_objects
 
-    def get_url_objects(self):
-        return self._url_objects
+    def get_urls(self):
+        return self._urls
+    
+    # there is something very strange going on here if there paramters is set to self._url_objects. investigate this
+    def get_url_objects_from_pioneer_policy(self):
+        return self._url_objects_pioneer
 
     def get_url_group_objects(self):
         return self._url_groups
