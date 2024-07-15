@@ -105,9 +105,9 @@ class PioneerNetworkGroupObject(NetworkGroupObject, PioneerObject):
                 lambda: obj_class(None, member_info)
             )
             if type == 'object':
-                self._object_members.append(member)
+                self._object_members.add(member)
             elif type == 'group':
-                self._group_object_members.append(member)
+                self._group_object_members.add(member)
                 # If needed, extract members of nested groups
                 member.extract_members('object', object_cache, NetworkGroupObjectsMembersTable)
                 member.extract_members('group', object_cache, NetworkGroupObjectsMembersTable)
@@ -228,11 +228,11 @@ class PioneerPortGroupObject(PortGroupObject, PioneerObject):
                 lambda: obj_class(None, member_info)
             )
             if type == 'port_object':
-                self._object_members.append(member)
+                self._object_members.add(member)
             elif type == 'icmp_object':
-                self._icmp_object_members.append(member)
+                self._icmp_object_members.add(member)
             elif type == 'group':
-                self._group_object_members.append(member)
+                self._group_object_members.add(member)
                 # If needed, extract members of nested groups
                 member.extract_members('port_object', object_cache, PortGroupObjectsMembersTable)
                 member.extract_members('icmp_object', object_cache, PortGroupObjectsMembersTable)
@@ -319,9 +319,9 @@ class PioneerURLGroupObject(URLGroupObject, PioneerObject):
                 lambda: obj_class(None, member_info)
             )
             if type == 'url_object':
-                self._object_members.append(member)
+                self._object_members.add(member)
             elif type == 'url_group':
-                self._group_object_members.append(member)
+                self._group_object_members.add(member)
                 # If needed, extract members of nested groups
                 member.extract_members('url_object', object_cache, URLGroupObjectsMembersTable)
                 member.extract_members('url_group', object_cache, URLGroupObjectsMembersTable)

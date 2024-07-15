@@ -121,10 +121,15 @@ class GroupObject(Object):
             object_info (dict): Information about the group object.
         """
         self._group_member_names = []
-        self._object_members = []
-        self._group_object_members = []
+        
+        self._object_members = set()
+        self._group_object_members = set()
+    
         # no better idea of where to put it at the moment :(
-        self._icmp_object_members = []
+        # decide if it belongs with the rest of the group members or if it should be kept separately
+        self._icmp_object_members = set()
+
+        self._group_members = self._object_members | self._group_object_members
 
     def get_group_member_names(self):
         return self._group_member_names

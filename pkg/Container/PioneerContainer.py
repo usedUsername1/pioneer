@@ -27,54 +27,56 @@ class PioneerSecurityPolicyContainer(SecurityPolicyContainer):
         )[0][0]
     
     def process_and_migrate(self):
-        # retrieve the security policy info from the database
-        SecurityDeviceDatabase = self._SecurityDevice.get_database()
-        security_policies_info_db = SecurityDeviceDatabase.get_security_policies_table().get('*', 'security_policy_container_uid', self.get_uid(), 'index')
-        
-        # create the PioneerSecurityPolicy object with data extracted from the database
-        # when the object is initialized, all the data about objects attached to it will be collected
-        # multiple lists need to be kept, in case the target device supports bulk object creation
-        # the list with the objects must be passed to it
-        #TODO: maybe use a different data type here idk
+        # Retrieve the security policy info from the database
+        db = self._SecurityDevice.get_database()
+        policies = db.get_security_policies_table().get('*', 'security_policy_container_uid', self.get_uid(), 'index')
+
+        # Initialize sets to track different types of objects
         network_objects = set()
         network_group_objects = set()
         port_objects = set()
         icmp_objects = set()
         port_group_objects = set()
-
         url_objects = set()
         url_group_objects = set()
 
-        for security_policy_entry in security_policies_info_db:
-            # create the python object and collect all the data of the policy from the database
-            PioneerSecurityPolicyObject = PioneerSecurityPolicy(self, security_policy_entry)
-            
-            # log the special paramteres such as L7 apps
-            # is it possible to get all the data for a given uid, and not just the uid?
-            PioneerSecurityPolicyObject.log_special_parameters()
-            network_objects.update(PioneerSecurityPolicyObject.get_source_network_objects())
-            network_objects.update(PioneerSecurityPolicyObject.get_destination_network_objects())
+        # Process each security policy entry
+        for entry in policies:
+            policy = PioneerSecurityPolicy(self, entry)
+            policy.log_special_parameters()
 
-            network_group_objects.update(PioneerSecurityPolicyObject.get_source_network_group_objects())
-            network_group_objects.update(PioneerSecurityPolicyObject.get_destination_network_group_objects())
-            # there is a problem with adding data RuntimeError: Set changed size during iteration
-            # # loop through the groups here, retrieve their members and update the network_objects set. it is the only way
-            # for NetworkGroup in network_group_objects:
-            #     network_group_objects.update(NetworkGroup.get_object_members())
-            #     network_group_objects.update(NetworkGroup.get_group_object_members())
+            # Update network-related objects
+            network_objects.update(policy.get_source_network_objects())
+            network_objects.update(policy.get_destination_network_objects())
+            network_group_objects.update(policy.get_source_network_group_objects())
+            network_group_objects.update(policy.get_destination_network_group_objects())
 
-            port_objects.update(PioneerSecurityPolicyObject.get_source_port_objects())
-            port_objects.update(PioneerSecurityPolicyObject.get_destination_port_objects())
+            # Process network group objects
+            for group in list(network_group_objects):
+                network_objects.update(group.get_object_members())
+                network_group_objects.update(group.get_group_object_members())
 
-            icmp_objects.update(PioneerSecurityPolicyObject.get_source_icmp_objects())
-            icmp_objects.update(PioneerSecurityPolicyObject.get_destination_icmp_objects())
+            # Update port-related objects
+            port_objects.update(policy.get_source_port_objects())
+            port_objects.update(policy.get_destination_port_objects())
+            icmp_objects.update(policy.get_source_icmp_objects())
+            icmp_objects.update(policy.get_destination_icmp_objects())
+            port_group_objects.update(policy.get_source_port_group_objects())
+            port_group_objects.update(policy.get_destination_port_group_objects())
 
-            port_group_objects.update(PioneerSecurityPolicyObject.get_source_port_group_objects())
-            port_group_objects.update(PioneerSecurityPolicyObject.get_destination_port_group_objects())
+            # Process port group objects
+            for group in list(port_group_objects):
+                port_objects.update(group.get_object_members())
+                port_group_objects.update(group.get_group_object_members())
 
-            # there is something very weird going on with this function
-            url_objects.update(PioneerSecurityPolicyObject.get_url_objects_from_pioneer_policy())
-            url_group_objects.update(PioneerSecurityPolicyObject.get_url_group_objects())
+            # Update URL-related objects
+            url_objects.update(policy.get_url_objects_from_pioneer_policy())
+            url_group_objects.update(policy.get_url_group_objects())
 
-            # ok, all the members of all the groups have been extracted. next question, how do you update
-            # all the sets with the elements of the list and not with the array itself?
+            # Process URL group objects
+            for group in list(url_group_objects):
+                url_objects.update(group.get_object_members())
+                url_group_objects.update(group.get_group_object_members())
+        
+        #TODO: see if rearranging the set based on the group object dependencies is necessary.
+        # all the policies have been processed. it is now the time to migrate all the groups and objects
