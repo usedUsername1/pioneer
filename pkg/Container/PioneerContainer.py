@@ -27,6 +27,7 @@ class PioneerSecurityPolicyContainer(SecurityPolicyContainer):
         )[0][0]
     
     def process_and_migrate(self):
+        policies_list = []
         # Retrieve the security policy info from the database
         db = self._SecurityDevice.get_database()
         policies = db.get_security_policies_table().get('*', 'security_policy_container_uid', self.get_uid(), 'index')
@@ -77,6 +78,15 @@ class PioneerSecurityPolicyContainer(SecurityPolicyContainer):
             for group in list(url_group_objects):
                 url_objects.update(group.get_object_members())
                 url_group_objects.update(group.get_group_object_members())
+            
+            # add the policy to the list of policies that will be migrated
+            policies_list.append(policy)
         
         #TODO: see if rearranging the set based on the group object dependencies is necessary.
         # all the policies have been processed. it is now the time to migrate all the groups and objects
+        
+        # where should the migrate() method be applied for all the objects and policies?
+        #SecurityDevice is migration project object. in this case, is PA project
+        # god fuckin, i forgot about policy tags :(
+        self._SecurityDevice.migrate_network_objects(network_objects)
+        # self._SecurityDevice.migrate(network_group_objects)

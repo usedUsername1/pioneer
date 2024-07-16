@@ -150,33 +150,8 @@ class PANMCSecurityDevice(SecurityDevice):
     def return_security_policy_info(self, ObjectContainer):
         print("Importing this object is not supported yet for PANMC.")
         return None
-    
-    def migrate_network_objects(self, network_object_names, SourceDevice):
-        print("migrating network objects")
-        for network_object_name in network_object_names:
-            network_object_container = 'Global Internet'
-            network_address_value = SourceDevice.get_db_col_by_val('network_address_value', 'network_address_objects_table', 'network_address_name', network_object_name)
-            network_address_type = SourceDevice.get_db_col_by_val('network_address_type', 'network_address_objects_table', 'network_address_name', network_object_name)
-            network_address_description = SourceDevice.get_db_col_by_val('network_address_description', 'network_address_objects_table', 'network_address_name', network_object_name)
 
-            if network_address_type == 'Host' or network_address_type == 'Network':
-                network_address_type = 'ip-netmask'
-            
-            if network_address_type == 'Range':
-                network_address_type = 'ip-range'
-        
-            network_object = AddressObject(network_object_name, network_address_value, network_address_type.lower() , network_address_description)
-            dg_object = DeviceGroup(network_object_container)
-
-            self._SecurityDeviceConnection.add(dg_object)
-
-            dg_object.add(network_object)
-
-        # create the object
-        try:
-            dg_object.find(network_object_name).create_similar()
-        except Exception as e:
-            print("error occured when creating network address. More details: ", e)
+#TODO: delete everything below 
 
     def migrate_network_group_objects(self, network_group_object_names, SourceDevice):
         print("migrating network group objects")
@@ -293,9 +268,6 @@ class PANMCSecurityDevice(SecurityDevice):
             self._SecurityDeviceConnection.find(cat_name).create_similar()
         except Exception as e:
             print("error occured when creating tag object. More details: ", e)
-
-    # create the files that will keep track of all the failed objects/policies
-    # keep a count of: all objects of all types that will be created, all theo bjects created. do the same with the policies
     
     # TODO: ensure that if you have policies with regions, they do not get migrated yet!
             # ensure that you combine the description and the comments into a single string, which will be the description of the palo alto policy
@@ -430,39 +402,6 @@ class PANMCSecurityDevice(SecurityDevice):
             except Exception as e:
                 print("error occured when creating policy object. More details: ", e)
                 error_file.write(f"Failed to create policy {security_policy_name}. Reason: {e}.\n")
-
-    @staticmethod
-    def apply_name_constraints(name):
-        # Replace all characters that are not space, '-', or '.' with '_'
-        name = re.sub(r'[^a-zA-Z0-9\s_.-]', '_', name)
-
-        if len(name) > 63:
-            truncated_name = name[:58]
-            suffix = f"_{random.randint(100, 999)}"
-            truncated_name += suffix
-            return truncated_name
-        else:
-            return name
-
-    @staticmethod
-    # make sure it does not start with digit
-    def apply_url_name_constraints(name):
-        # Replace all occurrences of '-' with '_'
-        name = name.replace('-', '_')
-        # Replace all characters that are not space, '_', '.', or '-' with '_'
-        name = re.sub(r'[^a-zA-Z0-9\s_.-]', '_', name)
-
-        if not name[0].isalpha():
-            name = 'a' + name
-            
-        if len(name) > 31:
-            truncated_name = name[:27]
-            suffix = f"_{random.randint(100, 999)}"
-            truncated_name += suffix
-            return truncated_name
-        else:
-            return name
-
 
     @staticmethod
     def apply_url_constraints(url_value):

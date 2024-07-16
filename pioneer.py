@@ -259,8 +259,11 @@ def main():
             migration_project_name = MigrationProjectObject.get_name()
             MigrationProjectObject = MigrationProjectFactory.build_migration_project(migration_project_name, MigrationProjectDB)
             
+            #TODO: the migration project should be initialized with the source and target device python objects. or not initialized. whatever,
+            # it is still needed to have the actual objects in there!
+                # tables with mappings for actions and object types must be created.
+
             if pioneer_args['security_policy_container [container_name]']:
-                # what if i build an intermediary type of object? such as PioneerContainer and have it migrated based on the migration project target's device?
                 #TODO: at some point, maybe get the parent of the container on which the Pioneer container is based on
                 SecurityPolicyContainer = PioneerSecurityPolicyContainer(MigrationProjectObject, pioneer_args['security_policy_container [container_name]'], None)
                 SecurityPolicyContainer.process_and_migrate()

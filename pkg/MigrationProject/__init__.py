@@ -6,6 +6,7 @@ from pkg.SecurityDevice import SecurityDeviceDatabase
 
 special_policies_log = helper.logging.getLogger(gvars.special_policies_logger)
 
+#TODO: should the table containing mappings of actions and object types be created here?
 class MigrationProjectDatabase(SecurityDeviceDatabase):
     def __init__(self, cursor):
         super().__init__(cursor)
