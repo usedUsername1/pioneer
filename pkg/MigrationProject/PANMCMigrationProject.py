@@ -10,7 +10,9 @@ from panos.policies import PreRulebase, PostRulebase, SecurityRule
 #TODO: defining objects for source and target device might be needed here
 #TODO: create everything in shared for the time being
 class PANMCMigrationProject(MigrationProject):
-    def __init__(self, name, Database):
+    def __init__(self, name, Database, SourceSecurityDevice, TargetSecurityDevice):
+        self._SourceSecurityDevice = SourceSecurityDevice
+        self._TargetSecurityDevice = TargetSecurityDevice
         super().__init__(name, Database)
 
     # save it to the file file, don't print it
@@ -36,15 +38,32 @@ PA treats ping as an application. The second rule will keep the exact same sourc
         
             network_object = AddressObject(network_object.get_name(), network_object.get_network_address_value(), network_object.get_network_address_type().lower(), network_object.get_description())
 
-            self._SecurityDeviceConnection.add(network_object)
+            self._TargetSecurityDevice.get_device_connection().add(network_object)
         # bulk create the objects
         try:
-            self._SecurityDeviceConnection.find(network_object.get_name()).create_similar()
+            self._TargetSecurityDevice.get_device_connection().find(network_object.name).create_similar()
         except Exception as e:
             print("error occured when bulk creating network address. More details: ", e)
 
-    def migrate_network_group_objects(network_group_objects):
-        pass
+    def migrate_network_group_objects(self, network_group_objects):
+        for network_group_object in network_group_objects:
+            network_group_members = []
+            # find the group object member banes
+            for network_group_object_member in network_group_object.get_group_object_members():
+                network_group_members.append(network_group_object_member.get_name())
+            # find the object member names
+            for network_object_member in network_group_object.get_object_members():
+                network_group_members.append(network_object_member.get_name())
+            
+            network_group_object = AddressGroup(name=network_group_object.get_name(), static_value=network_group_members,description=network_group_object.get_description())
+
+            # set the device group for the panorama instance
+            self._TargetSecurityDevice.get_device_connection().add(network_group_object)
+
+        try:
+            self._TargetSecurityDevice.get_device_connection().find(network_group_object.name).create_similar()
+        except Exception as e:
+            print("error occured when creating network group. More details: ", e)
 
 
     #TODO: don't forget that the URL groups can't be migrated, as Palo Alto does not have URL groups

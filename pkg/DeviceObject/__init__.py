@@ -129,8 +129,6 @@ class GroupObject(Object):
         # decide if it belongs with the rest of the group members or if it should be kept separately
         self._icmp_object_members = set()
 
-        self._group_members = self._object_members | self._group_object_members
-
     def get_group_member_names(self):
         return self._group_member_names
 
@@ -151,6 +149,9 @@ class GroupObject(Object):
 
     def get_icmp_members(self):
         return self._icmp_members
+    
+    def get_group_members(self):
+        return self._group_members
 
 class NetworkObject:
     """

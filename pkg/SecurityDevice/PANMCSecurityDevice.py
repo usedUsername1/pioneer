@@ -153,27 +153,6 @@ class PANMCSecurityDevice(SecurityDevice):
 
 #TODO: delete everything below 
 
-    def migrate_network_group_objects(self, network_group_object_names, SourceDevice):
-        print("migrating network group objects")
-        for network_group_object_name in network_group_object_names:
-            network_object_container = 'Global Internet'
-            network_group_members = SourceDevice.get_db_col_by_val('network_address_group_members', 'network_address_object_groups_table', 'network_address_group_name', network_group_object_name)
-            network_group_description = SourceDevice.get_db_col_by_val('network_address_group_description', 'network_address_object_groups_table', 'network_address_group_name', network_group_object_name)
-
-            network_group_object = AddressGroup(name=network_group_object_name, static_value=network_group_members,description=network_group_description)
-            dg_object = DeviceGroup(network_object_container)
-
-            # set the device group for the panorama instance
-            self._SecurityDeviceConnection.add(dg_object)
-
-            # add the network object to the device group
-            dg_object.add(network_group_object)
-
-        try:
-            dg_object.find(network_group_object_name).create_similar()
-        except Exception as e:
-            print("error occured when creating network group. More details: ", e)
-
     def migrate_port_objects(self, port_object_names, SourceDevice):
         print("migrating port objects")
         for port_object_name in port_object_names:

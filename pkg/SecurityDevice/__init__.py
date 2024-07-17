@@ -259,6 +259,12 @@ class SecurityDevice:
 
     def get_uid(self):
         return self._uid
+    
+    def get_name(self):
+        return self._name
+    
+    def get_device_connection(self):
+        return self._DeviceConnection 
 
     def get_device_version_from_device_conn(self):
         """

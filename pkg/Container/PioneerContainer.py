@@ -3,7 +3,6 @@ from pkg.Container import Container, SecurityPolicyContainer
             # don't forget to check if groups should be sorted based on depdendencies
 
 # a Pioneer object belongs to a MigrationProject object so SecurityDevice is the MigrationProject
-#TODO: at some point, get the uid of the source container
 from pkg.Policy.PioneerPolicy import PioneerSecurityPolicy
 
 class PioneerSecurityPolicyContainer(SecurityPolicyContainer):
@@ -82,11 +81,13 @@ class PioneerSecurityPolicyContainer(SecurityPolicyContainer):
             # add the policy to the list of policies that will be migrated
             policies_list.append(policy)
         
-        #TODO: see if rearranging the set based on the group object dependencies is necessary.
+        #TODO: see if rearranging the set based on the group object dependencies is necessary. fuck, it is necessary
         # all the policies have been processed. it is now the time to migrate all the groups and objects
         
         # where should the migrate() method be applied for all the objects and policies?
         #SecurityDevice is migration project object. in this case, is PA project
+        #TODO: maybe use a migrate() function here, which will be implemented in the migration project as there are attributes that should be migrated
+        # and not ll devices should migrate them. for example palo alto as tags, FMC does not hve tags
         # god fuckin, i forgot about policy tags :(
         self._SecurityDevice.migrate_network_objects(network_objects)
-        # self._SecurityDevice.migrate(network_group_objects)
+        self._SecurityDevice.migrate_network_group_objects(network_group_objects)

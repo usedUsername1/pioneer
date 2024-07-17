@@ -148,7 +148,7 @@ class PioneerPortGroupObject(PortGroupObject, PioneerObject):
         self.set_uid(object_uid)
 
     def extract_members(self, type, object_cache, PortGroupObjectsMembersTable):
-        if type == 'port_object':
+        if type == 'object':
             columns = [
                 "port_objects.uid",
                 "port_objects.name",
@@ -202,7 +202,7 @@ class PioneerPortGroupObject(PortGroupObject, PioneerObject):
                     "condition": "port_group_objects_members.object_uid = port_group_objects.uid"
                 }
             ]
-            name_col = 'port_group_objects.group_uid'
+            name_col = 'port_group_objects_members.group_uid'
 
         else:
             raise ValueError(f"Unknown type: {type}")

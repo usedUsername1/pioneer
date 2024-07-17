@@ -10,6 +10,8 @@ special_policies_log = helper.logging.getLogger(gvars.special_policies_logger)
 class MigrationProjectDatabase(SecurityDeviceDatabase):
     def __init__(self, cursor):
         super().__init__(cursor)
+        self._SourceSecurityDevice = None
+        self._TargetSecurityDevice = None
         self._SecurityPolicyContainersMapTable = SecurityPolicyContainersMapTable(self)
         self._MigrationProjectGeneralDataTable = MigrationProjectGeneralDataTable(self)
         self._MigrationProjectDevicesTable = MigrationProjectDevicesTable(self)

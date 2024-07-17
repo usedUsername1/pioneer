@@ -238,7 +238,6 @@ def main():
         MigrationProjectObject = MigrationProjectFactory.create_migration_project(db_user, project_name, db_password, db_host, db_port)
         # create migration project object here
         if pioneer_args['set_source_device [name]'] and pioneer_args['set_target_device [name]']:
-            print("setting devices in project")
             SourceSecurityDevice = SecurityDeviceFactory.create_security_device(db_user, pioneer_args['set_source_device [name]'], db_password, db_host, db_port)
             TargetSecurityDevice = SecurityDeviceFactory.create_security_device(db_user, pioneer_args['set_target_device [name]'], db_password, db_host, db_port)
             #TODO: when importing data, zones and containers names might be duplicated. if there are duplicates, then what?
@@ -258,21 +257,14 @@ def main():
             MigrationProjectDB = MigrationProjectObject.get_database()
             migration_project_name = MigrationProjectObject.get_name()
             MigrationProjectObject = MigrationProjectFactory.build_migration_project(migration_project_name, MigrationProjectDB)
-            
-            #TODO: the migration project should be initialized with the source and target device python objects. or not initialized. whatever,
-            # it is still needed to have the actual objects in there!
-                # tables with mappings for actions and object types must be created.
 
             if pioneer_args['security_policy_container [container_name]']:
                 #TODO: at some point, maybe get the parent of the container on which the Pioneer container is based on
                 SecurityPolicyContainer = PioneerSecurityPolicyContainer(MigrationProjectObject, pioneer_args['security_policy_container [container_name]'], None)
                 SecurityPolicyContainer.process_and_migrate()
 
-
-        
 if __name__ == "__main__":
     main()
-
 
 # python3 pioneer.py --create-security-device 'name' --device-type 'type' --hostname 'ip/dns' --username 'user' --secret 'pass'
 # python3 pioneer.py --project 'test_prj' --set-source-device 'test_sfmc' --set-target-device 'test_sfmc1'   
@@ -280,3 +272,4 @@ if __name__ == "__main__":
 #TODO:
     # at some point, fix generating UIDs upon init of objects as it is a bad practice
     # don't forget to refactor the SecurityPolicy subclasses to remove the redundancy of attributes
+    # tables with mappings for actions and object types must be created.

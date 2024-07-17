@@ -1,5 +1,6 @@
 from pkg.MigrationProject.PANMCMigrationProject import PANMCMigrationProject
 from pkg.MigrationProject import MigrationProject, MigrationProjectDatabase
+from pkg.SecurityDevice.SecurityDeviceFactory import SecurityDeviceFactory
 
 import utils.helper as helper
 import utils.gvars as gvars
@@ -25,15 +26,18 @@ def create_migration_project(db_user, migration_project_name, db_password, db_ho
     MigrationProjectObject = MigrationProject(migration_project_name, MigrationProjectDB)
 
     return MigrationProjectObject
-
-#TODO: maybe be more specific when creating migration project, make sure you account for both source and target device.
+    
 @staticmethod
 def build_migration_project(name, Database):
     # Retrieve the target_device_uid
+    source_device_name = get_device_name(Database, 'source')
+    target_device_name = get_device_name(Database, 'target')
+    SourceSecurityDevice = SecurityDeviceFactory.create_security_device(gvars.pioneer_db_user, source_device_name, gvars.pioneer_db_user_pass, gvars.db_host, gvars.db_port)
+    TargetSecurityDevice = SecurityDeviceFactory.create_security_device(gvars.pioneer_db_user, target_device_name, gvars.pioneer_db_user_pass, gvars.db_host, gvars.db_port)
     target_device_type = get_target_device_type_by_uid(Database)
     match target_device_type:
         case 'panmc-api':
-            return PANMCMigrationProject(name, Database)
+            return PANMCMigrationProject(name, Database, SourceSecurityDevice, TargetSecurityDevice)
         case _:
             # Default case, return None or raise an error
             raise ValueError(f"Unsupported target device type: <{target_device_type}>.")
@@ -57,3 +61,31 @@ def get_target_device_type_by_uid(Database):
 
     target_device_type = target_device_info[0][0]
     return target_device_type
+
+@staticmethod
+def get_device_name(Database, device_type):
+    if device_type not in ['source', 'target']:
+        raise ValueError("device_type must be either 'source' or 'target'")
+
+    device_column = f'{device_type}_device_uid'
+    
+    # Retrieve the device UID from the migration_project_devices table
+    device_uid = Database.get_migration_project_devices_table().get(columns=device_column)[0][0]
+
+    # Define the join condition
+    join_condition = {
+        'table': 'general_security_device_data',
+        'condition': f'migration_project_devices.{device_column} = general_security_device_data.uid'
+    }
+
+    # Query the database to get the device name
+    device_info = Database.get_migration_project_devices_table().get(
+        columns=['general_security_device_data.name'],
+        name_col=f'migration_project_devices.{device_column}',
+        val=device_uid,
+        join=join_condition
+    )
+
+    # Return the device name if available
+    device_name = device_info[0][0] if device_info else None
+    return device_name
