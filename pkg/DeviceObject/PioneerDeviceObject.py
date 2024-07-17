@@ -319,13 +319,13 @@ class PioneerURLGroupObject(URLGroupObject, PioneerObject):
                 key,
                 lambda: obj_class(None, member_info)
             )
-            if type == 'url_object':
+            if type == 'object':
                 self._object_members.add(member)
-            elif type == 'url_group':
+            elif type == 'group':
                 self._group_object_members.add(member)
                 # If needed, extract members of nested groups
-                member.extract_members('url_object', object_cache, URLGroupObjectsMembersTable)
-                member.extract_members('url_group', object_cache, URLGroupObjectsMembersTable)
+                member.extract_members('object', object_cache, URLGroupObjectsMembersTable)
+                member.extract_members('group', object_cache, URLGroupObjectsMembersTable)
 
 @staticmethod
 def recursive_update_objects_and_groups(objects_set, group_objects_set):

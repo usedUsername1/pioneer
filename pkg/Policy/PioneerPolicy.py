@@ -101,9 +101,9 @@ class PioneerSecurityPolicy(SecurityPolicy):
         self._schedule_objects = self.extract_schedule_object_info()
         self._users = self.extract_user_object_info()
 
-        self._url_objects_pioneer = self.extract_url_object_info('object_uid')
-        self._url_groups = self.extract_url_object_info('group_object_uid')
-        self._url_categories = self.extract_url_object_info('url_category_uid')
+        self._url_objects_pioneer = self.extract_url_object_info('object')
+        self._url_groups = self.extract_url_object_info('group')
+        self._url_categories = self.extract_url_object_info('url_category')
         self._urls = self._url_objects_pioneer | self._url_groups
 
         self._policy_apps = self.extract_l7_app_object_info('l7_app_uid')
@@ -309,9 +309,8 @@ class PioneerSecurityPolicy(SecurityPolicy):
 
     def extract_url_object_info(self, object_type):
         security_policy_urls = set()
-        
         match object_type:
-            case 'object_uid':
+            case 'object':
                 join = {
                     "table": "url_objects",
                     "condition": "security_policy_urls.object_uid = url_objects.uid"
@@ -332,7 +331,7 @@ class PioneerSecurityPolicy(SecurityPolicy):
                     url_object = self._object_cache.get_or_create(key, lambda: PioneerURLObject(None, object_info))
                     security_policy_urls.add(url_object)
 
-            case 'group_object_uid':
+            case 'group':
                 join = {
                     "table": "url_group_objects",
                     "condition": "security_policy_urls.group_object_uid = url_group_objects.uid"
@@ -345,7 +344,6 @@ class PioneerSecurityPolicy(SecurityPolicy):
                     join=join,
                     not_null_condition=False
                 )
-
                 for object_info in data:
                     uid = object_info[0]
                     name = object_info[1]
@@ -356,7 +354,7 @@ class PioneerSecurityPolicy(SecurityPolicy):
                     security_policy_urls.add(URLGroupObject)
 
 
-            case 'url_category_uid':
+            case 'url_category':
                 join = {
                     "table": "security_policy_urls",
                     "condition": "url_categories.uid = security_policy_urls.url_category_uid"

@@ -133,8 +133,43 @@ PA treats ping as an application. The second rule will keep the exact same sourc
             except Exception as e:
                 print("error occured when creating port group. More details: ", e)
 
+    def migrate_url_objects(self, url_objects):
+        for url_object in url_objects:
+            # adapt the name of the object
+            url_object.set_name(PANMCMigrationProject.apply_url_name_constraints(url_object.get_name()))
+        
+            url_object = CustomUrlCategory(name=url_object.get_name(), url_value=PANMCMigrationProject.apply_url_value_constraints(url_object.get_url_value()), description=url_object.get_description(), type='URL List')   
+
+            self._TargetSecurityDevice.get_device_connection().add(url_object)
+        # bulk create the objects
+        try:
+            self._TargetSecurityDevice.get_device_connection().find(url_object.name).create_similar()
+        except Exception as e:
+            print("error occured when bulk creating url address. More details: ", e)
+
     #TODO: don't forget that the URL groups can't be migrated, as Palo Alto does not have URL groups
     # instead, everything URL of a group must be placed in the PA URL category
+    def migrate_url_group_objects(self, url_group_objects):
+        for url_group_object in url_group_objects:
+            url_group_object.set_name(PANMCMigrationProject.apply_url_name_constraints(url_group_object.get_name()))
+            url_member_values = set()
+            # get the members of the url group
+            #TODO: don't know yet, but we might need yet another recursve processing here
+            for url_group_member in url_group_object.get_object_members():
+                url_member_values.add(PANMCMigrationProject.apply_url_value_constraints(url_group_member.get_url_value()))
+
+            url_group_object = CustomUrlCategory(name=url_group_object.get_name(), url_value=url_member_values, description=url_group_object.get_description(), type='URL List')   
+
+            self._TargetSecurityDevice.get_device_connection().add(url_group_object)
+        # bulk create the objects
+        try:
+            self._TargetSecurityDevice.get_device_connection().find(url_group_object.name).create_similar()
+        except Exception as e:
+            print("error occured when bulk creating url address. More details: ", e)
+
+            
+
+    
     @staticmethod
     def apply_name_constraints(name):
         # Replace all characters that are not space, '-', or '.' with '_'
@@ -178,44 +213,6 @@ PA treats ping as an application. The second rule will keep the exact same sourc
         return url_value
 
 #TODO: refactor below
-    def migrate_url_objects(self, url_object_names, SourceDevice, type):
-        if type == 'url_object':
-            print("migrating url objects")
-            for url_object_name in url_object_names:
-                url_object_container = 'Global Internet'
-                url_object_value = SourceDevice.get_db_col_by_val('url_value', 'url_objects_table', 'url_object_name', url_object_name)
-                url_object_description = SourceDevice.get_db_col_by_val('url_object_description', 'url_objects_table', 'url_object_name', url_object_name)
-                url_object = CustomUrlCategory(name=url_object_name, url_value=url_object_value, description=url_object_description, type='URL List')
-                dg_object = DeviceGroup(url_object_container)
-            
-                # set the device group for the panorama instance
-                self._SecurityDeviceConnection.add(dg_object)
-                
-                # add the network object to the device group
-                dg_object.add(url_object)
-        
-        elif type == 'url_group':
-            print("migrating url group objects")
-            for url_object_name in url_object_names:
-                url_object_container = 'Global Internet'
-                url_members = SourceDevice.get_db_col_by_val('url_object_members', 'url_object_groups_table', 'url_object_group_name', url_object_name)
-                url_object_description = SourceDevice.get_db_col_by_val('url_group_object_description', 'url_object_groups_table', 'url_object_group_name', url_object_name)
-
-                url_object = CustomUrlCategory(name=url_object_name, url_value=url_members, description=url_object_description, type='URL List')
-                dg_object = DeviceGroup(url_object_container)
-            
-                # set the device group for the panorama instance
-                self._SecurityDeviceConnection.add(dg_object)
-                
-                # add the network object to the device group
-                dg_object.add(url_object)
-
-        # create the object
-        try:
-            dg_object.find(url_object_name).create_similar()
-        except Exception as e:
-            print("error occured when creating url object. More details: ", e)
-    
     def migrate_tags(self, categories):
         print("migrating tag objects")
         for cat_name in categories:

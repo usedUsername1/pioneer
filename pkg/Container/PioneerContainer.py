@@ -69,21 +69,23 @@ class PioneerSecurityPolicyContainer(SecurityPolicyContainer):
         
         # the problem is when group_object members are found.
         # basically, the same logic needs to be applied to them as well
-        print("recursive processing of network objects")
         PioneerDeviceObject.recursive_update_objects_and_groups(network_objects, network_group_objects)
         
-        # # migrate the network objects
-        print("migrating network objects")
-        self._SecurityDevice.migrate_network_objects(network_objects)
-        self._SecurityDevice.migrate_network_group_objects(network_group_objects)
+        # # # migrate the network objects
+        # print("migrating network objects")
+        # self._SecurityDevice.migrate_network_objects(network_objects)
+        # self._SecurityDevice.migrate_network_group_objects(network_group_objects)
 
-        print("recursive processing of port objects")
-        PioneerDeviceObject.recursive_update_objects_and_groups(port_objects, port_group_objects)
+        # PioneerDeviceObject.recursive_update_objects_and_groups(port_objects, port_group_objects)
 
-        # for some reason, the members of the port groups are not retrieved. whyyyyy
-        print("migrating port objects")
-        self._SecurityDevice.migrate_port_objects(port_objects)
-        print("migrating port group objects")
-        self._SecurityDevice.migrate_port_group_objects(port_group_objects)
+        # # for some reason, the members of the port groups are not retrieved. whyyyyy
+        # print("migrating port objects")
+        # self._SecurityDevice.migrate_port_objects(port_objects)
+        # print("migrating port group objects")
+        # self._SecurityDevice.migrate_port_group_objects(port_group_objects)
 
-        # migrate the url objects
+        PioneerDeviceObject.recursive_update_objects_and_groups(url_objects, url_group_objects)
+        print("migrating url objects")
+        self._SecurityDevice.migrate_url_objects(url_objects)
+        print("migrating url group objects")
+        self._SecurityDevice.migrate_url_group_objects(url_group_objects)
