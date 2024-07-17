@@ -335,17 +335,24 @@ def recursive_update_objects_and_groups(objects_set, group_objects_set):
     """
     # Create a set to keep track of groups that need further processing
     groups_to_process = set(group_objects_set)
-    
+    # Create a set to keep track of processed groups
+    processed_groups = set()
+
     while groups_to_process:
         # Create a copy of the groups to process for the current iteration
-        current_groups = set(groups_to_process)
+        current_groups = groups_to_process - processed_groups
         # Clear the original set to start fresh
         groups_to_process.clear()
+
+        if not current_groups:
+            break
 
         for current_group in current_groups:
             # Update objects_set with members of the current group
             objects_set.update(current_group.get_object_members())
             # Add new groups from the current group to the groups_to_process
             new_groups = current_group.get_group_object_members()
-            group_objects_set.update(new_groups)
             groups_to_process.update(new_groups)
+            group_objects_set.update(new_groups)
+            # Mark the current group as processed
+            processed_groups.add(current_group)

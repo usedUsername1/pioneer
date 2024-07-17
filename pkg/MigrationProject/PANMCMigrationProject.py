@@ -67,20 +67,38 @@ PA treats ping as an application. The second rule will keep the exact same sourc
         except Exception as e:
             print("error occured when creating network group. More details: ", e)
 
-    # if the type of object is ICMP, then skip it
     def migrate_port_objects(self, port_objects):
+        # Get the device connection once
+        device_connection = self._TargetSecurityDevice.get_device_connection()
+
         for port_object in port_objects:
             if isinstance(port_object, PioneerICMPObject):
                 continue
-            else:
-                port_object.set_name(PANMCMigrationProject.apply_name_constraints(port_object.get_name()))
-                port_object = ServiceObject(name=port_object.get_name(), protocol=port_object.get_port_protocol().lower(), destination_port=port_object.get_destination_port(), description=port_object.get_description(), tag=None)
-                self._TargetSecurityDevice.get_device_connection().add(port_object)
-            # bulk create the objects
+
+            # Apply name constraints and create a new ServiceObject
+            port_object.set_name(PANMCMigrationProject.apply_name_constraints(port_object.get_name()))
+            new_port_object = ServiceObject(
+                name=port_object.get_name(),
+                protocol=port_object.get_port_protocol().lower(),
+                destination_port=port_object.get_destination_port(),
+                description=port_object.get_description(),
+                tag=None
+            )
+
+            # Add the service object individually
             try:
-                self._TargetSecurityDevice.get_device_connection().find(port_object.name).create_similar()
+                device_connection.add(new_port_object)
             except Exception as e:
-                print("error occured when bulk creating port objects. More details: ", e)
+                print(f"Error occurred when adding port object {new_port_object.name}. More details:", e)
+                continue
+
+            # Attempt to create similar objects
+            try:
+                found_object = device_connection.find(new_port_object.name)
+                if found_object:
+                    found_object.create_similar()
+            except Exception as e:
+                print(f"Error occurred when creating similar for port object {new_port_object.name}. More details:", e)
 
     def migrate_port_group_objects(self, port_group_objects):
         for port_group_object in port_group_objects:
