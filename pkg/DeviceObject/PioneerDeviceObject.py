@@ -228,7 +228,7 @@ class PioneerPortGroupObject(PortGroupObject, PioneerObject):
                 key,
                 lambda: obj_class(None, member_info)
             )
-            if type == 'port_object':
+            if type == 'object':
                 self._object_members.add(member)
             elif type == 'icmp_object':
                 self._icmp_object_members.add(member)
@@ -328,7 +328,7 @@ class PioneerURLGroupObject(URLGroupObject, PioneerObject):
                 member.extract_members('url_group', object_cache, URLGroupObjectsMembersTable)
 
 @staticmethod
-def update_network_objects_and_groups(objects_set, group_objects_set):
+def recursive_update_objects_and_groups(objects_set, group_objects_set):
     """
     Recursively updates objects_set with all objects from the group_objects_set.
     Also updates group_objects_set with all group members.

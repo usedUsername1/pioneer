@@ -149,9 +149,6 @@ class GroupObject(Object):
 
     def get_icmp_members(self):
         return self._icmp_members
-    
-    def get_group_members(self):
-        return self._group_members
 
 class NetworkObject:
     """

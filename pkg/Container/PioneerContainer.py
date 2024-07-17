@@ -36,7 +36,6 @@ class PioneerSecurityPolicyContainer(SecurityPolicyContainer):
         network_objects = set()
         network_group_objects = set()
         port_objects = set()
-        icmp_objects = set()
         port_group_objects = set()
         url_objects = set()
         url_group_objects = set()
@@ -56,22 +55,31 @@ class PioneerSecurityPolicyContainer(SecurityPolicyContainer):
             # Update port-related objects
             port_objects.update(policy.get_source_port_objects())
             port_objects.update(policy.get_destination_port_objects())
-            icmp_objects.update(policy.get_source_icmp_objects())
-            icmp_objects.update(policy.get_destination_icmp_objects())
+            port_objects.update(policy.get_source_icmp_objects())
+            port_objects.update(policy.get_destination_icmp_objects())
             port_group_objects.update(policy.get_source_port_group_objects())
             port_group_objects.update(policy.get_destination_port_group_objects())
 
-            # Update URL-related objects
+            # # Update URL-related objects
             url_objects.update(policy.get_url_objects_from_pioneer_policy())
             url_group_objects.update(policy.get_url_group_objects())
             
-            # add the policy to the list of policies that will be migrated
+            # # add the policy to the list of policies that will be migrated
             policies_list.append(policy)
         
         # the problem is when group_object members are found.
         # basically, the same logic needs to be applied to them as well
-        PioneerDeviceObject.update_network_objects_and_groups(network_objects, network_group_objects)
+        PioneerDeviceObject.recursive_update_objects_and_groups(network_objects, network_group_objects)
         
-        # migrate the network objects
+        # # migrate the network objects
         self._SecurityDevice.migrate_network_objects(network_objects)
         self._SecurityDevice.migrate_network_group_objects(network_group_objects)
+
+        PioneerDeviceObject.recursive_update_objects_and_groups(port_objects, port_group_objects)
+
+        # for some reason, the members of the port groups are not retrieved. whyyyyy
+
+        self._SecurityDevice.migrate_port_objects(port_objects)
+        self._SecurityDevice.migrate_port_group_objects(port_group_objects)
+
+        # migrate the url objects
