@@ -26,6 +26,7 @@ PA treats ping as an application. The second rule will keep the exact same sourc
     #TODO: mapping tables for actions, network types and so on
     def migrate_network_objects(self, network_objects):
         for network_object in network_objects:
+            # print(network_object._name)
             # adapt the name of the object
             network_object.set_name(PANMCMigrationProject.apply_name_constraints(network_object.get_name()))
             
@@ -47,6 +48,7 @@ PA treats ping as an application. The second rule will keep the exact same sourc
 
     def migrate_network_group_objects(self, network_group_objects):
         for network_group_object in network_group_objects:
+
             network_group_members = []
             # find the group object member banes
             for network_group_object_member in network_group_object.get_group_object_members():

@@ -217,7 +217,7 @@ def main():
         PioneerProjectDB.create_database(project_database_name)
         
         # Connect to the project's database and create the migration project
-        MigrationProjectObject = MigrationProject.create_migration_project(db_user, project_name, db_password, db_host, db_port)
+        MigrationProjectObject = MigrationProjectFactory.create_migration_project(db_user, project_name, db_password, db_host, db_port)
 
         # Create the migration project's tables
         MigrationProjectObject.get_database().create_migration_project_tables()
@@ -267,7 +267,10 @@ if __name__ == "__main__":
     main()
 
 # python3 pioneer.py --create-security-device 'name' --device-type 'type' --hostname 'ip/dns' --username 'user' --secret 'pass'
-# python3 pioneer.py --project 'test_prj' --set-source-device 'test_sfmc' --set-target-device 'test_sfmc1'   
+# python3 pioneer.py --create-project 'name'
+# python3 pioneer.py --project 'name' --set-source-device 'name' --set-target-device 'name'
+# python3 pioneer.py --project "test_prj1" --map-containers --source-container "Debug" --target-container "Debug"
+# python3 pioneer.py --project "test_prj1" --migrate --security-policy-container "Debug"
 
 #TODO:
     # at some point, fix generating UIDs upon init of objects as it is a bad practice

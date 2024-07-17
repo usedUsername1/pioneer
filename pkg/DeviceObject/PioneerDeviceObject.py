@@ -7,6 +7,7 @@ import ipaddress
 import utils.exceptions as PioneerExceptions
 from abc import abstractmethod
 general_logger = helper.logging.getLogger('general')
+from collections import defaultdict, deque
 
 class ObjectCache:
     def __init__(self):
@@ -325,3 +326,26 @@ class PioneerURLGroupObject(URLGroupObject, PioneerObject):
                 # If needed, extract members of nested groups
                 member.extract_members('url_object', object_cache, URLGroupObjectsMembersTable)
                 member.extract_members('url_group', object_cache, URLGroupObjectsMembersTable)
+
+@staticmethod
+def update_network_objects_and_groups(objects_set, group_objects_set):
+    """
+    Recursively updates objects_set with all objects from the group_objects_set.
+    Also updates group_objects_set with all group members.
+    """
+    # Create a set to keep track of groups that need further processing
+    groups_to_process = set(group_objects_set)
+    
+    while groups_to_process:
+        # Create a copy of the groups to process for the current iteration
+        current_groups = set(groups_to_process)
+        # Clear the original set to start fresh
+        groups_to_process.clear()
+
+        for current_group in current_groups:
+            # Update objects_set with members of the current group
+            objects_set.update(current_group.get_object_members())
+            # Add new groups from the current group to the groups_to_process
+            new_groups = current_group.get_group_object_members()
+            group_objects_set.update(new_groups)
+            groups_to_process.update(new_groups)

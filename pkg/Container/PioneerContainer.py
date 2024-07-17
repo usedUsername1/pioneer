@@ -4,6 +4,7 @@ from pkg.Container import Container, SecurityPolicyContainer
 
 # a Pioneer object belongs to a MigrationProject object so SecurityDevice is the MigrationProject
 from pkg.Policy.PioneerPolicy import PioneerSecurityPolicy
+import pkg.DeviceObject.PioneerDeviceObject as PioneerDeviceObject
 
 class PioneerSecurityPolicyContainer(SecurityPolicyContainer):
     def __init__(self, SecurityDevice, name, parent_name) -> None:
@@ -40,6 +41,7 @@ class PioneerSecurityPolicyContainer(SecurityPolicyContainer):
         url_objects = set()
         url_group_objects = set()
 
+
         # Process each security policy entry
         for entry in policies:
             policy = PioneerSecurityPolicy(self, entry)
@@ -51,11 +53,6 @@ class PioneerSecurityPolicyContainer(SecurityPolicyContainer):
             network_group_objects.update(policy.get_source_network_group_objects())
             network_group_objects.update(policy.get_destination_network_group_objects())
 
-            # Process network group objects
-            for group in list(network_group_objects):
-                network_objects.update(group.get_object_members())
-                network_group_objects.update(group.get_group_object_members())
-
             # Update port-related objects
             port_objects.update(policy.get_source_port_objects())
             port_objects.update(policy.get_destination_port_objects())
@@ -64,30 +61,17 @@ class PioneerSecurityPolicyContainer(SecurityPolicyContainer):
             port_group_objects.update(policy.get_source_port_group_objects())
             port_group_objects.update(policy.get_destination_port_group_objects())
 
-            # Process port group objects
-            for group in list(port_group_objects):
-                port_objects.update(group.get_object_members())
-                port_group_objects.update(group.get_group_object_members())
-
             # Update URL-related objects
             url_objects.update(policy.get_url_objects_from_pioneer_policy())
             url_group_objects.update(policy.get_url_group_objects())
-
-            # Process URL group objects
-            for group in list(url_group_objects):
-                url_objects.update(group.get_object_members())
-                url_group_objects.update(group.get_group_object_members())
             
             # add the policy to the list of policies that will be migrated
             policies_list.append(policy)
         
-        #TODO: see if rearranging the set based on the group object dependencies is necessary. fuck, it is necessary
-        # all the policies have been processed. it is now the time to migrate all the groups and objects
+        # the problem is when group_object members are found.
+        # basically, the same logic needs to be applied to them as well
+        PioneerDeviceObject.update_network_objects_and_groups(network_objects, network_group_objects)
         
-        # where should the migrate() method be applied for all the objects and policies?
-        #SecurityDevice is migration project object. in this case, is PA project
-        #TODO: maybe use a migrate() function here, which will be implemented in the migration project as there are attributes that should be migrated
-        # and not ll devices should migrate them. for example palo alto as tags, FMC does not hve tags
-        # god fuckin, i forgot about policy tags :(
+        # migrate the network objects
         self._SecurityDevice.migrate_network_objects(network_objects)
         self._SecurityDevice.migrate_network_group_objects(network_group_objects)
