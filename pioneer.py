@@ -11,6 +11,7 @@ import sys
 from datetime import datetime, timezone
 import time
 from pkg.Container.PioneerContainer import PioneerSecurityPolicyContainer
+from pkg.MigrationProject.PANMCMigrationProject import PANMCMigrationProject
 # import psutil
 
 import subprocess
@@ -68,7 +69,7 @@ def main():
         # try:
         general_logger.info(f"Connecting to the security device: <{security_device_name}>.")
         # Attempt to create the security device object based on the device type
-        if '-api' in security_device_type:
+        if '_api' in security_device_type:
             general_logger.info(f"The device <{security_device_name}> is an API device. Its API will be used for interacting with it.")
             SecurityDeviceObject = SecurityDeviceFactory.build_api_security_device(
                 security_device_uuid, security_device_name, security_device_type, 
@@ -252,27 +253,42 @@ def main():
                 MigrationProjectObject.map_zones(
                     pioneer_args['source_zone_name'], pioneer_args['target_zone_name'])
         
+        if pioneer_args.get('send_logs_to_manager'):
+            manager_name = pioneer_args.get('send_logs_to_manager')
+            MigrationProjectObject.set_log_manager(manager_name)
+
+        if pioneer_args.get('set_security_profile'):
+            security_profile_name = pioneer_args.get('set_security_profile')
+            MigrationProjectObject.set_security_profile(security_profile_name)
+        
         if pioneer_args['migrate']:
             # pass the database of the project here
             MigrationProjectDB = MigrationProjectObject.get_database()
             migration_project_name = MigrationProjectObject.get_name()
             MigrationProjectObject = MigrationProjectFactory.build_migration_project(migration_project_name, MigrationProjectDB)
+            
+            SecurityPolicyContainersMapTable = MigrationProjectObject._Database.get_security_policy_containers_map_table().get(['source_security_policy_container_uid', 'target_security_policy_container_uid'])
+            GeneralDataTable = MigrationProjectObject._Database.get_security_policy_containers_table()
+            print(PANMCMigrationProject.load_containers_map_dict(SecurityPolicyContainersMapTable, GeneralDataTable))
 
-            if pioneer_args['security_policy_container [container_name]']:
-                #TODO: at some point, maybe get the parent of the container on which the Pioneer container is based on
-                SecurityPolicyContainer = PioneerSecurityPolicyContainer(MigrationProjectObject, pioneer_args['security_policy_container [container_name]'], None)
-                SecurityPolicyContainer.process_and_migrate()
+            # if pioneer_args['security_policy_container [container_name]']:
+            #     #TODO: at some point, maybe get the parent of the container on which the Pioneer container is based on
+            #     # also, perform migration of all the mapped entities
+            #     SecurityPolicyContainer = PioneerSecurityPolicyContainer(MigrationProjectObject, pioneer_args['security_policy_container [container_name]'], None)
+            #     SecurityPolicyContainer.process_and_migrate()
 
 if __name__ == "__main__":
     main()
 
 # python3 pioneer.py --create-security-device 'name' --device-type 'type' --hostname 'ip/dns' --username 'user' --secret 'pass'
-# python3 pioneer.py --create-project 'name'
-# python3 pioneer.py --project 'name' --set-source-device 'name' --set-target-device 'name'
-# python3 pioneer.py --project "test_prj1" --map-containers --source-container "Debug" --target-container "Debug"
-# python3 pioneer.py --project "test_prj1" --migrate --security-policy-container "Debug"
+# python3 pioneer.py --create-project ''
+# python3 pioneer.py --project '' --set-source-device '' --set-target-device ''
+# python3 pioneer.py --project '' --map-containers --source-container '' --target-container ''
+# python3 pioneer.py --project '' --map-zones --source-zone '' --target-zone ''
+# python3 pioneer.py --project '' --send-logs-to-manager ''
+# python3 pioneer.py --project '' --set-security-profile ''
+# python3 pioneer.py --project '' --migrate --security-policy-container ''
 
 #TODO:
     # at some point, fix generating UIDs upon init of objects as it is a bad practice
     # don't forget to refactor the SecurityPolicy subclasses to remove the redundancy of attributes
-    # tables with mappings for actions and object types must be created.

@@ -11,8 +11,10 @@ special_policies_log = helper.logging.getLogger(gvars.special_policies_logger)
 class MigrationProjectDatabase(SecurityDeviceDatabase):
     def __init__(self, cursor):
         super().__init__(cursor)
+        #TODO: these parameters might not be needed here
         self._SourceSecurityDevice = None
         self._TargetSecurityDevice = None
+        
         self._SecurityPolicyContainersMapTable = SecurityPolicyContainersMapTable(self)
         self._MigrationProjectGeneralDataTable = MigrationProjectGeneralDataTable(self)
         self._MigrationProjectDevicesTable = MigrationProjectDevicesTable(self)
@@ -163,15 +165,33 @@ class MigrationProject():
     
     def map_containers(self, source_container_name, target_container_name):
         GeneralDataTable = self._Database.get_security_policy_containers_table()
-        # get source uid
-        source_container_uid = GeneralDataTable.get('uid', 'name', source_container_name)[0]
+        MigrationProjectDevicesTable = self._Database.get_migration_project_devices_table()
 
-        # get destination uid
-        target_container_uid = GeneralDataTable.get('uid', 'name', target_container_name)[0]
+        # Get source security device uid based on source container name
+        source_container_data = GeneralDataTable.get(['uid', 'security_device_uid'], 'name', source_container_name)
+        if not source_container_data:
+            raise ValueError(f"Source container with name '{source_container_name}' not found.")
 
-        # insert the data in the table
+        source_container_uid, source_device_uid = source_container_data[0]
+
+        # Get target device uid based on source device uid from migration project devices
+        target_device_data = MigrationProjectDevicesTable.get('target_device_uid', 'source_device_uid', source_device_uid)
+        if not target_device_data:
+            raise ValueError(f"Target device for source device uid '{source_device_uid}' not found.")
+
+        target_device_uid = target_device_data[0]
+
+        # Get target container uid based on target container name and target device uid
+        target_container_data = GeneralDataTable.get(['uid'], ['name', 'security_device_uid'], [target_container_name, target_device_uid], multiple_where=True)
+        if not target_container_data:
+            raise ValueError(f"Target container with name '{target_container_name}' for device uid '{target_device_uid}' not found.")
+
+        target_container_uid = target_container_data[0][0]
+
+        # Insert the data into the containers map table
         self._Database.get_security_policy_containers_map_table().insert(source_container_uid, target_container_uid)
     
+    #TODO: modify map_zones like the map_containers
     def map_zones(self, source_zone_name, target_zone_name):
         SecurityZonesTable = self._Database.get_security_zones_table()
 
@@ -182,3 +202,11 @@ class MigrationProject():
         target_zone_uid = SecurityZonesTable.get('uid', 'name', target_zone_name)[0]
 
         self._Database.get_security_device_interface_map_table().insert(source_zone_uid, target_zone_uid)
+
+    def set_log_manager(self, log_manager_name):
+        LogSettingsTable = self._Database.get_log_settings_table()
+        LogSettingsTable.insert(log_manager_name)
+
+    def set_security_profile(self, security_profile):
+        SpecialSecurityPolicyParameters = self._Database.get_special_security_policy_parameters_table()
+        SpecialSecurityPolicyParameters.insert(security_profile)

@@ -235,6 +235,7 @@ class PioneerTable():
             cursor = self._Database.get_cursor()
             
             # Execute the insert command with the actual values
+            # print(insert_command, values)
             cursor.execute(insert_command, values)
             
             general_logger.info(f"Succesfully inserted values into table <{self._name}>.")

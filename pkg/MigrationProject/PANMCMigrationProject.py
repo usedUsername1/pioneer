@@ -16,7 +16,36 @@ class PANMCMigrationProject(MigrationProject):
     def __init__(self, name, Database, SourceSecurityDevice, TargetSecurityDevice):
         self._SourceSecurityDevice = SourceSecurityDevice
         self._TargetSecurityDevice = TargetSecurityDevice
+        
+        #TODO: this will be moved to MigrationProject
+        self._security_policy_containers_map = self.load_containers_map_dict()
+        self._security_zones_map = ''
+        self._network_object_types_map = ''
+        self._security_policy_actions_map = ''
+        self._log_settings = ''
+        self._special_security_policy_parameters = ''
         super().__init__(name, Database)
+    
+    def load_containers_map_dict(self):
+        containers_map = self._Database.get_security_policy_containers_map_table().get(['source_security_policy_container_uid', 'target_security_policy_container_uid'])
+        SecurityPoliciesContainersTable = self._Database.get_security_policy_containers_table()
+
+        # Initialize the dictionary to store the mappings
+        containers_map_dict = {}
+
+        # Process each mapping
+        for source_uid, target_uid in containers_map:
+            # Get target security device name
+            target_container_data = SecurityPoliciesContainersTable.get(['name'], 'uid', target_uid)
+            if not target_container_data:
+                raise ValueError(f"Target container with UID '{target_uid}' not found.")
+            target_security_device_name = target_container_data[0][0]
+
+            # Add to the dictionary
+            containers_map_dict[source_uid] = target_security_device_name
+
+        return containers_map_dict
+
 
     # save it to the file file, don't print it
     def print_compatibility_issues(self):
@@ -274,12 +303,6 @@ PA treats ping as an application. The second rule will keep the exact same sourc
             # except Exception as e:
             #     print("error occured when creating policy object. More details: ", e)
             #     error_file.write(f"Failed to create policy {security_policy_name}. Reason: {e}.\n")
-
-
-
-
-
-
 
 
     @staticmethod

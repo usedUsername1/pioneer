@@ -60,8 +60,9 @@ def create_parser():
     parser.add_argument("--import-config", nargs='?', const=True, default=False, help="Flag to import configuration. Imports the configuration from the target device.")
     parser.add_argument("--security-policy-container [container_name]", help="Imports a security policy container.")
 
-    parser.add_argument("--test-function")
-    # parser.add_argument("--import-nat-policy-package", help="Import a NAT policy package from the target device. If nothing is specifed, all NAT policy packages are imported.")
+    # temporary, only usable with migration project
+    parser.add_argument("--send-logs-to-manager", help="Specify the manager name to send logs to.")
+    parser.add_argument("--set-security-profile", help="Specify the security profile name.")
 
     # arguments related both to devices and projects
     parser.add_argument("--description [description]", help="Add a description for the project/device. Max length is 256 characters", default='no description')

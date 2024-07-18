@@ -89,7 +89,7 @@ class SecurityDeviceFactory:
         general_logger.info(f"Got device type <{security_device_type}>.")
 
         # TODO: put this into a function
-        if '-api' in security_device_type:
+        if '_api' in security_device_type:
             general_logger.info(f"<{security_device_name}> is an API device. Type: <{security_device_type}>")
             # get the security device hostname
             security_device_hostname = GenericSecurityDevice.get_general_data("hostname", "name", security_device_name)
@@ -112,7 +112,7 @@ class SecurityDeviceFactory:
             # create the API security object based on the device type
             SpecificSecurityDeviceObject = SecurityDeviceFactory.build_api_security_device(security_device_uid, security_device_name, security_device_type, SecurityDeviceDB, security_device_hostname, security_device_username, security_device_secret, security_device_port, security_device_domain)
 
-        elif '-config' in security_device_type:
+        elif '_config' in security_device_type:
             general_logger.info(f"{security_device_name} is an device that does not use API. Only its config file will be processed.")
 
         else:

@@ -95,3 +95,6 @@ class PioneerSecurityPolicyContainer(SecurityPolicyContainer):
 
         print("migrating policy categories")
         self._SecurityDevice.migrate_policy_categories(policy_categories)
+
+        print("migrating security policies")
+        self._SecurityDevice.migrate_security_policies(policies)
