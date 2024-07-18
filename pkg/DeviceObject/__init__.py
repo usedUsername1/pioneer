@@ -145,10 +145,10 @@ class GroupObject(Object):
         self._object_members = group_object_members
     
     def set_icmp_members(self, icmp_members):
-        self._icmp_members = icmp_members
+        self._icmp_object_members = icmp_members
 
     def get_icmp_members(self):
-        return self._icmp_members
+        return self._icmp_object_members
 
 class NetworkObject:
     """

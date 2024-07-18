@@ -239,6 +239,19 @@ class PioneerPortGroupObject(PortGroupObject, PioneerObject):
                 member.extract_members('icmp_object', object_cache, PortGroupObjectsMembersTable)
                 member.extract_members('group', object_cache, PortGroupObjectsMembersTable)
 
+    def check_icmp_members_recursively(self, has_icmp):
+        if self._icmp_object_members:
+            has_icmp = True
+            return has_icmp
+        
+        if self._group_object_members:
+            for group_object_member in self._group_object_members:
+                has_icmp = group_object_member.check_icmp_members_recursively(has_icmp)
+                if has_icmp:  # Short-circuit if True is found
+                    return has_icmp
+
+        return has_icmp
+
 class PioneerURLObject(URLObject, PioneerObject):
     def __init__(self, ObjectContainer, object_info) -> None:
         object_uid = object_info[0]

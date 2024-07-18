@@ -285,6 +285,7 @@ if __name__ == "__main__":
 # python3 pioneer.py --project '' --set-security-profile ''
 # python3 pioneer.py --project '' --migrate --security-policy-container ''
 
+# python3 pioneer.py --create-security-device 'test_sfmc' --device-type 'fmc_api' --hostname '10.2.196.131' --username 'vzlate' --secret '2wsx#EDC'
 # python3 pioneer.py --create-project 'test_prj'
 # python3 pioneer.py --project 'test_prj' --set-source-device 'test_sfmc' --set-target-device 'test_panmc'
 # python3 pioneer.py --project 'test_prj' --map-containers --source-container 'Debug' --target-container 'Debug'

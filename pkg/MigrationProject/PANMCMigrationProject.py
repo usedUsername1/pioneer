@@ -1,13 +1,18 @@
 from pkg.MigrationProject import MigrationProject
 from pkg.Container.PANMCContainer import PANMCSecurityPolicyContainer
-from pkg.DeviceObject.PioneerDeviceObject import PioneerICMPObject
+from pkg.DeviceObject.PioneerDeviceObject import PioneerICMPObject, PioneerPortGroupObject
 import random
 import re
 from panos.panorama import DeviceGroup, Template
 from panos.network import Zone
 from panos.objects import AddressObject, AddressGroup, ServiceObject, ServiceGroup, CustomUrlCategory, Tag
 from panos.policies import PreRulebase, PostRulebase, SecurityRule
+import utils.helper as helper
+import utils.gvars as gvars
 
+#TODO: there is a problem with random generation of url names. new names will be generated each time a migration occurs
+
+special_policies_log = helper.logging.getLogger(gvars.special_policies_logger)
 #TODO: actions, object types, log settings and special parameters must be dynamically retrieved.
 # preload the data from the database as class variables (in dictionaries)
 # and access them whenever necessary
@@ -125,7 +130,7 @@ class PANMCMigrationProject(MigrationProject):
             destination_section = row[1]
             section_map[source_section] = destination_section
         
-        return section_map_table
+        return section_map
 
     # save it to the file file, don't print it
     def print_compatibility_issues(self):
@@ -205,6 +210,8 @@ PA treats ping as an application. The second rule will keep the exact same sourc
             except Exception as e:
                 print(f"Error occurred when creating similar for port object {new_port_object.name}. More details:", e)
 
+    #TODO: make sure you don't migrate any groups that have 0 members. the check has to be done recursively - or does it?
+    # i think it works pretty good so far, needs to be tested further
     def migrate_port_group_objects(self, port_group_objects):
         for port_group_object in port_group_objects:
             # print(port_group_object._name)
@@ -260,17 +267,21 @@ PA treats ping as an application. The second rule will keep the exact same sourc
             url_member_values = set()
             # get the members of the url group
             #TODO: don't know yet, but we might need yet another recursve processing here
-            for url_group_member in url_group_object.get_object_members():
-                url_member_values.add(PANMCMigrationProject.apply_url_value_constraints(url_group_member.get_url_value()))
+            if url_group_object.get_object_members():
+                for url_group_member in url_group_object.get_object_members():
+                    url_member_values.add(PANMCMigrationProject.apply_url_value_constraints(url_group_member.get_url_value()))
 
-            url_group_object = CustomUrlCategory(name=url_group_object.get_name(), url_value=url_member_values, description=url_group_object.get_description(), type='URL List')   
+                url_group_object = CustomUrlCategory(name=url_group_object.get_name(), url_value=url_member_values, description=url_group_object.get_description(), type='URL List')   
 
-            self._TargetSecurityDevice.get_device_connection().add(url_group_object)
+                self._TargetSecurityDevice.get_device_connection().add(url_group_object)
+            else:
+                continue
+        #TODO: problem with the error message when url_group_member is null
         # bulk create the objects
-        try:
+        # try:
             self._TargetSecurityDevice.get_device_connection().find(url_group_object.name).create_similar()
-        except Exception as e:
-            print("error occured when bulk creating url address. More details: ", e)
+        # except Exception as e:
+        #     print("error occured when bulk creating url group address. More details: ", e)
 
     def migrate_policy_categories(self, categories):
         for cat_name in categories:
@@ -287,108 +298,187 @@ PA treats ping as an application. The second rule will keep the exact same sourc
             # get the special_policies.log file and write the failed policies in there
             # also, make sure you don't migrate policies that, if have all parameters removed, will become any-any policies. log them instead.
 
+    # policies are not migrated in bulk, but individually
     def migrate_security_policies(self, security_policies):
-        pass
-            # for each of the names, get all the details needed in order to create the policy
+        for security_policy in security_policies:
+            if security_policy._status != 'enabled':
+                continue
 
-            # check if the policy is disabled. if it is, don't migrate it
+            unresolved_dependency = False
 
-            # get the security zones and make sure you do the mapping of the zones
+            # Get the security zones and create a list with the zones names
+            # If zone lookup doesn't return anything, log the policy
+            source_security_zones_names = []
+            if security_policy._source_zones:
+                for source_security_zone_uid in security_policy._source_zones:
+                    try:
+                        source_security_zones_names.append(self._security_zones_map[source_security_zone_uid[0]])
+                    except:
+                        special_policies_log.warn(f"Policy: {security_policy._name} was not migrated because it has unresolved source zone dependencies.")
+                        unresolved_dependency = True
+                        break  # Break out of the inner loop
+            else:
+                source_security_zones_names = ['any']
 
-            # get the mapping of the container as well
+            if unresolved_dependency:
+                continue  # Skip to the next security_policy
 
-            # get the networks
+            destination_security_zones_names = []
+            if security_policy._destination_zones:
+                for destination_security_zone_uid in security_policy._destination_zones:
+                    try:
+                        destination_security_zones_names.append(self._security_zones_map[destination_security_zone_uid[0]])
+                    except:
+                        special_policies_log.warn(f"Policy: {security_policy._name} was not migrated because it has unresolved destination zone dependencies.")
+                        unresolved_dependency = True
+                        break  # Break out of the inner loop
+            else:
+                destination_security_zones_names = ['any']
 
-            # get the destination ports
+            if unresolved_dependency:
+                continue  # Skip to the next security_policy
+
+            # now get the names of the source and desstination networks
+            source_networks_names = []
+            if security_policy._source_networks:
+                for source_network_object in security_policy._source_networks:
+                    source_networks_names.append(source_network_object._name)
+            else:
+                source_networks_names = ['any']
             
+            destination_networks_names = []
+            if security_policy._destination_networks:
+                for destination_network_object in security_policy._destination_networks:
+                    destination_networks_names.append(destination_network_object._name)
+            else:
+                destination_networks_names = ['any']
+
+            # get the destination ports -> it is very important to see if a group member has a ping member.
+            destination_port_objects_names = []
+            has_icmp = False
+
+            #TODO: this needs very thorough testing
+            #there is a problem here. if a policy has a group which has only ping members, that policy is still created, but without the app ping attached to it\
+            if security_policy._destination_ports:
+                for destination_port_object in security_policy._destination_ports:
+                    if isinstance(destination_port_object, PioneerICMPObject):
+                        has_icmp = True
+                    
+                    elif isinstance(destination_port_object, PioneerPortGroupObject):
+                        has_icmp = destination_port_object.check_icmp_members_recursively(has_icmp)
+                        #TODO: what if group_object_members contains only groups that have ICMP objects?
+                        if destination_port_object._object_members or destination_port_object._group_object_members:
+                            destination_port_objects_names.append(destination_port_object._name)
+
+                    # in this case, the object is just a normal port object and can be added to the members list
+                    else:
+                        destination_port_objects_names.append(destination_port_object._name)
+            else:
+                destination_port_objects_names = ['any']
+            
+            # duct tape solution
+            if not destination_port_objects_names:
+                destination_port_objects_names = ['any']
+
             # get the urls
-            
-            # get the apps
+            security_policy_url_names = []
+            if security_policy._urls:
+                for url_object in security_policy._urls:
+                    security_policy_url_names.append(url_object._name)
+            else:
+                security_policy_url_names = ['any']
 
-            # get the description. 
-            # get the comments and maybe put them in audit comments? - yes. TODO: constraints for the comments to be up to 256 characters
-
-            ######
-
-            # get the log forwarding setting as specified by the user
-
-            # also get the security profile
-
-            # # set to log at the end
-            # log_end = True
-            
-            # # get the section of the polcy and the mapping based on source device
+            log_end = True
             
             # # get the action and make sure it maps to the proper PA action
+            policy_action = self._security_policy_actions_map[security_policy._action]
 
-            # dg_object = DeviceGroup(security_policy_container)
-            # # set the device group for the panorama instance
-            # self._SecurityDeviceConnection.add(dg_object)
-            # print("using device group: ", dg_object)
+            dg_object = DeviceGroup(self._security_policy_containers_map[security_policy._PolicyContainer._uid])
+            # set the device group for the panorama instance
+            
+            self._TargetSecurityDevice.get_device_connection().add(dg_object)
 
-            # print("creating policy: ", security_policy_name)
+            # # get the section of the polcy and the mapping based on source device
+            policy_section = self._section_map[security_policy._section]
 
-            # if policy_section == 'Mandatory':
-            #     rulebase = 'pre'
-            #     rulebase_with_dg = dg_object.add(PreRulebase())
-            # elif policy_section == 'Default':
-            #     rulebase = 'post'
-            #     rulebase_with_dg = dg_object.add(PostRulebase())
+            rulebase_with_dg = ''
+            if policy_section == 'pre':
+                rulebase_with_dg = dg_object.add(PreRulebase())
+            elif policy_section == 'post':
+                rulebase_with_dg = dg_object.add(PostRulebase())
 
+            # before migrating, make sure the policies that have only any parameters are logged and not migraged
+            #TODO: this below does not work
+            # Check if all conditions are 'any'
+            if has_icmp:
+                security_policy._policy_apps = ['ping']
+            else:
+                security_policy._policy_apps = ['any']
 
-            # # the security_policy_apps must be any all the time, if they are not ping
-            # if security_policy_apps != ['ping']:
-            #     security_policy_apps = ['any']
+            if (source_networks_names == ['any'] and
+                destination_networks_names == ['any'] and
+                destination_port_objects_names == ['any'] and
+                security_policy_url_names == ['any'] and
+                security_policy._policy_apps == ['any']):
+                special_policies_log.warn(f"Policy {security_policy._name} is an 'any-any' policy. Check on source device what special parameters it has.")
 
-            #     # TODO: set the security group
-            #     policy_object = SecurityRule(name=security_policy_name, tag=[security_policy_category], group_tag=security_policy_category, disabled=is_disabled, \
-            #                                 fromzone = security_policy_source_zones, tozone=security_policy_destination_zones, source=security_policy_source_networks, \
-            #                                 destination=security_policy_destination_networks, service=security_policy_destination_ports, category=security_policy_urls, application=security_policy_apps, \
-            #                                 description=security_policy_comments, log_setting=log_forwarding, log_end=log_end, action=policy_action, group="DUMMY_SPG")
+            # the security_policy_apps must be any all the time, if they are not ping
+            security_policy._name = self.apply_name_constraints(security_policy._name)
+
+            #TODO: make sure you make any parameter 'any' if the policy is a ping policy (url categories as well)
+            if security_policy._policy_apps != ['ping']:
+                security_policy._policy_apps = ['any']
+                policy_object = SecurityRule(name=security_policy._name, tag=[security_policy._category], group_tag=security_policy._category, disabled=False, \
+                                            fromzone = source_security_zones_names, tozone=destination_security_zones_names, source=source_networks_names, \
+                                            destination=destination_networks_names, service={'any'}, category=security_policy_url_names, application=security_policy._policy_apps, \
+                                            description=security_policy._comments, log_setting=self._log_settings, log_end=log_end, action=policy_action, group=self._special_security_policy_parameters)
                 
-            #     # add the policy object to the device group
-                
-            #     rulebase_with_dg.add(policy_object)
-            #     print(f"adding policy {security_policy_name}, container {security_policy_container} to rulebase {rulebase}")
+                # add the policy object to the device group
+                rulebase_with_dg.add(policy_object)
 
-            # # TWO CASES HERE FFS, one in which there is ping and destination ports and one in which there is only ping
-            # elif security_policy_apps == ['ping']:
-            #     # if there are destination ports and ping objects, create two policies
-            #     # else create only the ping policy
-            #     if security_policy_destination_ports != ['any']:
-            #         security_policy_apps = ['any']
-            #         policy_object = SecurityRule(name=security_policy_name, tag=[security_policy_category], group_tag=security_policy_category, disabled=is_disabled, \
-            #                                     fromzone = security_policy_source_zones, tozone=security_policy_destination_zones, source=security_policy_source_networks, \
-            #                                     destination=security_policy_destination_networks, service=security_policy_destination_ports, category=security_policy_urls, application=security_policy_apps, \
-            #                                     description=security_policy_comments, log_setting=log_forwarding, log_end=log_end, action=policy_action, group="DUMMY_SPG")
+            # TWO CASES HERE FFS, one in which there is ping and destination ports and one in which there is only ping
+            elif security_policy._policy_apps == ['ping']:
+                # if there are destination ports and ping objects, create two policies
+                # else create only the ping policy
+                if destination_port_objects_names != ['any']:
+                    security_policy._policy_apps = ['any']
+                    policy_object = SecurityRule(name=security_policy._name, tag=[security_policy._category], group_tag=security_policy._category, disabled=False, \
+                                                fromzone = source_security_zones_names, tozone=destination_security_zones_names, source=source_networks_names, \
+                                                destination=destination_networks_names, service=destination_port_objects_names, category=security_policy_url_names, application=security_policy._policy_apps, \
+                                                description=security_policy._comments, log_setting=self._log_settings, log_end=log_end, action=policy_action, group=self._special_security_policy_parameters)
                     
-            #         rulebase_with_dg.add(policy_object)
-            #         print(f"adding policy {security_policy_name}, container {security_policy_container} to rulebase {rulebase}")
+                    rulebase_with_dg.add(policy_object)
 
-            #     security_policy_name = security_policy_name[:58] + '_PING'
-            #     security_policy_apps = ['ping']
-            #     security_policy_destination_ports = ['any']
-            #     policy_object = SecurityRule(name=security_policy_name, tag=[security_policy_category], group_tag=security_policy_category, disabled=is_disabled, \
-            #                                 fromzone = security_policy_source_zones, tozone=security_policy_destination_zones, source=security_policy_source_networks, \
-            #                                 destination=security_policy_destination_networks, service=security_policy_destination_ports, category=security_policy_urls, application=security_policy_apps, \
-            #                                 description=security_policy_description, log_setting=log_forwarding, log_end=log_end, action=policy_action, group="DUMMY_SPG")
 
-            #     rulebase_with_dg.add(policy_object)
-            #     print(f"adding policy {security_policy_name}, container {security_policy_container} to rulebase {rulebase}")
+                security_policy._name = security_policy._name[:58] + '_PING'
+                security_policy._policy_apps = ['ping']
+                destination_port_objects_names = ['any']
+                policy_object = SecurityRule(name=security_policy._name, tag=[security_policy._category], group_tag=security_policy._category, disabled=False, \
+                                            fromzone = source_security_zones_names, tozone=destination_security_zones_names, source=source_networks_names, \
+                                            destination=destination_networks_names, service=destination_port_objects_names, category=security_policy_url_names, application=security_policy._policy_apps, \
+                                            description=security_policy._comments, log_setting=self._log_settings, log_end=log_end, action=policy_action, group=self._special_security_policy_parameters)
 
-            # # create the object
-            # try:
-            #     rulebase_with_dg.find(security_policy_name).create_similar()
-            # except Exception as e:
-            #     print("error occured when creating policy object. More details: ", e)
-            #     error_file.write(f"Failed to create policy {security_policy_name}. Reason: {e}.\n")
+                rulebase_with_dg.add(policy_object)
 
+            # create the object
+            #TODO: you sure this creates policies one by oe?
+            try:
+                rulebase_with_dg.create()
+                # rulebase_with_dg.find(security_policy._name).create_similar()
+            except Exception as e:
+                print("error occured when creating policy object. More details: ", e)
+                special_policies_log.write(f"Failed to create policy {security_policy._name}. Reason: {e}.\n")
 
     @staticmethod
     def apply_name_constraints(name):
         # Replace all characters that are not space, '-', or '.' with '_'
         name = re.sub(r'[^a-zA-Z0-9\s_.-]', '_', name)
-
+        
+        # Remove the last character if it is a whitespace
+        if name and name[-1].isspace():
+            name = name[:-1]
+        
+        # Truncate the name if it exceeds 63 characters
         if len(name) > 63:
             truncated_name = name[:58]
             suffix = f"_{random.randint(100, 999)}"

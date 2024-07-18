@@ -95,8 +95,8 @@ class PioneerSecurityPolicy(SecurityPolicy):
         self._destination_port_group_objects = self.extract_port_object_info('group_object_uid', 'destination')
 
         # I'd rather keep the ICMP objects separately, just in case there are compatibility issues with migration between platforms
-        self._source_ports = self._source_port_objects | self._source_port_group_objects
-        self._destination_ports = self._destination_port_objects | self._destination_port_group_objects
+        self._source_ports = self._source_port_objects | self._source_port_group_objects | self._source_icmp_objects
+        self._destination_ports = self._destination_port_objects | self._destination_port_group_objects | self._destination_icmp_objects
 
         self._schedule_objects = self.extract_schedule_object_info()
         self._users = self.extract_user_object_info()
@@ -287,6 +287,7 @@ class PioneerSecurityPolicy(SecurityPolicy):
                     PortGroupObject = self._object_cache.get_or_create(key, lambda: PioneerPortGroupObject(None, object_info))
                     PortGroupObject.extract_members('object', self._object_cache, self._PortGroupObjectsMembersTable)
                     PortGroupObject.extract_members('group', self._object_cache, self._PortGroupObjectsMembersTable)
+                    PortGroupObject.extract_members('icmp_object', self._object_cache, self._PortGroupObjectsMembersTable)
                     security_policy_ports_info.add(PortGroupObject)
 
         return security_policy_ports_info
