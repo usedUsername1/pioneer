@@ -846,6 +846,7 @@ class MigrationProjectDevicesTable(PioneerTable):
             ("PRIMARY KEY (source_device_uid, target_device_uid)", "")
         ]
 
+#TODO: composite primary key
 class SecurityDeviceInterfaceMap(PioneerTable):
     def __init__(self, Database) -> None:
         super().__init__(Database)
@@ -857,6 +858,7 @@ class SecurityDeviceInterfaceMap(PioneerTable):
             ("CONSTRAINT fk_target_security_zone FOREIGN KEY (target_security_zone)", "REFERENCES security_zones (uid)")
         ]
 
+#TODO: composite primary key
 class SecurityPolicyContainersMapTable(PioneerTable):
     def __init__(self, Database) -> None:
         super().__init__(Database)
@@ -868,3 +870,50 @@ class SecurityPolicyContainersMapTable(PioneerTable):
             ("CONSTRAINT fk_target_security_policy_container FOREIGN KEY (target_security_policy_container_uid)", "REFERENCES security_policy_containers (uid)")
         ]
 
+# the following tables are very simplistic and limited and will be rewritten
+# in the future. the feature they are trying to emulate is needed now
+class LogSettingsTable(PioneerTable):
+    def __init__(self, Database) -> None:
+        super().__init__(Database)
+        self._name = "log_settings"
+        self._table_columns = [
+            ("log_manager", "TEXT")
+        ]
+
+class SpecialSecurityPolicyParametersTable(PioneerTable):
+    def __init__(self, Database):
+        super().__init__(Database)
+        self._name = "special_security_policy_parameters"
+        self._table_columns = [
+            ("security_profile", "TEXT")
+        ]
+
+#TODO: should absolutely all mappings (even these one that differ in lowercase/uppercase (like FQDN and fqdn) be loaded here?)
+class NetworkObjectTypesMapTable(PioneerTable):
+    def __init__(self, Database) -> None:
+        super().__init__(Database)
+        self._name = "network_object_types_map"
+        self._table_columns = [
+            ("fmc_api", "TEXT"),
+            ("panmc_api", "TEXT")
+        ]
+
+    def pre_insert_data(self):
+        self.insert('Host', 'ip-netmask')
+        self.insert('Network', 'ip-netmask')
+        self.insert('Range', 'ip-range')
+
+class SecurityPolicyActionMapTable(PioneerTable):
+    def __init__(self, Database) -> None:
+        super().__init__(Database)
+        self._name = "security_policy_actions_map"
+        self._table_columns = [
+            ("fmc_api", "TEXT"),
+            ("panmc_api", "TEXT")
+        ]
+
+    def pre_insert_data(self):
+        self.insert('ALLOW', 'allow')
+        self.insert('TRUST', 'allow')
+        self.insert('BLOCK', 'deny')
+        self.insert('BLOCK_RESET', 'reset-client')

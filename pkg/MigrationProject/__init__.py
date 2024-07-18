@@ -1,7 +1,8 @@
 from abc import abstractmethod
 import utils.helper as helper
 import utils.gvars as gvars
-from pkg import PioneerDatabase, DBConnection, SecurityPolicyContainersMapTable, MigrationProjectGeneralDataTable, MigrationProjectDevicesTable, SecurityDeviceInterfaceMap
+from pkg import PioneerDatabase, DBConnection, SecurityPolicyContainersMapTable, MigrationProjectGeneralDataTable, MigrationProjectDevicesTable, SecurityDeviceInterfaceMap, \
+LogSettingsTable, SpecialSecurityPolicyParametersTable, NetworkObjectTypesMapTable, SecurityPolicyActionMapTable
 from pkg.SecurityDevice import SecurityDeviceDatabase
 
 special_policies_log = helper.logging.getLogger(gvars.special_policies_logger)
@@ -17,6 +18,11 @@ class MigrationProjectDatabase(SecurityDeviceDatabase):
         self._MigrationProjectDevicesTable = MigrationProjectDevicesTable(self)
         self._SecurityDeviceInterfaceMapTable = SecurityDeviceInterfaceMap(self)
 
+        self._LogSettingsTable = LogSettingsTable(self)
+        self._SpecialSecurityPolicyParametersTable = SpecialSecurityPolicyParametersTable(self)
+        self._NetworkObjectTypesMapTable = NetworkObjectTypesMapTable(self)
+        self._SecurityPolicyActionMapTable = SecurityPolicyActionMapTable(self)
+
     def create_migration_project_tables(self):
         # create the security device tables needed to store the data from the imported security devices
         self.create_security_device_tables()
@@ -24,6 +30,13 @@ class MigrationProjectDatabase(SecurityDeviceDatabase):
         self._MigrationProjectGeneralDataTable.create()
         self._MigrationProjectDevicesTable.create()
         self._SecurityDeviceInterfaceMapTable.create()
+
+        self._LogSettingsTable.create()
+        self._SpecialSecurityPolicyParametersTable.create()
+        self._NetworkObjectTypesMapTable.create()
+        self._NetworkObjectTypesMapTable.pre_insert_data()
+        self._SecurityPolicyActionMapTable.create()
+        self._SecurityPolicyActionMapTable.pre_insert_data()
     
     def get_migration_project_general_data_table(self):
         return self._MigrationProjectGeneralDataTable
@@ -36,6 +49,18 @@ class MigrationProjectDatabase(SecurityDeviceDatabase):
     
     def get_security_device_interface_map_table(self):
         return self._SecurityDeviceInterfaceMapTable
+
+    def get_log_settings_table(self):
+        return self._LogSettingsTable
+
+    def get_special_security_policy_parameters_table(self):
+        return self._SpecialSecurityPolicyParametersTable
+
+    def get_network_object_types_map_table(self):
+        return self._NetworkObjectTypesMapTable
+
+    def get_security_policy_action_map_table(self):
+        return self._SecurityPolicyActionMapTable
 
 class MigrationProject():
     def __init__(self, name, Database):

@@ -8,8 +8,10 @@ from panos.network import Zone
 from panos.objects import AddressObject, AddressGroup, ServiceObject, ServiceGroup, CustomUrlCategory, Tag
 from panos.policies import PreRulebase, PostRulebase, SecurityRule
 
-#TODO: defining objects for source and target device might be needed here
-#TODO: create everything in shared for the time being
+#TODO: actions, object types, log settings and special parameters must be dynamically retrieved.
+# preload the data from the database as class variables (in dictionaries)
+# and access them whenever necessary
+# same for the zone and container mappings
 class PANMCMigrationProject(MigrationProject):
     def __init__(self, name, Database, SourceSecurityDevice, TargetSecurityDevice):
         self._SourceSecurityDevice = SourceSecurityDevice
@@ -30,12 +32,7 @@ PA treats ping as an application. The second rule will keep the exact same sourc
             # adapt the name of the object
             network_object.set_name(PANMCMigrationProject.apply_name_constraints(network_object.get_name()))
             
-            #TODO: these must be retrieved dynamically, based on the type of source security device
-            if network_object.get_network_address_type() == 'Host' or network_object.get_network_address_type() == 'Network':
-                network_object.set_network_address_type('ip-netmask')
-            
-            if network_object.get_network_address_type() == 'Range':
-                network_object.set_network_address_type('ip-range')
+            #TODO: dynamically retrieve object type. 
         
             network_object = AddressObject(network_object.get_name(), network_object.get_network_address_value(), network_object.get_network_address_type().lower(), network_object.get_description())
 
@@ -167,9 +164,124 @@ PA treats ping as an application. The second rule will keep the exact same sourc
         except Exception as e:
             print("error occured when bulk creating url address. More details: ", e)
 
-            
+    def migrate_policy_categories(self, categories):
+        for cat_name in categories:
+            tag_object = Tag(cat_name)
+            self._TargetSecurityDevice.get_device_connection().add(tag_object)
+        # create the object
+        try:
+            self._TargetSecurityDevice.get_device_connection().find(cat_name).create_similar()
+        except Exception as e:
+            print("error occured when creating tag object. More details: ", e)
 
-    
+    # TODO: ensure that if you have policies with regions, they do not get migrated yet!
+            # ensure that you combine the description and the comments into a single string, which will be the description of the palo alto policy
+            # get the special_policies.log file and write the failed policies in there
+            # also, make sure you don't migrate policies that, if have all parameters removed, will become any-any policies. log them instead.
+
+    def migrate_security_policies(self, security_policies):
+        pass
+            # for each of the names, get all the details needed in order to create the policy
+
+            # check if the policy is disabled. if it is, don't migrate it
+
+            # get the security zones and make sure you do the mapping of the zones
+
+            # get the mapping of the container as well
+
+            # get the networks
+
+            # get the destination ports
+            
+            # get the urls
+            
+            # get the apps
+
+            # get the description. 
+            # get the comments and maybe put them in audit comments? - yes. TODO: constraints for the comments to be up to 256 characters
+
+            ######
+
+            # get the log forwarding setting as specified by the user
+
+            # also get the security profile
+
+            # # set to log at the end
+            # log_end = True
+            
+            # # get the section of the polcy and the mapping based on source device
+            
+            # # get the action and make sure it maps to the proper PA action
+
+            # dg_object = DeviceGroup(security_policy_container)
+            # # set the device group for the panorama instance
+            # self._SecurityDeviceConnection.add(dg_object)
+            # print("using device group: ", dg_object)
+
+            # print("creating policy: ", security_policy_name)
+
+            # if policy_section == 'Mandatory':
+            #     rulebase = 'pre'
+            #     rulebase_with_dg = dg_object.add(PreRulebase())
+            # elif policy_section == 'Default':
+            #     rulebase = 'post'
+            #     rulebase_with_dg = dg_object.add(PostRulebase())
+
+
+            # # the security_policy_apps must be any all the time, if they are not ping
+            # if security_policy_apps != ['ping']:
+            #     security_policy_apps = ['any']
+
+            #     # TODO: set the security group
+            #     policy_object = SecurityRule(name=security_policy_name, tag=[security_policy_category], group_tag=security_policy_category, disabled=is_disabled, \
+            #                                 fromzone = security_policy_source_zones, tozone=security_policy_destination_zones, source=security_policy_source_networks, \
+            #                                 destination=security_policy_destination_networks, service=security_policy_destination_ports, category=security_policy_urls, application=security_policy_apps, \
+            #                                 description=security_policy_comments, log_setting=log_forwarding, log_end=log_end, action=policy_action, group="DUMMY_SPG")
+                
+            #     # add the policy object to the device group
+                
+            #     rulebase_with_dg.add(policy_object)
+            #     print(f"adding policy {security_policy_name}, container {security_policy_container} to rulebase {rulebase}")
+
+            # # TWO CASES HERE FFS, one in which there is ping and destination ports and one in which there is only ping
+            # elif security_policy_apps == ['ping']:
+            #     # if there are destination ports and ping objects, create two policies
+            #     # else create only the ping policy
+            #     if security_policy_destination_ports != ['any']:
+            #         security_policy_apps = ['any']
+            #         policy_object = SecurityRule(name=security_policy_name, tag=[security_policy_category], group_tag=security_policy_category, disabled=is_disabled, \
+            #                                     fromzone = security_policy_source_zones, tozone=security_policy_destination_zones, source=security_policy_source_networks, \
+            #                                     destination=security_policy_destination_networks, service=security_policy_destination_ports, category=security_policy_urls, application=security_policy_apps, \
+            #                                     description=security_policy_comments, log_setting=log_forwarding, log_end=log_end, action=policy_action, group="DUMMY_SPG")
+                    
+            #         rulebase_with_dg.add(policy_object)
+            #         print(f"adding policy {security_policy_name}, container {security_policy_container} to rulebase {rulebase}")
+
+            #     security_policy_name = security_policy_name[:58] + '_PING'
+            #     security_policy_apps = ['ping']
+            #     security_policy_destination_ports = ['any']
+            #     policy_object = SecurityRule(name=security_policy_name, tag=[security_policy_category], group_tag=security_policy_category, disabled=is_disabled, \
+            #                                 fromzone = security_policy_source_zones, tozone=security_policy_destination_zones, source=security_policy_source_networks, \
+            #                                 destination=security_policy_destination_networks, service=security_policy_destination_ports, category=security_policy_urls, application=security_policy_apps, \
+            #                                 description=security_policy_description, log_setting=log_forwarding, log_end=log_end, action=policy_action, group="DUMMY_SPG")
+
+            #     rulebase_with_dg.add(policy_object)
+            #     print(f"adding policy {security_policy_name}, container {security_policy_container} to rulebase {rulebase}")
+
+            # # create the object
+            # try:
+            #     rulebase_with_dg.find(security_policy_name).create_similar()
+            # except Exception as e:
+            #     print("error occured when creating policy object. More details: ", e)
+            #     error_file.write(f"Failed to create policy {security_policy_name}. Reason: {e}.\n")
+
+
+
+
+
+
+
+
     @staticmethod
     def apply_name_constraints(name):
         # Replace all characters that are not space, '-', or '.' with '_'
@@ -208,152 +320,8 @@ PA treats ping as an application. The second rule will keep the exact same sourc
         url_value = re.sub(r'\.\*', '*.', url_value)
 
         # If a single wildcard character is found and not followed by a dot, add a dot after it
+        #TODO: this will change the way the expression is processed. if the user intended to match everything
+        # then this is wrong. if there is a single wildcard, then just remove it
         url_value = re.sub(r'(?<!\*)\*(?!\.)', '*.', url_value)
 
         return url_value
-
-#TODO: refactor below
-    def migrate_tags(self, categories):
-        print("migrating tag objects")
-        for cat_name in categories:
-            tag_object = Tag(cat_name)
-            self._SecurityDeviceConnection.add(tag_object)
-        # create the object
-        try:
-            self._SecurityDeviceConnection.find(cat_name).create_similar()
-        except Exception as e:
-            print("error occured when creating tag object. More details: ", e)
-    
-    # TODO: ensure that if you have policies with regions, they do not get migrated yet!
-            # ensure that you combine the description and the comments into a single string, which will be the description of the palo alto policy
-    def migrate_security_policies(self, security_policy_names, SourceDevice):
-        print("migrating security policies")
-        error_file = open("failed_policies.log", "w")
-
-        for security_policy_name in security_policy_names:
-            if 'Embargoed' in security_policy_name:
-                continue
-
-            # for each of the names, get all the details needed in order to create the policy
-            
-            # get the container name
-            security_policy_container = SourceDevice.get_db_col_by_val('security_policy_container_name', 'security_policies_table', 'security_policy_name', security_policy_name)
-
-            # get the security category
-            security_policy_category = SourceDevice.get_db_col_by_val('security_policy_category', 'security_policies_table', 'security_policy_name', security_policy_name)
-
-            # get the policy status
-            security_policy_status = SourceDevice.get_db_col_by_val('security_policy_status', 'security_policies_table', 'security_policy_name', security_policy_name)
-            
-            is_disabled = False
-            if security_policy_status != 'enabled':
-                is_disabled = True
-
-            # get the security zones
-            security_policy_source_zones = SourceDevice.get_db_col_by_val('security_policy_source_zones', 'security_policies_table', 'security_policy_name', security_policy_name)
-            security_policy_destination_zones = SourceDevice.get_db_col_by_val('security_policy_destination_zones', 'security_policies_table', 'security_policy_name', security_policy_name)
-
-            # get the networks
-            security_policy_source_networks = SourceDevice.get_db_col_by_val('security_policy_source_networks', 'security_policies_table', 'security_policy_name', security_policy_name)
-            security_policy_destination_networks = SourceDevice.get_db_col_by_val('security_policy_destination_networks', 'security_policies_table', 'security_policy_name', security_policy_name)
-
-            # get the destination ports
-            security_policy_destination_ports = SourceDevice.get_db_col_by_val('security_policy_destination_ports', 'security_policies_table', 'security_policy_name', security_policy_name)
-            
-            # get the urls
-            security_policy_urls = SourceDevice.get_db_col_by_val('security_policy_urls', 'security_policies_table', 'security_policy_name', security_policy_name)
-            
-            # get the apps
-            security_policy_apps = SourceDevice.get_db_col_by_val('security_policy_l7_apps', 'security_policies_table', 'security_policy_name', security_policy_name)
-
-            # get the description
-            #### make a single string with whateever is here
-            security_policy_description = SourceDevice.get_db_col_by_val('security_policy_description', 'security_policies_table', 'security_policy_name', security_policy_name)
-            
-            # get the comments
-            security_policy_comments = SourceDevice.get_db_col_by_val('security_policy_comments', 'security_policies_table', 'security_policy_name', security_policy_name) 
-            ######
-
-            # set log forwarding to panorama
-            log_forwarding = 'Panorama'
-
-            # set to log at the end
-            log_end = True
-            
-            # get the section of the polcy
-            policy_section = SourceDevice.get_db_col_by_val('security_policy_section', 'security_policies_table', 'security_policy_name', security_policy_name)
-            
-            # get the action and make sure it maps to the proper PA action
-            policy_action = SourceDevice.get_db_col_by_val('security_policy_action', 'security_policies_table', 'security_policy_name', security_policy_name)
-
-            match policy_action:
-                case 'ALLOW':
-                    policy_action = 'allow'
-                case 'TRUST':
-                    policy_action = 'allow'
-                case 'BLOCK':
-                    policy_action = 'deny'
-                case 'BLOCK_RESET':
-                    policy_action = 'reset-client'
-
-            dg_object = DeviceGroup(security_policy_container)
-            # set the device group for the panorama instance
-            self._SecurityDeviceConnection.add(dg_object)
-            print("using device group: ", dg_object)
-
-            print("creating policy: ", security_policy_name)
-
-            if policy_section == 'Mandatory':
-                rulebase = 'pre'
-                rulebase_with_dg = dg_object.add(PreRulebase())
-            elif policy_section == 'Default':
-                rulebase = 'post'
-                rulebase_with_dg = dg_object.add(PostRulebase())
-
-
-            # the security_policy_apps must be any all the time, if they are not ping
-            if security_policy_apps != ['ping']:
-                security_policy_apps = ['any']
-
-                # TODO: set the security group
-                policy_object = SecurityRule(name=security_policy_name, tag=[security_policy_category], group_tag=security_policy_category, disabled=is_disabled, \
-                                            fromzone = security_policy_source_zones, tozone=security_policy_destination_zones, source=security_policy_source_networks, \
-                                            destination=security_policy_destination_networks, service=security_policy_destination_ports, category=security_policy_urls, application=security_policy_apps, \
-                                            description=security_policy_comments, log_setting=log_forwarding, log_end=log_end, action=policy_action, group="DUMMY_SPG")
-                
-                # add the policy object to the device group
-                
-                rulebase_with_dg.add(policy_object)
-                print(f"adding policy {security_policy_name}, container {security_policy_container} to rulebase {rulebase}")
-
-            # TWO CASES HERE FFS, one in which there is ping and destination ports and one in which there is only ping
-            elif security_policy_apps == ['ping']:
-                # if there are destination ports and ping objects, create two policies
-                # else create only the ping policy
-                if security_policy_destination_ports != ['any']:
-                    security_policy_apps = ['any']
-                    policy_object = SecurityRule(name=security_policy_name, tag=[security_policy_category], group_tag=security_policy_category, disabled=is_disabled, \
-                                                fromzone = security_policy_source_zones, tozone=security_policy_destination_zones, source=security_policy_source_networks, \
-                                                destination=security_policy_destination_networks, service=security_policy_destination_ports, category=security_policy_urls, application=security_policy_apps, \
-                                                description=security_policy_comments, log_setting=log_forwarding, log_end=log_end, action=policy_action, group="DUMMY_SPG")
-                    
-                    rulebase_with_dg.add(policy_object)
-                    print(f"adding policy {security_policy_name}, container {security_policy_container} to rulebase {rulebase}")
-
-                security_policy_name = security_policy_name[:58] + '_PING'
-                security_policy_apps = ['ping']
-                security_policy_destination_ports = ['any']
-                policy_object = SecurityRule(name=security_policy_name, tag=[security_policy_category], group_tag=security_policy_category, disabled=is_disabled, \
-                                            fromzone = security_policy_source_zones, tozone=security_policy_destination_zones, source=security_policy_source_networks, \
-                                            destination=security_policy_destination_networks, service=security_policy_destination_ports, category=security_policy_urls, application=security_policy_apps, \
-                                            description=security_policy_description, log_setting=log_forwarding, log_end=log_end, action=policy_action, group="DUMMY_SPG")
-
-                rulebase_with_dg.add(policy_object)
-                print(f"adding policy {security_policy_name}, container {security_policy_container} to rulebase {rulebase}")
-
-            # create the object
-            try:
-                rulebase_with_dg.find(security_policy_name).create_similar()
-            except Exception as e:
-                print("error occured when creating policy object. More details: ", e)
-                error_file.write(f"Failed to create policy {security_policy_name}. Reason: {e}.\n")

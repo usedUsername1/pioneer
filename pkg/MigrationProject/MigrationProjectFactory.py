@@ -36,7 +36,7 @@ def build_migration_project(name, Database):
     TargetSecurityDevice = SecurityDeviceFactory.create_security_device(gvars.pioneer_db_user, target_device_name, gvars.pioneer_db_user_pass, gvars.db_host, gvars.db_port)
     target_device_type = get_target_device_type_by_uid(Database)
     match target_device_type:
-        case 'panmc-api':
+        case 'panmc_api':
             return PANMCMigrationProject(name, Database, SourceSecurityDevice, TargetSecurityDevice)
         case _:
             # Default case, return None or raise an error

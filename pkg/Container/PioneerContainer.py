@@ -39,6 +39,7 @@ class PioneerSecurityPolicyContainer(SecurityPolicyContainer):
         port_group_objects = set()
         url_objects = set()
         url_group_objects = set()
+        policy_categories = set()
 
 
         # Process each security policy entry
@@ -63,13 +64,15 @@ class PioneerSecurityPolicyContainer(SecurityPolicyContainer):
             # # Update URL-related objects
             url_objects.update(policy.get_url_objects_from_pioneer_policy())
             url_group_objects.update(policy.get_url_group_objects())
+
+            policy_categories.add(policy.get_category())
             
             # # add the policy to the list of policies that will be migrated
             policies_list.append(policy)
         
-        # the problem is when group_object members are found.
-        # basically, the same logic needs to be applied to them as well
-        PioneerDeviceObject.recursive_update_objects_and_groups(network_objects, network_group_objects)
+        # # the problem is when group_object members are found.
+        # # basically, the same logic needs to be applied to them as well
+        # PioneerDeviceObject.recursive_update_objects_and_groups(network_objects, network_group_objects)
         
         # # # migrate the network objects
         # print("migrating network objects")
@@ -84,8 +87,11 @@ class PioneerSecurityPolicyContainer(SecurityPolicyContainer):
         # print("migrating port group objects")
         # self._SecurityDevice.migrate_port_group_objects(port_group_objects)
 
-        PioneerDeviceObject.recursive_update_objects_and_groups(url_objects, url_group_objects)
-        print("migrating url objects")
-        self._SecurityDevice.migrate_url_objects(url_objects)
-        print("migrating url group objects")
-        self._SecurityDevice.migrate_url_group_objects(url_group_objects)
+        # PioneerDeviceObject.recursive_update_objects_and_groups(url_objects, url_group_objects)
+        # print("migrating url objects")
+        # self._SecurityDevice.migrate_url_objects(url_objects)
+        # print("migrating url group objects")
+        # self._SecurityDevice.migrate_url_group_objects(url_group_objects)
+
+        print("migrating policy categories")
+        self._SecurityDevice.migrate_policy_categories(policy_categories)

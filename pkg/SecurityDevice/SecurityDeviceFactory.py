@@ -41,12 +41,12 @@ class SecurityDeviceFactory:
             SecurityDevice: An instance of the appropriate API security device class.
         """
         match security_device_type:
-            case "fmc-api":
+            case "fmc_api":
                 general_logger.info(f"Device <{security_device_name}> is a Firepower Management Center.")
                 Connection = FMCDeviceConnection(security_device_username, security_device_secret, security_device_hostname, security_device_port, domain).connect_to_security_device()
                 SecurityDeviceObj = FMCSecurityDevice(security_device_uid, security_device_name, SecurityDeviceDB, Connection)
 
-            case "panmc-api":
+            case "panmc_api":
                 general_logger.info(f"Device <{security_device_name}> is a Panorama Management Center.")
                 Connection = PANMCDeviceConnection(security_device_username, security_device_secret, security_device_hostname, security_device_port).connect_to_security_device()
                 return PANMCSecurityDevice(security_device_uid, security_device_name, SecurityDeviceDB, Connection)
