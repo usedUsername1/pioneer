@@ -70,14 +70,14 @@ class PioneerSecurityPolicyContainer(SecurityPolicyContainer):
             # # add the policy to the list of policies that will be migrated
             policies_list.append(policy)
         
-        # # the problem is when group_object members are found.
-        # # basically, the same logic needs to be applied to them as well
-        # PioneerDeviceObject.recursive_update_objects_and_groups(network_objects, network_group_objects)
+        # the problem is when group_object members are found.
+        # basically, the same logic needs to be applied to them as well
+        PioneerDeviceObject.recursive_update_objects_and_groups(network_objects, network_group_objects)
         
         # # # migrate the network objects
-        # print("migrating network objects")
-        # self._SecurityDevice.migrate_network_objects(network_objects)
-        # self._SecurityDevice.migrate_network_group_objects(network_group_objects)
+        print("migrating network objects")
+        self._SecurityDevice.migrate_network_objects(network_objects)
+        self._SecurityDevice.migrate_network_group_objects(network_group_objects)
 
         # PioneerDeviceObject.recursive_update_objects_and_groups(port_objects, port_group_objects)
 

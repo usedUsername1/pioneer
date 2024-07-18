@@ -17,13 +17,15 @@ class PANMCMigrationProject(MigrationProject):
         self._SourceSecurityDevice = SourceSecurityDevice
         self._TargetSecurityDevice = TargetSecurityDevice
         
-        #TODO: this will be moved to MigrationProject
+        #TODO: this will be moved to MigrationProject and executed hopefully not everytime an instance of the migration project object is created
+        self._Database = Database
         self._security_policy_containers_map = self.load_containers_map_dict()
-        self._security_zones_map = ''
-        self._network_object_types_map = ''
-        self._security_policy_actions_map = ''
-        self._log_settings = ''
-        self._special_security_policy_parameters = ''
+        self._security_zones_map = self.load_security_zones_map_dict()
+        self._network_object_types_map = self.load_network_object_types_map()
+        self._security_policy_actions_map = self.load_security_policies_actions_map()
+        self._log_settings = self.load_log_settings()
+        self._special_security_policy_parameters = self.load_special_security_policy_parameters()
+        self._section_map = self.load_section_map()
         super().__init__(name, Database)
     
     def load_containers_map_dict(self):
@@ -46,6 +48,84 @@ class PANMCMigrationProject(MigrationProject):
 
         return containers_map_dict
 
+    def load_security_zones_map_dict(self):
+        # Retrieve all mappings from the security zones map table
+        zones_map = self._Database.get_security_device_interface_map_table().get(['source_security_zone', 'target_security_zone'])
+        SecurityZonesTable = self._Database.get_security_zones_table()
+
+        # Initialize the dictionary to store the mappings
+        zones_map_dict = {}
+
+        # Process each mapping
+        for source_uid, target_uid in zones_map:
+            # Get target security zone name
+            target_zone_data = SecurityZonesTable.get(['name'], 'uid', target_uid)
+            if not target_zone_data:
+                raise ValueError(f"Target security zone with UID '{target_uid}' not found.")
+            target_security_zone_name = target_zone_data[0][0]
+
+            # Add to the dictionary
+            zones_map_dict[source_uid] = target_security_zone_name
+
+        return zones_map_dict
+
+    def load_network_object_types_map(self):
+        source_type = self._SourceSecurityDevice.get_database().get_general_data_table().get('type', 'name', self._SourceSecurityDevice.get_name())[0][0]
+        target_type = self._TargetSecurityDevice.get_database().get_general_data_table().get('type', 'name', self._TargetSecurityDevice.get_name())[0][0]
+
+        # Retrieve mappings from network_object_types_map table
+        network_object_types_map = self._Database.get_network_object_types_map_table().get([source_type, target_type])
+        
+        # Initialize dictionary to store mappings
+        network_object_types_map_dict = {}
+        
+        # Process each mapping
+        for row in network_object_types_map:
+            source_action = row[0]
+            destination_action = row[1]
+            network_object_types_map_dict[source_action] = destination_action
+        
+        return network_object_types_map_dict
+
+    def load_security_policies_actions_map(self):
+        source_type = self._SourceSecurityDevice.get_database().get_general_data_table().get('type', 'name', self._SourceSecurityDevice.get_name())[0][0]
+        target_type = self._TargetSecurityDevice.get_database().get_general_data_table().get('type', 'name', self._TargetSecurityDevice.get_name())[0][0]
+
+        # Retrieve mappings from network_object_types_map table
+        network_object_types_map = self._Database.get_security_policy_action_map_table().get([source_type, target_type])
+        
+        # Initialize dictionary to store mappings
+        network_object_types_map_dict = {}
+        
+        # Process each mapping
+        for row in network_object_types_map:
+            source_action = row[0]
+            destination_action = row[1]
+            network_object_types_map_dict[source_action] = destination_action
+        
+        return network_object_types_map_dict
+
+    def load_log_settings(self):
+        log_settings_table = self._Database.get_log_settings_table()
+        return log_settings_table.get('log_manager')[0][0]
+        
+    def load_special_security_policy_parameters(self):
+        special_security_parameters_table = self._Database.get_special_security_policy_parameters_table()
+        return special_security_parameters_table.get('security_profile')[0][0]
+
+    def load_section_map(self):
+        source_type = self._SourceSecurityDevice.get_database().get_general_data_table().get('type', 'name', self._SourceSecurityDevice.get_name())[0][0]
+        target_type = self._TargetSecurityDevice.get_database().get_general_data_table().get('type', 'name', self._TargetSecurityDevice.get_name())[0][0]
+
+        section_map_table = self._Database.get_security_policy_section_map().get([source_type, target_type])
+        section_map = {}
+        
+        for row in section_map_table:
+            source_section = row[0]
+            destination_section = row[1]
+            section_map[source_section] = destination_section
+        
+        return section_map_table
 
     # save it to the file file, don't print it
     def print_compatibility_issues(self):
@@ -61,9 +141,8 @@ PA treats ping as an application. The second rule will keep the exact same sourc
             # adapt the name of the object
             network_object.set_name(PANMCMigrationProject.apply_name_constraints(network_object.get_name()))
             
-            #TODO: dynamically retrieve object type. 
-        
-            network_object = AddressObject(network_object.get_name(), network_object.get_network_address_value(), network_object.get_network_address_type().lower(), network_object.get_description())
+            network_object_type = self._network_object_types_map[network_object.get_network_address_type()]
+            network_object = AddressObject(network_object.get_name(), network_object.get_network_address_value(), network_object_type, network_object.get_description())
 
             self._TargetSecurityDevice.get_device_connection().add(network_object)
         # bulk create the objects

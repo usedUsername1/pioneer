@@ -903,6 +903,7 @@ class NetworkObjectTypesMapTable(PioneerTable):
         self.insert('Host', 'ip-netmask')
         self.insert('Network', 'ip-netmask')
         self.insert('Range', 'ip-range')
+        self.insert('FQDN', 'fqdn')
 
 class SecurityPolicyActionMapTable(PioneerTable):
     def __init__(self, Database) -> None:
@@ -918,3 +919,16 @@ class SecurityPolicyActionMapTable(PioneerTable):
         self.insert('TRUST', 'allow')
         self.insert('BLOCK', 'deny')
         self.insert('BLOCK_RESET', 'reset-client')
+
+class SecurityPolicySectionMap(PioneerTable):
+    def __init__(self, Database) -> None:
+        super().__init__(Database)
+        self._name = "seecurity_policy_section_map"
+        self._table_columns = [
+            ("fmc_api", "TEXT"),
+            ("panmc_api", "TEXT")
+        ]
+
+    def pre_insert_data(self):
+        self.insert('Mandatory', 'pre')
+        self.insert('Default', 'post')

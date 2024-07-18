@@ -2,7 +2,7 @@ from abc import abstractmethod
 import utils.helper as helper
 import utils.gvars as gvars
 from pkg import PioneerDatabase, DBConnection, SecurityPolicyContainersMapTable, MigrationProjectGeneralDataTable, MigrationProjectDevicesTable, SecurityDeviceInterfaceMap, \
-LogSettingsTable, SpecialSecurityPolicyParametersTable, NetworkObjectTypesMapTable, SecurityPolicyActionMapTable
+LogSettingsTable, SpecialSecurityPolicyParametersTable, NetworkObjectTypesMapTable, SecurityPolicyActionMapTable, SecurityPolicySectionMap
 from pkg.SecurityDevice import SecurityDeviceDatabase
 
 special_policies_log = helper.logging.getLogger(gvars.special_policies_logger)
@@ -14,7 +14,7 @@ class MigrationProjectDatabase(SecurityDeviceDatabase):
         #TODO: these parameters might not be needed here
         self._SourceSecurityDevice = None
         self._TargetSecurityDevice = None
-        
+
         self._SecurityPolicyContainersMapTable = SecurityPolicyContainersMapTable(self)
         self._MigrationProjectGeneralDataTable = MigrationProjectGeneralDataTable(self)
         self._MigrationProjectDevicesTable = MigrationProjectDevicesTable(self)
@@ -24,6 +24,7 @@ class MigrationProjectDatabase(SecurityDeviceDatabase):
         self._SpecialSecurityPolicyParametersTable = SpecialSecurityPolicyParametersTable(self)
         self._NetworkObjectTypesMapTable = NetworkObjectTypesMapTable(self)
         self._SecurityPolicyActionMapTable = SecurityPolicyActionMapTable(self)
+        self._SecurityPolicySectionMapTable = SecurityPolicySectionMap(self)
 
     def create_migration_project_tables(self):
         # create the security device tables needed to store the data from the imported security devices
@@ -39,6 +40,8 @@ class MigrationProjectDatabase(SecurityDeviceDatabase):
         self._NetworkObjectTypesMapTable.pre_insert_data()
         self._SecurityPolicyActionMapTable.create()
         self._SecurityPolicyActionMapTable.pre_insert_data()
+        self._SecurityPolicySectionMapTable.create()
+        self._SecurityPolicySectionMapTable.pre_insert_data()
     
     def get_migration_project_general_data_table(self):
         return self._MigrationProjectGeneralDataTable
@@ -63,6 +66,9 @@ class MigrationProjectDatabase(SecurityDeviceDatabase):
 
     def get_security_policy_action_map_table(self):
         return self._SecurityPolicyActionMapTable
+    
+    def get_security_policy_section_map(self):
+        return self._SecurityPolicySectionMapTable
 
 class MigrationProject():
     def __init__(self, name, Database):

@@ -247,7 +247,7 @@ def main():
         if pioneer_args['map_containers']:
             if pioneer_args['source_container_name'] and pioneer_args['target_container_name']:
                 MigrationProjectObject.map_containers(pioneer_args['source_container_name'], pioneer_args['target_container_name'])
-        
+
         if pioneer_args.get('map_zones'):
             if pioneer_args.get('source_zone_name') and pioneer_args.get('target_zone_name'):
                 MigrationProjectObject.map_zones(
@@ -267,15 +267,11 @@ def main():
             migration_project_name = MigrationProjectObject.get_name()
             MigrationProjectObject = MigrationProjectFactory.build_migration_project(migration_project_name, MigrationProjectDB)
             
-            SecurityPolicyContainersMapTable = MigrationProjectObject._Database.get_security_policy_containers_map_table().get(['source_security_policy_container_uid', 'target_security_policy_container_uid'])
-            GeneralDataTable = MigrationProjectObject._Database.get_security_policy_containers_table()
-            print(PANMCMigrationProject.load_containers_map_dict(SecurityPolicyContainersMapTable, GeneralDataTable))
-
-            # if pioneer_args['security_policy_container [container_name]']:
-            #     #TODO: at some point, maybe get the parent of the container on which the Pioneer container is based on
-            #     # also, perform migration of all the mapped entities
-            #     SecurityPolicyContainer = PioneerSecurityPolicyContainer(MigrationProjectObject, pioneer_args['security_policy_container [container_name]'], None)
-            #     SecurityPolicyContainer.process_and_migrate()
+            if pioneer_args['security_policy_container [container_name]']:
+                #TODO: at some point, maybe get the parent of the container on which the Pioneer container is based on
+                # also, perform migration of all the mapped entities
+                SecurityPolicyContainer = PioneerSecurityPolicyContainer(MigrationProjectObject, pioneer_args['security_policy_container [container_name]'], None)
+                SecurityPolicyContainer.process_and_migrate()
 
 if __name__ == "__main__":
     main()
@@ -288,6 +284,17 @@ if __name__ == "__main__":
 # python3 pioneer.py --project '' --send-logs-to-manager ''
 # python3 pioneer.py --project '' --set-security-profile ''
 # python3 pioneer.py --project '' --migrate --security-policy-container ''
+
+# python3 pioneer.py --create-project 'test_prj'
+# python3 pioneer.py --project 'test_prj' --set-source-device 'test_sfmc' --set-target-device 'test_panmc'
+# python3 pioneer.py --project 'test_prj' --map-containers --source-container 'Debug' --target-container 'Debug'
+# python3 pioneer.py --project 'test_prj' --map-containers --source-container "Global Internet Access Policy" --target-container "Global Internet"
+# python3 pioneer.py --project 'test_prj' --map-zones --source-zone 'FTD-INSIDE' --target-zone 'ZONE-LAN'
+# python3 pioneer.py --project 'test_prj' --map-zones --source-zone 'FTD-OUTSIDE' --target-zone 'ZONE-WAN'
+# python3 pioneer.py --project 'test_prj' --send-logs-to-manager 'Panorama'
+# python3 pioneer.py --project 'test_prj' --set-security-profile 'SPG-Luxoft-Default'
+# python3 pioneer.py --project '' --migrate --security-policy-container 'Debug'
+
 
 #TODO:
     # at some point, fix generating UIDs upon init of objects as it is a bad practice
