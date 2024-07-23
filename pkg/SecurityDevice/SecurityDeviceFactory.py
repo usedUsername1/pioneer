@@ -88,7 +88,6 @@ class SecurityDeviceFactory:
         security_device_type = GenericSecurityDevice.get_general_data("type", "name", security_device_name)
         general_logger.info(f"Got device type <{security_device_type}>.")
 
-        # TODO: put this into a function
         if '_api' in security_device_type:
             general_logger.info(f"<{security_device_name}> is an API device. Type: <{security_device_type}>")
             # get the security device hostname

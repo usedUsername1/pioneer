@@ -7,11 +7,9 @@ from pkg.SecurityDevice import SecurityDeviceDatabase
 
 special_policies_log = helper.logging.getLogger(gvars.special_policies_logger)
 
-#TODO: should the table containing mappings of actions and object types be created here?
 class MigrationProjectDatabase(SecurityDeviceDatabase):
     def __init__(self, cursor):
         super().__init__(cursor)
-        #TODO: these parameters might not be needed here
         self._SourceSecurityDevice = None
         self._TargetSecurityDevice = None
 
@@ -197,7 +195,6 @@ class MigrationProject():
         # Insert the data into the containers map table
         self._Database.get_security_policy_containers_map_table().insert(source_container_uid, target_container_uid)
     
-    #TODO: modify map_zones like the map_containers
     def map_zones(self, source_zone_name, target_zone_name):
         SecurityZonesTable = self._Database.get_security_zones_table()
 

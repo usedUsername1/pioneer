@@ -83,7 +83,6 @@ class PioneerSecurityPolicyContainer(SecurityPolicyContainer):
         PioneerDeviceObject.recursive_update_objects_and_groups(port_objects, port_group_objects)
 
         print("migrating port objects")
-        #TODO: make sure that everything here is created in bulk, it looks like the ports are not created in bulk
         self._SecurityDevice.migrate_port_objects(port_objects)
         print("migrating port group objects")
         self._SecurityDevice.migrate_port_group_objects(port_group_objects)

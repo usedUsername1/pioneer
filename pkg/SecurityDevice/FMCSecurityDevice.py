@@ -57,11 +57,6 @@ class FMCSecurityDevice(SecurityDevice):
     def return_network_group_object_info(self):
         return self._SecurityDeviceConnection.object.networkgroup.get()
     
-    #TODO: should contintents and countries be imported here as well?
-    # def return_geolocation_object_info(self):
-    #     return self._SecurityDeviceConnection.object.geolocation.get()
-        # return self._SecurityDeviceConnection.object.country.get()
-        # self._SecurityDeviceConnection.object.continent.get()
     
     def return_port_object_info(self):
         return self._SecurityDeviceConnection.object.port.get()
@@ -114,19 +109,12 @@ class FMCSecurityDevice(SecurityDevice):
     def return_geolocation_object(self, ObjectContainer, geolocation_object_entry):
         return FMCGeolocationObject(ObjectContainer, geolocation_object_entry)
 
-    #TODO: the problem is ICMP objects and port objects are treated the same by FMC, there is no distinction between them.
-    # we need to determine the type of the object and then call the right constructor based on the object's type
     def return_port_object(self, ObjectContainer, port_object_entry):
         if 'ICMP' in port_object_entry['type']:
             return FMCICMPObject(ObjectContainer, port_object_entry)
         else:
             return FMCPortObject(ObjectContainer, port_object_entry)
 
-    # for FMC devices, retrieving the policies of a child container, will also return the policies
-    # inherited from the parent.
-    # they need to be filtered out
-    #TODO: multiple policies are being returned.
-    # whyyy
     def return_security_policy_info(self, SecurityPolicyContainer):
         """
         Retrieve information about security policies within a specified container.
@@ -163,10 +151,7 @@ class FMCSecurityDevice(SecurityDevice):
     def return_schedule_object(self, ObjectContainer, schedule_object_entry):
         return FMCScheduleObject(ObjectContainer, schedule_object_entry)
 
-    #TODO is there anyway to put the virtual object container here?
     def return_security_policy_object(self, SecurityPolicyContainer, policy_entry):
-        # return security policy object only if the current policy belongs to the current container,
-        # if it belongs to another parent, skip it
         return FMCSecurityPolicy(SecurityPolicyContainer, policy_entry)
 
     def get_device_version(self):

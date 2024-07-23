@@ -156,7 +156,6 @@ class PioneerSecurityPolicy(SecurityPolicy):
     # then there will be 10 objects, all having the same data!
     # caching is implemented to avoid this
 
-    #TODO: use sets for storing objects and whatsoever
     def extract_network_address_object_info(self, object_type, flow):
         security_policy_networks = set()
 
@@ -394,7 +393,6 @@ class PioneerSecurityPolicy(SecurityPolicy):
         security_policy_apps = table.get(columns='name', name_col='security_policy_uid', val=self._uid, join=join)
         return security_policy_apps
 
-    #TODO: make everything be a set in here
     def log_special_parameters(self):
         special_parameters = {
             "Source country objects": self._source_country_objects,

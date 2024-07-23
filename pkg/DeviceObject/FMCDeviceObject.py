@@ -79,7 +79,6 @@ class FMCObjectWithLiterals(Object):
             # Convert protocol number to its corresponding keyword
             literal_protocol_keyword = helper.protocol_number_to_keyword(literal_protocol)
         
-        #TODO: make sure you track all of these as well
         except PioneerExceptions.UnknownProtocolNumber:
             # Log error if protocol number cannot be converted
             general_logger.warn(f"Protocol number: <{literal_protocol}> cannot be converted to a known IANA keyword.")
@@ -185,7 +184,6 @@ class FMCObjectWithLiterals(Object):
         object_info = {'name':url_object_name, 'url':literal_value, 'description':gvars.literal_objects_description, 'overridable':False}
         return FMCURLObject(ObjectContainer, object_info)
 
-    #TODO: fix this. does the try/except make sense here?
     @staticmethod
     def convert_policy_region_to_object(ObjectContainer, region_info):
         try:
@@ -204,8 +202,6 @@ class FMCObjectWithLiterals(Object):
             print(region_info)
         return FMCCountryObject(ObjectContainer, object_info)
 
-#TODO: see what to do with the overridable parameter, it looks kind of wrong at the moment
-# since multiple FMC objects that intherit from this class don't have this attribute
 class FMCObject(Object):
     """
     A class representing a FMC object.
@@ -262,9 +258,6 @@ class FMCNetworkGroupObject(NetworkGroupObject, FMCObjectWithLiterals, FMCObject
         NetworkGroupObjectsTable = Database.get_network_group_objects_table()
         NetworkGroupObjectsTable.insert(self.get_uid(), self.get_name(), self.get_object_container().get_uid(), self.get_description(), self.get_override_bool())   
 
-#TODO: the problem is ICMP objects and port objects are treated the same by FMC, there is no distinction between them.
-# we need to determine the type of the object and then call the right
-#TODO: remove the self._ parameters as they can be passed to the constructor directly. they are redundant
 class FMCPortObject(FMCObject, PortObject):
     """
     Class representing a port object in the Firepower Management Center (FMC).

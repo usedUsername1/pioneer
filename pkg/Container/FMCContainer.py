@@ -1,6 +1,5 @@
 from pkg.Container import SecurityPolicyContainer, ObjectContainer, ZoneContainer, ManagedDeviceContainer
 
-#TODO: maybe use setters for setting the values in here, and use the getters from the parent class to retrieve the info. just like you do for objects
 class FMCSecurityPolicyContainer(SecurityPolicyContainer):
     """
     Represents a policy container specific to the Firepower Management Center (FMC).

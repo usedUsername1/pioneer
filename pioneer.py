@@ -1,5 +1,4 @@
 # git ls-files | xargs wc -l
-#TODO: use properties instead of getters and setters in python
 import utils.helper as helper
 import utils.gvars as gvars
 from pkg.MigrationProject import MigrationProject, MigrationProjectDatabase
@@ -11,275 +10,277 @@ import sys
 from datetime import datetime, timezone
 import time
 from pkg.Container.PioneerContainer import PioneerSecurityPolicyContainer
-from pkg.MigrationProject.PANMCMigrationProject import PANMCMigrationProject
-# import psutil
-
-import subprocess
 
 # Disable logging for the 'fireREST' logger
 helper.logging.getLogger('fireREST').setLevel(helper.logging.CRITICAL)
 
 def main():
+    # Retrieve db credentials and connection details from global variables
     db_user = gvars.pioneer_db_user
     db_password = gvars.pioneer_db_user_pass
     landing_db = gvars.landing_db
     db_host = gvars.db_host
     db_port = gvars.db_port
 
-    # create the parser for the pioneer utilty
+    # Create the parser for the Pioneer utility
     pioneer_parser = helper.create_parser()
 
-    # store the arguments passed by the user
+    # Store the arguments passed by the user
     pioneer_args = pioneer_parser.parse_args()
 
-    # convert the args to a dictionary in order to further process them
+    # Convert the args to a dictionary for easier processing
     pioneer_args = vars(pioneer_args)
 
-    # the "--create-security-device" argument must be used with the "--type" argument
-    # create a security device with the name and the type specified by the user
-    # create folder where logs for the security device will be stored
-    if pioneer_args["create_security_device [name]"] and pioneer_args["device_type [type]"] and pioneer_args["hostname [hostname]"] and pioneer_args["username [username]"] and pioneer_args["secret [secret]"]:
-        # Extract information about the security device from pioneer_args
-        security_device_name = pioneer_args["create_security_device [name]"]
-        security_device_type = pioneer_args["device_type [type]"]
-        security_device_hostname = pioneer_args["hostname [hostname]"]
-        security_device_username = pioneer_args["username [username]"]
-        security_device_secret = pioneer_args["secret [secret]"]
-        security_device_port = pioneer_args["port [port]"]
-        domain = pioneer_args["domain [fmc_domain]"]
+    # Check if the necessary arguments for creating a security device are provided
+    if (pioneer_args["create_security_device [name]"] and 
+        pioneer_args["device_type [type]"] and 
+        pioneer_args["hostname [hostname]"] and 
+        pioneer_args["username [username]"] and 
+        pioneer_args["secret [secret]"]):
 
-        # Setup logging
-        log_folder = helper.os.path.join('log', f'device_{security_device_name}')
+        # Extract information about the security device from pioneer_args
+        device_name = pioneer_args["create_security_device [name]"]
+        device_type = pioneer_args["device_type [type]"]
+        device_hostname = pioneer_args["hostname [hostname]"]
+        device_username = pioneer_args["username [username]"]
+        device_secret = pioneer_args["secret [secret]"]
+        device_port = pioneer_args["port [port]"]
+        device_domain = pioneer_args["domain [fmc_domain]"]
+
+        # Set up logging directory
+        log_folder = helper.os.path.join('log', f'device_{device_name}')
         helper.setup_logging(log_folder, {gvars.general_logger: gvars.general_log_file,
                                           gvars.special_policies_logger: gvars.special_policies_logger_file})
         
         general_logger = helper.logging.getLogger(gvars.general_logger)
 
-        # Log creation of new device
-        general_logger.info(f"################## CREATING A NEW DEVICE: <{security_device_name}> ##################")
-        general_logger.info(f"Got the following info about device from user, security device name: <{security_device_name}>, type <{security_device_type}>, hostname <{security_device_hostname}, username <{security_device_username}>, secret <>, port: <{security_device_port}>, domain <{domain}>.")
+        # Log the creation of a new security device
+        general_logger.info(f"################## CREATING A NEW DEVICE: <{device_name}> ##################")
+        general_logger.info(f"Got the following info about device from user: device name: <{device_name}>, type: <{device_type}>, hostname: <{device_hostname}>, username: <{device_username}>, secret: <>, port: <{device_port}>, domain: <{device_domain}>.")
 
-        # Connect to the landing device database
-        LandingDBcursor = PioneerDatabase.connect_to_db(db_user, landing_db, db_password, db_host, db_port)
-        # Create the security device database object using the landing database
-        SecurityDeviceDB = SecurityDeviceDatabase(LandingDBcursor)
+        # Connect to the landing device db
+        landing_db_cursor = PioneerDatabase.connect_to_db(db_user, landing_db, db_password, db_host, db_port)
+        
+        # Create the security device db object using the landing db connection
+        security_device_db = SecurityDeviceDatabase(landing_db_cursor)
 
-        security_device_uuid = helper.generate_uid()
+        # Generate a unique identifier for the security device
+        device_uuid = helper.generate_uid()
 
-        # try:
-        general_logger.info(f"Connecting to the security device: <{security_device_name}>.")
+        # Log connection to the security device
+        general_logger.info(f"Connecting to the security device: <{device_name}>.")
+        
         # Attempt to create the security device object based on the device type
-        if '_api' in security_device_type:
-            general_logger.info(f"The device <{security_device_name}> is an API device. Its API will be used for interacting with it.")
-            SecurityDeviceObject = SecurityDeviceFactory.build_api_security_device(
-                security_device_uuid, security_device_name, security_device_type, 
-                SecurityDeviceDB, security_device_hostname, security_device_username, 
-                security_device_secret, security_device_port, domain
+        if '_api' in device_type:
+            general_logger.info(f"The device <{device_name}> is an API device. Its API will be used for interacting with it.")
+            security_device_object = SecurityDeviceFactory.build_api_security_device(
+                device_uuid, device_name, device_type, 
+                security_device_db, device_hostname, device_username, 
+                device_secret, device_port, device_domain
             )
         else:
-            general_logger.critical(f"Provided device type <{security_device_type}> is invalid.")
+            general_logger.critical(f"Provided device type <{device_type}> is invalid.")
             sys.exit(1)
         
-        # Get the version of the security device
-        general_logger.info(f"################## Getting the device version for device: <{security_device_name}>. ##################")
-        security_device_version = SecurityDeviceObject.get_device_version_from_device_conn()
+        # Log retrieval of the security device version
+        general_logger.info(f"################## Getting the device version for device: <{device_name}>. ##################")
         
-        # If version retrieval is successful, proceed with database creation and data insertion
-        if security_device_version:
-            # Create the database
-            security_device_db_name = security_device_name + '_db'
-            general_logger.info(f"Connecting to the Postgres using, user: <{db_user}>, password ..., host: <{db_host}>, port: <{db_port}>, landing database: <{landing_db}>.")
-            SecurityDeviceDB.create_database(security_device_db_name)
+        # Get the version of the security device
+        device_version = security_device_object.get_device_version_from_device_conn()
+        
+        # If version retrieval is successful, proceed with db creation and data insertion
+        if device_version:
+            # Create the security device db name
+            security_device_db_name = device_name + '_db'
+            general_logger.info(f"Connecting to the Postgres using user: <{db_user}>, password: ..., host: <{db_host}>, port: <{db_port}>, landing db: <{landing_db}>.")
+            
+            # Create the db for the security device
+            security_device_db.create_db(security_device_db_name)
 
-            # Connect to the newly created security device database
-            SecurityDeviceDBcursor = PioneerDatabase.connect_to_db(db_user, security_device_db_name, db_password, db_host, db_port)
-            SecurityDeviceDB = SecurityDeviceDatabase(SecurityDeviceDBcursor)
+            # Connect to the newly created security device db
+            security_device_db_cursor = PioneerDatabase.connect_to_db(db_user, security_device_db_name, db_password, db_host, db_port)
+            security_device_db = SecurityDeviceDatabase(security_device_db_cursor)
 
-            # Create the tables in the device database
-            SecurityDeviceDB.create_security_device_tables()
+            # Create the necessary tables in the device db
+            security_device_db.create_security_device_tables()
 
-            SecurityDeviceObject.set_database(SecurityDeviceDB)
+            # Set the db for the security device object
+            security_device_object.db = security_device_db
 
-            # Insert general device info into the database
-            general_logger.info(f"Inserting general device info in the database.")
-            SecurityDeviceObject.save_general_info(
-                SecurityDeviceObject.get_uid(), security_device_name, security_device_username, 
-                security_device_secret, security_device_hostname, security_device_type, 
-                security_device_port, security_device_version, domain
+            # Insert general device info into the db
+            general_logger.info(f"Inserting general device info in the db.")
+            security_device_object.save_general_info(
+                security_device_object.get_uid(), device_name, device_username, 
+                device_secret, device_hostname, device_type, 
+                device_port, device_version, device_domain
             )
 
-            # Retrieve the information about the containers, interfaces and objects
-            start_time = time.time()
-            cpu_usage, ram_usage = helper.get_usage()
-            print(f"CPU usage before: {cpu_usage}%")
-            print(f"RAM usage before: {ram_usage}%")
-
+            # Log the import of object container data
             print("Importing the object container data.")
-            # import and insert the object container first!
-            general_logger.info(f"################## Getting the object containers of device: <{security_device_name}>. ##################")
-            object_containers_list = SecurityDeviceObject.get_container_info_from_device_conn('object_container')
+            general_logger.info(f"################## Getting the object containers of device: <{device_name}>. ##################")
+            
+            # Import and insert the object container data
+            object_containers_list = security_device_object.get_container_info_from_device_conn(gvars.object_containers)
+            
+            # Log the import of security zones container data
             print("Importing security zones container data.")
-            zone_containers_list = SecurityDeviceObject.get_container_info_from_device_conn('security_zone_container')
+            zone_containers_list = security_device_object.get_container_info_from_device_conn(gvars.security_zone_container)
+            
+            # Log the import of managed devices container data
             print("Importing managed devices container data.")
-            managed_devices_container_list = SecurityDeviceObject.get_container_info_from_device_conn('managed_device_container')
+            managed_devices_container_list = security_device_object.get_container_info_from_device_conn(gvars.managed_device_container)
+            
+            # Log the import of security policy containers data
             print("Importing the security policy containers info.")
-            security_policy_containers_list = SecurityDeviceObject.get_container_info_from_device_conn('security_policy_container')
+            security_policy_containers_list = security_device_object.get_container_info_from_device_conn(gvars.security_policy_container)
+            
+            # Log the import of object data
             print("Importing the object data")
-            general_logger.info(f"################## Getting the objects of device: <{security_device_name}>. ##################")
+            general_logger.info(f"################## Getting the objects of device: <{device_name}>. ##################")
             
-            #TODO: when preloading data for creating the db relationships, make sure you preload the data from the current container!
-            # make sure that the user is warned if he has duplicate policies by name - how tf is this even possible?
-            # as objects have container scope
-            # there are still problem with the url group objects and url objects
-            for ObjectContainer in object_containers_list:
-                object_container_name = ObjectContainer.get_name()
-                general_logger.info(f"################## Getting the network objects of device: <{security_device_name}>. Container: <{object_container_name}> ##################")
+            # Iterate through each object container and import relevant data
+            for object_container in object_containers_list:
+                object_container_name = object_container.get_name()
+                
+                # Log and import network objects
+                general_logger.info(f"################## Getting the network objects of device: <{device_name}>. Container: <{object_container_name}> ##################")
                 print("Import network objects.")
-                SecurityDeviceObject.get_object_info_from_device_conn('network_object', ObjectContainer)
+                security_device_object.get_object_info_from_device_conn(gvars.network_object, object_container)
 
-                general_logger.info(f"################## Getting the network group objects of device: <{security_device_name}>. Container: <{object_container_name}> ##################")
+                # Log and import network group objects
+                general_logger.info(f"################## Getting the network group objects of device: <{device_name}>. Container: <{object_container_name}> ##################")
                 print("Import network group objects.")
-                SecurityDeviceObject.get_object_info_from_device_conn('network_group_object', ObjectContainer)
-                # TODO: geolocation objects support
-                # print("Importing geolocation objects.")
-                # general_logger.info(f"################## Getting the geolocation objects of device: <{security_device_name}>. Container: <{object_container_name}> ##################")
-                # SecurityDeviceObject.get_object_info_from_device_conn('geolocation_object', ObjectContainer)
+                security_device_object.get_object_info_from_device_conn(gvars.network_group_object, object_container)
 
-                general_logger.info(f"################## Getting the port objects of device: <{security_device_name}>. Container: <{object_container_name}> ##################")
+                # Log and import port objects
+                general_logger.info(f"################## Getting the port objects of device: <{device_name}>. Container: <{object_container_name}> ##################")
                 print("Import port objects.")
-                SecurityDeviceObject.get_object_info_from_device_conn('port_object', ObjectContainer)
+                security_device_object.get_object_info_from_device_conn(gvars.port_object, object_container)
                 
-                general_logger.info(f"################## Getting the port group objects of device: <{security_device_name}>. Container: <{object_container_name}> ##################")
+                # Log and import port group objects
+                general_logger.info(f"################## Getting the port group objects of device: <{device_name}>. Container: <{object_container_name}> ##################")
                 print("Import port group objects.")
-                SecurityDeviceObject.get_object_info_from_device_conn('port_group_object', ObjectContainer)
+                security_device_object.get_object_info_from_device_conn(gvars.port_group_object, object_container)
                 
-                general_logger.info(f"################## Getting the URL objects of device: <{security_device_name}>. Container: <{object_container_name}> ##################")
+                # Log and import URL objects
+                general_logger.info(f"################## Getting the URL objects of device: <{device_name}>. Container: <{object_container_name}> ##################")
                 print("Import URL objects.")
-                SecurityDeviceObject.get_object_info_from_device_conn('url_object', ObjectContainer)
+                security_device_object.get_object_info_from_device_conn(gvars.url_object, object_container)
                 
-                general_logger.info(f"################## Getting the URL group objects of device: <{security_device_name}>. Container: <{object_container_name}> ##################")
+                # Log and import URL group objects
+                general_logger.info(f"################## Getting the URL group objects of device: <{device_name}>. Container: <{object_container_name}> ##################")
                 print("Import URL group objects.")
-                SecurityDeviceObject.get_object_info_from_device_conn('url_group_object', ObjectContainer)
+                security_device_object.get_object_info_from_device_conn(gvars.url_group_object, object_container)
 
-                general_logger.info(f"################## Getting the schedule objects of device: <{security_device_name}>. Container: <{object_container_name}> ##################")
+                # Log and import schedule objects
+                general_logger.info(f"################## Getting the schedule objects of device: <{device_name}>. Container: <{object_container_name}> ##################")
                 print("Import the schedule objects.")
-                SecurityDeviceObject.get_object_info_from_device_conn('schedule_object', ObjectContainer)
+                security_device_object.get_object_info_from_device_conn(gvars.schedule_object, object_container)
             
-            for ZoneContainer in zone_containers_list:
+            # Iterate through each zone container and import zone data
+            for zone_container in zone_containers_list:
                 print("Importing the interfaces/zones data.")
-                SecurityDeviceObject.get_object_info_from_device_conn('security_zone', ZoneContainer)
+                security_device_object.get_object_info_from_device_conn(gvars.security_zone, zone_container)
 
-            # get the devices managed by the security device
-            general_logger.info(f"################## Getting the managed devices of device: <{security_device_name}>. ##################")
+            # Log and import managed devices
+            general_logger.info(f"################## Getting the managed devices of device: <{device_name}>. ##################")
             print("Importing the managed devices data.")
-            if managed_devices_container_list is None:
-                pass
-            else:
-                for ManagedDeviceContainer in managed_devices_container_list:
-                    SecurityDeviceObject.get_object_info_from_device_conn('managed_device', ManagedDeviceContainer)
+            if managed_devices_container_list is not None:
+                for managed_device_container in managed_devices_container_list:
+                    security_device_object.get_object_info_from_device_conn(gvars.managed_device, managed_device_container)
             
+            # Log and import security policies
             print("Importing security policies.")
-            #TODO: not sure if all the security devices return the index of the security policy as well
-            # if not, make sure you keep track of every policy index here
-            for SecurityPolicyContainer in security_policy_containers_list:
-                print(f"processing policies of container {SecurityPolicyContainer._name}")
-                SecurityDeviceObject.get_object_info_from_device_conn('security_policy_group', SecurityPolicyContainer)
+            for security_policy_container in security_policy_containers_list:
+                print(f"Processing policies of container {security_policy_container._name}")
+                security_device_object.get_object_info_from_device_conn(gvars.security_policy, security_policy_container)
 
-            end_time = time.time()
-            execution_time = end_time - start_time
-            print(f"Execution time: {execution_time} seconds")
         else:
+            # Log critical error and exit if device version retrieval fails
             general_logger.critical(f"Failed to retrieve version of the security device. Exiting...")
             sys.exit(1)
         
-        # close the cursors used to connect to the database
-        LandingDBcursor.close()
-        SecurityDeviceDBcursor.close()
-
-        # except Exception as e:
-        #     general_logger.critical(f"Failed to connect to the security device or encountered an error: <{e}>.")
-        #     sys.exit(1)
-
-    # if the create_project argument is used, then create a project database with the name supplied by the user
-    # when a project is created, a database for it gets created. the projects_metadata table also gets updated with the new info
+        # Close the cursors used to connect to the dbs
+        landing_db_cursor.close()
+        security_device_db_cursor.close()
 
     if pioneer_args['create_project [name]']:
-        # Extract the name from argv
+        # Extract the project name from arguments
         project_name = pioneer_args['create_project [name]']
         creation_timestamp = datetime.now()
-        
-        # Open a connection to the landing database
-        LandingDBcursor = PioneerDatabase.connect_to_db(db_user, landing_db, db_password, db_host, db_port)
 
-        # Set the database name
-        project_database_name = project_name + "_db"
+        # Open a connection to the landing db
+        landing_db_cursor = PioneerDatabase.connect_to_db(db_user, landing_db, db_password, db_host, db_port)
 
-        # Create the project database
-        PioneerProjectDB = MigrationProjectDatabase(LandingDBcursor)
-        PioneerProjectDB.create_database(project_database_name)
-        
-        # Connect to the project's database and create the migration project
-        MigrationProjectObject = MigrationProjectFactory.create_migration_project(db_user, project_name, db_password, db_host, db_port)
+        # Set the name for the project's db
+        project_db_name = project_name + gvars.db_name_prefix
+
+        # Create the project db
+        migration_project_db = MigrationProjectDatabase(landing_db_cursor)
+        migration_project_db.create_db(project_db_name)
+
+        # Connect to the project's db and create the migration project object
+        migration_project = MigrationProjectFactory.create_migration_project(db_user, project_name, db_password, db_host, db_port)
 
         # Create the migration project's tables
-        MigrationProjectObject.get_database().create_migration_project_tables()
+        migration_project.get_db().create_migration_project_tables()
 
         # Save general information about the project
-        MigrationProjectObject.save_general_info('TEST_DESC', creation_timestamp)
+        migration_project.save_general_info('TEST_DESC', creation_timestamp)
 
         # Close the cursors
-        LandingDBcursor.close()
-        MigrationProjectObject.get_database().get_cursor().close()
+        landing_db_cursor.close()
+        migration_project.get_db().get_cursor().close()
 
-    # the project objects must be created
-    # the source and security device objects must be created here
-    # exceptions for when user tries to use names of devices that
-    # make sure there can only be two security devices in a project and make sure stuff can't get imported multiple times
     if pioneer_args['project [name]']:
+        # Extract the project name from arguments
         project_name = pioneer_args['project [name]']
-        MigrationProjectObject = MigrationProjectFactory.create_migration_project(db_user, project_name, db_password, db_host, db_port)
-        # create migration project object here
-        if pioneer_args['set_source_device [name]'] and pioneer_args['set_target_device [name]']:
-            SourceSecurityDevice = SecurityDeviceFactory.create_security_device(db_user, pioneer_args['set_source_device [name]'], db_password, db_host, db_port)
-            TargetSecurityDevice = SecurityDeviceFactory.create_security_device(db_user, pioneer_args['set_target_device [name]'], db_password, db_host, db_port)
-            #TODO: when importing data, zones and containers names might be duplicated. if there are duplicates, then what?
-            MigrationProjectObject.import_data(SourceSecurityDevice, TargetSecurityDevice)
+        migration_project = MigrationProjectFactory.create_migration_project(db_user, project_name, db_password, db_host, db_port)
 
+        # Set source and target devices if provided
+        if pioneer_args['set_source_device [name]'] and pioneer_args['set_target_device [name]']:
+            source_device = SecurityDeviceFactory.create_security_device(db_user, pioneer_args['set_source_device [name]'], db_password, db_host, db_port)
+            target_device = SecurityDeviceFactory.create_security_device(db_user, pioneer_args['set_target_device [name]'], db_password, db_host, db_port)
+            migration_project.import_data(source_device, target_device)
+
+        # Map containers if provided
         if pioneer_args['map_containers']:
             if pioneer_args['source_container_name'] and pioneer_args['target_container_name']:
-                MigrationProjectObject.map_containers(pioneer_args['source_container_name'], pioneer_args['target_container_name'])
+                migration_project.map_containers(pioneer_args['source_container_name'], pioneer_args['target_container_name'])
 
+        # Map zones if provided
         if pioneer_args.get('map_zones'):
             if pioneer_args.get('source_zone_name') and pioneer_args.get('target_zone_name'):
-                MigrationProjectObject.map_zones(
-                    pioneer_args['source_zone_name'], pioneer_args['target_zone_name'])
-        
-        if pioneer_args.get('send_logs_to_manager'):
-            manager_name = pioneer_args.get('send_logs_to_manager')
-            MigrationProjectObject.set_log_manager(manager_name)
+                migration_project.map_zones(pioneer_args['source_zone_name'], pioneer_args['target_zone_name'])
 
+        # Set log manager if provided
+        if pioneer_args.get('send_logs_to_manager'):
+            log_manager_name = pioneer_args.get('send_logs_to_manager')
+            migration_project.set_log_manager(log_manager_name)
+
+        # Set security profile if provided
         if pioneer_args.get('set_security_profile'):
             security_profile_name = pioneer_args.get('set_security_profile')
-            MigrationProjectObject.set_security_profile(security_profile_name)
-        
-        #TODO: migration should be done on all mapped containers
-            # how to avoid creating common objects more than once
+            migration_project.set_security_profile(security_profile_name)
+
+        # Perform migration if requested
         if pioneer_args['migrate']:
-            # pass the database of the project here
-            MigrationProjectDB = MigrationProjectObject.get_database()
-            migration_project_name = MigrationProjectObject.get_name()
-            MigrationProjectObject = MigrationProjectFactory.build_migration_project(migration_project_name, MigrationProjectDB)
-            
+            migration_project_db = migration_project.get_db()
+            migration_project_name = migration_project.get_name()
+            migration_project = MigrationProjectFactory.build_migration_project(migration_project_name, migration_project_db)
+
+            # Process and migrate security policy container if provided
             if pioneer_args['security_policy_container [container_name]']:
-                #TODO: at some point, maybe get the parent of the container on which the Pioneer container is based on
-                # also, perform migration of all the mapped entities
-                SecurityPolicyContainer = PioneerSecurityPolicyContainer(MigrationProjectObject, pioneer_args['security_policy_container [container_name]'], None)
-                SecurityPolicyContainer.process_and_migrate()
+                security_policy_container = PioneerSecurityPolicyContainer(migration_project, pioneer_args['security_policy_container [container_name]'], None)
+                security_policy_container.process_and_migrate()
 
 if __name__ == "__main__":
     main()
 
-#TODO:
-    # at some point, fix generating UIDs upon init of objects as it is a bad practice
-    # don't forget to refactor the SecurityPolicy subclasses to remove the redundancy of attributes
-    #test
+# 2. replace as many hardcoded values with global variables
+# 3. use properties instead of getters and setters everywhere. reorganize them in a way that makes more sense based on their utility
+# 4. comment as much of the code as pssoible
+# 5. add a docstring for each function. the docstring should also contain info about what hte function does.
+# 6. rename variables to make more sense
+# 7. abstract functions everywhere 
+# 8. refactor functions that have the same logic. avoid duplicate logic as much as possible

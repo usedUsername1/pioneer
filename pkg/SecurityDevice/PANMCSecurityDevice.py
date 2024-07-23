@@ -12,9 +12,6 @@ from pkg.Container import SecurityPolicyContainer, ObjectContainer
 import random
 import re
 
-#TODO: failed objects creation file text
-#TODO: failed created policies file text
-
 general_logger = helper.logging.getLogger('general')
     
 # for the temp migration, only the policy containers and the object containers are needed
@@ -77,11 +74,9 @@ class PANMCSecurityDevice(SecurityDevice):
     def return_security_policy_container(self, container_entry):
         return PANMCSecurityPolicyContainer(self, container_entry)
     
-    #TODO: implement this
     def return_zone_container(self, container_entry):
         return PANMCSecurityZoneContainer(self, container_entry)
     
-    #TODO: implement this
     def return_security_zone(self, ZoneContainer, zone_entry):
         return PANMCSecurityZone(ZoneContainer, zone_entry)
 
@@ -150,9 +145,7 @@ class PANMCSecurityDevice(SecurityDevice):
     def return_security_policy_info(self, ObjectContainer):
         print("Importing this object is not supported yet for PANMC.")
         return None
-
-#TODO: delete everything below 
-
+    
     @staticmethod
     def apply_url_constraints(url_value):
         # If ".*" is found, change it to "*."
@@ -162,18 +155,4 @@ class PANMCSecurityDevice(SecurityDevice):
         url_value = re.sub(r'(?<!\*)\*(?!\.)', '*.', url_value)
 
         return url_value
-    
-    @staticmethod
-    def is_icmp_object(port_object, icmp_objects):
-        if port_object in icmp_objects:
-            return True
-        else:
-            return False
-    
-    @staticmethod
-    def is_port_group(port_object, port_group_objects):
-        if port_object in port_group_objects:
-            return True
-        else:
-            return False
         

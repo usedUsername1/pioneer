@@ -10,19 +10,13 @@ from panos.policies import PreRulebase, PostRulebase, SecurityRule
 import utils.helper as helper
 import utils.gvars as gvars
 
-#TODO: there is a problem with random generation of url names. new names will be generated each time a migration occurs
 
 special_policies_log = helper.logging.getLogger(gvars.special_policies_logger)
-#TODO: actions, object types, log settings and special parameters must be dynamically retrieved.
-# preload the data from the database as class variables (in dictionaries)
-# and access them whenever necessary
-# same for the zone and container mappings
 class PANMCMigrationProject(MigrationProject):
     def __init__(self, name, Database, SourceSecurityDevice, TargetSecurityDevice):
         self._SourceSecurityDevice = SourceSecurityDevice
         self._TargetSecurityDevice = TargetSecurityDevice
         
-        #TODO: this will be moved to MigrationProject and executed hopefully not everytime an instance of the migration project object is created
         self._Database = Database
         self._security_policy_containers_map = self.load_containers_map_dict()
         self._security_zones_map = self.load_security_zones_map_dict()
@@ -140,7 +134,6 @@ a random suffix will be generated in order to avoid duplicates. All special char
 Security Policies restricting ping access: All policies that control ping access will be split in two. The original policy and the ping policy. This is needed because 
 PA treats ping as an application. The second rule will keep the exact same source and destinations, but will have all port objects removed and application set to ping.""" + '\n')
 
-    #TODO: mapping tables for actions, network types and so on
     def migrate_network_objects(self, network_objects):
         for network_object in network_objects:
             # adapt the name of the object
@@ -201,8 +194,6 @@ PA treats ping as an application. The second rule will keep the exact same sourc
         except Exception as e:
             print("error occured when bulk creating network address. More details: ", e)
 
-    #TODO: make sure you don't migrate any groups that have 0 members. the check has to be done recursively - or does it?
-    # i think it works pretty good so far, needs to be tested further
     def migrate_port_group_objects(self, port_group_objects):
         for port_group_object in port_group_objects:
             # print(port_group_object._name)
@@ -235,29 +226,36 @@ PA treats ping as an application. The second rule will keep the exact same sourc
                 self._TargetSecurityDevice.get_device_connection().find(port_group_object.name).create_similar()
             except Exception as e:
                 print("error occured when creating port group. More details: ", e)
-    #TODO: err message problem
+
     def migrate_url_objects(self, url_objects):
-        for url_object in url_objects:
-            # adapt the name of the object
-            url_object.set_name(PANMCMigrationProject.apply_url_name_constraints(url_object.get_name()))
+        new_url_objects = []
         
-            url_object = CustomUrlCategory(name=url_object.get_name(), url_value=PANMCMigrationProject.apply_url_value_constraints(url_object.get_url_value()), description=url_object.get_description(), type='URL List')   
+        for url_object in url_objects:
+            # Adapt the name of the object
+            new_name = PANMCMigrationProject.apply_url_name_constraints(url_object.get_name())
+            new_url_value = PANMCMigrationProject.apply_url_value_constraints(url_object.get_url_value())
+            description = url_object.get_description()
+            
+            new_url_object = CustomUrlCategory(name=new_name, url_value=new_url_value, description=description, type='URL List')
+            
+            try:
+                self._TargetSecurityDevice.get_device_connection().add(new_url_object)
+                new_url_objects.append(new_url_object)
+            except Exception as e:
+                print(f"Error occurred when adding URL object '{new_name}'. More details: ", e)
 
-            self._TargetSecurityDevice.get_device_connection().add(url_object)
-        # bulk create the objects
+        # Bulk create the objects
         try:
-            self._TargetSecurityDevice.get_device_connection().find(url_object.name).create_similar()
+            for new_url_object in new_url_objects:
+                self._TargetSecurityDevice.get_device_connection().find(new_url_object.name).create_similar()
         except Exception as e:
-            print("error occured when bulk creating url address. More details: ", e)
+            print("Error occurred when bulk creating URL objects. More details: ", e)
 
-    #TODO: don't forget that the URL groups can't be migrated, as Palo Alto does not have URL groups
-    # instead, everything URL of a group must be placed in the PA URL category
     def migrate_url_group_objects(self, url_group_objects):
         for url_group_object in url_group_objects:
             url_group_object.set_name(PANMCMigrationProject.apply_url_name_constraints(url_group_object.get_name()))
             url_member_values = set()
             # get the members of the url group
-            #TODO: don't know yet, but we might need yet another recursve processing here
             if url_group_object.get_object_members():
                 for url_group_member in url_group_object.get_object_members():
                     url_member_values.add(PANMCMigrationProject.apply_url_value_constraints(url_group_member.get_url_value()))
@@ -267,7 +265,6 @@ PA treats ping as an application. The second rule will keep the exact same sourc
                 self._TargetSecurityDevice.get_device_connection().add(url_group_object)
             else:
                 continue
-        #TODO: problem with the error message when url_group_member is null
         # bulk create the objects
         # try:
             self._TargetSecurityDevice.get_device_connection().find(url_group_object.name).create_similar()
@@ -283,11 +280,6 @@ PA treats ping as an application. The second rule will keep the exact same sourc
             self._TargetSecurityDevice.get_device_connection().find(cat_name).create_similar()
         except Exception as e:
             print("error occured when creating tag object. More details: ", e)
-
-    # TODO: ensure that if you have policies with regions, they do not get migrated yet!
-            # ensure that you combine the description and the comments into a single string, which will be the description of the palo alto policy
-            # get the special_policies.log file and write the failed policies in there
-            # also, make sure you don't migrate policies that, if have all parameters removed, will become any-any policies. log them instead.
 
     # policies are not migrated in bulk, but individually
     def migrate_security_policies(self, security_policies):
@@ -349,8 +341,6 @@ PA treats ping as an application. The second rule will keep the exact same sourc
             destination_port_objects_names = []
             has_icmp = False
 
-            #TODO: this needs very thorough testing
-            #there is a problem here. if a policy has a group which has only ping members, that policy is still created, but without the app ping attached to it\
             if security_policy._destination_ports:
                 for destination_port_object in security_policy._destination_ports:
                     if isinstance(destination_port_object, PioneerICMPObject):
@@ -358,7 +348,6 @@ PA treats ping as an application. The second rule will keep the exact same sourc
                     
                     elif isinstance(destination_port_object, PioneerPortGroupObject):
                         has_icmp = destination_port_object.check_icmp_members_recursively(has_icmp)
-                        #TODO: what if group_object_members contains only groups that have ICMP objects?
                         if destination_port_object._object_members or destination_port_object._group_object_members:
                             destination_port_objects_names.append(destination_port_object._name)
 
@@ -400,7 +389,6 @@ PA treats ping as an application. The second rule will keep the exact same sourc
                 rulebase_with_dg = dg_object.add(PostRulebase())
 
             # before migrating, make sure the policies that have only any parameters are logged and not migraged
-            #TODO: this below does not work
             # Check if all conditions are 'any'
             if has_icmp:
                 security_policy._policy_apps = ['ping']
@@ -417,12 +405,11 @@ PA treats ping as an application. The second rule will keep the exact same sourc
             # the security_policy_apps must be any all the time, if they are not ping
             security_policy._name = self.apply_name_constraints(security_policy._name)
 
-            #TODO: make sure you make any parameter 'any' if the policy is a ping policy (url categories as well)
             if security_policy._policy_apps != ['ping']:
                 security_policy._policy_apps = ['any']
                 policy_object = SecurityRule(name=security_policy._name, tag=[security_policy._category], group_tag=security_policy._category, disabled=False, \
                                             fromzone = source_security_zones_names, tozone=destination_security_zones_names, source=source_networks_names, \
-                                            destination=destination_networks_names, service={'any'}, category=security_policy_url_names, application=security_policy._policy_apps, \
+                                            destination=destination_networks_names, service={'any'}, category={'any'}, application=security_policy._policy_apps, \
                                             description=security_policy._comments, log_setting=self._log_settings, log_end=log_end, action=policy_action, group=self._special_security_policy_parameters)
                 
                 # add the policy object to the device group
@@ -453,7 +440,6 @@ PA treats ping as an application. The second rule will keep the exact same sourc
                 rulebase_with_dg.add(policy_object)
 
             # create the object
-            #TODO: you sure this creates policies one by oe?
             try:
                 # rulebase_with_dg.create()
                 rulebase_with_dg.find(security_policy._name).create_similar()
@@ -503,9 +489,6 @@ PA treats ping as an application. The second rule will keep the exact same sourc
         # If ".*" is found, change it to "*."
         url_value = re.sub(r'\.\*', '*.', url_value)
 
-        # If a single wildcard character is found and not followed by a dot, add a dot after it
-        #TODO: this will change the way the expression is processed. if the user intended to match everything
-        # then this is wrong. if there is a single wildcard, then just remove it
         url_value = re.sub(r'(?<!\*)\*(?!\.)', '*.', url_value)
 
         return url_value
