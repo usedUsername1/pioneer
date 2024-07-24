@@ -213,7 +213,7 @@ def main():
         landing_db_cursor = PioneerDatabase.connect_to_db(db_user, landing_db, db_password, db_host, db_port)
 
         # Set the name for the project's db
-        project_db_name = project_name + gvars.db_name_prefix
+        project_db_name = project_name + gvars.db_name_suffix
 
         # Create the project db
         migration_project_db = MigrationProjectDatabase(landing_db_cursor)

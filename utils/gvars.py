@@ -3,7 +3,7 @@ port_literal_prefix = "PL_"
 url_literal_prefix = "UL_"
 literal_objects_description = "Originally a literal value, converted to object."
 virtual_container_name = "virtual_container"
-db_name_prefix = "_db"
+db_name_suffix = "_db"
 
 # LANDING DATABASE VARIABLES
 pioneer_db_user = "pioneer_admin"
@@ -46,8 +46,18 @@ policy_user_object = 'policy_user_object'
 l7_app_object = 'l7_app_object'
 l7_app_filter_object = 'l7_app_filter_object'
 l7_app_group_object = 'l7_app_group_object'
+
+# OBJECT MEMBER TYPES
+object_member_type = 'object'
+group_object_group_member_type = 'group'
+icmp_object_member = 'icmp'
+
 # group is used here as a "flag" value. it marks the fact
 # that the security policies will be processed as object groups
 # also, only the security policies for a particular object container
 # specified by the user will be returned
 security_policy = 'security_policy_group'
+
+# DEVICE TYPES VARIABLES
+fmc_device_type = 'fmc_api'
+panmc_device_type = 'panmc_api'

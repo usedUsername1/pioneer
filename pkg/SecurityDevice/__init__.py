@@ -539,11 +539,8 @@ class SecurityDevice:
             security_device_version (str): The version of the security device.
             domain (str): The domain of the security device.
         """
-        # Get the general data table instance from the db
-        general_data_table = self._db.general_data_table
-        
         # Insert general information into the general data table
-        general_data_table.insert(
+        self._db.general_data_table.insert(
             security_device_uid,
             security_device_name,
             security_device_username,
@@ -573,14 +570,12 @@ class SecurityDevice:
         general_logger.debug("Attempting to retrieve the device version from the device connection.")
 
         try:
-            # Retrieve the device version using the get_device_version() method
-            device_version = self.device_version
             
             # Log an informational message with the retrieved device version
-            general_logger.info(f"Got device version: {device_version}")
+            general_logger.info(f"Got device version: {self.device_version}")
             
             # Return the retrieved device version
-            return device_version
+            return self.device_version
         
         except Exception as err:
             # Log a critical error message if an exception occurs during version retrieval
@@ -717,12 +712,11 @@ class SecurityDevice:
                 current_container = self.create_py_object(container_type, container_entry, object_container=None)
                 
                 # Log the name of the current container being processed
-                current_container_name = current_container.parent_name
-                general_logger.info(f"Processing <{container_type}> container. Name: <{current_container_name}>")
+                general_logger.info(f"Processing <{container_type}> container. Name: <{current_container.parent_name}>")
                 
                 # Log the parent container information
                 parent_container_name = current_container.parent_name
-                general_logger.info(f"<{current_container_name}> is a child container. Its parent is: <{parent_container_name}>.")
+                general_logger.info(f"<{current_container.parent_name}> is a child container. Its parent is: <{parent_container_name}>.")
                 
                 # Add the container object to the set
                 container_objects.add(current_container)

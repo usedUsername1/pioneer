@@ -7,150 +7,245 @@ class Object:
     Base class for representing objects in the system.
     """
 
-    def __init__(self, ObjectContainer, name, description, is_overridable) -> None:
+    def __init__(self, object_container, name, description, is_overridable) -> None:
         """
         Initialize an Object instance.
 
-        Parameters:
-        - object_info (dict): Information about the object.
+        Args:
+            object_container (ObjectContainer): The container that holds this object.
+            name (str): The name of the object.
+            description (str): A description of the object.
+            is_overridable (bool): Indicates if the object can be overridden.
         """
-        # Initialize attributes
+        # Generate a unique identifier for the object
         self._uid = helper.generate_uid()
-        self._ObjectContainer = ObjectContainer
+        self._object_container = object_container
         self._name = name
         self._description = description
         self._is_overridable = is_overridable
+        self._group_member_names = []  # Initialize an empty list for group members
 
-    def get_uid(self):
+    @property
+    def uid(self) -> str:
+        """
+        Get the UID of the object.
+
+        Returns:
+            str: The UID of the object.
+        """
         return self._uid
-    
-    def set_uid(self, uid):
-        self._uid = uid
-    
-    def get_object_container(self):
-        return self._ObjectContainer
 
-    def get_name(self):
+    @uid.setter
+    def uid(self, value) -> None:
+        """
+        Set the UID of the object.
+
+        Args:
+            value (str): The UID to set.
+        """
+        self._uid = value
+
+    @property
+    def object_container(self):
+        """
+        Get the container that holds this object.
+
+        Returns:
+            ObjectContainer: The container that holds this object.
+        """
+        return self._object_container
+
+    @property
+    def name(self) -> str:
         """
         Get the name of the object.
 
         Returns:
-            str: Name of the object.
+            str: The name of the object.
         """
         return self._name
 
-    def set_name(self, value):
+    @name.setter
+    def name(self, value) -> None:
         """
         Set the name of the object.
 
-        Parameters:
-            value (str): Name of the object.
+        Args:
+            value (str): The name of the object.
         """
         self._name = value
 
-    def get_description(self):
+    @property
+    def description(self) -> str:
         """
         Get the description of the object.
 
         Returns:
-            str: Description of the object.
+            str: The description of the object.
         """
         return self._description
 
-    def set_description(self, value):
+    @description.setter
+    def description(self, value) -> None:
         """
         Set the description of the object.
 
-        Parameters:
-            value (str): Description of the object.
+        Args:
+            value (str): The description of the object.
         """
         self._description = value
 
-    def get_override_bool(self):
+    @property
+    def is_overridable(self) -> bool:
         """
         Get the override status of the object.
 
         Returns:
-            bool: Override status of the object.
+            bool: Indicates if the object can be overridden.
         """
         return self._is_overridable
 
-    def set_override_bool(self, value):
+    @is_overridable.setter
+    def is_overridable(self, value: bool) -> None:
         """
         Set the override status of the object.
 
-        Parameters:
-            value (bool): Override status of the object.
+        Args:
+            value (bool): The override status of the object.
         """
         self._is_overridable = value
 
-    def get_object_container_name(self):
+    @property
+    def object_container_name(self) -> str:
         """
         Get the name of the object container.
 
         Returns:
-            str: Name of the object container.
+            str: The name of the object container.
         """
-        return self._object_container
+        return self._object_container.name
 
-    def set_object_container_name(self, value):
+    @object_container_name.setter
+    def object_container_name(self, value) -> None:
         """
         Set the name of the object container.
 
-        Parameters:
-            value (str): Name of the object container.
+        Args:
+            value (str): The name of the object container.
         """
-        self._object_container = value
+        self._object_container.name = value
 
-    def add_group_member_name(self, group_member_name):
+    def add_group_member_name(self, group_member_name) -> None:
+        """
+        Add a group member name to the list.
+
+        Args:
+            group_member_name (str): The name of the group member to add.
+        """
         self._group_member_names.append(group_member_name)
           
 # regarding processing groups: the object members of the groups have to be processed as well
 class GroupObject(Object):
     """
-    A class representing a group object.
+    Represents a group object in the system.
     """
 
     def __init__(self) -> None:
         """
-        Initialize the GroupObject instance.
+        Initialize the GroupObject instance with default values.
 
         Args:
-            object_info (dict): Information about the group object.
+            None
         """
+        super().__init__(object_container=None, name='', description='', is_overridable=False)
         self._group_member_names = []
-        
         self._object_members = set()
         self._group_object_members = set()
-    
-        # no better idea of where to put it at the moment :(
-        # decide if it belongs with the rest of the group members or if it should be kept separately
         self._icmp_object_members = set()
 
-    def get_group_member_names(self):
+    @property
+    def group_member_names(self) -> list:
+        """
+        Get the list of group member names.
+
+        Returns:
+            list: The list of group member names.
+        """
         return self._group_member_names
 
-    def get_object_members(self):
+    @group_member_names.setter
+    def group_member_names(self, value: list) -> None:
+        """
+        Set the list of group member names.
+
+        Args:
+            value (list): The list of group member names to set.
+        """
+        self._group_member_names = value
+
+    @property
+    def object_members(self) -> set:
+        """
+        Get the set of object members.
+
+        Returns:
+            set: The set of object members.
+        """
         return self._object_members
 
-    def get_group_object_members(self):
+    @object_members.setter
+    def object_members(self, value: set) -> None:
+        """
+        Set the set of object members.
+
+        Args:
+            value (set): The set of object members to set.
+        """
+        self._object_members = value
+
+    @property
+    def group_object_members(self) -> set:
+        """
+        Get the set of group object members.
+
+        Returns:
+            set: The set of group object members.
+        """
         return self._group_object_members
-    
-    def set_object_members(self, object_members):
-        self._object_members = object_members
 
-    def set_group_object_members(self, group_object_members):
-        self._object_members = group_object_members
-    
-    def set_icmp_members(self, icmp_members):
-        self._icmp_object_members = icmp_members
+    @group_object_members.setter
+    def group_object_members(self, value: set) -> None:
+        """
+        Set the set of group object members.
 
-    def get_icmp_members(self):
+        Args:
+            value (set): The set of group object members to set.
+        """
+        self._group_object_members = value
+
+    @property
+    def icmp_object_members(self) -> set:
+        """
+        Get the set of ICMP object members.
+
+        Returns:
+            set: The set of ICMP object members.
+        """
         return self._icmp_object_members
+
+    @icmp_object_members.setter
+    def icmp_object_members(self, value: set) -> None:
+        """
+        Set the set of ICMP object members.
+
+        Args:
+            value (set): The set of ICMP object members to set.
+        """
+        self._icmp_object_members = value
 
 class NetworkObject:
     """
-    A class representing a generic network object.
+    Represents a generic network object.
     """
 
     def __init__(self, network_address_value, network_address_type) -> None:
@@ -158,14 +253,14 @@ class NetworkObject:
         Initialize the NetworkObject instance.
 
         Args:
-            object_info (dict): Information about the network object.
             network_address_value (str): The network address value.
             network_address_type (str): The network address type.
         """
         self._network_address_value = network_address_value
         self._network_address_type = network_address_type
 
-    def get_network_address_value(self):
+    @property
+    def network_address_value(self) -> str:
         """
         Get the network address value of the object.
 
@@ -173,17 +268,19 @@ class NetworkObject:
             str: The network address value.
         """
         return self._network_address_value
-    
-    def set_network_address_value(self, value):
+
+    @network_address_value.setter
+    def network_address_value(self, value) -> None:
         """
         Set the network address value of the object.
 
-        Parameters:
+        Args:
             value (str): The network address value.
         """
         self._network_address_value = value
 
-    def get_network_address_type(self):
+    @property
+    def network_address_type(self) -> str:
         """
         Get the network address type of the object.
 
@@ -191,35 +288,70 @@ class NetworkObject:
             str: The network address type.
         """
         return self._network_address_type
-    
-    def set_network_address_type(self, value):
+
+    @network_address_type.setter
+    def network_address_type(self, value) -> None:
         """
         Set the network address type of the object.
 
-        Parameters:
+        Args:
             value (str): The network address type.
         """
         self._network_address_type = value
 
-    def save(self, Database):
-        NetworkAddressObjectsTable = Database.get_network_address_objects_table()
-        NetworkAddressObjectsTable.insert(self.get_uid(), self.get_name(), self.get_object_container().get_uid(), self.get_network_address_value(), self.get_description(), self.get_network_address_type(), self.get_override_bool())  
+    def save(self, db) -> None:
+        """
+        Save the network object to the db.
+
+        Args:
+            db: The db object where the network object will be saved.
+        """
+        db.network_address_objects_table.insert(
+            self.uid,
+            self.name,
+            self.object_container.uid,
+            self.network_address_value,
+            self.description,
+            self.network_address_type,
+            self.is_overridable
+        )  
 
 class NetworkGroupObject(GroupObject):
-    def save(self, Database):
-        NetworkGroupObjectsTable = Database.get_network_group_objects_table()
-        NetworkGroupObjectsTable.insert(self.get_uid(), self.get_name(), self.get_object_container().get_uid(), self.get_description(), self.get_override_bool())
+    """
+    Represents a network group object, inheriting from GroupObject.
+    """
 
-    def create_relationships_in_db(self, Database, preloaded_data):
-        member_names = self.get_group_member_names()
-        network_group_objects_members_table = Database.get_network_group_objects_members_table()
-        for member_name in member_names:
+    def save(self, db) -> None:
+        """
+        Save the network group object to the db.
+
+        Args:
+            db: The db object where the network group object will be saved.
+        """
+        db.network_group_objects_table.insert(
+            self.uid,
+            self.name,
+            self.object_container.uid,
+            self.description,
+            self.is_overridable
+        )
+
+    def create_relationships_in_db(self, db, preloaded_data) -> None:
+        """
+        Create relationships in the db for the network group object.
+
+        Args:
+            db: The db object where relationships will be created.
+            preloaded_data (dict): Preloaded data mapping member names to their UIDs.
+        """        
+        for member_name in self.group_member_names:
             group_member_uid = preloaded_data.get(member_name)
-            network_group_objects_members_table.insert(self.get_uid(), group_member_uid)
+            if group_member_uid:
+                db.network_group_objects_members_table.insert(self.uid, group_member_uid)
 
 class PortObject:
     """
-    A class representing a port object.
+    Represents a port object with source and destination ports and a protocol.
     """
 
     def __init__(self, source_port, destination_port, port_protocol) -> None:
@@ -227,13 +359,16 @@ class PortObject:
         Initialize the PortObject instance.
 
         Args:
-            object_info (dict): Information about the port object.
+            source_port (int): The source port number.
+            destination_port (int): The destination port number.
+            port_protocol (str): The protocol used by the port (e.g., 'TCP', 'UDP').
         """
-        self._port_protocol = port_protocol
         self._source_port = source_port
         self._destination_port = destination_port
+        self._port_protocol = port_protocol
 
-    def get_port_protocol(self):
+    @property
+    def port_protocol(self) -> str:
         """
         Get the port protocol of the object.
 
@@ -241,8 +376,9 @@ class PortObject:
             str: The port protocol.
         """
         return self._port_protocol
-    
-    def set_port_protocol(self, protocol):
+
+    @port_protocol.setter
+    def port_protocol(self, protocol) -> None:
         """
         Set the port protocol of the object.
 
@@ -251,7 +387,8 @@ class PortObject:
         """
         self._port_protocol = protocol
 
-    def get_source_port(self):
+    @property
+    def source_port(self) -> int:
         """
         Get the source port of the object.
 
@@ -259,8 +396,9 @@ class PortObject:
             int: The source port.
         """
         return self._source_port
-    
-    def set_source_port(self, number):
+
+    @source_port.setter
+    def source_port(self, number: int) -> None:
         """
         Set the source port of the object.
 
@@ -269,7 +407,8 @@ class PortObject:
         """
         self._source_port = number
 
-    def get_destination_port(self):
+    @property
+    def destination_port(self) -> int:
         """
         Get the destination port of the object.
 
@@ -277,8 +416,9 @@ class PortObject:
             int: The destination port.
         """
         return self._destination_port
-    
-    def set_destination_port(self, number):
+
+    @destination_port.setter
+    def destination_port(self, number: int) -> None:
         """
         Set the destination port of the object.
 
@@ -287,13 +427,27 @@ class PortObject:
         """
         self._destination_port = number
 
-    def save(self, Database):
-        PortObjectsTable = Database.get_port_objects_table()
-        PortObjectsTable.insert(self.get_uid(), self.get_name(), self.get_object_container().get_uid(), self.get_port_protocol(), self.get_source_port(), self.get_destination_port(), self.get_description(), self.get_override_bool())
+    def save(self, db) -> None:
+        """
+        Save the port object to the db.
+
+        Args:
+            db: The db object where the port object will be saved.
+        """
+        db.port_objects_table.insert(
+            self.uid,
+            self.name,
+            self.object_container.uid,
+            self.port_protocol,
+            self.source_port,
+            self.destination_port,
+            self.description,
+            self.is_overridable
+        )
 
 class ICMPObject:
     """
-    Class representing an ICMP object in the system, inheriting from the base Object class.
+    Represents an ICMP object in the system.
     """
 
     def __init__(self, icmp_type, icmp_code) -> None:
@@ -301,156 +455,382 @@ class ICMPObject:
         Initialize an ICMPObject instance.
 
         Parameters:
-        - object_info (dict): Information about the ICMP object.
+            icmp_type (str): The type of the ICMP object.
+            icmp_code (str): The code of the ICMP object.
         """
         self._icmp_type = icmp_type
         self._icmp_code = icmp_code
-    
-    def get_icmp_type(self):
+
+    @property
+    def icmp_type(self) -> str:
         """
         Get the ICMP type.
 
         Returns:
-            str: ICMP type.
+            str: The ICMP type.
         """
         return self._icmp_type
 
-    def set_icmp_type(self, icmp_type):
+    @icmp_type.setter
+    def icmp_type(self, value) -> None:
         """
         Set the ICMP type.
 
         Parameters:
-            icmp_type (str): ICMP type.
+            value (str): The ICMP type.
         """
-        self._icmp_type = icmp_type
+        self._icmp_type = value
 
-    def get_icmp_code(self):
+    @property
+    def icmp_code(self) -> str:
         """
         Get the ICMP code.
 
         Returns:
-            str: ICMP code.
+            str: The ICMP code.
         """
         return self._icmp_code
 
-    def set_icmp_code(self, icmp_code):
+    @icmp_code.setter
+    def icmp_code(self, value) -> None:
         """
         Set the ICMP code.
 
         Parameters:
-            icmp_code (str): ICMP code.
+            value (str): The ICMP code.
         """
-    def save(self, Database):
-        ICMPObjectsTable = Database.get_icmp_objects_table()
-        ICMPObjectsTable.insert(self.get_uid(), self.get_name(), self.get_object_container().get_uid(), self.get_icmp_type(), self.get_icmp_code(), self.get_description(), self.get_override_bool())
+        self._icmp_code = value
+
+    def save(self, db) -> None:
+        """
+        Save the ICMP object to the db.
+
+        Args:
+            db: The db object where the ICMP object will be saved.
+        """
+        db.icmp_objects_table.insert(
+            self.uid,
+            self.name,
+            self.object_container.uid,
+            self.icmp_type,
+            self.icmp_code,
+            self.description,
+            self.is_overridable
+        )
 
 class PortGroupObject(GroupObject):
-    def save(self, Database):
-        PortGroupObjectsTable = Database.get_port_group_objects_table()
-        PortGroupObjectsTable.insert(self.get_uid(), self.get_name(), self.get_object_container().get_uid(), self.get_description(), self.get_override_bool())
+    """
+    Represents a port group object.
+    Inherits from GroupObject to handle a collection of port-related objects.
+    """
 
-    def create_relationships_in_db(self, Database, preloaded_data):
-        member_names = self.get_group_member_names()
-        port_group_objects_members_table = Database.get_port_group_objects_members_table()
-        for member_name in member_names:
+    def save(self, db) -> None:
+        """
+        Save the port group object to the db.
+
+        Args:
+            db: The db object where the port group object will be saved.
+        """
+        db.port_group_objects_table.insert(
+            self.uid,
+            self.name,
+            self.object_container.uid,
+            self.description,
+            self.is_overridable
+        )
+
+    def create_relationships_in_db(self, db, preloaded_data) -> None:
+        """
+        Create relationships in the db for the port group object.
+
+        Args:
+            db: The db object where relationships will be created.
+            preloaded_data (dict): A dictionary mapping member names to their UIDs.
+        """
+        for member_name in self.group_member_names:
             group_member_uid = preloaded_data.get(member_name)
-            port_group_objects_members_table.insert(self.get_uid(), group_member_uid)
+            if group_member_uid is not None:
+                db.port_group_objects_members_table.insert(self.uid, group_member_uid)
 
 class URLObject:
+    """
+    Represents a URL object in the system.
+    """
+
     def __init__(self, url_value) -> None:
         """
-        Initialize a URL Object.
+        Initialize a URLObject instance.
 
-        Parameters:
-        - object_info (dict): Information about the URL object.
-
-        Returns:
-        None
+        Args:
+            url_value (str): The URL value for the object.
         """
         self._url_value = url_value
-    
-    def get_url_value(self):
+
+    @property
+    def url_value(self) -> str:
         """
-        Get the URL value.
+        Get the URL value of the object.
 
         Returns:
-        str: The URL value.
+            str: The URL value.
         """
         return self._url_value
 
-    def set_url_value(self, url_value):
+    @url_value.setter
+    def url_value(self, value) -> None:
         """
-        Set the URL value.
+        Set the URL value of the object.
 
-        Parameters:
-        - url_value (str): The URL value to set.
-
-        Returns:
-        None
+        Args:
+            value (str): The URL value to set.
         """
-        self._url_value = url_value
+        self._url_value = value
 
-    def save(self, Database):
-        URLObjectsTable = Database.get_url_objects_table()
-        URLObjectsTable.insert(self.get_uid(), self.get_name(), self.get_object_container().get_uid(), self.get_url_value(), self.get_description(), self.get_override_bool())
+    def save(self, db) -> None:
+        """
+        Save the URL object to the db.
+
+        Args:
+            db: The db object where the URL object will be saved.
+        """
+        db.url_objects_table.insert(
+            self.uid,
+            self.name,
+            self.object_container.uid,
+            self.url_value,
+            self.description,
+            self.is_overridable
+        )
 
 class URLGroupObject(GroupObject):
-    def save(self, Database):
-        URLGroupObjectsTable = Database.get_url_group_objects_table()
-        URLGroupObjectsTable.insert(self.get_uid(), self.get_name(), self.get_object_container().get_uid(), self.get_description(), self.get_override_bool())
+    """
+    Represents a URL group object in the system.
+    """
 
-    def create_relationships_in_db(self, Database, preloaded_data):
-        member_names = self.get_group_member_names()
-        url_group_objects_members_table = Database.get_url_group_objects_members_table()
-        for member_name in member_names:
+    def save(self, db) -> None:
+        """
+        Save the URL group object to the db.
+
+        Args:
+            db: The db object where the URL group object will be saved.
+        """
+        url_group_objects_table = db.url_group_objects_table
+        url_group_objects_table.insert(
+            self.uid,
+            self.name,
+            self.object_container.uid,
+            self.description,
+            self.is_overridable
+        )
+
+    def create_relationships_in_db(self, db, preloaded_data) -> None:
+        """
+        Create relationships between the URL group object and its members in the db.
+
+        Args:
+            db: The db object used for creating relationships.
+            preloaded_data (dict): Dictionary containing member names and their corresponding UIDs.
+        """
+        for member_name in self.group_member_names:
             group_member_uid = preloaded_data.get(member_name)
-            url_group_objects_members_table.insert(self.get_uid(), group_member_uid)
+            if group_member_uid:
+                db.url_group_objects_members_table.insert(self.uid, group_member_uid)
     
 
 class ScheduleObject:
-    def save(self, Database):
-        ScheduleObjectsTable = Database.get_schedule_objects_table()
-        ScheduleObjectsTable.insert(self.get_uid(), self.get_name(), self.get_object_container().get_uid(), self.get_description())
+    """
+    Represents a schedule object in the system.
+    """
+
+    def save(self, db) -> None:
+        """
+        Save the schedule object to the db.
+
+        Args:
+            db: The db object where the schedule object will be saved.
+        """
+        db.schedule_objects_table.insert(
+            self.uid,
+            self.name,
+            self.object_container.uid,
+            self.description
+        )
 
 class GeolocationObject:
-    def save(self, Database):
-        GeolocationObjectsTable = Database.get_geolocation_objects_table()
-        GeolocationObjectsTable.insert(self.get_uid(), self.get_name(), self.get_object_container().get_uid())
+    """
+    Represents a geolocation object in the system.
+    """
+
+    def save(self, db) -> None:
+        """
+        Save the geolocation object to the db.
+
+        Args:
+            db: The db object where the geolocation object will be saved.
+        """
+        db.geolocation_objects_table.insert(
+            self.uid,
+            self.name,
+            self.object_container.uid
+        )
 
 class CountryObject:
-    def save(self, Database):
-        CountryObjectsTable = Database.get_country_objects_table()
-        CountryObjectsTable.insert(self.get_uid(), self.get_name(), self.get_object_container().get_uid())
+    """
+    Represents a country object in the system.
+    """
+
+    def save(self, db) -> None:
+        """
+        Save the country object to the db.
+
+        Args:
+            db: The db object where the country object will be saved.
+        """
+        db.country_objects_table.insert(
+            self.uid,
+            self.name,
+            self.object_container.uid
+        )
 
 class PolicyUserObject:
-    def __init__(self, name) -> None:
-        self._name = name
+    """
+    Represents a policy user object in the system.
+    """
 
-    def save(self, Database):
-        PolicyUserObjectsTable = Database.get_policy_user_objects_table()
-        PolicyUserObjectsTable.insert(self.get_uid(), self.get_name(), self.get_object_container().get_uid())
+    def __init__(self, name) -> None:
+        """
+        Initialize a PolicyUserObject instance.
+
+        Args:
+            name (str): The name of the policy user object.
+        """
+        self.name = name
+
+    @property
+    def name(self) -> str:
+        return self._name
+
+    @name.setter
+    def name(self, value) -> None:
+        self._name = value
+
+    def save(self, db) -> None:
+        """
+        Save the policy user object to the db.
+
+        Args:
+            db: The db object where the policy user object will be saved.
+        """
+        db.policy_user_objects_table.insert(
+            self.uid,
+            self.name,
+            self.object_container.uid
+        )
 
 class URLCategoryObject:
-    def __init__(self, reputation) -> None:
-        self._reputation = reputation
+    """
+    Represents a URL category object in the system.
+    """
 
-    def save(self, Database):
-        URLCategoryObjectsTable = Database.get_url_category_objects_table()
-        URLCategoryObjectsTable.insert(self.get_uid(), self.get_name(), self.get_object_container().get_uid(), self._reputation)
+    def __init__(self, reputation) -> None:
+        """
+        Initialize a URLCategoryObject instance.
+
+        Args:
+            reputation (str): The reputation of the URL category.
+        """
+        self.reputation = reputation
+
+    @property
+    def reputation(self) -> str:
+        return self._reputation
+
+    @reputation.setter
+    def reputation(self, value) -> None:
+        self._reputation = value
+
+    def save(self, db) -> None:
+        """
+        Save the URL category object to the db.
+
+        Args:
+            db: The db object where the URL category object will be saved.
+        """
+        db.url_category_objects_table.insert(
+            self.uid,
+            self.name,
+            self.object_container.uid,
+            self.reputation
+        )
 
 class L7AppObject:
-    def save(self, Database):
-        L7AppObjectsTable = Database.get_l7_app_objects_table()
-        L7AppObjectsTable.insert(self.get_uid(), self.get_name(), self.get_object_container().get_uid())
+    """
+    Represents a Layer 7 application object in the system.
+    """
+
+    def save(self, db) -> None:
+        """
+        Save the Layer 7 application object to the db.
+
+        Args:
+            db: The db object where the Layer 7 application object will be saved.
+        """
+        db.l7_app_objects_table.insert(
+            self.uid,
+            self.name,
+            self.object_container.uid
+        )
 
 class L7AppFilterObject:
+    """
+    Represents a Layer 7 application filter object in the system.
+    """
+
     def __init__(self, type) -> None:
-        self._type = type
-    def save(self, Database):
-        L7AppFilterObjectsTable = Database.get_l7_app_filter_objects_table()
-        L7AppFilterObjectsTable.insert(self.get_uid(), self.get_name(), self.get_object_container().get_uid(), self._type)
+        """
+        Initialize an L7AppFilterObject instance.
+
+        Args:
+            type (str): The type of the Layer 7 application filter.
+        """
+        self.type = type
+
+    @property
+    def type(self) -> str:
+        return self._type
+
+    @type.setter
+    def type(self, value) -> None:
+        self._type = value
+
+    def save(self, db) -> None:
+        """
+        Save the Layer 7 application filter object to the db.
+
+        Args:
+            db: The db object where the Layer 7 application filter object will be saved.
+        """
+        db.l7_app_filter_objects_table.insert(
+            self.uid,
+            self.name,
+            self.object_container.uid,
+            self.type
+        )
 
 class L7AppGroupObject:
-    def save(self, Database):
-        L7AppGroupObjectsTable = Database.get_l7_app_group_objects_table()
-        L7AppGroupObjectsTable.insert(self.get_uid(), self.get_name(), self.get_object_container().get_uid())
+    """
+    Represents a Layer 7 application group object in the system.
+    """
+
+    def save(self, db) -> None:
+        """
+        Save the Layer 7 application group object to the db.
+
+        Args:
+            db: The db object where the Layer 7 application group object will be saved.
+        """
+        db.l7_app_group_objects_table.insert(
+            self.uid,
+            self.name,
+            self.object_container.uid
+        )

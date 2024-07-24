@@ -1,48 +1,94 @@
 import utils.helper as helper
-class ManagedDevice():
-    def __init__(self, ManagedDevicesContainer, name, assigned_security_policy_container_name, hostname, cluster) -> None:
-        self._uid = helper.generate_uid()
-        self._name = name
-        self._managed_devices_container_uid = ManagedDevicesContainer.get_uid()
-        self._ManagedDevicesContainer = ManagedDevicesContainer
+class ManagedDevice:
+    def __init__(self, managed_devices_container, name, assigned_security_policy_container_name, hostname, cluster) -> None:
+        """
+        Initialize a ManagedDevice instance.
+
+        Args:
+            managed_devices_container (ManagedDevicesContainer): The container for managed devices.
+            name (str): The name of the managed device.
+            assigned_security_policy_container_name (str): The name of the assigned security policy container.
+            hostname (str): The hostname of the managed device.
+            cluster (str): The cluster the managed device belongs to.
+        """
+        # Initialize properties
+        self._uid = helper.generate_uid() 
+        self._name = name  
+        self._managed_devices_container_uid = managed_devices_container.uid
+        self._managed_devices_container = managed_devices_container
         self._assigned_security_policy_container_name = assigned_security_policy_container_name
-        self._hostname = hostname
-        self._cluster = cluster
-    
-    def get_name(self):
+        self._hostname = hostname  
+        self._cluster = cluster  
+
+    @property
+    def name(self):
+        """Get or set the name of the managed device."""
         return self._name
 
-    def set_name(self, name):
+    @name.setter
+    def name(self, name: str):
         self._name = name
 
-    def get_assigned_security_policy_container_uid(self):
-        # get the container_uid by the name of the container and set object's value
-        container_uid_raw = self._ManagedDevicesContainer.get_security_device().get_database().get_security_policy_containers_table().get('uid', 'name', self._assigned_security_policy_container_name)
-        # extract the uid from the tuple
+    @property
+    def assigned_security_policy_container_uid(self):
+        """
+        Get the UID of the assigned security policy container.
+
+        Returns:
+            str: UID of the assigned security policy container.
+        """
+        # Retrieve the UID by querying the db with the container name
+        container_uid_raw = self._managed_devices_container.security_device.db.security_policy_containers_table.get(
+            'uid', 'name', self._assigned_security_policy_container_name
+        )
+        # Extract the UID from the result
         container_uid = container_uid_raw[0][0]
         return container_uid
-    
-    def get_hostname(self):
+
+    @property
+    def hostname(self):
+        """Get or set the hostname of the managed device."""
         return self._hostname
 
-    def set_hostname(self, hostname):
+    @hostname.setter
+    def hostname(self, hostname: str):
         self._hostname = hostname
 
-    def get_cluster(self):
+    @property
+    def cluster(self):
+        """Get or set the cluster of the managed device."""
         return self._cluster
 
-    def set_cluster(self, cluster):
+    @cluster.setter
+    def cluster(self, cluster: str):
         self._cluster = cluster
-    
-    def set_uid(self, uid):
+
+    @property
+    def uid(self):
+        """Get or set the unique identifier of the managed device."""
+        return self._uid
+
+    @uid.setter
+    def uid(self, uid: str):
         self._uid = uid
 
-    def get_uid(self):
-        return self._uid
-    
-    def get_managed_devices_container_uid(self):
+    @property
+    def managed_devices_container_uid(self):
+        """Get the UID of the managed devices container."""
         return self._managed_devices_container_uid
 
-    def save(self, Database):
-        ManagedDevicesTable = Database.get_managed_devices_table()
-        ManagedDevicesTable.insert(self._uid, self._name, self._managed_devices_container_uid, self.get_assigned_security_policy_container_uid(), self._hostname, self._cluster)
+    def save(self, db):
+        """
+        Save the managed device to the db.
+
+        Args:
+            db (Database): The db instance where the device information will be saved.
+        """
+        db.managed_devices_table.insert(
+            self.uid, 
+            self.name, 
+            self.managed_devices_container_uid, 
+            self.assigned_security_policy_container_uid, 
+            self.hostname, 
+            self.cluster
+        )
