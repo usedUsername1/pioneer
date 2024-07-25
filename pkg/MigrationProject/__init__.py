@@ -224,63 +224,63 @@ class MigrationProject:
         # List of tables to copy
         tables = [
             # General Data Table
-            '_GeneralDataTable',
+            '_general_data_table',
 
             # Policy Containers
-            '_SecurityPolicyContainersTable',
-            '_NATPolicyContainersTable',
-            '_ObjectContainersTable',
-            '_SecurityZoneContainersTable',
-            '_ManagedDeviceContainersTable',
+            '_security_policy_containers_table',
+            '_nat_policy_containers_table',
+            '_object_containers_table',
+            '_security_zone_containers_table',
+            '_managed_device_containers_table',
 
             # Managed Devices
-            '_ManagedDevicesTable',
+            '_managed_devices_table',
 
             # Security Policies
-            '_SecurityPoliciesTable',
+            '_security_policies_table',
 
             # Zones
-            '_SecurityZonesTable',
+            '_security_zones_table',
 
             # Objects
-            '_URLObjectsTable',
-            '_NetworkAddressObjectsTable',
-            '_PortObjectsTable',
-            '_ICMPObjectsTable',
-            '_GeolocationObjectsTable',
-            '_CountryObjectsTable',
-            '_ScheduleObjectsTable',
+            '_url_objects_table',
+            '_network_address_objects_table',
+            '_port_objects_table',
+            '_icmp_objects_table',
+            '_geolocation_objects_table',
+            '_country_objects_table',
+            '_schedule_objects_table',
 
             # Groups
-            '_NetworkGroupObjectsTable',
-            '_PortGroupObjectsTable',
-            '_URLGroupObjectsTable',
+            '_network_group_objects_table',
+            '_port_group_objects_table',
+            '_url_group_objects_table',
 
             # Group Members
-            '_NetworkGroupObjectsMembersTable',
-            '_PortGroupObjectsMembersTable',
-            '_URLGroupObjectsMembersTable',
+            '_network_group_objects_members_table',
+            '_port_group_objects_members_table',
+            '_url_group_objects_members_table',
 
             # Policy Users
-            '_PolicyUsersTable',
+            '_policy_users_table',
 
             # Layer 7 Applications
-            '_L7AppsTable',
-            '_L7AppFiltersTable',
-            '_L7AppGroupsTable',
-            '_L7AppGroupMembersTable',
+            '_l7_apps_table',
+            '_l7_app_filters_table',
+            '_l7_app_groups_table',
+            '_l7_app_group_members_table',
 
             # URL Categories
-            '_URLCategoriesTable',
+            '_url_categories_table',
 
             # Security Policy Details
-            '_SecurityPolicyZonesTable',
-            '_SecurityPolicyNetworksTable',
-            '_SecurityPolicyPortsTable',
-            '_SecurityPolicyUsersTable',
-            '_SecurityPolicyURLsTable',
-            '_SecurityPolicyL7AppsTable',
-            '_SecurityPolicyScheduleTable'
+            '_security_policy_zones_table',
+            '_security_policy_networks_table',
+            '_security_policy_ports_table',
+            '_security_policy_users_table',
+            '_security_policy_urls_table',
+            '_security_policy_l7_apps_table',
+            '_security_policy_schedule_table'
         ]
 
         # Copy data for each table

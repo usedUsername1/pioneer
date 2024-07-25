@@ -52,10 +52,10 @@ class PANMCSecurityDevice(SecurityDevice):
     def return_device_group_info(self):
         device_group_info = []
         # Access the OPSTATES attribute to get the hierarchy class
-        HierarchyObject = self._DeviceConnection.OPSTATES['dg_hierarchy']
+        HierarchyObject = self.device_connection.OPSTATES['dg_hierarchy']
 
         # Create an instance of PanoramaDeviceGroupHierarchy
-        HierarchyInstance = HierarchyObject(self._DeviceConnection)
+        HierarchyInstance = HierarchyObject(self.device_connection)
 
         # Call the fetch method on the instance
         hierarchy_data = HierarchyInstance.fetch()
@@ -85,7 +85,7 @@ class PANMCSecurityDevice(SecurityDevice):
 
     def return_template_info(self):
         templates_info = []
-        templates = Template.refreshall(parent=self._DeviceConnection)
+        templates = Template.refreshall(parent=self.device_connection)
         for template in templates:
             templates_info.append({'name':template.name, 'parent':None})
         
@@ -100,7 +100,7 @@ class PANMCSecurityDevice(SecurityDevice):
     
     def return_security_zone_info(self):
         zones_info = []
-        templates = Template.refreshall(parent=self._DeviceConnection)
+        templates = Template.refreshall(parent=self.device_connection)
         for template in templates:
             zones = Zone.refreshall(template)
             for zone in zones:
@@ -146,13 +146,3 @@ class PANMCSecurityDevice(SecurityDevice):
         print("Importing this object is not supported yet for PANMC.")
         return None
     
-    @staticmethod
-    def apply_url_constraints(url_value):
-        # If ".*" is found, change it to "*."
-        url_value = re.sub(r'\.\*', '*.', url_value)
-
-        # If a single wildcard character is found and not followed by a dot, add a dot after it
-        url_value = re.sub(r'(?<!\*)\*(?!\.)', '*.', url_value)
-
-        return url_value
-        
