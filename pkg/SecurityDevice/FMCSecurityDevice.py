@@ -190,7 +190,7 @@ class FMCSecurityDevice(SecurityDevice):
         Returns:
             list: List of dictionaries containing information about security policies.
         """
-        security_policy_container_name = security_policy_container.get_name()
+        security_policy_container_name = security_policy_container.name
         # Execute the request to retrieve information about the security policies
         security_policies_info = self._security_device_connection.policy.accesspolicy.accessrule.get(container_name=security_policy_container_name)
         

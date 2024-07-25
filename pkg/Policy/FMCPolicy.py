@@ -406,8 +406,8 @@ class FMCSecurityPolicy(SecurityPolicy, FMCObjectWithLiterals):
                         filter_name = filter_item.get('name')
                         if filter_name:
                             special_policies_logger.info(f"Layer 7 inline application filter type: <{filter_type}>, name: <{filter_name}>.")
-                            full_filter_name = f"inlineApplicationFilters{gvars.separator_character}{filter_type}{gvars.separator_character}{filter_name}"
-                            l7_app_names.append(full_filter_name)
+                            # full_filter_name = f"inlineApplicationFilters{gvars.separator_character}{filter_type}{gvars.separator_character}{filter_name}"
+                            # l7_app_names.append(full_filter_name)
                             inline_filter_object = FMCL7AppFilterObject(virtual_object_container, {'name': filter_name, 'type': filter_type})
                             inline_filter_object.save(db)
                             l7_app_names.append(inline_filter_object.name)

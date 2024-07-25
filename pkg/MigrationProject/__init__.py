@@ -1,7 +1,7 @@
 from abc import abstractmethod
 import utils.helper as helper
 import utils.gvars as gvars
-from pkg import Pioneerdb, DBConnection, SecurityPolicyContainersMapTable, MigrationProjectGeneralDataTable, MigrationProjectDevicesTable, SecurityDeviceInterfaceMap, \
+from pkg import SecurityPolicyContainersMapTable, MigrationProjectGeneralDataTable, MigrationProjectDevicesTable, SecurityDeviceInterfaceMap, \
 LogSettingsTable, SpecialSecurityPolicyParametersTable, NetworkObjectTypesMapTable, SecurityPolicyActionMapTable, SecurityPolicySectionMap
 from pkg.SecurityDevice import SecurityDeviceDatabase
 

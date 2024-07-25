@@ -1,4 +1,5 @@
 import utils.helper as helper
+import utils.gvars as gvars
 from abc import abstractmethod
 
 general_logger = helper.logging.getLogger('general')
@@ -11,7 +12,7 @@ class Policy:
     This class serves as a base class for different types of policies.
 
     Args:
-        PolicyContainer (type): The type of the policy container.
+        policy_container (type): The type of the policy container.
         name (str): Name of the policy.
         source_zones (list): List of source security zones associated with the policy.
         destination_zones (list): List of destination security zones associated with the policy.
@@ -40,7 +41,7 @@ class Policy:
 
     def __init__(
         self,
-        PolicyContainer,
+        policy_container,
         name,
         source_zones,
         destination_zones,
@@ -55,7 +56,7 @@ class Policy:
         Initialize a Policy object with the given policy information.
 
         Args:
-            PolicyContainer (type): The type of the policy container.
+            policy_container (type): The type of the policy container.
             name (str): Name of the policy.
             source_zones (list): List of source security zones.
             destination_zones (list): List of destination security zones.
@@ -66,12 +67,12 @@ class Policy:
             log_to_manager (bool): Log to manager.
             log_to_syslog (bool): Log to syslog.
         """
-        self._PolicyContainer = PolicyContainer
+        self._policy_container = policy_container
         self._name = name
         self._uid = helper.generate_uid()
         self._source_zones = source_zones
         self._destination_zones = destination_zones
-        self._container_uid = PolicyContainer.get_uid()
+        self._container_uid = policy_container.uid
         self._container_index = container_index
         self._status = status
         self._description = description
@@ -203,7 +204,7 @@ class SecurityPolicy(Policy):
     from a security policy.
 
     Args:
-        PolicyContainer (type): The type of the policy container.
+        policy_container (type): The type of the policy container.
         name (str): Name of the policy.
         container_index (int): Index of the security policy container.
         status (str): Status of the policy.
@@ -246,7 +247,7 @@ class SecurityPolicy(Policy):
 
     def __init__(
         self,
-        PolicyContainer,
+        policy_container,
         name,
         container_index,
         status,
@@ -274,7 +275,7 @@ class SecurityPolicy(Policy):
         Initialize a SecurityPolicy object with the given policy information.
 
         Args:
-            PolicyContainer (type): The type of the policy container.
+            policy_container (type): The type of the policy container.
             name (str): Name of the policy.
             container_index (int): Index of the security policy container.
             status (str): Status of the policy.
@@ -298,7 +299,7 @@ class SecurityPolicy(Policy):
             section (str): Section of the security policy.
             action (str): Action associated with the security policy.
         """
-        super().__init__(PolicyContainer, name, source_zones, destination_zones, container_index, status, description, comments, log_to_manager, log_to_syslog)
+        super().__init__(policy_container, name, source_zones, destination_zones, container_index, status, description, comments, log_to_manager, log_to_syslog)
         self._category = category
         self._source_networks = source_networks
         self._destination_networks = destination_networks
@@ -307,7 +308,7 @@ class SecurityPolicy(Policy):
         self._schedule = schedule_objects
         self._users = users
         self._url_objects = urls
-        self.policy_apps = policy_apps
+        self.l7_policy_apps = policy_apps
         self._section = section
         self._action = action
         self._log_start = log_start
@@ -388,11 +389,11 @@ class SecurityPolicy(Policy):
     @property
     def policy_apps(self):
         """Get or set the Layer 7 application objects associated with the security policy."""
-        return self.policy_apps
+        return self.l7_policy_apps
 
     @policy_apps.setter
     def policy_apps(self, value):
-        self.policy_apps = value
+        self.l7_policy_apps = value
 
     @property
     def section(self):
@@ -458,7 +459,7 @@ class SecurityPolicy(Policy):
                 db.security_policy_zones_table.insert(self.uid, None, flow)
             else:
                 for zone_name in zone_names:
-                    zone_uid = preloaded_data['security_zones'].get(zone_name)
+                    zone_uid = preloaded_data[gvars.security_zone].get(zone_name)
                     db.security_policy_zones_table.insert(self.uid, zone_uid, flow)
 
         def insert_networks(network_names, flow):
@@ -473,10 +474,10 @@ class SecurityPolicy(Policy):
                 db.security_policy_networks_table.insert(self.uid, None, None, None, None, flow)
             else:
                 for network_name in network_names:
-                    object_uid = preloaded_data['network_objects'].get(network_name)
-                    group_uid = preloaded_data['network_group_objects'].get(network_name)
-                    country_uid = preloaded_data['country_objects'].get(network_name)
-                    geolocation_uid = preloaded_data['geolocation_objects'].get(network_name)
+                    object_uid = preloaded_data[gvars.network_object].get(network_name)
+                    group_uid = preloaded_data[gvars.network_group_object].get(network_name)
+                    country_uid = preloaded_data[gvars.country_object].get(network_name)
+                    geolocation_uid = preloaded_data[gvars.geolocation_object].get(network_name)
                     db.security_policy_networks_table.insert(self.uid, object_uid, group_uid, country_uid, geolocation_uid, flow)
 
         def insert_ports(port_names, flow):
@@ -491,9 +492,9 @@ class SecurityPolicy(Policy):
                 db.security_policy_ports_table.insert(self.uid, None, None, None, flow)
             else:
                 for port_name in port_names:
-                    object_uid = preloaded_data['port_objects'].get(port_name)
-                    icmp_uid = preloaded_data['icmp_objects'].get(port_name)
-                    group_uid = preloaded_data['port_group_objects'].get(port_name)
+                    object_uid = preloaded_data[gvars.port_object].get(port_name)
+                    icmp_uid = preloaded_data[gvars.icmp_object].get(port_name)
+                    group_uid = preloaded_data[gvars.port_group_object].get(port_name)
                     db.security_policy_ports_table.insert(self.uid, object_uid, icmp_uid, group_uid, flow)
 
         def insert_users(user_names):
@@ -507,7 +508,7 @@ class SecurityPolicy(Policy):
                 db.security_policy_users_table.insert(self.uid, None)
             else:
                 for user_name in user_names:
-                    user_uid = preloaded_data['policy_user_objects'].get(user_name)
+                    user_uid = preloaded_data[gvars.policy_user_object].get(user_name)
                     db.security_policy_users_table.insert(self.uid, user_uid)
 
         def insert_urls(url_names):
@@ -521,9 +522,9 @@ class SecurityPolicy(Policy):
                 db.security_policy_urls_table.insert(self.uid, None, None, None)
             else:
                 for url_name in url_names:
-                    object_uid = preloaded_data['url_objects'].get(url_name)
-                    group_uid = preloaded_data['url_group_objects'].get(url_name)
-                    category_uid = preloaded_data['url_category_objects'].get(url_name)
+                    object_uid = preloaded_data[gvars.url_object].get(url_name)
+                    group_uid = preloaded_data[gvars.url_group_object].get(url_name)
+                    category_uid = preloaded_data[gvars.url_category_object].get(url_name)
                     db.security_policy_urls_table.insert(self.uid, object_uid, group_uid, category_uid)
 
         def insert_l7_apps(app_names):
@@ -537,9 +538,9 @@ class SecurityPolicy(Policy):
                 db.security_policy_l7_apps_table.insert(self.uid, None, None, None)
             else:
                 for app_name in app_names:
-                    app_uid = preloaded_data['l7_app_objects'].get(app_name)
-                    app_filter_uid = preloaded_data['l7_app_filter_objects'].get(app_name)
-                    app_group_uid = preloaded_data['l7_app_group_objects'].get(app_name)
+                    app_uid = preloaded_data[gvars.l7_app_object].get(app_name)
+                    app_filter_uid = preloaded_data[gvars.l7_app_filter_object].get(app_name)
+                    app_group_uid = preloaded_data[gvars.l7_app_group_object].get(app_name)
                     db.security_policy_l7_apps_table.insert(self.uid, app_uid, app_filter_uid, app_group_uid)
 
         def insert_schedule(schedule_name):
@@ -552,7 +553,7 @@ class SecurityPolicy(Policy):
             if not schedule_name:
                 db.security_policy_schedule_table.insert(self.uid, None)
             else:
-                schedule_uid = preloaded_data['schedule_objects'].get(schedule_name[0])
+                schedule_uid = preloaded_data[gvars.schedule_object].get(schedule_name[0])
                 db.security_policy_schedule_table.insert(self.uid, schedule_uid)
 
         # Insert source and destination zones
@@ -574,7 +575,7 @@ class SecurityPolicy(Policy):
         insert_urls(self.urls)
 
         # Insert Layer 7 applications
-        insert_l7_apps(self.policy_apps)
+        insert_l7_apps(self.l7_policy_apps)
 
         # Insert schedule
         insert_schedule(self.schedule)

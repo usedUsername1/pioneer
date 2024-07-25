@@ -110,7 +110,7 @@ def main():
             # Insert general device info into the db
             general_logger.info(f"Inserting general device info in the db.")
             security_device_object.save_general_info(
-                security_device_object.get_uid(), device_name, device_username, 
+                security_device_object.uid, device_name, device_username, 
                 device_secret, device_hostname, device_type, 
                 device_port, device_version, device_domain
             )
@@ -140,7 +140,7 @@ def main():
             
             # Iterate through each object container and import relevant data
             for object_container in object_containers_list:
-                object_container_name = object_container.get_name()
+                object_container_name = object_container.name
                 
                 # Log and import network objects
                 general_logger.info(f"################## Getting the network objects of device: <{device_name}>. Container: <{object_container_name}> ##################")
@@ -192,7 +192,7 @@ def main():
             # Log and import security policies
             print("Importing security policies.")
             for security_policy_container in security_policy_containers_list:
-                print(f"Processing policies of container {security_policy_container._name}")
+                print(f"Processing policies of container {security_policy_container.name}")
                 security_device_object.get_object_info_from_device_conn(gvars.security_policy, security_policy_container)
 
         else:
@@ -223,14 +223,14 @@ def main():
         migration_project = MigrationProjectFactory.create_migration_project(db_user, project_name, db_password, db_host, db_port)
 
         # Create the migration project's tables
-        migration_project.get_db().create_migration_project_tables()
+        migration_project.db.create_migration_project_tables()
 
         # Save general information about the project
         migration_project.save_general_info('TEST_DESC', creation_timestamp)
 
         # Close the cursors
         landing_db_cursor.close()
-        migration_project.get_db().get_cursor().close()
+        migration_project.db.cursor.close()
 
     if pioneer_args['project [name]']:
         # Extract the project name from arguments
@@ -265,9 +265,7 @@ def main():
 
         # Perform migration if requested
         if pioneer_args['migrate']:
-            migration_project_db = migration_project.get_db()
-            migration_project_name = migration_project.get_name()
-            migration_project = MigrationProjectFactory.build_migration_project(migration_project_name, migration_project_db)
+            migration_project = MigrationProjectFactory.build_migration_project(migration_project.name, migration_project.db)
 
             # Process and migrate security policy container if provided
             if pioneer_args['security_policy_container [container_name]']:

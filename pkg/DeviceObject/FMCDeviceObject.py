@@ -374,7 +374,7 @@ class FMCPortGroupObject(PortGroupObject, FMCObject, FMCObjectWithLiterals):
             self.name,                
             self.object_container.uid, 
             self.description,         
-            self.override_bool        
+            self.is_overridable        
         )
 
 class FMCURLObject(FMCObject, URLObject):

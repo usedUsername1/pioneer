@@ -125,7 +125,7 @@ class Container():
         Returns:
             str: The UID of the associated security device.
         """
-        return self._security_device.get_uid()
+        return self._security_device.uid
 
     @abstractmethod
     def save(self, db):

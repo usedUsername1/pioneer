@@ -84,6 +84,12 @@ class SecurityDeviceDatabase(PioneerDatabase):
         self._geolocation_objects_table.create()
         self._country_objects_table.create()
         self._schedule_objects_table.create()
+        self._network_group_objects_table.create()
+        self._port_group_objects_table.create()
+        self._url_group_objects_table.create()
+        self._network_group_objects_members_table.create()
+        self._port_group_objects_members_table.create()
+        self._url_group_objects_members_table.create()
         self._policy_users_table.create()
         self._l7_apps_table.create()
         self._l7_app_filters_table.create()
@@ -570,12 +576,12 @@ class SecurityDevice:
         general_logger.debug("Attempting to retrieve the device version from the device connection.")
 
         try:
-            
+            device_version = self.get_device_version()
             # Log an informational message with the retrieved device version
-            general_logger.info(f"Got device version: {self.device_version}")
+            general_logger.info(f"Got device version: {device_version}")
             
             # Return the retrieved device version
-            return self.device_version
+            return device_version
         
         except Exception as err:
             # Log a critical error message if an exception occurs during version retrieval

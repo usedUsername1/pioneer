@@ -83,7 +83,7 @@ class DBConnection:
             # Establish connection to the PostgreSQL db
             postgres_connection = psycopg2.connect(
                 user=self._user,
-                db=self._db,
+                database=self._db,
                 password=self._password,
                 host=self._host,
                 port=self._port
@@ -102,7 +102,7 @@ class DBConnection:
         
         return db_cursor
 
-class PioneerDatabase(ABC):
+class PioneerDatabase():
     def __init__(self, cursor):
         """
         Initialize the PioneerDatabase instance with a cursor.
@@ -251,23 +251,23 @@ class PioneerDatabase(ABC):
 
         members_dict_from_db = {}
 
-        if object_type == gvars.network_group_object:
+        if object_type == 'network_group_object':
             tables_to_fetch = [
                 db.network_address_objects_table,
                 db.network_group_objects_table
             ]
-        elif object_type == gvars.port_group_object:
+        elif object_type == 'port_group_object':
             tables_to_fetch = [
                 db.port_objects_table,
                 db.port_group_objects_table,
                 db.icmp_objects_table
             ]
-        elif object_type == gvars.url_group_object:
+        elif object_type == 'url_group_object':
             tables_to_fetch = [
                 db.url_objects_table,
                 db.url_group_objects_table
             ]
-        elif object_type == gvars.security_policy:
+        elif object_type == 'security_policy_group':
             tables_to_fetch = {
                 gvars.security_zone: db.security_zones_table,
                 gvars.network_object: db.network_address_objects_table,
@@ -279,22 +279,24 @@ class PioneerDatabase(ABC):
                 gvars.icmp_object: db.icmp_objects_table,
                 gvars.url_object: db.url_objects_table,
                 gvars.url_group_object: db.url_group_objects_table,
-                gvars.url_category_object: db.url_category_objects_table,
+                gvars.url_category_object: db.url_categories_table,
                 gvars.schedule_object: db.schedule_objects_table,
-                gvars.policy_user_object: db.policy_user_objects_table,
-                gvars.l7_app_object: db.l7_app_objects_table,
-                gvars.l7_app_filter_object: db.l7_app_filter_objects_table,
-                gvars.l7_app_group_object: db.l7_app_group_objects_table
+                gvars.policy_user_object: db.policy_users_table,
+                gvars.l7_app_object: db.l7_apps_table,
+                gvars.l7_app_filter_object: db.l7_app_filters_table,
+                gvars.l7_app_group_object: db.l7_app_groups_table
             }
             # Fetch data for each table and store it in members_dict_from_db with the table name as key
             for table_name, table in tables_to_fetch.items():
                 members_dict_from_db[table_name] = get_table_data(table, ['name', 'uid'])
+            return members_dict_from_db
         else:
             tables_to_fetch = []
 
+        # Fetch data for non-security policy object types
         for table in tables_to_fetch:
             members_dict_from_db.update(get_table_data(table, ['name', 'uid']))
-        
+
         return members_dict_from_db
 
 class PioneerTable:

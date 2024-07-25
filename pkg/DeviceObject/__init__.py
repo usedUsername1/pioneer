@@ -157,7 +157,6 @@ class GroupObject(Object):
         Args:
             None
         """
-        super().__init__(object_container=None, name='', description='', is_overridable=False)
         self._group_member_names = []
         self._object_members = set()
         self._group_object_members = set()
@@ -721,7 +720,7 @@ class PolicyUserObject:
         Args:
             db: The db object where the policy user object will be saved.
         """
-        db.policy_user_objects_table.insert(
+        db.policy_users_table.insert(
             self.uid,
             self.name,
             self.object_container.uid
@@ -756,7 +755,7 @@ class URLCategoryObject:
         Args:
             db: The db object where the URL category object will be saved.
         """
-        db.url_category_objects_table.insert(
+        db.url_categories_table.insert(
             self.uid,
             self.name,
             self.object_container.uid,
@@ -775,7 +774,7 @@ class L7AppObject:
         Args:
             db: The db object where the Layer 7 application object will be saved.
         """
-        db.l7_app_objects_table.insert(
+        db.l7_apps_table.insert(
             self.uid,
             self.name,
             self.object_container.uid
@@ -810,7 +809,7 @@ class L7AppFilterObject:
         Args:
             db: The db object where the Layer 7 application filter object will be saved.
         """
-        db.l7_app_filter_objects_table.insert(
+        db.l7_app_filters_table.insert(
             self.uid,
             self.name,
             self.object_container.uid,
@@ -829,7 +828,7 @@ class L7AppGroupObject:
         Args:
             db: The db object where the Layer 7 application group object will be saved.
         """
-        db.l7_app_group_objects_table.insert(
+        db.l7_app_groups_table.insert(
             self.uid,
             self.name,
             self.object_container.uid
