@@ -4,45 +4,46 @@ import utils.gvars as gvars
 from pkg.DeviceObject.FMCDeviceObject import FMCObjectWithLiterals, FMCPolicyUserObject, FMCURLCategoryObject, FMCL7AppObject, FMCL7AppFilterObject, FMCL7AppGroupObject
 from pkg.Container import Container
 
-special_policies_logger = helper.logging.getLogger('special_policies')
-general_logger = helper.logging.getLogger('general')
+special_policies_logger = helper.logging.getLogger(gvars.special_policies_logger)
+general_logger = helper.logging.getLogger(gvars.general_logger)
 
 class FMCSecurityPolicy(SecurityPolicy, FMCObjectWithLiterals):
     """
     Represents a security policy specific to the Firepower Management Center (FMC).
     """
-    # duct tape solution :(
-    # Class variables
-    # why the fuck did I do this?
-    _VirtualObjectContainer = None
-    _Database = None
+
+    _virtual_object_container = None
+    _db = None
     _initialized = False  # Initialization flag
 
     @classmethod
-    def initialize_class_variables(cls, PolicyContainer):
+    def initialize_class_variables(cls, policy_container):
         """
         Initialize class variables if they are not already initialized.
+
+        Args:
+            policy_container (PolicyContainer): The policy container to initialize from.
         """
         if not cls._initialized:
-            security_device = PolicyContainer.get_security_device()
-            cls._Database = security_device.get_database()
-            cls._VirtualObjectContainer = Container(security_device, "virtual_object_container", None)
-            cls._VirtualObjectContainer.set_uid(
-                cls._Database.get_object_containers_table().get('uid', 'name', 'virtual_container')[0][0]
-            )
+            security_device = policy_container.security_device
+            cls._db = security_device.db
+            cls._virtual_object_container = Container(security_device, gvars.virtual_container_name, None)
+            cls._virtual_object_container.uid = cls._db.object_containers_table.get('uid', 'name', gvars.virtual_container_name)[0][0]
             cls._initialized = True
 
-    def __init__(self, PolicyContainer, policy_info) -> None:
+    def __init__(self, policy_container, policy_info) -> None:
         """
         Initialize an FMCSecurityPolicy instance.
 
-        Parameters:
-            policy_info_fmc (dict): Information about the security policy.
+        Args:
+            policy_container (PolicyContainer): The policy container holding the policy.
+            policy_info (dict): Information about the security policy.
         """
-        self._PolicyContainer = PolicyContainer
+        self._PolicyContainer = policy_container
         self._policy_info = policy_info
-        # Initialize class variables if not already done
-        FMCSecurityPolicy.initialize_class_variables(PolicyContainer)
+
+        # The object container is needed in order to store literal objects and other special parameters
+        FMCSecurityPolicy.initialize_class_variables(policy_container)
 
         self._name = policy_info['name']
         self._container_index = policy_info['metadata']['ruleIndex']
@@ -50,19 +51,14 @@ class FMCSecurityPolicy(SecurityPolicy, FMCObjectWithLiterals):
         self._category = policy_info['metadata']['category']
         self._source_zones = self.extract_security_zone_object_info(policy_info.get('sourceZones'))
         self._destination_zones = self.extract_security_zone_object_info(policy_info.get('destinationZones'))
-
-        self._source_networks = self.extract_network_address_object_info(policy_info.get('sourceNetworks'), self._VirtualObjectContainer, self._Database)
-        self._destination_networks = self.extract_network_address_object_info(policy_info.get('destinationNetworks'), self._VirtualObjectContainer, self._Database)
-
-        self._source_ports = self.extract_port_object_info(policy_info.get('sourcePorts'), self._VirtualObjectContainer, self._Database)
-        self._destination_ports = self.extract_port_object_info(policy_info.get('destinationPorts'), self._VirtualObjectContainer, self._Database)
-
+        self._source_networks = self.extract_network_address_object_info(policy_info.get('sourceNetworks'), self._virtual_object_container, self._db)
+        self._destination_networks = self.extract_network_address_object_info(policy_info.get('destinationNetworks'), self._virtual_object_container, self._db)
+        self._source_ports = self.extract_port_object_info(policy_info.get('sourcePorts'), self._virtual_object_container, self._db)
+        self._destination_ports = self.extract_port_object_info(policy_info.get('destinationPorts'), self._virtual_object_container, self._db)
         self._schedule_objects = self.extract_schedule_object_info(policy_info.get('timeRangeObjects'))
-        self._users = self.extract_user_object_info(policy_info.get('users'), self._VirtualObjectContainer, self._Database)
-
-        self._urls = self.extract_url_object_info(policy_info.get('urls'), self._VirtualObjectContainer, self._Database)
-        self._policy_apps = self.extract_l7_app_object_info(policy_info.get('applications'), self._VirtualObjectContainer, self._Database)
-        
+        self._users = self.extract_user_object_info(policy_info.get('users'), self._virtual_object_container, self._db)
+        self._urls = self.extract_url_object_info(policy_info.get('urls'), self._virtual_object_container, self._db)
+        self._policy_apps = self.extract_l7_app_object_info(policy_info.get('applications'), self._virtual_object_container, self._db)
         self._description = policy_info.get('description')
         self._comments = self.extract_comments(policy_info.get('commentHistoryList'))
         self._log_to_manager = policy_info.get('sendEventsToFMC', False)
@@ -108,23 +104,37 @@ class FMCSecurityPolicy(SecurityPolicy, FMCObjectWithLiterals):
             security_zone_object_info (dict): A dictionary containing information about security zone objects.
 
         Returns:
-            list: A list of security zone names extracted from the provided data structure.
+            list: A list of security zone names extracted from the provided data structure, or None if no information is provided.
         """
         # Initialize an empty list to store the extracted security zone names
         extracted_security_zones = []
 
-        # Iterate through each security zone entry in the provided data structure
-        if security_zone_object_info is not None:
+        # Check if security_zone_object_info is not None before processing
+        if security_zone_object_info:
+            # Iterate through each security zone entry in the provided data structure
             for security_zone_entry in security_zone_object_info['objects']:
                 # Extract the name of the security zone and append it to the list
                 extracted_security_zones.append(security_zone_entry['name'])
         else:
             extracted_security_zones = None
-        
+
         # Return the list of extracted security zone names
         return extracted_security_zones
     
-    def extract_network_address_object_info(self, network_object_info, VirtualObjectContainer, Database):
+    def extract_network_address_object_info(self, network_object_info, virtual_object_container, db):
+        """
+        Extract network address information from the provided data structure.
+
+        This method processes both network objects and literals, converts them to internal objects, and saves them to the db.
+
+        Parameters:
+            network_object_info (dict): A dictionary containing information about network objects and literals.
+            virtual_object_container (Container): A container for virtual objects.
+            db (db): The db instance where the objects will be saved.
+
+        Returns:
+            list: A list of extracted network object names.
+        """
         # Initialize an empty list to store extracted network objects
         extracted_network_objects = []
 
@@ -138,20 +148,20 @@ class FMCSecurityPolicy(SecurityPolicy, FMCObjectWithLiterals):
             # Extract the name and type of the network object
             network_object_name = network_object_entry['name']
             network_object_type = network_object_entry['type']
-            
+
             # If the network object is of type 'Country' or 'Geolocation'
             if network_object_type == 'Geolocation':
                 # Convert the policy region to an object and save it
-                PolicyRegion = FMCObjectWithLiterals.convert_policy_region_to_object(VirtualObjectContainer, network_object_entry)
+                policy_region = FMCObjectWithLiterals.convert_policy_region_to_object(virtual_object_container, network_object_entry)
             elif network_object_type == 'Country':
-                PolicyRegion = FMCObjectWithLiterals.convert_policy_country_to_object(VirtualObjectContainer, network_object_entry)
+                policy_region = FMCObjectWithLiterals.convert_policy_country_to_object(virtual_object_container, network_object_entry)
             else:
-                PolicyRegion = None
+                policy_region = None
 
-            if PolicyRegion:
-                PolicyRegion.save(Database)
-                # Append the name of the PolicyRegion to the list
-                extracted_network_objects.append(PolicyRegion.get_name())
+            if policy_region:
+                policy_region.save(db)
+                # Append the name of the policy region to the list
+                extracted_network_objects.append(policy_region.name)
             
             # Append the name of the network object to the list
             extracted_network_objects.append(network_object_name)
@@ -160,27 +170,29 @@ class FMCSecurityPolicy(SecurityPolicy, FMCObjectWithLiterals):
         network_literals = network_object_info.get('literals', [])
         for network_literal_entry in network_literals:
             # Convert the network literal to an object and save it
-            ConvertedLiteral = FMCObjectWithLiterals.convert_network_literal_to_object(VirtualObjectContainer, network_literal_entry)
-            ConvertedLiteral.save(Database)
-            # Append the name of the ConvertedLiteral to the list
-            extracted_network_objects.append(ConvertedLiteral.get_name())
+            converted_literal = FMCObjectWithLiterals.convert_network_literal_to_object(virtual_object_container, network_literal_entry)
+            converted_literal.save(db)
+            # Append the name of the converted literal to the list
+            extracted_network_objects.append(converted_literal.name)
 
         # Return the list of extracted network objects
         return extracted_network_objects
     
-    def extract_port_object_info(self, port_object_info, VirtualObjectContainer, Database):
+    def extract_port_object_info(self, port_object_info, virtual_object_container, db):
         """
         Extract port object information from the provided data structure.
 
-        This method extracts the names of port objects from the given data structure.
+        This method processes both port objects and literals, converts them to internal objects, and saves them to the db.
 
         Parameters:
-            port_object_info (dict): Information about port objects.
+            port_object_info (dict): A dictionary containing information about port objects and literals.
+            virtual_object_container (Container): A container for virtual objects.
+            db (db): The db instance where the objects will be saved.
 
         Returns:
-            list: A list of port object names extracted from the provided data structure.
+            list: A list of extracted port object names.
         """
-        # Initialize an empty list to store the extracted port object names
+        # Initialize an empty list to store extracted port objects
         extracted_port_objects = []
 
         # If no port object information is provided, return None
@@ -198,207 +210,230 @@ class FMCSecurityPolicy(SecurityPolicy, FMCObjectWithLiterals):
         port_literals = port_object_info.get('literals', [])
         for port_literal_entry in port_literals:
             # Convert the port literal to an object
-            ConvertedLiteral = FMCObjectWithLiterals.convert_port_literals_to_objects(VirtualObjectContainer, port_literal_entry, self._policy_info)
+            converted_literal = FMCObjectWithLiterals.convert_port_literals_to_objects(virtual_object_container, port_literal_entry, self._policy_info)
 
             # Save the literal object
-            ConvertedLiteral.save(Database)
+            converted_literal.save(db)
             # Append the name of the literal to the list
-            extracted_port_objects.append(ConvertedLiteral.get_name())
+            extracted_port_objects.append(converted_literal.name)
 
         # Return the list of extracted port objects
         return extracted_port_objects
 
-    def extract_user_object_info(self, user_object_info, VirtualObjectContainer, Database):
+    def extract_user_object_info(self, user_object_info, virtual_object_container, db):
         """
         Extract user object information from the provided data structure.
 
-        This method extracts the names of user objects from the given data structure.
+        This method processes user objects, converts them to internal objects, saves them to the db, and returns their names.
 
         Parameters:
-            user_object_info (dict): Information about user objects.
+            user_object_info (dict): A dictionary containing information about user objects.
+            virtual_object_container (Container): A container for virtual objects.
+            db (db): The db instance where the objects will be saved.
 
         Returns:
-            list: A list of processed user object entries containing user type and name.
+            list: A list of processed user object entries containing the user type and name.
         """
         # Log a debug message indicating the function call
-        general_logger.info(f"Found users on this policy.")
-        # Initialize an empty list to store the processed user object entries
-        extracted_user_objects = []
+        general_logger.info("Processing user objects from policy.")
+        
+        # Initialize an empty list to store processed user object entries
+        processed_user_objects = []
 
-        # Iterate through each user object entry in the provided data structure
+        # If no user object information is provided, return an empty list
         if user_object_info is not None:
-            for user_object_entry in user_object_info['objects']:
-                # Extract the name of the user object and ensure all required keys exist
+            for user_object_entry in user_object_info.get('objects', []):
+                # Ensure all required keys exist
                 if 'name' in user_object_entry and 'realm' in user_object_entry and 'name' in user_object_entry['realm']:
                     user_object_name = user_object_entry['name']
+                    user_realm_name = user_object_entry['realm']['name']
+                    
+                    # Log information about the user object
                     special_policies_logger.info(f"User object name: <{user_object_name}>, user object type: <{user_object_entry['type']}>")
-                    # Construct the processed user object entry containing user type and name
-                    user_object_processed_entry = user_object_entry['realm']['name'] + '\\' + user_object_name
-                    object_info = {'name': user_object_processed_entry}
-                    # Create the object
-                    UserObject = FMCPolicyUserObject(VirtualObjectContainer, object_info)
-                    UserObject.save(Database)
+                    
+                    # Construct the processed user object entry
+                    processed_user_entry = f"{user_realm_name}\\{user_object_name}"
+                    
+                    # Create the user object
+                    user_object_info = {'name': processed_user_entry}
+                    user_object = FMCPolicyUserObject(virtual_object_container, user_object_info)
+                    user_object.save(db)
+                    
                     # Append the processed user object entry to the list
-                    extracted_user_objects.append(user_object_processed_entry)
+                    processed_user_objects.append(processed_user_entry)
 
         # Return the list of processed user object entries
-        return extracted_user_objects
+        return processed_user_objects
 
     def extract_schedule_object_info(self, schedule_object_info):
         """
         Extract schedule object information from the provided data structure.
 
-        This method extracts the names of schedule objects from the given data structure.
+        This method processes the provided list of schedule objects, logs details about each schedule, 
+        and returns a list of their names.
 
         Parameters:
-            schedule_object_info (list): Information about schedule objects.
+            schedule_object_info (list): A list of dictionaries, each containing information about a schedule object.
 
         Returns:
             list: A list of schedule object names extracted from the provided data structure.
         """
-        # Log a debug message indicating the function call
+        # Log a message indicating the presence of schedule objects
+        general_logger.info("Processing schedule objects from this policy.")
         
-        general_logger.info(f"Found schedule objects on this policy.")
-        # Initialize an empty list to store the extracted schedule object names
-        extracted_schedule_objects = []
+        # Initialize an empty list to store the names of the schedule objects
+        schedule_object_names = []
         
-        # Iterate through each schedule object entry in the provided data structure
+        # If no schedule object information is provided, return an empty list
         if schedule_object_info is not None:
-            for schedule_object_entry in schedule_object_info:
-                # Extract the name of the schedule object and append it to the list
-                schedule_object_name = schedule_object_entry['name']
-                special_policies_logger.info(f"Schedule object name: <{schedule_object_name}>.")
-                extracted_schedule_objects.append(schedule_object_name)
+            for schedule_entry in schedule_object_info:
+                # Extract the name of the schedule object and log its details
+                schedule_name = schedule_entry.get('name')
+                if schedule_name:
+                    special_policies_logger.info(f"Schedule object name: <{schedule_name}>.")
+                    schedule_object_names.append(schedule_name)
         
-        # Return the list of extracted schedule object names
-        return extracted_schedule_objects
+        # Return the list of schedule object names
+        return schedule_object_names
 
     # there are three cases which need to be processed here. the url can be an object, a literal, or a category with reputation
-    def extract_url_object_info(self, url_object_info, VirtualObjectContainer, Database):
+    def extract_url_object_info(self, url_object_info, virtual_object_container, db):
         """
         Extract URL object information from the provided data structure.
 
-        This method extracts information about URL objects, literals, and categories from the given data structure.
+        This method processes the provided data structure to extract URL objects, literals, and categories,
+        and then returns a list of their names. It also creates and saves URL literal and category objects.
 
         Parameters:
-            url_object_info (dict): Information about URL objects.
+            url_object_info (dict): A dictionary containing information about URL objects, literals, and categories.
 
         Returns:
-            list: A list of URL objects, including objects, literals, and categories, extracted from the provided data structure.
+            list: A list of names of URL objects, literals, and categories extracted from the provided data structure.
         """
-        # Initialize an empty list to store the extracted URL objects
-        extracted_url_objects = []
+        # Log a message indicating the start of URL object extraction
+        general_logger.info("Processing URL objects from this policy.")
+        
+        # Initialize a list to store the names of extracted URL objects
+        url_object_names = []
 
-        # If no URL object information is provided, return None
+        # If no URL object information is provided, return an empty list
         if url_object_info is None:
-            return None
+            return url_object_names
 
-        # Extract URL objects
+        # Process URL objects
         url_objects = url_object_info.get('objects', [])
-        for url_object_entry in url_objects:
-            url_object_name = url_object_entry['name']
-            special_policies_logger.info(f"URL object name: <{url_object_name}>. URL type <{url_object_entry['type']}>")
-            extracted_url_objects.append(url_object_name)
-            
-        # Extract URL literals and create objects with it
+        for url_object in url_objects:
+            url_object_name = url_object.get('name')
+            url_object_type = url_object.get('type')
+            if url_object_name:
+                special_policies_logger.info(f"URL object name: <{url_object_name}>, URL type: <{url_object_type}>")
+                url_object_names.append(url_object_name)
+
+        # Process URL literals
         url_literals = url_object_info.get('literals', [])
-        for url_literal_entry in url_literals:
-            # Convert the URL literal to an object and save it
-            ConvertedLiteral = FMCObjectWithLiterals.convert_url_literal_to_object(VirtualObjectContainer, url_literal_entry)
-            ConvertedLiteral.save(Database)
-            # Append the name of the ConvertedLiteral to the list
-            extracted_url_objects.append(ConvertedLiteral.get_name())
+        for url_literal in url_literals:
+            literal_object = FMCObjectWithLiterals.convert_url_literal_to_object(virtual_object_container, url_literal)
+            literal_object.save(db)
+            url_object_names.append(literal_object.name)
 
+        # Process URL categories
         url_categories = url_object_info.get('urlCategoriesWithReputation', [])
-        for url_category_entry in url_categories:
-            category_name = url_category_entry['category']['name']
-            category_reputation = url_category_entry.get('reputation', None)
-            special_policies_logger.info(f"URL category name: <{category_name}>, with reputation <{category_reputation}>.")
-            object_info = {'name':category_name, 'reputation': category_reputation}
-            ConvertedURLCategory = FMCURLCategoryObject(VirtualObjectContainer, object_info)
-            ConvertedURLCategory.save(Database)
-            extracted_url_objects.append(category_name)
+        for url_category in url_categories:
+            category_name = url_category.get('category', {}).get('name')
+            category_reputation = url_category.get('reputation', None)
+            if category_name:
+                special_policies_logger.info(f"URL category name: <{category_name}>, Reputation: <{category_reputation}>")
+                category_info = {'name': category_name, 'reputation': category_reputation}
+                category_object = FMCURLCategoryObject(virtual_object_container, category_info)
+                category_object.save(db)
+                url_object_names.append(category_name)
 
-        # Return the list of extracted URL objects
-        return extracted_url_objects
-    
-    def extract_l7_app_object_info(self, l7_app_object_info, VirtualObjectContainer, Database):
+        # Return the list of URL object names
+        return url_object_names
+        
+    def extract_l7_app_object_info(self, l7_app_object_info, virtual_object_container, db):
         """
         Extract Layer 7 application object information from the provided data structure.
 
-        This method extracts information about Layer 7 applications and their associated filters from the given data structure.
+        This method processes the provided data structure to extract information about Layer 7 applications,
+        application filters, and inline application filters. It creates and saves objects for these components
+        and returns a list of their names.
 
         Parameters:
-            l7_app_object_info (dict): Information about Layer 7 application objects.
+            l7_app_object_info (dict): A dictionary containing information about Layer 7 applications,
+                                    application filters, and inline application filters.
 
         Returns:
-            list: A list of Layer 7 application names and their associated filters extracted from the provided data structure.
+            list: A list of names of Layer 7 applications, application filters, and inline application filters
+                extracted from the provided data structure.
         """
-        # Initialize an empty list to store the extracted Layer 7 application information
-        policy_l7_apps_list = []
+        # Log the start of Layer 7 application extraction
+        general_logger.info("Processing Layer 7 application objects from this policy.")
+        
+        # Initialize a list to store the names of Layer 7 applications and filters
+        l7_app_names = []
 
-        # If no Layer 7 application object information is provided, return None
+        # Return an empty list if no Layer 7 application information is provided
         if l7_app_object_info is None:
-            return None
+            return l7_app_names
 
-        # Extract regular Layer 7 applications
-        general_logger.info(f"Found L7 applications on this policy.")
-        policy_l7_apps = l7_app_object_info.get('applications', [])
-        for policy_l7_app in policy_l7_apps:
-            special_policies_logger.info(f"L7 application name: <{policy_l7_app['name']}>.")
-            # Convert this to an FMCL7AppObject
-            object_info = {'name':policy_l7_app['name']}
-            ConvertedApp = FMCL7AppObject(VirtualObjectContainer, object_info)
-            ConvertedApp.save(Database)
-            policy_l7_apps_list.append(ConvertedApp.get_name())
+        # Extract and process regular Layer 7 applications
+        applications = l7_app_object_info.get('applications', [])
+        for app in applications:
+            app_name = app.get('name')
+            if app_name:
+                special_policies_logger.info(f"Layer 7 application name: <{app_name}>.")
+                app_object = FMCL7AppObject(virtual_object_container, {'name': app_name})
+                app_object.save(db)
+                l7_app_names.append(app_object.name)
 
-        # Extract Layer 7 application filters
-        general_logger.info(f"Found L7 application filters on this policy.")
-        policy_l7_app_filters = l7_app_object_info.get('applicationFilters', [])
-        for policy_l7_app_filter in policy_l7_app_filters:
-            special_policies_logger.info(f"L7 application filter name: <{policy_l7_app_filter['name']}>.")
-            # Convert this to FMCL7AppGroupObject
-            object_info = {'name':policy_l7_app_filter['name']}
-            ConvertedAppFilter = FMCL7AppGroupObject(VirtualObjectContainer, object_info)
-            ConvertedAppFilter.save(Database)
-            policy_l7_apps_list.append(ConvertedAppFilter.get_name())
+        # Extract and process Layer 7 application filters
+        app_filters = l7_app_object_info.get('applicationFilters', [])
+        for app_filter in app_filters:
+            filter_name = app_filter.get('name')
+            if filter_name:
+                special_policies_logger.info(f"Layer 7 application filter name: <{filter_name}>.")
+                filter_object = FMCL7AppGroupObject(virtual_object_container, {'name': filter_name})
+                filter_object.save(db)
+                l7_app_names.append(filter_object.name)
 
-        # Extract inline Layer 7 application filters
-        general_logger.info(f"Found L7 inline application filters on this policy.")
-        policy_inline_l7_app_filters = l7_app_object_info.get('inlineApplicationFilters', [])
-        for filter_dict in policy_inline_l7_app_filters:
-            for key, elements in filter_dict.items():
-                if isinstance(elements, list):
-                    for element in elements:
-                        special_policies_logger.info(f"L7 inline application filter: <{key}>, name: <{element['name']}>.")
-                        filter_name = f"inlineApplicationFilters{gvars.separator_character}{key}{gvars.separator_character}{element['name']}"
-                        policy_l7_apps_list.append(filter_name)
-                        # Convert this to FMCL7AppFilterObject
-                        object_info = {'name':element['name'], 'type':key}
-                        ConvertedInlineFilter = FMCL7AppFilterObject(VirtualObjectContainer, object_info)
-                        ConvertedInlineFilter.save(Database)
-                        policy_l7_apps_list.append(ConvertedInlineFilter.get_name())
+        # Extract and process inline Layer 7 application filters
+        inline_app_filters = l7_app_object_info.get('inlineApplicationFilters', [])
+        for filter_entry in inline_app_filters:
+            for filter_type, filters in filter_entry.items():
+                if isinstance(filters, list):
+                    for filter_item in filters:
+                        filter_name = filter_item.get('name')
+                        if filter_name:
+                            special_policies_logger.info(f"Layer 7 inline application filter type: <{filter_type}>, name: <{filter_name}>.")
+                            full_filter_name = f"inlineApplicationFilters{gvars.separator_character}{filter_type}{gvars.separator_character}{filter_name}"
+                            l7_app_names.append(full_filter_name)
+                            inline_filter_object = FMCL7AppFilterObject(virtual_object_container, {'name': filter_name, 'type': filter_type})
+                            inline_filter_object.save(db)
+                            l7_app_names.append(inline_filter_object.name)
 
-        # Return the list of extracted Layer 7 application information
-        return policy_l7_apps_list
+        # Return the list of extracted Layer 7 application names and filter names
+        return l7_app_names
 
     def extract_comments(self, comment_info):
         """
         Extract comments from the provided data structure.
 
-        This method extracts comments from the given data structure and returns a string containing user and comment content.
+        This method processes a list of comments, each associated with a user, and returns a string
+        that combines all comments into a single string with each comment separated by a newline.
 
         Parameters:
-            comment_info (list): Information about comments.
+            comment_info (list): A list of dictionaries, each containing information about a comment,
+                                including user details and comment content.
 
         Returns:
-            str: A string containing user and comment content extracted from the provided data structure, separated by newlines.
+            str: A string where each line contains the user and their associated comment.
         """
-        # Check if comment_info is None
+        # Initialize the processed_comments as an empty string
         if comment_info is None:
-            processed_comments = None
+            processed_comments = ""
         else:
-            # Create a string with all comments, each separated by a newline
+            # Join each comment entry into a single string, separating entries with newlines
             processed_comments = "\n".join(
                 f"User: <{comment_entry['user']['name']}> commented: <{comment_entry['comment']}>"
                 for comment_entry in comment_info

@@ -132,7 +132,7 @@ class PioneerNetworkGroupObject(NetworkGroupObject, PioneerObject):
             object_cache (ObjectCache): Cache to store and retrieve object instances.
             network_group_objects_members_table (Table): Table object to query the members.
         """
-        if member_type == gvars.object_member_type:
+        if member_type == 'object':
             columns = [
                 "network_address_objects.uid",
                 "network_address_objects.name",
@@ -151,7 +151,7 @@ class PioneerNetworkGroupObject(NetworkGroupObject, PioneerObject):
             ]
             name_column = 'network_group_objects_members.group_uid'
 
-        elif member_type == gvars.group_object_group_member_type:
+        elif member_type == 'group':
             columns = [
                 "network_group_objects.uid",
                 "network_group_objects.name",
@@ -193,13 +193,13 @@ class PioneerNetworkGroupObject(NetworkGroupObject, PioneerObject):
             )
 
             # Add the member to the appropriate collection based on type
-            if member_type == gvars.object_member_type:
+            if member_type == 'object':
                 self.object_members.add(member)
-            elif member_type == gvars.group_object_group_member_type:
+            elif member_type == 'group':
                 self._group_object_members.add(member)
                 # If needed, extract members of nested groups
-                member.extract_members(gvars.object_member_type, object_cache, network_group_objects_members_table)
-                member.extract_members(gvars.group_object_group_member_type, object_cache, network_group_objects_members_table)
+                member.extract_members('object', object_cache, network_group_objects_members_table)
+                member.extract_members('group', object_cache, network_group_objects_members_table)
         
 class PioneerPortObject(PortObject, PioneerObject):
     def __init__(self, object_container, object_info) -> None:
@@ -285,7 +285,7 @@ class PioneerPortGroupObject(PortGroupObject, PioneerObject):
             ValueError: If an unknown type is provided.
         """
         # Determine the columns to fetch and the class for the objects based on type
-        if member_type == gvars.object_member_type:
+        if member_type == 'object':
             columns = [
                 "port_objects.uid",
                 "port_objects.name",
@@ -305,7 +305,7 @@ class PioneerPortGroupObject(PortGroupObject, PioneerObject):
             ]
             name_col = 'port_group_objects_members.group_uid'
 
-        elif member_type == gvars.icmp_object_member:
+        elif member_type == 'icmp':
             columns = [
                 "icmp_objects.uid",
                 "icmp_objects.name",
@@ -324,7 +324,7 @@ class PioneerPortGroupObject(PortGroupObject, PioneerObject):
             ]
             name_col = 'port_group_objects_members.group_uid'
 
-        elif member_type == gvars.group_object_group_member_type:
+        elif member_type == 'group':
             columns = [
                 "port_group_objects.uid",
                 "port_group_objects.name",
@@ -364,16 +364,16 @@ class PioneerPortGroupObject(PortGroupObject, PioneerObject):
                 key,
                 lambda: obj_class(None, member_info)
             )
-            if member_type == gvars.object_member_type:
+            if member_type == 'object':
                 self.object_members.add(member)
-            elif member_type == gvars.icmp_object_member:
+            elif member_type == 'icmp':
                 self._icmp_object_members.add(member)
-            elif member_type == gvars.group_object_group_member_type:
+            elif member_type == 'group':
                 self._group_object_members.add(member)
                 # Extract members from nested groups
-                member.extract_members(gvars.object_member_type, object_cache, port_group_objects_network_group_objects_members_table)
-                member.extract_members(gvars.icmp_object_member, object_cache, port_group_objects_network_group_objects_members_table)
-                member.extract_members(gvars.group_object_group_member_type, object_cache, port_group_objects_network_group_objects_members_table)
+                member.extract_members('object', object_cache, port_group_objects_network_group_objects_members_table)
+                member.extract_members('icmp', object_cache, port_group_objects_network_group_objects_members_table)
+                member.extract_members('group', object_cache, port_group_objects_network_group_objects_members_table)
 
     def check_icmp_members_recursively(self, has_icmp) -> bool:
         """
@@ -449,7 +449,7 @@ class PioneerURLGroupObject(URLGroupObject, PioneerObject):
         Raises:
             ValueError: If the member_type is unknown.
         """
-        if member_type == gvars.object_member_type:
+        if member_type == 'object':
             columns = [
                 "url_objects.uid",
                 "url_objects.name",
@@ -467,7 +467,7 @@ class PioneerURLGroupObject(URLGroupObject, PioneerObject):
             ]
             name_col = 'url_group_objects_members.group_uid'
 
-        elif member_type == gvars.group_object_group_member_type:
+        elif member_type == 'group':
             columns = [
                 "url_group_objects.uid",
                 "url_group_objects.name",
@@ -507,13 +507,13 @@ class PioneerURLGroupObject(URLGroupObject, PioneerObject):
                 key,
                 lambda: obj_class(None, member_info)
             )
-            if member_type == gvars.object_member_type:
+            if member_type == 'object':
                 self.object_members.add(member)
-            elif member_type == gvars.group_object_group_member_type:
+            elif member_type == 'group':
                 self._group_object_members.add(member)
                 # If needed, extract members of nested groups
-                member.extract_members(gvars.object_member_type, object_cache, url_group_objects_members_table)
-                member.extract_members(gvars.group_object_group_member_type, object_cache, url_group_objects_members_table)
+                member.extract_members('object', object_cache, url_group_objects_members_table)
+                member.extract_members('group', object_cache, url_group_objects_members_table)
 
 @staticmethod
 def recursive_update_objects_and_groups(objects_set, group_objects_set):

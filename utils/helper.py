@@ -3,7 +3,6 @@ import sys
 import utils.exceptions as PioneerExceptions
 import logging
 import os
-import psutil
 import uuid
 
 def generate_uid():

@@ -47,11 +47,6 @@ l7_app_object = 'l7_app_object'
 l7_app_filter_object = 'l7_app_filter_object'
 l7_app_group_object = 'l7_app_group_object'
 
-# OBJECT MEMBER TYPES
-object_member_type = 'object'
-group_object_group_member_type = 'group'
-icmp_object_member = 'icmp'
-
 # group is used here as a "flag" value. it marks the fact
 # that the security policies will be processed as object groups
 # also, only the security policies for a particular object container
