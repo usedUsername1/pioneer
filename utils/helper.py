@@ -1,11 +1,8 @@
 import argparse
 import sys
-import psycopg2
 import utils.exceptions as PioneerExceptions
-import ipaddress
 import logging
 import os
-import psutil
 import uuid
 
 def generate_uid():
@@ -15,59 +12,70 @@ def generate_uid():
     return str(uuid.uuid4())
 
 general_logger = logging.getLogger('general')
-# this function returns a parser objects for the pioneer tool
+
 def create_parser():
+    """
+    Creates and configures the argument parser for the Pioneer CLI tool.
+
+    Pioneer is a vendor-agnostic CLI tool for migrating firewall policies. This function sets up the argument parser,
+    defines mutually exclusive argument groups, and specifies individual arguments related to projects, devices, 
+    mappings and so on.
+
+    Returns:
+        argparse.ArgumentParser: Configured argument parser for Pioneer CLI tool.
+    """
+    # Initialize the argument parser with a description
     parser = argparse.ArgumentParser(description="Pioneer is a vendor-agnostic CLI tool for migrating firewall policies.")
     
-    # the create, set and delete parameters should be mutually exclusive
+    # Create a mutually exclusive group for create, set, and delete parameters
     exclusive_arg_group = parser.add_mutually_exclusive_group()
     
-    # TODO: implement arguments for the --pro
-    # arguments related to projects
+    # Arguments related to projects
     exclusive_arg_group.add_argument("--create-project [name]", help="Create a migration project.")
     exclusive_arg_group.add_argument("--delete-project [name]", help="Delete a migration project.")
-    exclusive_arg_group.add_argument("--list-projects", help="Print a list with all the projects.")
+    exclusive_arg_group.add_argument("--list-projects", help="Print a list of all projects.")
     exclusive_arg_group.add_argument("--project [name]", help="Specify the migration project where you make the changes.")
-    parser.add_argument("--set-source-device [name]", help="Set the source device of the project")
-    parser.add_argument("--set-target-device [name]", help="Set the target device of the project")
+    parser.add_argument("--set-source-device [name]", help="Set the source device of the project.")
+    parser.add_argument("--set-target-device [name]", help="Set the target device of the project.")
 
-    # arguments related to devices
+    # Arguments related to devices
     exclusive_arg_group.add_argument("--delete-security-device [name]", help="Delete a security device.")
     exclusive_arg_group.add_argument("--list-security-devices", help="List all security devices.")
     parser.add_argument("--create-security-device [name]", help="Create a security device.")
-    parser.add_argument("--device-type [type]", help="Specify the device type you are creating.")
-    parser.add_argument("--username [username]", help="Specify the user that you will use to perform operations on the device.")
-    parser.add_argument("--secret [secret]", help="Specify the password or the API token of the user.")
-    parser.add_argument("--hostname [hostname]", help="Specify the hostname or the IP address of the security device.")
-    parser.add_argument("--port [port]", default='https', help="Specify the port. Implicit value is https")
-    parser.add_argument("--domain [fmc_domain]", default='Global', help="Only for FMC devices. Specify the administration domain")
+    parser.add_argument("--device-type [type]", help="Specify the type of device you are creating.")
+    parser.add_argument("--username [username]", help="Specify the user to perform operations on the device.")
+    parser.add_argument("--secret [secret]", help="Specify the password or API token of the user.")
+    parser.add_argument("--hostname [hostname]", help="Specify the hostname or IP address of the security device.")
+    parser.add_argument("--port [port]", default='https', help="Specify the port. Default value is https.")
+    parser.add_argument("--domain [fmc_domain]", default='Global', help="For FMC devices, specify the administration domain.")
 
     parser.add_argument("--device-name [device_name]", help="Specify the security device where you make the changes.")
-    parser.add_argument("--migrate", nargs='?', const=True, default=False, help="Specify the security device where you make the changes.")
-    
+    parser.add_argument("--migrate", nargs='?', const=True, default=False, help="Flag to initiate the migration process.")
+
     # Container mapping arguments
-    parser.add_argument("--map-containers", action='store_true', help="Specify if you want to map containers.")
+    parser.add_argument("--map-containers", action='store_true', help="Flag to indicate if you want to map containers.")
     parser.add_argument("--source-container", dest='source_container_name', help="Specify the source container name.")
     parser.add_argument("--target-container", dest='target_container_name', help="Specify the target container name.")
 
     # Zone mapping arguments
-    parser.add_argument("--map-zones", action='store_true', help="Specify if you want to map zones.")
+    parser.add_argument("--map-zones", action='store_true', help="Flag to indicate if you want to map zones.")
     parser.add_argument("--source-zone", dest='source_zone_name', help="Specify the source zone name.")
     parser.add_argument("--target-zone", dest='target_zone_name', help="Specify the target zone name.")
     
-    parser.add_argument("--target-device", dest='target_device_name', help="Specify the security device where you make the changes.")
+    parser.add_argument("--target-device", dest='target_device_name', help="Specify the target security device for changes.")
 
-    parser.add_argument("--import-config", nargs='?', const=True, default=False, help="Flag to import configuration. Imports the configuration from the target device.")
-    parser.add_argument("--security-policy-container [container_name]", help="Imports a security policy container.")
+    # Import configuration argument
+    parser.add_argument("--import-config", nargs='?', const=True, default=False, help="Flag to import configuration from the target device.")
+    parser.add_argument("--security-policy-container [container_name]", help="Import a security policy container.")
 
-    # temporary, only usable with migration project
+    # Temporary arguments related to migration projects
     parser.add_argument("--send-logs-to-manager", help="Specify the manager name to send logs to.")
     parser.add_argument("--set-security-profile", help="Specify the security profile name.")
 
-    # arguments related both to devices and projects
-    parser.add_argument("--description [description]", help="Add a description for the project/device. Max length is 256 characters", default='no description')
+    # Arguments related to both devices and projects
+    parser.add_argument("--description [description]", help="Add a description for the project/device. Max length is 256 characters.", default='no description')
 
-    # parse the arguments, print help message if no arguments are supplied
+    # Parse the arguments and print help message if no arguments are supplied
     parser.parse_args(args=None if sys.argv[1:] else ['--help'])
 
     return parser
@@ -87,29 +95,30 @@ def setup_logging(log_folder, log_files=None):
     Returns:
         None
     """
-    # Create log folder if it doesn't exist
+    # Create the log folder if it doesn't exist
     os.makedirs(log_folder, exist_ok=True)
 
     # Get the root logger
-    logger = logging.getLogger()
+    root_logger = logging.getLogger()
 
     # Set the logger level to DEBUG to capture all levels of logs
-    logger.setLevel(logging.DEBUG)
+    root_logger.setLevel(logging.DEBUG)
 
     # Create a custom formatter with desired format and explicit encoding
     class UnicodeFormatter(logging.Formatter):
         def format(self, record):
-            # Ensure the message is properly encoded
+            # Ensure the message is properly encoded to handle Unicode characters
             record.msg = str(record.msg).encode('utf-8', errors='replace').decode('utf-8')
             return super().format(record)
 
+    # Instantiate the custom formatter
     formatter = UnicodeFormatter('%(asctime)s - %(levelname)s - %(message)s')
 
-    # Configure logging to write to console
+    # Configure logging to write errors and above to the console
     console_handler = logging.StreamHandler()
     console_handler.setLevel(logging.ERROR)  # Log only errors and above to the console
     console_handler.setFormatter(formatter)
-    logger.addHandler(console_handler)
+    root_logger.addHandler(console_handler)
 
     # Configure logging to write to multiple files
     if log_files is not None:
@@ -118,11 +127,22 @@ def setup_logging(log_folder, log_files=None):
             file_logger = logging.getLogger(logger_name)
             file_logger.setLevel(logging.DEBUG)
             
-            file_handler = logging.FileHandler(os.path.join(log_folder, log_file), mode='a', encoding='utf-8')  # Log to file
+            # Create a file handler for each log file
+            file_handler = logging.FileHandler(os.path.join(log_folder, log_file), mode='a', encoding='utf-8')
             file_handler.setFormatter(formatter)
             file_logger.addHandler(file_handler)
 
 def load_protocol_mapping():
+    """
+    Load and return a dictionary mapping protocol numbers to their respective protocol names.
+
+    This function returns a dictionary where each key is a protocol number (as a string), and the value is the name 
+    of the protocol associated with that number. This mapping helps in interpreting protocol numbers in network data.
+
+    Returns:
+        dict: A dictionary mapping protocol numbers (str) to protocol names (str).
+    """
+
     return {
     "0": "HOPOPT",
     "1": "ICMP",
@@ -274,34 +294,60 @@ def load_protocol_mapping():
     }
 
 def protocol_number_to_keyword(protocol_number):
-    # Load the protocol mapping dictionary from the load_protocol_mapping function
-    # This dictionary maps protocol numbers to their corresponding names
+    """
+    Convert a protocol number to its corresponding protocol name.
+
+    This function uses a predefined mapping of protocol numbers to protocol names. It retrieves the name for the given
+    protocol number. If the protocol number is not recognized, it raises an exception.
+
+    Parameters:
+        protocol_number (str): The protocol number as a string to be converted to its corresponding name.
+
+    Returns:
+        str: The name of the protocol corresponding to the given number.
+
+    Raises:
+        PioneerExceptions.UnknownProtocolNumber: If the provided protocol number is not in the mapping dictionary.
+    """
+    # Load the dictionary mapping protocol numbers to protocol names
     protocol_mapping = load_protocol_mapping()
 
     # Check if the provided protocol_number exists in the protocol_mapping dictionary
     if protocol_number not in protocol_mapping:
-        # If the protocol_number is not in the dictionary, raise the UnknownProtocolNumber exception
-        # This informs the caller that the provided number is not a recognized protocol
+        # Raise an exception if the protocol_number is not recognized
         raise PioneerExceptions.UnknownProtocolNumber(protocol_number)
 
-    # If the protocol_number is found in the dictionary, return the corresponding protocol name
-    # For example, if the protocol_number is 6, this will return 'TCP'
+    # Return the protocol name corresponding to the provided protocol_number
     return protocol_mapping[protocol_number]
 
 def netmask_to_cidr_bits(netmask):
+    """
+    Convert a netmask to its corresponding CIDR prefix length.
+
+    This function takes a netmask in dotted decimal format and converts it to the equivalent CIDR notation prefix length.
+    The CIDR prefix length represents the number of bits set to '1' in the netmask.
+
+    Parameters:
+        netmask (str): The netmask in dotted decimal format (e.g., '255.255.255.0').
+
+    Returns:
+        int: The CIDR prefix length corresponding to the netmask, or None if the netmask format is invalid.
+
+    Raises:
+        ValueError: If the netmask is not in a valid dotted decimal format or contains non-numeric values.
+    """
     try:
-        # Convert netmask to binary representation
+        # Convert the netmask to its binary representation by:
+        # 1. Splitting the netmask into its four octets.
+        # 2. Converting each octet to an 8-bit binary string.
+        # 3. Concatenating these binary strings to form the full binary representation of the netmask.
         binary_netmask = ''.join(format(int(octet), '08b') for octet in netmask.split('.'))
 
-        # Count the number of set bits
-        cidr_bits = binary_netmask.count('1')
+        # Count the number of '1' bits in the binary netmask to determine the CIDR prefix length.
+        cidr_prefix_length = binary_netmask.count('1')
 
-        return cidr_bits
+        return cidr_prefix_length
+
     except ValueError:
-        return None  # Invalid netmask format
-
-def get_usage():
-    cpu_percent = psutil.cpu_percent()
-    mem_info = psutil.virtual_memory()
-    mem_usage_mb = mem_info.used / (1024 ** 2)  # Convert bytes to MB
-    return cpu_percent, mem_usage_mb
+        # Return None if there's an error in the conversion process, indicating an invalid netmask format.
+        return None

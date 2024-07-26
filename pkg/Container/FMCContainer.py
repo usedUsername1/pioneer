@@ -1,38 +1,64 @@
 from pkg.Container import SecurityPolicyContainer, ObjectContainer, ZoneContainer, ManagedDeviceContainer
-
-#TODO: maybe use setters for setting the values in here, and use the getters from the parent class to retrieve the info. just like you do for objects
+import utils.gvars as gvars
 class FMCSecurityPolicyContainer(SecurityPolicyContainer):
     """
-    Represents a policy container specific to the Firepower Management Center (FMC).
+    Represents a security policy container specific to the Firepower Management Center (FMC).
     """
-    def __init__(self, SecurityDevice, container_info) -> None:
+    
+    def __init__(self, security_device, container_info) -> None:
         """
-        Initialize an FMCPolicyContainer instance.
+        Initializes an FMCSecurityPolicyContainer instance.
 
-        Parameters:
-            container_info (dict): Information about the policy container.
+        Args:
+            security_device (SecurityDevice): The security device associated with this container.
+            container_info (dict): Information about the policy container, including its name and parent policy.
         """
-        self._name = container_info['name']
-        self._parent_name = container_info['metadata'].get('parentPolicy', {}).get('name')
-        super().__init__(SecurityDevice, self._name, self._parent_name)
+        super().__init__(security_device, container_info['name'], container_info['metadata'].get('parentPolicy', {}).get('name'))
+
 
 class FMCObjectContainer(ObjectContainer):
     """
     Represents an object container specific to the Firepower Management Center (FMC).
     """
-    def __init__(self, SecurityDevice, container_info) -> None:
+    
+    def __init__(self, security_device, container_info) -> None:
         """
-        Initialize an FMCObjectContainer instance.
+        Initializes an FMCObjectContainer instance.
 
-        Parameters:
+        Args:
+            security_device (SecurityDevice): The security device associated with this container.
             container_info (dict): Information about the object container.
         """
-        super().__init__(SecurityDevice, 'virtual_container', None)
+        super().__init__(security_device, gvars.virtual_container_name, None)
+
 
 class FMCZoneContainer(ZoneContainer):
-    def __init__(self, SecurityDevice, container_entry) -> None:
-        super().__init__(SecurityDevice, 'virtual_container', None)
+    """
+    Represents a zone container specific to the Firepower Management Center (FMC).
+    """
+    
+    def __init__(self, security_device, container_entry) -> None:
+        """
+        Initializes an FMCZoneContainer instance.
+
+        Args:
+            security_device (SecurityDevice): The security device associated with this container.
+            container_entry: Information related to the zone container.
+        """
+        super().__init__(security_device, gvars.virtual_container_name, None)
+
 
 class FMCManagedDeviceContainer(ManagedDeviceContainer):
-    def __init__(self, SecurityDevice, container_entry) -> None:
-        super().__init__(SecurityDevice, 'virtual_container', None)
+    """
+    Represents a managed device container specific to the Firepower Management Center (FMC).
+    """
+    
+    def __init__(self, security_device, container_entry) -> None:
+        """
+        Initializes an FMCManagedDeviceContainer instance.
+
+        Args:
+            security_device (SecurityDevice): The security device associated with this container.
+            container_entry: Information related to the managed device container.
+        """
+        super().__init__(security_device, gvars.virtual_container_name, None)

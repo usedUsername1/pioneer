@@ -12,9 +12,6 @@ from pkg.Container import SecurityPolicyContainer, ObjectContainer
 import random
 import re
 
-#TODO: failed objects creation file text
-#TODO: failed created policies file text
-
 general_logger = helper.logging.getLogger('general')
     
 # for the temp migration, only the policy containers and the object containers are needed
@@ -55,10 +52,10 @@ class PANMCSecurityDevice(SecurityDevice):
     def return_device_group_info(self):
         device_group_info = []
         # Access the OPSTATES attribute to get the hierarchy class
-        HierarchyObject = self._DeviceConnection.OPSTATES['dg_hierarchy']
+        HierarchyObject = self.device_connection.OPSTATES['dg_hierarchy']
 
         # Create an instance of PanoramaDeviceGroupHierarchy
-        HierarchyInstance = HierarchyObject(self._DeviceConnection)
+        HierarchyInstance = HierarchyObject(self.device_connection)
 
         # Call the fetch method on the instance
         hierarchy_data = HierarchyInstance.fetch()
@@ -77,11 +74,9 @@ class PANMCSecurityDevice(SecurityDevice):
     def return_security_policy_container(self, container_entry):
         return PANMCSecurityPolicyContainer(self, container_entry)
     
-    #TODO: implement this
     def return_zone_container(self, container_entry):
         return PANMCSecurityZoneContainer(self, container_entry)
     
-    #TODO: implement this
     def return_security_zone(self, ZoneContainer, zone_entry):
         return PANMCSecurityZone(ZoneContainer, zone_entry)
 
@@ -90,7 +85,7 @@ class PANMCSecurityDevice(SecurityDevice):
 
     def return_template_info(self):
         templates_info = []
-        templates = Template.refreshall(parent=self._DeviceConnection)
+        templates = Template.refreshall(parent=self.device_connection)
         for template in templates:
             templates_info.append({'name':template.name, 'parent':None})
         
@@ -105,7 +100,7 @@ class PANMCSecurityDevice(SecurityDevice):
     
     def return_security_zone_info(self):
         zones_info = []
-        templates = Template.refreshall(parent=self._DeviceConnection)
+        templates = Template.refreshall(parent=self.device_connection)
         for template in templates:
             zones = Zone.refreshall(template)
             for zone in zones:
@@ -150,30 +145,4 @@ class PANMCSecurityDevice(SecurityDevice):
     def return_security_policy_info(self, ObjectContainer):
         print("Importing this object is not supported yet for PANMC.")
         return None
-
-#TODO: delete everything below 
-
-    @staticmethod
-    def apply_url_constraints(url_value):
-        # If ".*" is found, change it to "*."
-        url_value = re.sub(r'\.\*', '*.', url_value)
-
-        # If a single wildcard character is found and not followed by a dot, add a dot after it
-        url_value = re.sub(r'(?<!\*)\*(?!\.)', '*.', url_value)
-
-        return url_value
     
-    @staticmethod
-    def is_icmp_object(port_object, icmp_objects):
-        if port_object in icmp_objects:
-            return True
-        else:
-            return False
-    
-    @staticmethod
-    def is_port_group(port_object, port_group_objects):
-        if port_object in port_group_objects:
-            return True
-        else:
-            return False
-        

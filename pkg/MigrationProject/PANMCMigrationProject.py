@@ -10,128 +10,36 @@ from panos.policies import PreRulebase, PostRulebase, SecurityRule
 import utils.helper as helper
 import utils.gvars as gvars
 
-#TODO: there is a problem with random generation of url names. new names will be generated each time a migration occurs
-
 special_policies_log = helper.logging.getLogger(gvars.special_policies_logger)
-#TODO: actions, object types, log settings and special parameters must be dynamically retrieved.
-# preload the data from the database as class variables (in dictionaries)
-# and access them whenever necessary
-# same for the zone and container mappings
+
 class PANMCMigrationProject(MigrationProject):
-    def __init__(self, name, Database, SourceSecurityDevice, TargetSecurityDevice):
-        self._SourceSecurityDevice = SourceSecurityDevice
-        self._TargetSecurityDevice = TargetSecurityDevice
-        
-        #TODO: this will be moved to MigrationProject and executed hopefully not everytime an instance of the migration project object is created
-        self._Database = Database
-        self._security_policy_containers_map = self.load_containers_map_dict()
-        self._security_zones_map = self.load_security_zones_map_dict()
+    def __init__(self, name, db, source_security_device, target_security_device):
+        """
+        Initializes a PANMCMigrationProject instance.
+
+        Args:
+            name (str): The name of the migration project.
+            db (MigrationProjectDatabase): The db instance for the migration project.
+            source_security_device (SecurityDevice): The source security device object.
+            target_security_device (SecurityDevice): The target security device object.
+        """
+        # Store the provided arguments
+        self._source_security_device = source_security_device
+        self._target_security_device = target_security_device
+        self._db = db
+
+        # Load various mappings and settings from the db
+        self._security_policy_containers_map = self.load_containers_map()
+        self._security_zones_map = self.load_security_zones_map()
         self._network_object_types_map = self.load_network_object_types_map()
         self._security_policy_actions_map = self.load_security_policies_actions_map()
         self._log_settings = self.load_log_settings()
         self._special_security_policy_parameters = self.load_special_security_policy_parameters()
         self._section_map = self.load_section_map()
-        super().__init__(name, Database)
+
+        # Initialize the parent class
+        super().__init__(name, db)
     
-    def load_containers_map_dict(self):
-        containers_map = self._Database.get_security_policy_containers_map_table().get(['source_security_policy_container_uid', 'target_security_policy_container_uid'])
-        SecurityPoliciesContainersTable = self._Database.get_security_policy_containers_table()
-
-        # Initialize the dictionary to store the mappings
-        containers_map_dict = {}
-
-        # Process each mapping
-        for source_uid, target_uid in containers_map:
-            # Get target security device name
-            target_container_data = SecurityPoliciesContainersTable.get(['name'], 'uid', target_uid)
-            if not target_container_data:
-                raise ValueError(f"Target container with UID '{target_uid}' not found.")
-            target_security_device_name = target_container_data[0][0]
-
-            # Add to the dictionary
-            containers_map_dict[source_uid] = target_security_device_name
-
-        return containers_map_dict
-
-    def load_security_zones_map_dict(self):
-        # Retrieve all mappings from the security zones map table
-        zones_map = self._Database.get_security_device_interface_map_table().get(['source_security_zone', 'target_security_zone'])
-        SecurityZonesTable = self._Database.get_security_zones_table()
-
-        # Initialize the dictionary to store the mappings
-        zones_map_dict = {}
-
-        # Process each mapping
-        for source_uid, target_uid in zones_map:
-            # Get target security zone name
-            target_zone_data = SecurityZonesTable.get(['name'], 'uid', target_uid)
-            if not target_zone_data:
-                raise ValueError(f"Target security zone with UID '{target_uid}' not found.")
-            target_security_zone_name = target_zone_data[0][0]
-
-            # Add to the dictionary
-            zones_map_dict[source_uid] = target_security_zone_name
-
-        return zones_map_dict
-
-    def load_network_object_types_map(self):
-        source_type = self._SourceSecurityDevice.get_database().get_general_data_table().get('type', 'name', self._SourceSecurityDevice.get_name())[0][0]
-        target_type = self._TargetSecurityDevice.get_database().get_general_data_table().get('type', 'name', self._TargetSecurityDevice.get_name())[0][0]
-
-        # Retrieve mappings from network_object_types_map table
-        network_object_types_map = self._Database.get_network_object_types_map_table().get([source_type, target_type])
-        
-        # Initialize dictionary to store mappings
-        network_object_types_map_dict = {}
-        
-        # Process each mapping
-        for row in network_object_types_map:
-            source_action = row[0]
-            destination_action = row[1]
-            network_object_types_map_dict[source_action] = destination_action
-        
-        return network_object_types_map_dict
-
-    def load_security_policies_actions_map(self):
-        source_type = self._SourceSecurityDevice.get_database().get_general_data_table().get('type', 'name', self._SourceSecurityDevice.get_name())[0][0]
-        target_type = self._TargetSecurityDevice.get_database().get_general_data_table().get('type', 'name', self._TargetSecurityDevice.get_name())[0][0]
-
-        # Retrieve mappings from network_object_types_map table
-        network_object_types_map = self._Database.get_security_policy_action_map_table().get([source_type, target_type])
-        
-        # Initialize dictionary to store mappings
-        network_object_types_map_dict = {}
-        
-        # Process each mapping
-        for row in network_object_types_map:
-            source_action = row[0]
-            destination_action = row[1]
-            network_object_types_map_dict[source_action] = destination_action
-        
-        return network_object_types_map_dict
-
-    def load_log_settings(self):
-        log_settings_table = self._Database.get_log_settings_table()
-        return log_settings_table.get('log_manager')[0][0]
-        
-    def load_special_security_policy_parameters(self):
-        special_security_parameters_table = self._Database.get_special_security_policy_parameters_table()
-        return special_security_parameters_table.get('security_profile')[0][0]
-
-    def load_section_map(self):
-        source_type = self._SourceSecurityDevice.get_database().get_general_data_table().get('type', 'name', self._SourceSecurityDevice.get_name())[0][0]
-        target_type = self._TargetSecurityDevice.get_database().get_general_data_table().get('type', 'name', self._TargetSecurityDevice.get_name())[0][0]
-
-        section_map_table = self._Database.get_security_policy_section_map().get([source_type, target_type])
-        section_map = {}
-        
-        for row in section_map_table:
-            source_section = row[0]
-            destination_section = row[1]
-            section_map[source_section] = destination_section
-        
-        return section_map
-
     # save it to the file file, don't print it
     def print_compatibility_issues(self):
         print("""You are migrating to a Panorama Management Center device. The following is a list with compatibility issues and how they will be fixed:
@@ -140,372 +48,637 @@ a random suffix will be generated in order to avoid duplicates. All special char
 Security Policies restricting ping access: All policies that control ping access will be split in two. The original policy and the ping policy. This is needed because 
 PA treats ping as an application. The second rule will keep the exact same source and destinations, but will have all port objects removed and application set to ping.""" + '\n')
 
-    #TODO: mapping tables for actions, network types and so on
     def migrate_network_objects(self, network_objects):
-        for network_object in network_objects:
-            # adapt the name of the object
-            network_object.set_name(PANMCMigrationProject.apply_name_constraints(network_object.get_name()))
-            
-            network_object_type = self._network_object_types_map[network_object.get_network_address_type()]
-            network_object = AddressObject(network_object.get_name(), network_object.get_network_address_value(), network_object_type, network_object.get_description())
+        """
+        Migrates a list of network objects to the target security device.
 
-            self._TargetSecurityDevice.get_device_connection().add(network_object)
-        # bulk create the objects
+        This method iterates over each network object, applies name constraints, 
+        maps network object types, and adds the object to the target security device. 
+        It then attempts to bulk create the network objects on the target device.
+
+        Args:
+            network_objects (list): A list of network objects to be migrated.
+
+        Raises:
+            Exception: If an error occurs during bulk creation of network objects.
+        """
+        last_obj = ''
+        for net_obj in network_objects:
+            # Adapt the name of the network object according to the naming constraints
+            adapted_name = PANMCMigrationProject.apply_name_constraints(net_obj.name)
+            net_obj.name = adapted_name
+
+            # Map the network object type from source to target
+            net_obj_type = self._network_object_types_map.get(net_obj.network_address_type)
+            # Create a new AddressObject with the adapted name and mapped type
+            updated_network_object = AddressObject(
+                net_obj.name,
+                net_obj.network_address_value,
+                net_obj_type,
+                net_obj.description
+            )
+            last_obj = updated_network_object
+            # Add the updated network object to the target security device
+            self._target_security_device.device_connection.add(updated_network_object)
+        
+        # Attempt to bulk create the network objects on the target device
         try:
-            self._TargetSecurityDevice.get_device_connection().find(network_object.name).create_similar()
+            # Create similar objects in bulk based on the updated object's name
+            self._target_security_device.device_connection.find(last_obj.name).create_similar()
         except Exception as e:
-            print("error occured when bulk creating network address. More details: ", e)
+            print("Error occurred when bulk creating network address objects. More details: ", e)
 
     def migrate_network_group_objects(self, network_group_objects):
-        for network_group_object in network_group_objects:
-            network_group_object.set_name(PANMCMigrationProject.apply_name_constraints(network_group_object.get_name()))
-            network_group_members = []
-            # find the group object member banes
-            for network_group_object_member in network_group_object.get_group_object_members():
-                network_group_members.append(network_group_object_member.get_name())
-            # find the object member names
-            for network_object_member in network_group_object.get_object_members():
-                network_group_members.append(network_object_member.get_name())
+        """
+        Migrates a list of network group objects to the target security device.
+
+        This method iterates over each network group object, applies name constraints, 
+        gathers group and object member names, and adds the group object to the target 
+        security device. It then attempts to bulk create the network group objects on 
+        the target device.
+
+        Args:
+            network_group_objects (list): A list of network group objects to be migrated.
+
+        Raises:
+            Exception: If an error occurs during bulk creation of network group objects.
+        """
+        last_obj = ''
+        for net_group_obj in network_group_objects:
+            # Adapt the name of the network group object according to the naming constraints
+            adapted_name = PANMCMigrationProject.apply_name_constraints(net_group_obj.name)
+            net_group_obj.name = adapted_name
+
+            # Gather the names of all group and object members
+            group_member_names = []
+            # Find the group object member names
+            for group_member in net_group_obj.group_object_members:
+                group_member_names.append(group_member.name)
+            # Find the object member names
+            for obj_member in net_group_obj.object_members:
+                group_member_names.append(obj_member.name)
             
-            network_group_object = AddressGroup(name=network_group_object.get_name(), static_value=network_group_members,description=network_group_object.get_description())
+            # Create a new AddressGroup with the adapted name, gathered member names, and description
+            updated_network_group_object = AddressGroup(
+                name=net_group_obj.name,
+                static_value=group_member_names,
+                description=net_group_obj.description
+            )
 
-            # set the device group for the panorama instance
-            self._TargetSecurityDevice.get_device_connection().add(network_group_object)
+            # Add the updated network group object to the target security device
+            self._target_security_device.device_connection.add(updated_network_group_object)
+            last_obj = updated_network_group_object
 
+        # Attempt to bulk create the network group objects on the target device
         try:
-            self._TargetSecurityDevice.get_device_connection().find(network_group_object.name).create_similar()
+            # Create similar objects in bulk based on the first network group object's name
+            self._target_security_device.device_connection.find(last_obj.name).create_similar()
         except Exception as e:
-            print("error occured when creating network group. More details: ", e)
+            print("Error occurred when creating network group objects. More details: ", e)
 
     def migrate_port_objects(self, port_objects):
-        # Get the device connection once
-        device_connection = self._TargetSecurityDevice.get_device_connection()
+        """
+        Migrates a list of port objects to the target security device.
 
-        for port_object in port_objects:
-            if isinstance(port_object, PioneerICMPObject):
+        This method iterates over each port object, applies name constraints, 
+        and creates a new `ServiceObject` for each valid port object. It then 
+        adds the new port object to the target security device and attempts to 
+        create similar objects on the target device in bulk.
+
+        Args:
+            port_objects (list): A list of port objects to be migrated.
+
+        Raises:
+            Exception: If an error occurs during the bulk creation of port objects.
+        """
+        last_obj = ''
+        for port_obj in port_objects:
+            if isinstance(port_obj, PioneerICMPObject):
+                # Skip ICMP objects as they cannot be migrated
                 continue
 
-            # Apply name constraints and create a new ServiceObject
-            port_object.set_name(PANMCMigrationProject.apply_name_constraints(port_object.get_name()))
-            new_port_object = ServiceObject(
-                name=port_object.get_name(),
-                protocol=port_object.get_port_protocol().lower(),
-                destination_port=port_object.get_destination_port(),
-                description=port_object.get_description(),
+            # Apply name constraints to the port object name
+            constrained_name = PANMCMigrationProject.apply_name_constraints(port_obj.name)
+            port_obj.name = constrained_name
+
+            # Create a new ServiceObject with the required attributes
+            new_service_object = ServiceObject(
+                name=port_obj.name,
+                protocol=port_obj.port_protocol.lower(),
+                destination_port=port_obj.destination_port,
+                description=port_obj.description,
                 tag=None
             )
 
-            self._TargetSecurityDevice.get_device_connection().add(new_port_object)
-        try:
-            self._TargetSecurityDevice.get_device_connection().find(new_port_object.name).create_similar()
-        except Exception as e:
-            print("error occured when bulk creating network address. More details: ", e)
+            # Add the new service object to the target security device
+            self._target_security_device.device_connection.add(new_service_object)
+            last_obj = new_service_object
 
-    #TODO: make sure you don't migrate any groups that have 0 members. the check has to be done recursively - or does it?
-    # i think it works pretty good so far, needs to be tested further
+        try:
+            self._target_security_device.device_connection.find(last_obj.name).create_similar()
+        except Exception as e:
+            print("Error occurred when bulk creating port objects. More details: ", e)
+
     def migrate_port_group_objects(self, port_group_objects):
-        for port_group_object in port_group_objects:
-            # print(port_group_object._name)
-            port_group_object.set_name(PANMCMigrationProject.apply_name_constraints(port_group_object.get_name()))
-            port_group_members = []
-            # find the group object member banes
-            for port_group_object_member in port_group_object.get_group_object_members():
-                # make sure you remove any ICMP members from the groups, as they cannot be migrated in PA
-                if isinstance(port_group_object_member, PioneerICMPObject):
+        """
+        Migrates a list of port group objects to the target security device.
+
+        This method iterates over each port group object, applies name constraints, 
+        and creates a new `ServiceGroup` for each port group object. It then adds 
+        the new port group object to the target security device and attempts to 
+        create similar objects on the target device.
+
+        Args:
+            port_group_objects (list): A list of port group objects to be migrated.
+
+        Raises:
+            Exception: If an error occurs during creation of port group objects.
+        """
+        last_obj = ''
+        for port_group in port_group_objects:
+            # Apply name constraints to the port group object name
+            adapted_name = PANMCMigrationProject.apply_name_constraints(port_group.name)
+            port_group.name = adapted_name
+
+            # Initialize an empty list to store valid port group members
+            valid_port_group_members = []
+
+            # Process group object members and exclude ICMP members
+            for member in port_group.group_object_members:
+                if isinstance(member, PioneerICMPObject):
+                    # Skip ICMP objects as they cannot be migrated
                     continue
-                else:
-                    port_group_members.append(port_group_object_member.get_name())
+                valid_port_group_members.append(member.name)
             
-            # find the object member names
-            for port_object_member in port_group_object.get_object_members():
-                # if object is ICMP, don't add the name here
-                port_group_members.append(port_object_member.get_name())
-            
-            # make sure you don't migrate empty groups! there might be empty groups if all the members of the group are ICMP objects
-            if len(port_group_members) == 0:
+            # Add object members to the valid port group members list
+            for member in port_group.object_members:
+                valid_port_group_members.append(member.name)
+
+            # Skip empty port groups to avoid migrating groups with no valid members
+            if len(valid_port_group_members) == 0:
                 continue
 
-            else:
-                port_group_object = ServiceGroup(name=port_group_object.get_name(), value=port_group_members)
+            # Create a new ServiceGroup object with valid members
+            new_service_group = ServiceGroup(name=port_group.name, value=valid_port_group_members)
 
-                # set the device group for the panorama instance
-                self._TargetSecurityDevice.get_device_connection().add(port_group_object)
+            # Add the new service group object to the target security device
+            last_obj = new_service_group
+            self._target_security_device.device_connection.add(new_service_group)
 
+            # Attempt to create a similar object on the target device
             try:
-                self._TargetSecurityDevice.get_device_connection().find(port_group_object.name).create_similar()
+                self._target_security_device.device_connection.find(last_obj.name).create_similar()
             except Exception as e:
-                print("error occured when creating port group. More details: ", e)
-    #TODO: err message problem
+                print("Error occurred when creating port group. More details: ", e)
+
     def migrate_url_objects(self, url_objects):
-        for url_object in url_objects:
-            # adapt the name of the object
-            url_object.set_name(PANMCMigrationProject.apply_url_name_constraints(url_object.get_name()))
-        
-            url_object = CustomUrlCategory(name=url_object.get_name(), url_value=PANMCMigrationProject.apply_url_value_constraints(url_object.get_url_value()), description=url_object.get_description(), type='URL List')   
+        """
+        Migrates a list of URL objects to the target security device.
 
-            self._TargetSecurityDevice.get_device_connection().add(url_object)
-        # bulk create the objects
+        This method iterates over each URL object, applies name and value constraints, 
+        creates a new `CustomUrlCategory` object for each URL object, and adds it to 
+        the target security device. It then attempts to bulk create similar URL objects 
+        on the target device.
+
+        Args:
+            url_objects (list): A list of URL objects to be migrated.
+
+        Raises:
+            Exception: If an error occurs during the bulk creation of URL objects.
+        """
+        last_obj = ''
+        for url_obj in url_objects:
+            # Adapt the name and URL value of the URL object according to the constraints
+            adapted_name = PANMCMigrationProject.apply_url_name_constraints(url_obj.name)
+            url_obj.name = adapted_name
+            adapted_url_value = PANMCMigrationProject.apply_url_value_constraints(url_obj.url_value)
+            url_obj.url_value = adapted_url_value
+            # Create a new CustomUrlCategory object with the adapted name and URL value
+            new_url_object = CustomUrlCategory(
+                name=adapted_name,
+                url_value=adapted_url_value,
+                description=url_obj.description,
+                type='URL List'
+            )
+
+            last_obj = new_url_object
+            # Add the new URL object to the target security device
+            try:
+                self._target_security_device.device_connection.add(new_url_object)
+            except Exception as e:
+                print(f"Error occurred when adding URL object '{adapted_name}'. More details: ", e)
+
+        # Attempt to bulk create similar URL objects on the target device
         try:
-            self._TargetSecurityDevice.get_device_connection().find(url_object.name).create_similar()
+            self._target_security_device.device_connection.find(last_obj.name).create_similar()
         except Exception as e:
-            print("error occured when bulk creating url address. More details: ", e)
+            print("Error occurred when bulk creating URL objects. More details: ", e)
 
-    #TODO: don't forget that the URL groups can't be migrated, as Palo Alto does not have URL groups
-    # instead, everything URL of a group must be placed in the PA URL category
     def migrate_url_group_objects(self, url_group_objects):
-        for url_group_object in url_group_objects:
-            url_group_object.set_name(PANMCMigrationProject.apply_url_name_constraints(url_group_object.get_name()))
+        """
+        Migrates a list of URL group objects to the target security device.
+
+        This method iterates over each URL group object, applies name constraints, 
+        and value constraints to its members. It then creates a new `CustomUrlCategory` 
+        for each URL group object and adds it to the target security device. Finally, 
+        it attempts to bulk create similar URL group objects on the target device.
+
+        Args:
+            url_group_objects (list): A list of URL group objects to be migrated.
+
+        Raises:
+            Exception: If an error occurs during bulk creation of URL group objects.
+        """
+        last_obj = ''
+        for url_group in url_group_objects:
+            # Apply name constraints to the URL group object
+            adapted_group_name = PANMCMigrationProject.apply_url_name_constraints(url_group.name)
+            url_group.name = adapted_group_name
+
+            # Initialize a set to store unique URL member values
             url_member_values = set()
-            # get the members of the url group
-            #TODO: don't know yet, but we might need yet another recursve processing here
-            if url_group_object.get_object_members():
-                for url_group_member in url_group_object.get_object_members():
-                    url_member_values.add(PANMCMigrationProject.apply_url_value_constraints(url_group_member.get_url_value()))
 
-                url_group_object = CustomUrlCategory(name=url_group_object.get_name(), url_value=url_member_values, description=url_group_object.get_description(), type='URL List')   
+            # Get the members of the URL group
+            if url_group.object_members:
+                for member in url_group.object_members:
+                    # Apply value constraints to the URL group member
+                    adapted_member_value = PANMCMigrationProject.apply_url_value_constraints(member.url_value)
+                    url_member_values.add(adapted_member_value)
 
-                self._TargetSecurityDevice.get_device_connection().add(url_group_object)
+                # Create a new CustomUrlCategory object with adapted values
+                new_url_group = CustomUrlCategory(
+                    name=url_group.name,
+                    url_value=url_member_values,
+                    description=url_group.description,
+                    type='URL List'
+                )
+
+                # Add the new URL group object to the target security device
+                last_obj = new_url_group
+                self._target_security_device.device_connection.add(new_url_group)
             else:
                 continue
-        #TODO: problem with the error message when url_group_member is null
-        # bulk create the objects
-        # try:
-            self._TargetSecurityDevice.get_device_connection().find(url_group_object.name).create_similar()
-        # except Exception as e:
-        #     print("error occured when bulk creating url group address. More details: ", e)
+
+        # Attempt to bulk create similar URL group objects on the target device
+        try:
+            self._target_security_device.device_connection.find(last_obj.name).create_similar()
+        except Exception as e:
+            print("Error occurred when bulk creating URL group objects. More details: ", e)
 
     def migrate_policy_categories(self, categories):
-        for cat_name in categories:
-            tag_object = Tag(cat_name)
-            self._TargetSecurityDevice.get_device_connection().add(tag_object)
-        # create the object
+        """
+        Migrates a list of policy categories to the target security device.
+
+        This method iterates over each category name, creates a new `Tag` object, 
+        and adds it to the target security device. It then attempts to bulk create 
+        similar tag objects on the target device.
+
+        Args:
+            categories (list): A list of policy category names to be migrated.
+
+        Raises:
+            Exception: If an error occurs during the creation of tag objects.
+        """
+        last_obj = ''
+        for category_name in categories:
+            # Create a new Tag object for the category name
+            tag_object = Tag(category_name)
+
+            # Add the Tag object to the target security device
+            last_obj = tag_object
+            self._target_security_device.device_connection.add(tag_object)
+
+        # Attempt to bulk create similar tag objects on the target device
         try:
-            self._TargetSecurityDevice.get_device_connection().find(cat_name).create_similar()
+            self._target_security_device.device_connection.find(last_obj.name).create_similar()
         except Exception as e:
-            print("error occured when creating tag object. More details: ", e)
+            print("Error occurred when creating tag objects. More details: ", e)
 
-    # TODO: ensure that if you have policies with regions, they do not get migrated yet!
-            # ensure that you combine the description and the comments into a single string, which will be the description of the palo alto policy
-            # get the special_policies.log file and write the failed policies in there
-            # also, make sure you don't migrate policies that, if have all parameters removed, will become any-any policies. log them instead.
+    def migrate_security_policies(self, policies):
+        """
+        Migrate security policies from the source to the target system.
 
-    # policies are not migrated in bulk, but individually
-    def migrate_security_policies(self, security_policies):
-        for security_policy in security_policies:
-            print(f"Migrating policy: {security_policy._name}")
-            if security_policy._status != 'enabled':
+        :param policies: List of security policy objects to be migrated.
+        """
+        for policy in policies:
+            print(f"Migrating policy: {policy.name}")
+            if policy.status != 'enabled':
                 continue
 
             unresolved_dependency = False
 
-            # Get the security zones and create a list with the zones names
-            # If zone lookup doesn't return anything, log the policy
-            source_security_zones_names = []
-            if security_policy._source_zones:
-                for source_security_zone_uid in security_policy._source_zones:
-                    try:
-                        source_security_zones_names.append(self._security_zones_map[source_security_zone_uid[0]])
-                    except:
-                        special_policies_log.warn(f"Policy: {security_policy._name} was not migrated because it has unresolved source zone dependencies.")
-                        unresolved_dependency = True
-                        break  # Break out of the inner loop
-            else:
-                source_security_zones_names = ['any']
+            # Get source security zones and handle unresolved dependencies
+            source_zone_names = self._resolve_zone_names(policy.source_zones, 'source', policy.name)
+            if source_zone_names is None:
+                unresolved_dependency = True
+
+            # Get destination security zones and handle unresolved dependencies
+            destination_zone_names = self._resolve_zone_names(policy.destination_zones, 'destination', policy.name)
+            if destination_zone_names is None:
+                unresolved_dependency = True
 
             if unresolved_dependency:
-                continue  # Skip to the next security_policy
+                continue  # Skip to the next policy
 
-            destination_security_zones_names = []
-            if security_policy._destination_zones:
-                for destination_security_zone_uid in security_policy._destination_zones:
-                    try:
-                        destination_security_zones_names.append(self._security_zones_map[destination_security_zone_uid[0]])
-                    except:
-                        special_policies_log.warn(f"Policy: {security_policy._name} was not migrated because it has unresolved destination zone dependencies.")
-                        unresolved_dependency = True
-                        break  # Break out of the inner loop
-            else:
-                destination_security_zones_names = ['any']
+            # Get source and destination network names
+            source_network_names = self._get_network_names(policy.source_networks)
+            destination_network_names = self._get_network_names(policy.destination_networks)
 
-            if unresolved_dependency:
-                continue  # Skip to the next security_policy
+            # Get destination ports and check if ICMP is involved
+            destination_port_names, has_icmp = self._get_destination_ports(policy.destination_ports)
 
-            # now get the names of the source and desstination networks
-            source_networks_names = []
-            if security_policy._source_networks:
-                for source_network_object in security_policy._source_networks:
-                    source_networks_names.append(source_network_object._name)
-            else:
-                source_networks_names = ['any']
-            
-            destination_networks_names = []
-            if security_policy._destination_networks:
-                for destination_network_object in security_policy._destination_networks:
-                    destination_networks_names.append(destination_network_object._name)
-            else:
-                destination_networks_names = ['any']
-
-            # get the destination ports -> it is very important to see if a group member has a ping member.
-            destination_port_objects_names = []
-            has_icmp = False
-
-            #TODO: this needs very thorough testing
-            #there is a problem here. if a policy has a group which has only ping members, that policy is still created, but without the app ping attached to it\
-            if security_policy._destination_ports:
-                for destination_port_object in security_policy._destination_ports:
-                    if isinstance(destination_port_object, PioneerICMPObject):
-                        has_icmp = True
-                    
-                    elif isinstance(destination_port_object, PioneerPortGroupObject):
-                        has_icmp = destination_port_object.check_icmp_members_recursively(has_icmp)
-                        #TODO: what if group_object_members contains only groups that have ICMP objects?
-                        if destination_port_object._object_members or destination_port_object._group_object_members:
-                            destination_port_objects_names.append(destination_port_object._name)
-
-                    # in this case, the object is just a normal port object and can be added to the members list
-                    else:
-                        destination_port_objects_names.append(destination_port_object._name)
-            else:
-                destination_port_objects_names = ['any']
-            
-            # duct tape solution
-            if not destination_port_objects_names:
-                destination_port_objects_names = ['any']
-
-            # get the urls
-            security_policy_url_names = []
-            if security_policy._urls:
-                for url_object in security_policy._urls:
-                    security_policy_url_names.append(url_object._name)
-            else:
-                security_policy_url_names = ['any']
+            # Get URL names
+            url_names = self._get_url_names(policy.urls)
 
             log_end = True
-            
-            # # get the action and make sure it maps to the proper PA action
-            policy_action = self._security_policy_actions_map[security_policy._action]
 
-            dg_object = DeviceGroup(self._security_policy_containers_map[security_policy._PolicyContainer._uid])
-            # set the device group for the panorama instance
-            
-            self._TargetSecurityDevice.get_device_connection().add(dg_object)
+            # Map policy action
+            policy_action = self._security_policy_actions_map[policy.action]
 
-            # # get the section of the polcy and the mapping based on source device
-            policy_section = self._section_map[security_policy._section]
+            # Create and configure device group object
+            device_group = DeviceGroup(self._security_policy_containers_map[policy._policy_container.uid])
+            self._target_security_device.device_connection.add(device_group)
 
-            rulebase_with_dg = ''
-            if policy_section == 'pre':
-                rulebase_with_dg = dg_object.add(PreRulebase())
-            elif policy_section == 'post':
-                rulebase_with_dg = dg_object.add(PostRulebase())
+            # Determine the appropriate rulebase (pre or post)
+            rulebase = self._get_rulebase(device_group, policy.section)
 
-            # before migrating, make sure the policies that have only any parameters are logged and not migraged
-            #TODO: this below does not work
-            # Check if all conditions are 'any'
+            # Adjust policy applications based on ICMP presence
             if has_icmp:
-                security_policy._policy_apps = ['ping']
+                policy.policy_apps = ['ping']
             else:
-                security_policy._policy_apps = ['any']
+                policy.policy_apps = ['any']
 
-            if (source_networks_names == ['any'] and
-                destination_networks_names == ['any'] and
-                destination_port_objects_names == ['any'] and
-                security_policy_url_names == ['any'] and
-                security_policy._policy_apps == ['any']):
-                special_policies_log.warn(f"Policy {security_policy._name} is an 'any-any' policy. Check on source device what special parameters it has.")
+            # Check if the policy is an 'any-any' policy
+            if (source_network_names == ['any'] and
+                destination_network_names == ['any'] and
+                destination_port_names == ['any'] and
+                url_names == ['any'] and
+                policy.policy_apps == ['any']):
+                special_policies_log.warn(f"Policy {policy.name} is an 'any-any' policy. Check on source device what special parameters it has.")
 
-            # the security_policy_apps must be any all the time, if they are not ping
-            security_policy._name = self.apply_name_constraints(security_policy._name)
+            # Apply name constraints
+            policy.name = PANMCMigrationProject.apply_name_constraints(policy.name)
 
-            #TODO: make sure you make any parameter 'any' if the policy is a ping policy (url categories as well)
-            if security_policy._policy_apps != ['ping']:
-                security_policy._policy_apps = ['any']
-                policy_object = SecurityRule(name=security_policy._name, tag=[security_policy._category], group_tag=security_policy._category, disabled=False, \
-                                            fromzone = source_security_zones_names, tozone=destination_security_zones_names, source=source_networks_names, \
-                                            destination=destination_networks_names, service={'any'}, category=security_policy_url_names, application=security_policy._policy_apps, \
-                                            description=security_policy._comments, log_setting=self._log_settings, log_end=log_end, action=policy_action, group=self._special_security_policy_parameters)
-                
-                # add the policy object to the device group
-                rulebase_with_dg.add(policy_object)
+            # Create and add policy object to the rulebase
+            self._create_and_add_policy(rulebase, policy, source_zone_names, destination_zone_names,
+                                        source_network_names, destination_network_names,
+                                        destination_port_names, url_names, policy_action, log_end)
 
-            # TWO CASES HERE FFS, one in which there is ping and destination ports and one in which there is only ping
-            elif security_policy._policy_apps == ['ping']:
-                # if there are destination ports and ping objects, create two policies
-                # else create only the ping policy
-                if destination_port_objects_names != ['any']:
-                    security_policy._policy_apps = ['any']
-                    policy_object = SecurityRule(name=security_policy._name, tag=[security_policy._category], group_tag=security_policy._category, disabled=False, \
-                                                fromzone = source_security_zones_names, tozone=destination_security_zones_names, source=source_networks_names, \
-                                                destination=destination_networks_names, service=destination_port_objects_names, category=security_policy_url_names, application=security_policy._policy_apps, \
-                                                description=security_policy._comments, log_setting=self._log_settings, log_end=log_end, action=policy_action, group=self._special_security_policy_parameters)
-                    
-                    rulebase_with_dg.add(policy_object)
+#TODO: maybe move all the below functions in MigrationProject?
+# it looks like this code can be reused in other places as well
+    def _resolve_zone_names(self, zone_uids, zone_type, policy_name):
+        """
+        Resolve security zone names from their UIDs and handle unresolved dependencies.
 
+        :param zone_uids: List of zone UIDs to resolve.
+        :param zone_type: Type of zone ('source' or 'destination').
+        :param policy_name: Name of the policy for logging.
+        :return: List of resolved zone names, or None if unresolved dependencies are found.
+        """
+        zone_names = []
+        if zone_uids:
+            for zone_uid in zone_uids:
+                try:
+                    zone_names.append(self._security_zones_map[zone_uid[0]])
+                except KeyError:
+                    special_policies_log.warn(f"Policy: {policy_name} was not migrated because it has unresolved {zone_type} zone dependencies.")
+                    return None
+        else:
+            zone_names = ['any']
+        return zone_names
 
-                security_policy._name = security_policy._name[:58] + '_PING'
-                security_policy._policy_apps = ['ping']
-                destination_port_objects_names = ['any']
-                policy_object = SecurityRule(name=security_policy._name, tag=[security_policy._category], group_tag=security_policy._category, disabled=False, \
-                                            fromzone = source_security_zones_names, tozone=destination_security_zones_names, source=source_networks_names, \
-                                            destination=destination_networks_names, service=destination_port_objects_names, category=security_policy_url_names, application=security_policy._policy_apps, \
-                                            description=security_policy._comments, log_setting=self._log_settings, log_end=log_end, action=policy_action, group=self._special_security_policy_parameters)
+    def _get_network_names(self, network_objects):
+        """
+        Get network names from a list of network objects.
 
-                rulebase_with_dg.add(policy_object)
+        :param network_objects: List of network objects.
+        :return: List of network names.
+        """
+        if network_objects:
+            return [network.name for network in network_objects]
+        return ['any']
 
-            # create the object
-            #TODO: you sure this creates policies one by oe?
-            try:
-                # rulebase_with_dg.create()
-                rulebase_with_dg.find(security_policy._name).create_similar()
-            except Exception as e:
-                print("error occured when creating policy object. More details: ", e)
-                special_policies_log.warn(f"Failed to create policy {security_policy._name}. Reason: {e}.\n")
+    def _get_destination_ports(self, port_objects):
+        """
+        Get destination port names and check if any port is an ICMP object.
+
+        :param port_objects: List of destination port objects.
+        :return: Tuple (List of port names, Boolean indicating if ICMP is present).
+        """
+        port_names = []
+        has_icmp = False
+
+        if port_objects:
+            for port_obj in port_objects:
+                if isinstance(port_obj, PioneerICMPObject):
+                    has_icmp = True
+                elif isinstance(port_obj, PioneerPortGroupObject):
+                    has_icmp = port_obj.check_icmp_members_recursively(has_icmp)
+                    if port_obj._object_members or port_obj._group_object_members:
+                        port_names.append(port_obj.name)
+                else:
+                    port_names.append(port_obj.name)
+        else:
+            port_names = ['any']
+
+        if not port_names:
+            port_names = ['any']
+
+        return port_names, has_icmp
+
+    def _get_url_names(self, url_objects):
+        """
+        Get URL names from a list of URL objects.
+
+        :param url_objects: List of URL objects.
+        :return: List of URL names.
+        """
+        if url_objects:
+            return [url.name for url in url_objects]
+        return ['any']
+
+    def _get_rulebase(self, device_group, section):
+        """
+        Get the appropriate rulebase based on the policy section.
+
+        :param device_group: Device group object.
+        :param section: Policy section ('pre' or 'post').
+        :return: Rulebase object.
+        """
+        section = self._section_map[section]
+        if section == 'pre':
+            return device_group.add(PreRulebase())
+        elif section == 'post':
+            return device_group.add(PostRulebase())
+
+    def _create_and_add_policy(self, rulebase, policy, from_zones, to_zones,
+                               source_networks, destination_networks,
+                               destination_ports, url_names, policy_action, log_end):
+        """
+        Create and add a policy object to the rulebase.
+
+        :param rulebase: Rulebase object to add the policy to.
+        :param policy: Policy object to be added.
+        :param from_zones: List of source zone names.
+        :param to_zones: List of destination zone names.
+        :param source_networks: List of source network names.
+        :param destination_networks: List of destination network names.
+        :param destination_ports: List of destination port names.
+        :param url_names: List of URL names.
+        :param policy_action: Action for the policy.
+        :param log_end: Boolean indicating if logging should end.
+        """
+        if policy.policy_apps != ['ping']:
+            policy.policy_apps = ['any']
+            policy_object = SecurityRule(
+                name=policy.name,
+                tag=[policy.category],
+                group_tag=policy.category,
+                disabled=False,
+                fromzone=from_zones,
+                tozone=to_zones,
+                source=source_networks,
+                destination=destination_networks,
+                service=destination_ports,
+                category=url_names,
+                application=policy.policy_apps,
+                description=policy.comments,
+                log_setting=self._log_settings,
+                log_end=log_end,
+                action=policy_action,
+                group=self._special_security_policy_parameters
+            )
+            rulebase.add(policy_object)
+
+        elif policy.policy_apps == ['ping']:
+            if destination_ports != ['any']:
+                policy.policy_apps = ['any']
+                policy_object = SecurityRule(
+                    name=policy.name,
+                    tag=[policy.category],
+                    group_tag=policy.category,
+                    disabled=False,
+                    fromzone=from_zones,
+                    tozone=to_zones,
+                    source=source_networks,
+                    destination=destination_networks,
+                    service=destination_ports,
+                    category={'any'},
+                    application=policy.policy_apps,
+                    description=policy.comments,
+                    log_setting=self._log_settings,
+                    log_end=log_end,
+                    action=policy_action,
+                    group=self._special_security_policy_parameters
+                )
+                rulebase.add(policy_object)
+
+            # Create a separate ping policy
+            policy.name = policy.name[:58] + '_PING'
+            policy.policy_apps = ['ping']
+            destination_ports = ['any']
+            policy_object = SecurityRule(
+                name=policy.name,
+                tag=[policy.category],
+                group_tag=policy.category,
+                disabled=False,
+                fromzone=from_zones,
+                tozone=to_zones,
+                source=source_networks,
+                destination=destination_networks,
+                service=destination_ports,
+                category={'any'},
+                application=policy.policy_apps,
+                description=policy.comments,
+                log_setting=self._log_settings,
+                log_end=log_end,
+                action=policy_action,
+                group=self._special_security_policy_parameters
+            )
+            rulebase.add(policy_object)
+
+        # Attempt to create the policy object
+        #TODO: check if this gets created properly
+        try:
+            policy_object.create()
+        except Exception as e:
+            print("Error occurred when creating policy object. More details: ", e)
+            special_policies_log.warn(f"Failed to create policy {policy.name}. Reason: {e}.\n")
 
     @staticmethod
     def apply_name_constraints(name):
+        """
+        Applies constraints to a given name by replacing invalid characters, 
+        removing trailing spaces, and truncating the name if necessary.
+
+        Args:
+            name (str): The original name to be constrained.
+
+        Returns:
+            str: The constrained name.
+        """
         # Replace all characters that are not space, '-', or '.' with '_'
-        name = re.sub(r'[^a-zA-Z0-9\s_.-]', '_', name)
+        constrained_name = re.sub(r'[^a-zA-Z0-9\s_.-]', '_', name)
         
         # Remove the last character if it is a whitespace
-        if name and name[-1].isspace():
-            name = name[:-1]
+        if constrained_name and constrained_name[-1].isspace():
+            constrained_name = constrained_name[:-1]
         
         # Truncate the name if it exceeds 63 characters
-        if len(name) > 63:
-            truncated_name = name[:58]
+        if len(constrained_name) > 63:
+            truncated_name = constrained_name[:58]
             suffix = f"_{random.randint(100, 999)}"
-            truncated_name += suffix
-            return truncated_name
-        else:
-            return name
+            constrained_name = truncated_name + suffix
+        
+        return constrained_name
 
     @staticmethod
-    # make sure it does not start with digit
     def apply_url_name_constraints(name):
-        # Replace all occurrences of '-' with '_'
-        name = name.replace('-', '_')
-        # Replace all characters that are not space, '_', '.', or '-' with '_'
-        name = re.sub(r'[^a-zA-Z0-9\s_.-]', '_', name)
+        """
+        Applies constraints to a given URL name by replacing invalid characters,
+        ensuring the name starts with an alphabet, and truncating the name if necessary.
 
-        if not name[0].isalpha():
-            name = 'a' + name
+        Args:
+            name (str): The original URL name to be constrained.
+
+        Returns:
+            str: The constrained URL name.
+        """
+        # Replace all occurrences of '-' with '_'
+        constrained_name = name.replace('-', '_')
+
+        # Replace all characters that are not space, '_', '.', or '-' with '_'
+        constrained_name = re.sub(r'[^a-zA-Z0-9\s_.-]', '_', constrained_name)
+
+        # Ensure the name starts with an alphabet
+        if not constrained_name[0].isalpha():
+            constrained_name = 'a' + constrained_name
             
-        if len(name) > 31:
-            truncated_name = name[:27]
+        # Truncate the name if it exceeds 31 characters
+        if len(constrained_name) > 31:
+            truncated_name = constrained_name[:27]
             suffix = f"_{random.randint(100, 999)}"
-            truncated_name += suffix
-            return truncated_name
-        else:
-            return name
+            constrained_name = truncated_name + suffix
+        
+        return constrained_name
 
     @staticmethod
     def apply_url_value_constraints(url_value):
-        # If ".*" is found, change it to "*."
-        url_value = re.sub(r'\.\*', '*.', url_value)
+        """
+        Applies constraints to a given URL value by replacing certain patterns
+        with their constrained equivalents. Specifically, it removes any '*' that 
+        is not preceded or succeeded by a '.' and adjusts patterns like '.*' to '.'.
 
-        # If a single wildcard character is found and not followed by a dot, add a dot after it
-        #TODO: this will change the way the expression is processed. if the user intended to match everything
-        # then this is wrong. if there is a single wildcard, then just remove it
-        url_value = re.sub(r'(?<!\*)\*(?!\.)', '*.', url_value)
+        Args:
+            url_value (str): The original URL value to be constrained.
+
+        Returns:
+            str: The constrained URL value.
+        """
+        # If ".*" is found, change it to "."
+        url_value = re.sub(r'\.\*', '.', url_value)
+
+        # Remove any "*" that is not preceded or succeeded by "."
+        url_value = re.sub(r'(?<!\.)\*(?!\.)', '', url_value)
 
         return url_value
