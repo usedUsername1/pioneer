@@ -355,6 +355,7 @@ PA treats ping as an application. The second rule will keep the exact same sourc
             print("Error occurred when creating tag objects. More details: ", e)
 
     #TODO: experiment with bulk creating
+    # bulk creation should be possible as long as the rulebase object/device group object doesn't get instantiated each time for a new policy
     def migrate_security_policies(self, policies):
         """
         Migrate security policies from the source to the target system.
@@ -397,6 +398,7 @@ PA treats ping as an application. The second rule will keep the exact same sourc
             policy_action = self._security_policy_actions_map[policy.action]
 
             # Create and configure device group object
+            # a new object gets created here for each rule, this is kind of stupid
             device_group = DeviceGroup(self._security_policy_containers_map[policy._policy_container.uid])
             self._target_security_device.device_connection.add(device_group)
 
@@ -436,8 +438,6 @@ PA treats ping as an application. The second rule will keep the exact same sourc
 
 #TODO: maybe move all the below functions in MigrationProject?
 # it looks like this code can be reused in other places as well
-# there is a problem with ping policies.
-# when there are ping objects, only the ping policy gets created, policy does not get split up
     def _resolve_zone_names(self, zone_uids, zone_type, policy_name):
         """
         Resolve security zone names from their UIDs and handle unresolved dependencies.
