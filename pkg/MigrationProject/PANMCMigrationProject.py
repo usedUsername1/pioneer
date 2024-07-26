@@ -354,6 +354,7 @@ PA treats ping as an application. The second rule will keep the exact same sourc
         except Exception as e:
             print("Error occurred when creating tag objects. More details: ", e)
 
+    #TODO: experiment with bulk creating
     def migrate_security_policies(self, policies):
         """
         Migrate security policies from the source to the target system.
@@ -420,12 +421,23 @@ PA treats ping as an application. The second rule will keep the exact same sourc
             policy.name = PANMCMigrationProject.apply_name_constraints(policy.name)
 
             # Create and add policy object to the rulebase
-            self._create_and_add_policy(rulebase, policy, source_zone_names, destination_zone_names,
+            self._add_policy_to_rulebase(rulebase, policy, source_zone_names, destination_zone_names,
                                         source_network_names, destination_network_names,
                                         destination_port_names, url_names, policy_action, log_end)
 
+            # Attempt to create the policy object
+            # this is slightly faster than creating hte policy object directly
+            # bulk migrate?
+            try:
+                rulebase.find(policy.name).create_similar()
+            except Exception as e:
+                print("Error occurred when creating policy object. More details: ", e)
+                special_policies_log.warn(f"Failed to create policy {policy.name}. Reason: {e}.\n")
+
 #TODO: maybe move all the below functions in MigrationProject?
 # it looks like this code can be reused in other places as well
+# there is a problem with ping policies.
+# when there are ping objects, only the ping policy gets created, policy does not get split up
     def _resolve_zone_names(self, zone_uids, zone_type, policy_name):
         """
         Resolve security zone names from their UIDs and handle unresolved dependencies.
@@ -511,7 +523,7 @@ PA treats ping as an application. The second rule will keep the exact same sourc
         elif section == 'post':
             return device_group.add(PostRulebase())
 
-    def _create_and_add_policy(self, rulebase, policy, from_zones, to_zones,
+    def _add_policy_to_rulebase(self, rulebase, policy, from_zones, to_zones,
                                source_networks, destination_networks,
                                destination_ports, url_names, policy_action, log_end):
         """
@@ -596,14 +608,6 @@ PA treats ping as an application. The second rule will keep the exact same sourc
                 group=self._special_security_policy_parameters
             )
             rulebase.add(policy_object)
-
-        # Attempt to create the policy object
-        #TODO: check if this gets created properly
-        try:
-            policy_object.create()
-        except Exception as e:
-            print("Error occurred when creating policy object. More details: ", e)
-            special_policies_log.warn(f"Failed to create policy {policy.name}. Reason: {e}.\n")
 
     @staticmethod
     def apply_name_constraints(name):
