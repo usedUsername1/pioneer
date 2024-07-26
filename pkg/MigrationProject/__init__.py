@@ -16,9 +16,6 @@ class MigrationProjectDatabase(SecurityDeviceDatabase):
             cursor (Cursor): The cursor object used to interact with the db.
         """
         super().__init__(cursor)
-        
-        self._source_security_device = None
-        self._target_security_device = None
 
         # Initialize tables
         self._security_policy_containers_map_table = SecurityPolicyContainersMapTable(self)
@@ -55,22 +52,6 @@ class MigrationProjectDatabase(SecurityDeviceDatabase):
         
         self._security_policy_section_map_table.create()
         self._security_policy_section_map_table.pre_insert_data()
-
-    @property
-    def source_security_device(self):
-        return self._source_security_device
-
-    @source_security_device.setter
-    def source_security_device(self, value):
-        self._source_security_device = value
-
-    @property
-    def target_security_device(self):
-        return self._target_security_device
-
-    @target_security_device.setter
-    def target_security_device(self, value):
-        self._target_security_device = value
 
     @property
     def migration_project_general_data_table(self):
@@ -174,16 +155,6 @@ class MigrationProject:
         self._name = name
         self._db = db
 
-    def save_general_info(self, description, creation_timestamp):
-        """
-        Save the general information of the migration project to the db.
-
-        Args:
-            description (str): A description of the migration project.
-            creation_timestamp (str): The timestamp when the migration project was created.
-        """
-        self.db.migration_project_general_data_table.insert(self._name, description, creation_timestamp)
-    
     @property
     def db(self):
         """
@@ -203,6 +174,16 @@ class MigrationProject:
             str: The name of the migration project.
         """
         return self._name
+
+    def save_general_info(self, description, creation_timestamp):
+        """
+        Save the general information of the migration project to the db.
+
+        Args:
+            description (str): A description of the migration project.
+            creation_timestamp (str): The timestamp when the migration project was created.
+        """
+        self.db.migration_project_general_data_table.insert(self._name, description, creation_timestamp)
 
     def import_data(self, source_security_device, target_security_device):
         """
@@ -301,45 +282,28 @@ class MigrationProject:
                 target_project_db_table.insert(*row)
     
     def map_containers(self, source_container_name, target_container_name):
-        """
-        Maps a source security policy container to a target security policy container.
-
-        Args:
-            source_container_name (str): The name of the source security policy container.
-            target_container_name (str): The name of the target security policy container.
-
-        Raises:
-            ValueError: If the source or target container or device is not found.
-        """
-        migration_devices_table = self.db.migration_project_devices_table
-
-        # Fetch source container UID and source device UID based on the source container name
+        # Get source security device uid based on source container name
         source_container_data = self.db.security_policy_containers_table.get(['uid', 'security_device_uid'], 'name', source_container_name)
         if not source_container_data:
             raise ValueError(f"Source container with name '{source_container_name}' not found.")
 
         source_container_uid, source_device_uid = source_container_data[0]
 
-        # Fetch target device UID using the source device UID from the migration project devices table
-        target_device_data = migration_devices_table.get('target_device_uid', 'source_device_uid', source_device_uid)
+        # Get target device uid based on source device uid from migration project devices
+        target_device_data = self.db.migration_project_devices_table.get('target_device_uid', 'source_device_uid', source_device_uid)
         if not target_device_data:
-            raise ValueError(f"Target device for source device UID '{source_device_uid}' not found.")
+            raise ValueError(f"Target device for source device uid '{source_device_uid}' not found.")
 
         target_device_uid = target_device_data[0]
 
-        # Fetch target container UID based on the target container name and target device UID
-        target_container_data = self.db.security_policy_containers_table.get(
-            ['uid'],
-            ['name', 'security_device_uid'],
-            [target_container_name, target_device_uid],
-            multiple_where=True
-        )
+        # Get target container uid based on target container name and target device uid
+        target_container_data = self.db.security_policy_containers_table.get(['uid'], ['name', 'security_device_uid'], [target_container_name, target_device_uid], multiple_where=True)
         if not target_container_data:
-            raise ValueError(f"Target container with name '{target_container_name}' for device UID '{target_device_uid}' not found.")
+            raise ValueError(f"Target container with name '{target_container_name}' for device uid '{target_device_uid}' not found.")
 
         target_container_uid = target_container_data[0][0]
 
-        # Insert the mapping between source and target container UIDs into the containers map table
+        # Insert the data into the containers map table
         self.db.security_policy_containers_map_table.insert(source_container_uid, target_container_uid)
     
     def map_zones(self, source_zone_name, target_zone_name):
@@ -487,13 +451,13 @@ class MigrationProject:
             dict: A dictionary mapping source network object types to target network object types.
         """
         # Retrieve the network object type for the source security device
-        source_device_type = self.source_security_device.db.general_data_table.get(
-            'type', 'name', self.source_security_device.name
+        source_device_type = self._source_security_device.db.general_data_table.get(
+            'type', 'name', self._source_security_device.name
         )[0][0]
 
         # Retrieve the network object type for the target security device
-        target_device_type = self.target_security_device.db.general_data_table.get(
-            'type', 'name', self.target_security_device.name
+        target_device_type = self._target_security_device.db.general_data_table.get(
+            'type', 'name', self._target_security_device.name
         )[0][0]
 
         # Retrieve the network object type mappings from the database
@@ -524,13 +488,13 @@ class MigrationProject:
             dict: A dictionary mapping source security policy actions to target security policy actions.
         """
         # Retrieve the security policy action type for the source security device
-        source_device_type = self.source_security_device.db.general_data_table.get(
-            'type', 'name', self.source_security_device.name
+        source_device_type = self._source_security_device.db.general_data_table.get(
+            'type', 'name', self._source_security_device.name
         )[0][0]
 
         # Retrieve the security policy action type for the target security device
-        target_device_type = self.target_security_device.db.general_data_table.get(
-            'type', 'name', self.target_security_device.name
+        target_device_type = self._target_security_device.db.general_data_table.get(
+            'type', 'name', self._target_security_device.name
         )[0][0]
 
         # Retrieve the security policy action mappings from the database
@@ -594,15 +558,15 @@ class MigrationProject:
             dict: A dictionary mapping source security policy sections to their corresponding target sections.
         """
         # Retrieve the type of the source and target security devices
-        source_device_type = self.source_security_device.db.general_data_table.get(
-            'type', 'name', self.source_security_device.name
+        source_device_type = self._source_security_device.db.general_data_table.get(
+            'type', 'name', self._source_security_device.name
         )[0][0]
-        target_device_type = self.target_security_device.db.general_data_table.get(
-            'type', 'name', self.target_security_device.name
+        target_device_type = self._target_security_device.db.general_data_table.get(
+            'type', 'name', self._target_security_device.name
         )[0][0]
 
         # Retrieve the section map table from the database
-        section_map_table = self.db.security_policy_section_map.get([source_device_type, target_device_type])
+        section_map_table = self.db.security_policy_section_map_table.get([source_device_type, target_device_type])
         
         # Initialize a dictionary to store the section mappings
         section_map = {}

@@ -10,13 +10,13 @@ special_policies_log = helper.logging.getLogger(gvars.special_policies_logger)
 
 # python objects will be used for storing the policy parameter data that will be migrated (network and port objects)
 class PioneerSecurityPolicy(SecurityPolicy):
-    _network_table = None
-    _zone_table = None
-    _port_table = None
-    _user_table = None
-    _schedule_table = None
-    _url_table = None
-    _l7_app_table = None
+    security_policy_networks_table = None
+    security_policy_zones_table = None
+    security_policy_ports_table = None
+    security_policy_users_table = None
+    security_policy_schedule_table = None
+    security_policy_urls_table = None
+    security_policy_l7_app_table = None
     _network_group_members_table = None
     _port_group_members_table = None
     _url_group_members_table = None
@@ -46,21 +46,21 @@ class PioneerSecurityPolicy(SecurityPolicy):
 
         """
         if not cls._initialized:
-            cls._network_table = policy_container.security_device.db.security_policy_networks_table
-            cls._zone_table = policy_container.security_device.db.security_policy_zones_table
-            cls._port_table = policy_container.security_device.db.security_policy_ports_table
-            cls._user_table = policy_container.security_device.db.security_policy_users_table
-            cls._schedule_table = policy_container.security_device.db.security_policy_schedule_table
-            cls._url_table = policy_container.security_device.db.security_policy_urls_table
-            cls._l7_app_table = policy_container.security_device.db.security_policy_l7_apps_table
+            cls.security_policy_networks_table = policy_container.security_device.db.security_policy_networks_table
+            cls.security_policy_zones_table = policy_container.security_device.db.security_policy_zones_table
+            cls.security_policy_ports_table = policy_container.security_device.db.security_policy_ports_table
+            cls.security_policy_users_table = policy_container.security_device.db.security_policy_users_table
+            cls.security_policy_schedule_table = policy_container.security_device.db.security_policy_schedule_table
+            cls.security_policy_urls_table = policy_container.security_device.db.security_policy_urls_table
+            cls.security_policy_l7_app_table = policy_container.security_device.db.security_policy_l7_apps_table
             cls._country_table = policy_container.security_device.db.country_objects_table
             cls._geolocation_table = policy_container.security_device.db.geolocation_objects_table
             cls._schedule_objects_table = policy_container.security_device.db.schedule_objects_table
-            cls._policy_user_table = policy_container.security_device.db.policy_user_objects_table
-            cls._url_category_table = policy_container.security_device.db.url_category_objects_table
-            cls._l7_app_objects_table = policy_container.security_device.db.l7_app_objects_table
-            cls._l7_app_filter_table = policy_container.security_device.db.l7_app_filter_objects_table
-            cls._l7_app_group_table = policy_container.security_device.db.l7_app_group_objects_table
+            cls._policy_user_table = policy_container.security_device.db.policy_users_table
+            cls._url_category_table = policy_container.security_device.db.url_categories_table
+            cls._l7_app_objects_table = policy_container.security_device.db.l7_apps_table
+            cls._l7_app_filter_table = policy_container.security_device.db.l7_app_filters_table
+            cls._l7_app_group_table = policy_container.security_device.db.l7_app_groups_table
             cls._network_group_members_table = policy_container.security_device.db.network_group_objects_members_table
             cls._port_group_members_table = policy_container.security_device.db.port_group_objects_members_table
             cls._url_group_members_table = policy_container.security_device.db.url_group_objects_members_table
@@ -76,7 +76,7 @@ class PioneerSecurityPolicy(SecurityPolicy):
         """
         self._uid = policy_info[0]
         self._name = policy_info[1]
-        self._PolicyContainer = PolicyContainer
+        self._policy_container = PolicyContainer
 
         PioneerSecurityPolicy.initialize_class_variables(PolicyContainer)
 
@@ -135,7 +135,7 @@ class PioneerSecurityPolicy(SecurityPolicy):
         self._description = policy_info[13]
 
         super().__init__(
-            self._PolicyContainer,
+            self._policy_container,
             self._name,
             self._index,
             self._status,
@@ -301,7 +301,7 @@ class PioneerSecurityPolicy(SecurityPolicy):
         Returns:
             list: A list of security zone UIDs.
         """
-        security_policy_zones = self._zone_table.get(
+        security_policy_zones = self.security_policy_zones_table.get(
             columns='zone_uid',
             name_col=['security_policy_uid', 'flow'],
             val=[self._uid, flow],
@@ -338,7 +338,7 @@ class PioneerSecurityPolicy(SecurityPolicy):
                     "network_address_objects.type, "
                     "network_address_objects.overridable_object"
                 )
-                network_objects_info = self._network_table.get(
+                network_objects_info = self.security_policy_networks_table.get(
                     columns=columns,
                     name_col=['security_policy_uid', 'flow'],
                     val=[self._uid, flow],
@@ -371,7 +371,7 @@ class PioneerSecurityPolicy(SecurityPolicy):
                     "table": "network_group_objects",
                     "condition": "security_policy_networks.group_object_uid = network_group_objects.uid"
                 }
-                network_objects_info = self._network_table.get(
+                network_objects_info = self.security_policy_networks_table.get(
                     columns=columns,
                     name_col=['security_policy_uid', 'flow'],
                     val=[self._uid, flow],
@@ -456,7 +456,7 @@ class PioneerSecurityPolicy(SecurityPolicy):
                     "port_objects.description, "
                     "port_objects.overridable_object"
                 )
-                data = self._port_table.get(
+                data = self.security_policy_ports_table.get(
                     columns=columns,
                     name_col=['security_policy_uid', 'flow'],
                     val=[self._uid, flow],
@@ -489,7 +489,7 @@ class PioneerSecurityPolicy(SecurityPolicy):
                     "icmp_objects.description, "
                     "icmp_objects.overridable_object"
                 )
-                data = self._port_table.get(
+                data = self.security_policy_ports_table.get(
                     columns=columns,
                     name_col=['security_policy_uid', 'flow'],
                     val=[self._uid, flow],
@@ -520,7 +520,7 @@ class PioneerSecurityPolicy(SecurityPolicy):
                     "port_group_objects.description, "
                     "port_group_objects.overridable_object"
                 )
-                data = self._port_table.get(
+                data = self.security_policy_ports_table.get(
                     columns=columns,
                     name_col=['security_policy_uid', 'flow'],
                     val=[self._uid, flow],
@@ -556,7 +556,7 @@ class PioneerSecurityPolicy(SecurityPolicy):
             "condition": "schedule_objects.uid = security_policy_schedule.schedule_uid"
         }
         
-        schedule_names = self._schedule_table.get(
+        schedule_names = self._schedule_objects_table.get(
             columns='name',
             name_col='security_policy_uid',
             val=self._uid,
@@ -608,7 +608,7 @@ class PioneerSecurityPolicy(SecurityPolicy):
                     "condition": "security_policy_urls.object_uid = url_objects.uid"
                 }
                 columns = "url_objects.uid, url_objects.name, url_objects.object_container_uid, url_objects.url_value, url_objects.description, url_objects.overridable_object"
-                data = self._url_group_members_table.get(
+                data = self.security_policy_urls_table.get(
                     columns=columns,
                     name_col='security_policy_uid',
                     val=self._uid,
@@ -629,7 +629,7 @@ class PioneerSecurityPolicy(SecurityPolicy):
                     "condition": "security_policy_urls.group_object_uid = url_group_objects.uid"
                 }
                 columns = "url_group_objects.uid, url_group_objects.name, url_group_objects.object_container_uid, url_group_objects.description, url_group_objects.overridable_object"
-                data = self._url_group_members_table.get(
+                data = self.security_policy_urls_table.get(
                     columns=columns,
                     name_col='security_policy_uid',
                     val=self._uid,
@@ -642,8 +642,8 @@ class PioneerSecurityPolicy(SecurityPolicy):
                     name = object_info[1]
                     key = (uid, name)
                     url_group_object = self._object_cache.get_or_create(key, lambda: PioneerURLGroupObject(None, object_info))
-                    url_group_object.extract_members('object', self._object_cache, self._URLGroupMembersTable)
-                    url_group_object.extract_members('group', self._object_cache, self._URLGroupMembersTable)
+                    url_group_object.extract_members('object', self._object_cache, self._url_group_members_table)
+                    url_group_object.extract_members('group', self._object_cache, self._url_group_members_table)
                     urls_info.add(url_group_object)
 
             case 'url_category':
@@ -651,7 +651,7 @@ class PioneerSecurityPolicy(SecurityPolicy):
                     "table": "security_policy_urls",
                     "condition": "url_categories.uid = security_policy_urls.url_category_uid"
                 }
-                urls_info = self._url_categories_table.get(
+                urls_info = self._url_category_table.get(
                     columns='name',
                     name_col='security_policy_uid',
                     val=self._uid,
@@ -676,20 +676,20 @@ class PioneerSecurityPolicy(SecurityPolicy):
         match object_type:
             case 'l7_app_uid':
                 join_condition = {
-                    "table": "l7_app_objects",
-                    "condition": "l7_apps.uid = l7_app_objects.l7_app_uid"
+                    "table": "security_policy_l7_apps",
+                    "condition": "l7_apps.uid = security_policy_l7_apps.l7_app_uid"
                 }
                 table = self._l7_app_objects_table
             case 'l7_app_filter_uid':
                 join_condition = {
-                    "table": "l7_app_filter_objects",
-                    "condition": "l7_app_filters.uid = l7_app_filter_objects.l7_app_filter_uid"
+                    "table": "security_policy_l7_apps",
+                    "condition": "l7_app_filters.uid = security_policy_l7_apps.l7_app_filter_uid"
                 }
                 table = self._l7_app_filter_table
             case 'l7_app_group_uid':
                 join_condition = {
-                    "table": "l7_app_group_objects",
-                    "condition": "l7_app_groups.uid = l7_app_group_objects.l7_app_group_uid"
+                    "table": "security_policy_l7_apps",
+                    "condition": "l7_app_groups.uid = security_policy_l7_apps.l7_app_group_uid"
                 }
                 table = self._l7_app_group_table
 
@@ -703,7 +703,6 @@ class PioneerSecurityPolicy(SecurityPolicy):
             join=join_condition
         )
         return l7_app_objects
-
     def log_special_parameters(self):
         """
         Logs special parameters associated with the security policy.
@@ -729,7 +728,7 @@ class PioneerSecurityPolicy(SecurityPolicy):
         # Check if any special parameters have values to log
         if any(special_parameters.values()):
             special_policies_log.info("########################################################################################################")
-            special_policies_log.info(f"Security policy <{self._name}> in container <{self._PolicyContainer.get_name()}>, index <{self._container_index}> has special parameters:")
+            special_policies_log.info(f"Security policy <{self._name}> in container <{self._policy_container.name}>, index <{self._container_index}> has special parameters:")
 
             # Log each parameter with a non-null value
             for param_name, param_value in special_parameters.items():

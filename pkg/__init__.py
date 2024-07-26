@@ -470,6 +470,7 @@ class PioneerTable:
         # Execute the query
         try:
             cursor = self._db.cursor
+            # print(select_query, params)
             cursor.execute(select_query, params)
             results = cursor.fetchall()
             return results

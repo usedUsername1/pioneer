@@ -307,7 +307,7 @@ class SecurityPolicy(Policy):
         self._destination_ports = destination_ports
         self._schedule = schedule_objects
         self._users = users
-        self._url_objects = urls
+        self._urls = urls
         self.l7_policy_apps = policy_apps
         self._section = section
         self._action = action
@@ -380,11 +380,11 @@ class SecurityPolicy(Policy):
     @property
     def urls(self):
         """Get or set the URL objects associated with the security policy."""
-        return self._url_objects
+        return self._urls
 
     @urls.setter
     def urls(self, value):
-        self._url_objects = value
+        self._urls = value
 
     @property
     def policy_apps(self):

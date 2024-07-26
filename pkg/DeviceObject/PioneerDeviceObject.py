@@ -537,9 +537,9 @@ def recursive_update_objects_and_groups(objects_set, group_objects_set):
 
         for current_group in current_groups:
             # Update objects_set with members of the current group
-            objects_set.update(current_group.get_object_members())
+            objects_set.update(current_group.object_members)
             # Add new groups from the current group to the groups_to_process
-            new_groups = current_group.get_group_object_members()
+            new_groups = current_group.group_object_members
             groups_to_process.update(new_groups)
             group_objects_set.update(new_groups)
             # Mark the current group as processed

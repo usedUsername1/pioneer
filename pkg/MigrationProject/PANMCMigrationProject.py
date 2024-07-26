@@ -62,10 +62,11 @@ PA treats ping as an application. The second rule will keep the exact same sourc
         Raises:
             Exception: If an error occurs during bulk creation of network objects.
         """
+        last_obj = ''
         for net_obj in network_objects:
             # Adapt the name of the network object according to the naming constraints
             adapted_name = PANMCMigrationProject.apply_name_constraints(net_obj.name)
-            net_obj.name(adapted_name)
+            net_obj.name = adapted_name
 
             # Map the network object type from source to target
             net_obj_type = self._network_object_types_map.get(net_obj.network_address_type)
@@ -76,14 +77,14 @@ PA treats ping as an application. The second rule will keep the exact same sourc
                 net_obj_type,
                 net_obj.description
             )
-
+            last_obj = updated_network_object
             # Add the updated network object to the target security device
-            self.target_security_device.device_connection.add(updated_network_object)
+            self._target_security_device.device_connection.add(updated_network_object)
         
         # Attempt to bulk create the network objects on the target device
         try:
             # Create similar objects in bulk based on the updated object's name
-            self.target_security_device.device_connection.find(net_obj.name).create_similar()
+            self._target_security_device.device_connection.find(last_obj.name).create_similar()
         except Exception as e:
             print("Error occurred when bulk creating network address objects. More details: ", e)
 
@@ -102,10 +103,11 @@ PA treats ping as an application. The second rule will keep the exact same sourc
         Raises:
             Exception: If an error occurs during bulk creation of network group objects.
         """
+        last_obj = ''
         for net_group_obj in network_group_objects:
             # Adapt the name of the network group object according to the naming constraints
             adapted_name = PANMCMigrationProject.apply_name_constraints(net_group_obj.name)
-            net_group_obj.name(adapted_name)
+            net_group_obj.name = adapted_name
 
             # Gather the names of all group and object members
             group_member_names = []
@@ -124,12 +126,13 @@ PA treats ping as an application. The second rule will keep the exact same sourc
             )
 
             # Add the updated network group object to the target security device
-            self.target_security_device.device_connection.add(updated_network_group_object)
+            self._target_security_device.device_connection.add(updated_network_group_object)
+            last_obj = updated_network_group_object
 
         # Attempt to bulk create the network group objects on the target device
         try:
             # Create similar objects in bulk based on the first network group object's name
-            self.target_security_device.device_connection.find(net_group_obj.name).create_similar()
+            self._target_security_device.device_connection.find(last_obj.name).create_similar()
         except Exception as e:
             print("Error occurred when creating network group objects. More details: ", e)
 
@@ -148,6 +151,7 @@ PA treats ping as an application. The second rule will keep the exact same sourc
         Raises:
             Exception: If an error occurs during the bulk creation of port objects.
         """
+        last_obj = ''
         for port_obj in port_objects:
             if isinstance(port_obj, PioneerICMPObject):
                 # Skip ICMP objects as they cannot be migrated
@@ -155,22 +159,23 @@ PA treats ping as an application. The second rule will keep the exact same sourc
 
             # Apply name constraints to the port object name
             constrained_name = PANMCMigrationProject.apply_name_constraints(port_obj.name)
-            port_obj.name(constrained_name)
+            port_obj.name = constrained_name
 
             # Create a new ServiceObject with the required attributes
             new_service_object = ServiceObject(
                 name=port_obj.name,
-                protocol=port_obj.port_protocol().lower(),
+                protocol=port_obj.port_protocol.lower(),
                 destination_port=port_obj.destination_port,
                 description=port_obj.description,
                 tag=None
             )
 
             # Add the new service object to the target security device
-            self.target_security_device.device_connection.add(new_service_object)
+            self._target_security_device.device_connection.add(new_service_object)
+            last_obj = new_service_object
 
         try:
-            self.target_security_device.device_connection.find(port_obj.name).create_similar()
+            self._target_security_device.device_connection.find(last_obj.name).create_similar()
         except Exception as e:
             print("Error occurred when bulk creating port objects. More details: ", e)
 
@@ -189,10 +194,11 @@ PA treats ping as an application. The second rule will keep the exact same sourc
         Raises:
             Exception: If an error occurs during creation of port group objects.
         """
+        last_obj = ''
         for port_group in port_group_objects:
             # Apply name constraints to the port group object name
             adapted_name = PANMCMigrationProject.apply_name_constraints(port_group.name)
-            port_group.name(adapted_name)
+            port_group.name = adapted_name
 
             # Initialize an empty list to store valid port group members
             valid_port_group_members = []
@@ -216,11 +222,12 @@ PA treats ping as an application. The second rule will keep the exact same sourc
             new_service_group = ServiceGroup(name=port_group.name, value=valid_port_group_members)
 
             # Add the new service group object to the target security device
-            self.target_security_device.device_connection.add(new_service_group)
+            last_obj = new_service_group
+            self._target_security_device.device_connection.add(new_service_group)
 
             # Attempt to create a similar object on the target device
             try:
-                self.target_security_device.device_connection.find(port_group.name).create_similar()
+                self._target_security_device.device_connection.find(last_obj.name).create_similar()
             except Exception as e:
                 print("Error occurred when creating port group. More details: ", e)
 
@@ -239,13 +246,13 @@ PA treats ping as an application. The second rule will keep the exact same sourc
         Raises:
             Exception: If an error occurs during the bulk creation of URL objects.
         """
+        last_obj = ''
         for url_obj in url_objects:
             # Adapt the name and URL value of the URL object according to the constraints
             adapted_name = PANMCMigrationProject.apply_url_name_constraints(url_obj.name)
-            url_obj.name(adapted_name)
+            url_obj.name = adapted_name
             adapted_url_value = PANMCMigrationProject.apply_url_value_constraints(url_obj.url_value)
-            url_obj.url_value(adapted_url_value)
-
+            url_obj.url_value = adapted_url_value
             # Create a new CustomUrlCategory object with the adapted name and URL value
             new_url_object = CustomUrlCategory(
                 name=adapted_name,
@@ -254,6 +261,7 @@ PA treats ping as an application. The second rule will keep the exact same sourc
                 type='URL List'
             )
 
+            last_obj = new_url_object
             # Add the new URL object to the target security device
             try:
                 self._target_security_device.device_connection.add(new_url_object)
@@ -262,7 +270,7 @@ PA treats ping as an application. The second rule will keep the exact same sourc
 
         # Attempt to bulk create similar URL objects on the target device
         try:
-            self._target_security_device.device_connection.find(url_obj.name).create_similar()
+            self._target_security_device.device_connection.find(last_obj.name).create_similar()
         except Exception as e:
             print("Error occurred when bulk creating URL objects. More details: ", e)
 
@@ -281,17 +289,18 @@ PA treats ping as an application. The second rule will keep the exact same sourc
         Raises:
             Exception: If an error occurs during bulk creation of URL group objects.
         """
+        last_obj = ''
         for url_group in url_group_objects:
             # Apply name constraints to the URL group object
             adapted_group_name = PANMCMigrationProject.apply_url_name_constraints(url_group.name)
-            url_group.name(adapted_group_name)
+            url_group.name = adapted_group_name
 
             # Initialize a set to store unique URL member values
             url_member_values = set()
 
             # Get the members of the URL group
-            if url_group.object_members():
-                for member in url_group.object_members():
+            if url_group.object_members:
+                for member in url_group.object_members:
                     # Apply value constraints to the URL group member
                     adapted_member_value = PANMCMigrationProject.apply_url_value_constraints(member.url_value)
                     url_member_values.add(adapted_member_value)
@@ -305,13 +314,14 @@ PA treats ping as an application. The second rule will keep the exact same sourc
                 )
 
                 # Add the new URL group object to the target security device
+                last_obj = new_url_group
                 self._target_security_device.device_connection.add(new_url_group)
             else:
                 continue
 
         # Attempt to bulk create similar URL group objects on the target device
         try:
-            self._target_security_device.device_connection.find(url_group.name).create_similar()
+            self._target_security_device.device_connection.find(last_obj.name).create_similar()
         except Exception as e:
             print("Error occurred when bulk creating URL group objects. More details: ", e)
 
@@ -329,16 +339,18 @@ PA treats ping as an application. The second rule will keep the exact same sourc
         Raises:
             Exception: If an error occurs during the creation of tag objects.
         """
+        last_obj = ''
         for category_name in categories:
             # Create a new Tag object for the category name
             tag_object = Tag(category_name)
 
             # Add the Tag object to the target security device
+            last_obj = tag_object
             self._target_security_device.device_connection.add(tag_object)
 
         # Attempt to bulk create similar tag objects on the target device
         try:
-            self._target_security_device.device_connection.find(tag_object.name).create_similar()
+            self._target_security_device.device_connection.find(last_obj.name).create_similar()
         except Exception as e:
             print("Error occurred when creating tag objects. More details: ", e)
 
@@ -356,12 +368,12 @@ PA treats ping as an application. The second rule will keep the exact same sourc
             unresolved_dependency = False
 
             # Get source security zones and handle unresolved dependencies
-            source_zone_names = self._resolve_zone_names(policy._source_zones, 'source', policy.name)
+            source_zone_names = self._resolve_zone_names(policy.source_zones, 'source', policy.name)
             if source_zone_names is None:
                 unresolved_dependency = True
 
             # Get destination security zones and handle unresolved dependencies
-            destination_zone_names = self._resolve_zone_names(policy._destination_zones, 'destination', policy.name)
+            destination_zone_names = self._resolve_zone_names(policy.destination_zones, 'destination', policy.name)
             if destination_zone_names is None:
                 unresolved_dependency = True
 
@@ -384,7 +396,7 @@ PA treats ping as an application. The second rule will keep the exact same sourc
             policy_action = self._security_policy_actions_map[policy.action]
 
             # Create and configure device group object
-            device_group = DeviceGroup(self._security_policy_containers_map[policy.policy_container.uid])
+            device_group = DeviceGroup(self._security_policy_containers_map[policy._policy_container.uid])
             self._target_security_device.device_connection.add(device_group)
 
             # Determine the appropriate rulebase (pre or post)
@@ -405,13 +417,15 @@ PA treats ping as an application. The second rule will keep the exact same sourc
                 special_policies_log.warn(f"Policy {policy.name} is an 'any-any' policy. Check on source device what special parameters it has.")
 
             # Apply name constraints
-            policy.name(self.apply_name_constraints(policy.name))
+            policy.name = PANMCMigrationProject.apply_name_constraints(policy.name)
 
             # Create and add policy object to the rulebase
             self._create_and_add_policy(rulebase, policy, source_zone_names, destination_zone_names,
                                         source_network_names, destination_network_names,
                                         destination_port_names, url_names, policy_action, log_end)
 
+#TODO: maybe move all the below functions in MigrationProject?
+# it looks like this code can be reused in other places as well
     def _resolve_zone_names(self, zone_uids, zone_type, policy_name):
         """
         Resolve security zone names from their UIDs and handle unresolved dependencies.
@@ -491,11 +505,11 @@ PA treats ping as an application. The second rule will keep the exact same sourc
         :param section: Policy section ('pre' or 'post').
         :return: Rulebase object.
         """
+        section = self._section_map[section]
         if section == 'pre':
             return device_group.add(PreRulebase())
         elif section == 'post':
             return device_group.add(PostRulebase())
-        return None
 
     def _create_and_add_policy(self, rulebase, policy, from_zones, to_zones,
                                source_networks, destination_networks,
@@ -526,7 +540,7 @@ PA treats ping as an application. The second rule will keep the exact same sourc
                 source=source_networks,
                 destination=destination_networks,
                 service=destination_ports,
-                category={'any'},
+                category=url_names,
                 application=policy.policy_apps,
                 description=policy.comments,
                 log_setting=self._log_settings,
@@ -549,7 +563,7 @@ PA treats ping as an application. The second rule will keep the exact same sourc
                     source=source_networks,
                     destination=destination_networks,
                     service=destination_ports,
-                    category=url_names,
+                    category={'any'},
                     application=policy.policy_apps,
                     description=policy.comments,
                     log_setting=self._log_settings,
@@ -573,7 +587,7 @@ PA treats ping as an application. The second rule will keep the exact same sourc
                 source=source_networks,
                 destination=destination_networks,
                 service=destination_ports,
-                category=url_names,
+                category={'any'},
                 application=policy.policy_apps,
                 description=policy.comments,
                 log_setting=self._log_settings,
@@ -584,8 +598,9 @@ PA treats ping as an application. The second rule will keep the exact same sourc
             rulebase.add(policy_object)
 
         # Attempt to create the policy object
+        #TODO: check if this gets created properly
         try:
-            rulebase.find(policy.name).create_similar()
+            policy_object.create()
         except Exception as e:
             print("Error occurred when creating policy object. More details: ", e)
             special_policies_log.warn(f"Failed to create policy {policy.name}. Reason: {e}.\n")

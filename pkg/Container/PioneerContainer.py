@@ -1,6 +1,6 @@
 from pkg.Container import Container, SecurityPolicyContainer
 from pkg.Policy.PioneerPolicy import PioneerSecurityPolicy
-import pkg.DeviceObject.PioneerDeviceObject as PioneerDeviceObject
+from pkg.DeviceObject import PioneerDeviceObject
 
 class PioneerSecurityPolicyContainer(SecurityPolicyContainer):
     """
@@ -66,13 +66,13 @@ class PioneerSecurityPolicyContainer(SecurityPolicyContainer):
         Processes and migrates security policies, network objects, port objects, URL objects, and policy categories.
         """
         policies_list = []
-        network_objects = set()
-        network_group_objects = set()
-        port_objects = set()
-        port_group_objects = set()
-        url_objects = set()
-        url_group_objects = set()
-        policy_categories = set()
+        network_objects_set = set()
+        network_group_objects_set = set()
+        port_objects_set = set()
+        port_group_objects_set = set()
+        url_objects_set = set()
+        url_group_objects_set = set()
+        policy_categories_set = set()
 
         # Retrieve the security policy info from the database
         policies = self.security_device.db.security_policies_table.get(
@@ -88,49 +88,82 @@ class PioneerSecurityPolicyContainer(SecurityPolicyContainer):
             policy.log_special_parameters()
 
             # Update network-related objects
-            network_objects.update(policy.get_source_network_objects())
-            network_objects.update(policy.get_destination_network_objects())
-            network_group_objects.update(policy.get_source_network_group_objects())
-            network_group_objects.update(policy.get_destination_network_group_objects())
+            network_objects_set.update(policy.source_network_objects)
+            network_objects_set.update(policy.destination_network_objects)
+            network_group_objects_set.update(policy.source_network_group_objects)
+            network_group_objects_set.update(policy.destination_network_group_objects)
 
             # Update port-related objects
-            port_objects.update(policy.get_source_port_objects())
-            port_objects.update(policy.get_destination_port_objects())
-            port_objects.update(policy.get_source_icmp_objects())
-            port_objects.update(policy.get_destination_icmp_objects())
-            port_group_objects.update(policy.get_source_port_group_objects())
-            port_group_objects.update(policy.get_destination_port_group_objects())
+            port_objects_set.update(policy.source_port_objects)
+            port_objects_set.update(policy.destination_port_objects)
+            port_objects_set.update(policy.source_icmp_objects)
+            port_objects_set.update(policy.destination_icmp_objects)
+            port_group_objects_set.update(policy.source_port_group_objects)
+            port_group_objects_set.update(policy.destination_port_group_objects)
 
             # Update URL-related objects
-            url_objects.update(policy.get_url_objects_from_pioneer_policy())
-            url_group_objects.update(policy.get_url_group_objects())
+            url_objects_set.update(policy.url_objects)
+            url_group_objects_set.update(policy.url_group_objects)
 
-            policy_categories.add(policy.get_category())
+            policy_categories_set.add(policy.category)
             
             # Add the policy to the list of policies that will be migrated
             policies_list.append(policy)
 
-        # Migrate network objects
-        print("Migrating network objects")
-        self.security_device.migrate_network_objects(network_objects)
-        self.security_device.migrate_network_group_objects(network_group_objects)
+        # Migrate the network objects
+        PioneerDeviceObject.recursive_update_objects_and_groups(network_objects_set, network_group_objects_set)
+        if not network_objects_set:
+            pass
+        else:
+            print("migrating network objects")
+            self._security_device.migrate_network_objects(network_objects_set)
 
-        # Migrate port objects
-        print("Migrating port objects")
-        self.security_device.migrate_port_objects(port_objects)
-        print("Migrating port group objects")
-        self.security_device.migrate_port_group_objects(port_group_objects)
+        # Migrate the network group objects
+        if not network_group_objects_set:
+            pass
+        else:
+            print("migrating network group objects")
+            self._security_device.migrate_network_group_objects(network_group_objects_set)
 
-        # Migrate URL objects
-        print("Migrating URL objects")
-        self.security_device.migrate_url_objects(url_objects)
-        print("Migrating URL group objects")
-        self.security_device.migrate_url_group_objects(url_group_objects)
+        # Migrate the port objects
+        PioneerDeviceObject.recursive_update_objects_and_groups(port_objects_set, port_group_objects_set)
+        if not port_objects_set:
+            pass
+        else:
+            print("migrating port objects")
+            self._security_device.migrate_port_objects(port_objects_set)
 
-        # Migrate policy categories
-        print("Migrating policy categories")
-        self.security_device.migrate_policy_categories(policy_categories)
+        # Migrate the port group objects
+        if not port_group_objects_set:
+            pass
+        else:
+            print("migrating port group objects")
+            self._security_device.migrate_port_group_objects(port_group_objects_set)
 
-        # Migrate security policies
-        print("Migrating security policies")
-        self.security_device.migrate_security_policies(policies_list)
+        PioneerDeviceObject.recursive_update_objects_and_groups(url_objects_set, url_group_objects_set)
+        # Migrate the url objects
+        if not url_objects_set:
+            pass
+        else:
+            print("migrating url objects")
+            self._security_device.migrate_url_objects(url_objects_set)
+
+        # Migrate the url group objects
+        if not url_group_objects_set:
+            pass
+        else:
+            print("migrating url group objects")
+            self._security_device.migrate_url_group_objects(url_group_objects_set)
+
+        # Migrate the policy categories
+        if not policy_categories_set:
+            pass
+        else:
+            print("migrating policy categories")
+            self._security_device.migrate_policy_categories(policy_categories_set)
+
+        if not policies_list:
+            pass
+        else:
+            print("migrating security policies")
+            self._security_device.migrate_security_policies(policies_list)

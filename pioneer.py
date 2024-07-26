@@ -274,11 +274,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-# 2. replace as many hardcoded values with global variables
-# 3. use properties instead of getters and setters everywhere. reorganize them in a way that makes more sense based on their utility
-# 4. comment as much of the code as pssoible
-# 5. add a docstring for each function. the docstring should also contain info about what hte function does.
-# 6. rename variables to make more sense
-# 7. abstract functions everywhere 
-# 8. refactor functions that have the same logic. avoid duplicate logic as much as possible
