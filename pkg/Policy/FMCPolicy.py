@@ -47,7 +47,7 @@ class FMCSecurityPolicy(SecurityPolicy, FMCObjectWithLiterals):
 
         self._name = policy_info['name']
         self._container_index = policy_info['metadata']['ruleIndex']
-        self._status = 'enabled' if policy_info.get('enabled', False) else 'disabled'
+        self._status = True if policy_info.get('enabled', False) else False
         self._category = policy_info['metadata']['category']
         self._source_zones = self.extract_security_zone_object_info(policy_info.get('sourceZones'))
         self._destination_zones = self.extract_security_zone_object_info(policy_info.get('destinationZones'))

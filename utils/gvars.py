@@ -27,6 +27,7 @@ object_containers = 'object_container'
 security_zone_container = 'security_zone_container'
 managed_device_container = 'managed_device_container'
 security_policy_container = 'security_policy_container'
+nat_policy_container = 'nat_policy_container'
 
 # IMPORTING OBJECT VARIABLES
 network_object = 'network_object'

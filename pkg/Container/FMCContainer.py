@@ -1,4 +1,4 @@
-from pkg.Container import SecurityPolicyContainer, ObjectContainer, ZoneContainer, ManagedDeviceContainer
+from pkg.Container import SecurityPolicyContainer, ObjectContainer, ZoneContainer, ManagedDeviceContainer, NATPolicyContainer
 import utils.gvars as gvars
 class FMCSecurityPolicyContainer(SecurityPolicyContainer):
     """
@@ -15,7 +15,6 @@ class FMCSecurityPolicyContainer(SecurityPolicyContainer):
         """
         super().__init__(security_device, container_info['name'], container_info['metadata'].get('parentPolicy', {}).get('name'))
 
-
 class FMCObjectContainer(ObjectContainer):
     """
     Represents an object container specific to the Firepower Management Center (FMC).
@@ -30,7 +29,6 @@ class FMCObjectContainer(ObjectContainer):
             container_info (dict): Information about the object container.
         """
         super().__init__(security_device, gvars.virtual_container_name, None)
-
 
 class FMCZoneContainer(ZoneContainer):
     """
@@ -47,7 +45,6 @@ class FMCZoneContainer(ZoneContainer):
         """
         super().__init__(security_device, gvars.virtual_container_name, None)
 
-
 class FMCManagedDeviceContainer(ManagedDeviceContainer):
     """
     Represents a managed device container specific to the Firepower Management Center (FMC).
@@ -62,3 +59,17 @@ class FMCManagedDeviceContainer(ManagedDeviceContainer):
             container_entry: Information related to the managed device container.
         """
         super().__init__(security_device, gvars.virtual_container_name, None)
+
+class FMCNATPolicyContainer(NATPolicyContainer):
+    def __init__(self, security_device, container_info) -> None:
+        """
+        Initialize a new FMCNATPolicyContainer instance.
+
+        Args:
+            security_device (SecurityDevice): The security device associated with this FMC NAT policy container.
+            name (str): The name of the FMC NAT policy container.
+            parent_name (str): The name of the parent container.
+
+        """
+        # parent is None, NAT containers don't have a parent in FMC
+        super().__init__(security_device, container_info['name'], None)

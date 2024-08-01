@@ -364,7 +364,7 @@ PA treats ping as an application. The second rule will keep the exact same sourc
         """
         for policy in policies:
             print(f"Migrating policy: {policy.name}")
-            if policy.status != 'enabled':
+            if policy.status != True:
                 continue
 
             unresolved_dependency = False

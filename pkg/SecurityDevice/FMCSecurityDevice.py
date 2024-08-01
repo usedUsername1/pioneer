@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from pkg.Container.FMCContainer import FMCSecurityPolicyContainer, FMCObjectContainer, FMCZoneContainer, FMCManagedDeviceContainer
+from pkg.Container.FMCContainer import FMCSecurityPolicyContainer, FMCObjectContainer, FMCZoneContainer, FMCManagedDeviceContainer, FMCNATPolicyContainer
 from pkg.DeviceObject.FMCDeviceObject import FMCNetworkGroupObject, FMCNetworkObject, \
 FMCPortObject, FMCICMPObject, FMCPortGroupObject, FMCGeolocationObject, FMCURLObject, FMCURLGroupObject, FMCScheduleObject
 from pkg.Policy.FMCPolicy import FMCSecurityPolicy
@@ -49,6 +49,7 @@ class FMCSecurityDevice(SecurityDevice):
         """
         return self._security_device_connection.policy.accesspolicy.get()
 
+
     def return_managed_device_info(self):
         """
         Retrieve managed device information.
@@ -59,7 +60,7 @@ class FMCSecurityDevice(SecurityDevice):
         return self._security_device_connection.device.devicerecord.get()
     
     # returning container objects methods
-    def return_security_policy_container(self, container_entry):
+    def return_security_policy_container_object(self, container_entry):
         """
         Retrieve a security policy container.
 
@@ -71,7 +72,7 @@ class FMCSecurityDevice(SecurityDevice):
         """
         return FMCSecurityPolicyContainer(self, container_entry)
 
-    def return_object_container(self, container_entry):
+    def return_object_container_object(self, container_entry):
         """
         Retrieve an object container.
 
@@ -83,7 +84,7 @@ class FMCSecurityDevice(SecurityDevice):
         """
         return FMCObjectContainer(self, container_entry)
 
-    def return_zone_container(self, container_entry):
+    def return_zone_container_object(self, container_entry):
         """
         Retrieve a zone container.
 
@@ -95,7 +96,7 @@ class FMCSecurityDevice(SecurityDevice):
         """
         return FMCZoneContainer(self, container_entry)
 
-    def return_managed_device_container(self, container_entry):
+    def return_managed_device_container_object(self, container_entry):
         """
         Retrieve a managed device container.
 
@@ -106,6 +107,18 @@ class FMCSecurityDevice(SecurityDevice):
             FMCManagedDeviceContainer: Instance of FMCManagedDeviceContainer.
         """
         return FMCManagedDeviceContainer(self, container_entry)
+
+    def return_nat_container_object(self, container_entry):
+        """
+        Retrieve a NAT container.
+
+        Args:
+            container_entry (dict): Entry containing information about the NAT container.
+
+        Returns:
+            FMCNatContainer: Instance of FMCNATPolicyContainer.
+        """
+        return FMCNATPolicyContainer(self, container_entry)
 
     # returning objects info methods
     def return_network_object_info(self):
@@ -190,16 +203,28 @@ class FMCSecurityDevice(SecurityDevice):
         Returns:
             list: List of dictionaries containing information about security policies.
         """
-        security_policy_container_name = security_policy_container.name
         # Execute the request to retrieve information about the security policies
-        security_policies_info = self._security_device_connection.policy.accesspolicy.accessrule.get(container_name=security_policy_container_name)
+        security_policies_info = self._security_device_connection.policy.accesspolicy.accessrule.get(container_name=security_policy_container.name)
         
         # Filter out the security policies which are not part of the current container being processed
-        filtered_data_gen = (entry for entry in security_policies_info if entry['metadata']['accessPolicy']['name'] == security_policy_container_name)
+        filtered_data_gen = (entry for entry in security_policies_info if entry['metadata']['accessPolicy']['name'] == security_policy_container.name)
 
         # Convert generator to a list if needed
         filtered_data = list(filtered_data_gen)
         return filtered_data
+
+    def return_nat_policy_info(self, nat_policy_container):
+        """
+        Retrieve information about NAT policies within a specified container.
+
+        Args:
+            nat_policy_container (FMCSecurityPolicyContainer): The container for the NAT policies.
+
+        Returns:
+            list: List of dictionaries containing information about NAT policies.
+        """
+        # Execute the request to retrieve information about the NAT policies
+        nat_policies_info = self._nat_device_connection.policy.ftdnatpolicy.natrule.get(container_name=nat_policy_container.name)
 
     # returning objects methods
     def return_managed_device(self, managed_device_container, managed_device_entry):

@@ -342,5 +342,41 @@ class ManagedDeviceContainer(Container):
                 None
             )
 
-class NATPolicyContainer:
-    pass
+class NATPolicyContainer(Container):
+    def __init__(self, security_device, name, parent_name) -> None:
+        """
+        Initialize a new NATPolicyContainer instance.
+
+        Args:
+            security_device (SecurityDevice): The security device associated with this NAT policy container.
+            name (str): The name of the NAT policy container.
+            parent_name (str): The name of the parent container.
+        """
+        super().__init__(security_device, name, parent_name)
+
+    def save(self, db):
+        """
+        Saves the NAT container information to the db.
+
+        Args:
+            db (Database): The db where the container information will be saved.
+        
+        Handles saving with consideration for the presence or absence of a parent container.
+        """
+        
+        try:
+            # Attempt to insert the container with parent UID
+            db.nat_policy_containers_table.insert(
+                self.uid, 
+                self.name, 
+                self.security_device_uid, 
+                self.parent.uid
+            )
+        except AttributeError:
+            # Handle the case where the parent UID is None
+            db.nat_policy_containers_table.insert(
+                self.uid, 
+                self.name, 
+                self.security_device_uid, 
+                None
+            )

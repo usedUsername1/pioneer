@@ -50,8 +50,8 @@ class Policy:
         description,
         comments,
         log_to_manager,
-        log_to_syslog
-    ) -> None:
+        log_to_syslog,
+        ) -> None:
         """
         Initialize a Policy object with the given policy information.
 
@@ -81,6 +81,7 @@ class Policy:
         self._log_to_syslog = log_to_syslog
         self._log_start = None
         self._log_end = None
+        self._target_device_uid = None
 
     @property
     def uid(self):
@@ -194,7 +195,15 @@ class Policy:
     @log_to_syslog.setter
     def log_to_syslog(self, value):
         self._log_to_syslog = value
-    
+
+    @property
+    def target_device_uid(self):
+        """Get or set the target device uid."""
+        return self._target_device_uid
+
+    @target_device_uid.setter
+    def target_device_uid(self, value):
+        self._target_device_uid = value
 
 class SecurityPolicy(Policy):
     """
@@ -413,8 +422,6 @@ class SecurityPolicy(Policy):
     def action(self, value):
         self._action = value
 
-    # why does the uid change before saving the policy????
-    # is it because a policy with the same name?
     def save(self, db):
         """
         Save the security policy to the db.
@@ -436,7 +443,8 @@ class SecurityPolicy(Policy):
             self.section,
             self.action,
             self.comments,
-            self.description
+            self.description,
+            self.target_device_uid,
         )
 
     def create_relationships_in_db(self, db, preloaded_data):
@@ -581,5 +589,81 @@ class SecurityPolicy(Policy):
         insert_schedule(self.schedule)
 
 
-class NATPolicy:
-    pass
+class NATPolicy(Policy):
+    def __init__(self, policy_container, name, source_zones, destination_zones, container_index, status, description, comments, log_to_manager, log_to_syslog, category, section, static_or_dynamic, object_or_manual_nat) -> None:
+        super().__init__(policy_container, name, source_zones, destination_zones, container_index, status, description, comments, log_to_manager, log_to_syslog)
+        self._static_or_dynamic = static_or_dynamic
+        self._object_or_manual_nat = object_or_manual_nat
+        self._category = category
+        self._section = section
+
+    @property
+    def static_or_dynamic(self):
+        """
+        str: Indicates whether the configuration is static or dynamic.
+        """
+        return self._static_or_dynamic
+
+    @static_or_dynamic.setter
+    def static_or_dynamic(self, value):
+        self._static_or_dynamic = value
+
+    @property
+    def object_or_manual_nat(self):
+        """
+        str: Specifies whether the NAT configuration is object-based or manual.
+        """
+        return self._object_or_manual_nat
+
+    @object_or_manual_nat.setter
+    def object_or_manual_nat(self, value):
+        self._object_or_manual_nat = value
+
+    @property
+    def category(self):
+        """
+        str: The category of the item or configuration.
+        """
+        return self._category
+
+    @category.setter
+    def category(self, value):
+        self._category = value
+
+    @property
+    def section(self):
+        """
+        str: The section of the item or configuration.
+        """
+        return self._section
+
+    @section.setter
+    def section(self, value):
+        self._section = value
+
+
+    def save(self, db):
+        """
+        Save the security policy to the db.
+
+        Args:
+            db (Database): The db instance to save the policy to.
+        """
+        db.security_policies_table.insert(
+            self.uid,
+            self.name,
+            self.container_uid,
+            self.container_index,
+            self.category,
+            self.status,
+            self.log_to_manager,
+            self.log_to_syslog,
+            self.section,
+            self.comments,
+            self.description,
+            self.static_or_dynamic,
+            self.object_or_manual_nat,
+            self.target_device_uid,
+        )
+
+    #TODO: create relationships db table

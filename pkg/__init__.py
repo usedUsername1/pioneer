@@ -602,6 +602,26 @@ class ManagedDeviceContainersTable(PioneerTable):
             ("CONSTRAINT fk_security_device FOREIGN KEY (security_device_uid)", "REFERENCES general_security_device_data (uid)"),
         ]
 
+class NATContainersTable(PioneerTable):
+    def __init__(self, db):
+        """
+        Initialize the NATContainersTable with the provided database connection.
+
+        Args:
+            db (PioneerDatabase): The database connection object used to interact with the database.
+
+        This constructor sets up the table name and schema specific to managed device containers.
+        """
+        super().__init__(db)
+        self._name = "nat_containers"
+        self._table_columns = [
+            ("uid", "TEXT PRIMARY KEY"),
+            ("name", "TEXT NOT NULL"),
+            ("security_device_uid", "TEXT"),
+            ("parent", "TEXT"),
+            ("CONSTRAINT fk_security_device FOREIGN KEY (security_device_uid)", "REFERENCES general_security_device_data (uid)"),
+        ]
+
 class ManagedDevicesTable(PioneerTable):
     def __init__(self, db):
         """
@@ -647,7 +667,7 @@ class SecurityPoliciesTable(PioneerTable):
             ("security_policy_container_uid", "TEXT NOT NULL"),
             ("index", "INT"),
             ("category", "TEXT"),
-            ("status", "TEXT NOT NULL"),
+            ("status", "BOOLEAN NOT NULL"),
             ("log_start", "BOOLEAN NOT NULL"),
             ("log_end", "BOOLEAN NOT NULL"),
             ("log_to_manager", "BOOLEAN NOT NULL"),
@@ -656,9 +676,57 @@ class SecurityPoliciesTable(PioneerTable):
             ("action", "TEXT"),
             ("comments", "TEXT"),
             ("description", "TEXT"),
+            ("target_device_uid", "TEXT")
             ("CONSTRAINT fk_security_policy_container FOREIGN KEY(security_policy_container_uid)", "REFERENCES security_policy_containers(uid)"),
             ("CONSTRAINT uc_security_policy_container_uid1", "UNIQUE (name, security_policy_container_uid)")
         ]
+
+#TODO: what should be done about target_device_uid? how do I retrieve it and map it properly?
+# given the fact that managed_devices_table stores the assigned security policies
+class NATPoliciesTable(PioneerTable):
+    def __init__(self, db):
+        """
+        Initialize the NATPoliciesTable with the provided database connection.
+
+        Args:
+            db (PioneerDatabase): The database connection object used to interact with the database.
+
+        This constructor sets up the table name and schema specific to security policies, including 
+        constraints for foreign key relationships and a unique constraint on the combination of policy 
+        name and container UID.
+        """
+        super().__init__(db)
+        self._name = "nat_policies"
+        self._table_columns = [
+            ("uid", "TEXT PRIMARY KEY"),
+            ("name", "TEXT NOT NULL"),
+            ("security_policy_container_uid", "TEXT NOT NULL"),
+            ("index", "INT"),
+            ("category", "TEXT"),
+            ("status", "TEXT NOT NULL"),
+            ("log_to_manager", "BOOLEAN NOT NULL"),
+            ("log_to_syslog", "BOOLEAN NOT NULL"),
+            ("section", "TEXT"),
+            ("comments", "TEXT"),
+            ("description", "TEXT"),
+            ("static_or_dynamic", "TEXT"),
+            ("object_or_manual_nat", "TEXT"),
+            ("target_device_uid", "TEXT")
+            ("CONSTRAINT fk_security_policy_container FOREIGN KEY(security_policy_container_uid)", "REFERENCES security_policy_containers(uid)"),
+            ("CONSTRAINT uc_security_policy_container_uid1", "UNIQUE (name, security_policy_container_uid)")
+        ]
+
+        # needed for relationships tables
+        # 'source_interface',
+        # 'destination_interface',
+        # 'original_source',
+        # 'original_destination',
+        # 'translated_source',
+        # 'translated_destination',
+        # 'original_source_port',
+        # 'original_destination_port',
+        # 'translated_source_port',
+        # 'translated_destination_port',
 
 class SecurityZonesTable(PioneerTable):
     def __init__(self, db):
@@ -1122,6 +1190,8 @@ class URLCategoriesTable(PioneerTable):
             ("CONSTRAINT uc_object_container_uid22", "UNIQUE (name, object_container_uid)")
         ]
 
+# relationships tables between security policies and objects used to define the objects
+# attached to the security policies
 class SecurityPolicyZonesTable(PioneerTable):
     def __init__(self, db):
         """

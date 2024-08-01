@@ -4,7 +4,7 @@ SecurityZonesTable, URLObjectsTable, NetworkAddressObjectsTable, \
 GeolocationObjectsTable, CountryObjectsTable, PortObjectsTable, ICMPObjectsTable, ScheduleObjectsTable, ManagedDevicesTable, ManagedDeviceContainersTable, SecurityZoneContainersTable, \
 NetworkGroupObjectsTable, PortGroupObjectsTable, URLGroupObjectsTable, NetworkGroupObjectsMembersTable, PortGroupObjectsMembersTable, URLGroupObjectsMembersTable, \
 PolicyUsersTable, L7AppsTable, L7AppFiltersTable, L7AppGroupsTable, L7AppGroupMembersTable, URLCategoriesTable, SecurityPolicyZonesTable, SecurityPolicyNetworksTable, \
-SecurityPolicyPortsTable, SecurityPolicyUsersTable, SecurityPolicyURLsTable, SecurityPolicyL7AppsTable, SecurityPolicyScheduleTable
+SecurityPolicyPortsTable, SecurityPolicyUsersTable, SecurityPolicyURLsTable, SecurityPolicyL7AppsTable, SecurityPolicyScheduleTable, NATPoliciesTable
 import utils.helper as helper
 import sys
 import utils.gvars as gvars
@@ -33,6 +33,7 @@ class SecurityDeviceDatabase(PioneerDatabase):
         self._managed_device_containers_table = ManagedDeviceContainersTable(self)
         self._managed_devices_table = ManagedDevicesTable(self)
         self._security_policies_table = SecurityPoliciesTable(self)
+        self._nat_policies_table = NATPoliciesTable(self)
         self._security_zones_table = SecurityZonesTable(self)
         self._url_objects_table = URLObjectsTable(self)
         self._network_address_objects_table = NetworkAddressObjectsTable(self)
@@ -76,6 +77,7 @@ class SecurityDeviceDatabase(PioneerDatabase):
         self._managed_device_containers_table.create()
         self._managed_devices_table.create()
         self._security_policies_table.create()
+        self._nat_policies_table.create()
         self._security_zones_table.create()
         self._url_objects_table.create()
         self._network_address_objects_table.create()
@@ -265,6 +267,16 @@ class SecurityDeviceDatabase(PioneerDatabase):
         return self._security_policy_containers_table
 
     @property
+    def nat_policy_containers_table(self):
+        """
+        Get the NATPolicyContainersTable instance.
+        
+        Returns:
+            NATPolicyContainersTable: The NAT policy containers table instance.
+        """
+        return self._nat_policy_containers_table
+
+    @property
     def object_containers_table(self):
         """
         Get the ObjectContainersTable instance.
@@ -303,6 +315,16 @@ class SecurityDeviceDatabase(PioneerDatabase):
             SecurityPoliciesTable: The security policies table instance.
         """
         return self._security_policies_table
+
+    @property
+    def nat_policies_table(self):
+        """
+        Get the NATPoliciesTable instance.
+        
+        Returns:
+            NATPoliciesTable: The NAT policies table instance.
+        """
+        return self._nat_policies_table
 
     @property
     def url_objects_table(self):
@@ -626,6 +648,10 @@ class SecurityDevice:
                 # Return a security policy container object
                 return self.return_security_policy_container(object_entry)
             
+            case gvars.nat_policy_container:
+                # Return a NAT policy container object
+                return self.return_nat_policy_container(object_entry)
+            
             case gvars.security_zone:
                 # Return a security zone object
                 return self.return_security_zone(object_container, object_entry)
@@ -701,6 +727,8 @@ class SecurityDevice:
                     containers_info = self.return_managed_device_container_info()
                 case gvars.object_containers:
                     containers_info = self.return_object_container_info()
+                case gvars.nat_policy_container:
+                    containers_info = self.return_nat_container_object()
                 case _:
                     raise ValueError(f"Unknown container type: {container_type}")
         
@@ -817,6 +845,9 @@ class SecurityDevice:
         return ["container"]
     
     def return_security_policy_container_info(self):
+        return ["container"]
+
+    def return_nat_container_object(self):
         return ["container"]
 
     def get_general_data(self, column, name_col=None, val=None, order_param=None):
