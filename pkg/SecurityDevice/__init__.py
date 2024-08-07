@@ -634,27 +634,27 @@ class SecurityDevice:
         match object_type:
             case gvars.security_zone_container:
                 # Return a security zone container object
-                return self.return_zone_container(object_entry)
+                return self.return_zone_container_object(object_entry)
             
             case gvars.managed_device_container:
                 # Return a managed device container object
-                return self.return_managed_device_container(object_entry)
+                return self.return_managed_device_container_object(object_entry)
             
             case gvars.object_containers:
                 # Return a generic object container object
-                return self.return_object_container(object_entry)
+                return self.return_object_container_object(object_entry)
             
             case gvars.security_policy_container:
                 # Return a security policy container object
-                return self.return_security_policy_container(object_entry)
+                return self.return_security_policy_container_object(object_entry)
             
             case gvars.nat_policy_container:
                 # Return a NAT policy container object
-                return self.return_nat_policy_container(object_entry)
+                return self.return_nat_policy_container_object(object_entry)
             
             case gvars.security_zone:
                 # Return a security zone object
-                return self.return_security_zone(object_container, object_entry)
+                return self.return_security_zone_object(object_container, object_entry)
             
             case gvars.managed_device:
                 # Return a managed device object

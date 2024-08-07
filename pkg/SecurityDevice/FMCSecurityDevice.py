@@ -334,7 +334,7 @@ class FMCSecurityDevice(SecurityDevice):
         """
         return FMCURLGroupObject(object_container, url_group_object_entry)
 
-    def return_security_zone(self, zone_container, zone_entry):
+    def return_security_zone_object(self, zone_container, zone_entry):
         """
         Retrieve a security zone.
 

@@ -135,8 +135,8 @@ def main():
             security_policy_containers_list = security_device_object.get_container_info_from_device_conn(gvars.security_policy_container)
 
             # Log the import of NAT policy containers data
-            print("Importing the NAT policy containers info.")
-            security_policy_containers_list = security_device_object.get_container_info_from_device_conn(gvars.nat_policy_container)
+            # print("Importing the NAT policy containers info.")
+            # security_policy_containers_list = security_device_object.get_container_info_from_device_conn(gvars.nat_policy_container)
             
             # Log the import of object data
             print("Importing the object data")
