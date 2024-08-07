@@ -676,9 +676,9 @@ class SecurityPoliciesTable(PioneerTable):
             ("action", "TEXT"),
             ("comments", "TEXT"),
             ("description", "TEXT"),
-            ("target_device_uid", "TEXT")
+            ("target_device_uid", "TEXT"),
             ("CONSTRAINT fk_security_policy_container FOREIGN KEY(security_policy_container_uid)", "REFERENCES security_policy_containers(uid)"),
-            ("CONSTRAINT uc_security_policy_container_uid1", "UNIQUE (name, security_policy_container_uid)")
+            ("CONSTRAINT uc_security_policy_container_uid123", "UNIQUE (name, security_policy_container_uid)")
         ]
 
 #TODO: what should be done about target_device_uid? how do I retrieve it and map it properly?
@@ -710,8 +710,8 @@ class NATPoliciesTable(PioneerTable):
             ("comments", "TEXT"),
             ("description", "TEXT"),
             ("static_or_dynamic", "TEXT"),
-            ("object_or_manual_nat", "TEXT"),
-            ("target_device_uid", "TEXT")
+            ("single_or_twice", "TEXT"),
+            ("target_device_uid", "TEXT"),
             ("CONSTRAINT fk_security_policy_container FOREIGN KEY(security_policy_container_uid)", "REFERENCES security_policy_containers(uid)"),
             ("CONSTRAINT uc_security_policy_container_uid1", "UNIQUE (name, security_policy_container_uid)")
         ]
