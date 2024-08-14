@@ -65,19 +65,19 @@ class PANMCSecurityDevice(SecurityDevice):
 
         return device_group_info
 
-    def return_object_container(self, container_entry):
+    def return_object_container_object(self, container_entry):
         return PANMCObjectContainer(self, container_entry)
 
     def return_object_container_info(self):
         return self.return_device_group_info()
 
-    def return_security_policy_container(self, container_entry):
+    def return_security_policy_container_object(self, container_entry):
         return PANMCSecurityPolicyContainer(self, container_entry)
     
-    def return_zone_container(self, container_entry):
+    def return_zone_container_object(self, container_entry):
         return PANMCSecurityZoneContainer(self, container_entry)
     
-    def return_security_zone(self, ZoneContainer, zone_entry):
+    def return_security_zone_object(self, ZoneContainer, zone_entry):
         return PANMCSecurityZone(ZoneContainer, zone_entry)
 
     def return_security_policy_container_info(self):

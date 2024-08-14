@@ -1,4 +1,4 @@
-from pkg.Policy import SecurityPolicy
+from pkg.Policy import SecurityPolicy, NATPolicy
 import utils.helper as helper
 import utils.gvars as gvars
 from pkg.DeviceObject.FMCDeviceObject import FMCObjectWithLiterals, FMCPolicyUserObject, FMCURLCategoryObject, FMCL7AppObject, FMCL7AppFilterObject, FMCL7AppGroupObject
@@ -16,6 +16,8 @@ class FMCSecurityPolicy(SecurityPolicy, FMCObjectWithLiterals):
     _db = None
     _initialized = False  # Initialization flag
 
+    # This is needed for the literal values, which are defined directly on the security policy.
+    # All literals must be converted to objects for the migration to work properly
     @classmethod
     def initialize_class_variables(cls, policy_container):
         """
@@ -441,3 +443,7 @@ class FMCSecurityPolicy(SecurityPolicy, FMCObjectWithLiterals):
 
         # Return the combined string of processed comments
         return processed_comments
+
+class FMCNATPolicy(NATPolicy):
+    pass
+

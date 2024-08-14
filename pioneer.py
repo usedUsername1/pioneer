@@ -135,8 +135,8 @@ def main():
             security_policy_containers_list = security_device_object.get_container_info_from_device_conn(gvars.security_policy_container)
 
             # Log the import of NAT policy containers data
-            # print("Importing the NAT policy containers info.")
-            # security_policy_containers_list = security_device_object.get_container_info_from_device_conn(gvars.nat_policy_container)
+            print("Importing the NAT policy containers info.")
+            nat_policy_containers_list = security_device_object.get_container_info_from_device_conn(gvars.nat_policy_container)
             
             # Log the import of object data
             print("Importing the object data")
@@ -144,40 +144,38 @@ def main():
             
             # Iterate through each object container and import relevant data
             for object_container in object_containers_list:
-                object_container_name = object_container.name
-                
                 # Log and import network objects
-                general_logger.info(f"################## Getting the network objects of device: <{device_name}>. Container: <{object_container_name}> ##################")
+                general_logger.info(f"################## Getting the network objects of device: <{device_name}>. Container: <{object_container.name}> ##################")
                 print("Import network objects.")
                 security_device_object.get_object_info_from_device_conn(gvars.network_object, object_container)
 
                 # Log and import network group objects
-                general_logger.info(f"################## Getting the network group objects of device: <{device_name}>. Container: <{object_container_name}> ##################")
+                general_logger.info(f"################## Getting the network group objects of device: <{device_name}>. Container: <{object_container.name}> ##################")
                 print("Import network group objects.")
                 security_device_object.get_object_info_from_device_conn(gvars.network_group_object, object_container)
 
                 # Log and import port objects
-                general_logger.info(f"################## Getting the port objects of device: <{device_name}>. Container: <{object_container_name}> ##################")
+                general_logger.info(f"################## Getting the port objects of device: <{device_name}>. Container: <{object_container.name}> ##################")
                 print("Import port objects.")
                 security_device_object.get_object_info_from_device_conn(gvars.port_object, object_container)
                 
                 # Log and import port group objects
-                general_logger.info(f"################## Getting the port group objects of device: <{device_name}>. Container: <{object_container_name}> ##################")
+                general_logger.info(f"################## Getting the port group objects of device: <{device_name}>. Container: <{object_container.name}> ##################")
                 print("Import port group objects.")
                 security_device_object.get_object_info_from_device_conn(gvars.port_group_object, object_container)
                 
                 # Log and import URL objects
-                general_logger.info(f"################## Getting the URL objects of device: <{device_name}>. Container: <{object_container_name}> ##################")
+                general_logger.info(f"################## Getting the URL objects of device: <{device_name}>. Container: <{object_container.name}> ##################")
                 print("Import URL objects.")
                 security_device_object.get_object_info_from_device_conn(gvars.url_object, object_container)
                 
                 # Log and import URL group objects
-                general_logger.info(f"################## Getting the URL group objects of device: <{device_name}>. Container: <{object_container_name}> ##################")
+                general_logger.info(f"################## Getting the URL group objects of device: <{device_name}>. Container: <{object_container.name}> ##################")
                 print("Import URL group objects.")
                 security_device_object.get_object_info_from_device_conn(gvars.url_group_object, object_container)
 
                 # Log and import schedule objects
-                general_logger.info(f"################## Getting the schedule objects of device: <{device_name}>. Container: <{object_container_name}> ##################")
+                general_logger.info(f"################## Getting the schedule objects of device: <{device_name}>. Container: <{object_container.name}> ##################")
                 print("Import the schedule objects.")
                 security_device_object.get_object_info_from_device_conn(gvars.schedule_object, object_container)
             
@@ -198,6 +196,12 @@ def main():
             for security_policy_container in security_policy_containers_list:
                 print(f"Processing policies of container {security_policy_container.name}")
                 security_device_object.get_object_info_from_device_conn(gvars.security_policy, security_policy_container)
+
+            # Log and import NAT policies
+            print("Importing NAT policies.")
+            for nat_policy_container in nat_policy_containers_list:
+                print(f"Processing policies of container {nat_policy_container.name}")
+                security_device_object.get_object_info_from_device_conn(gvars.nat_policy, nat_policy_container)
 
         else:
             # Log critical error and exit if device version retrieval fails

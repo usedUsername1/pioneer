@@ -588,19 +588,77 @@ class SecurityPolicy(Policy):
         # Insert schedule
         insert_schedule(self.schedule)
 
-
 class NATPolicy(Policy):
-    def __init__(self, policy_container, name, source_zones, destination_zones, container_index, status, description, comments, log_to_manager, log_to_syslog, category, section, static_or_dynamic, object_or_manual_nat) -> None:
+    def __init__(self, policy_container, name, source_zones, destination_zones, container_index, status, description, comments, log_to_manager, log_to_syslog, category, section, original_destination_interface, destination_translation_interface, static_or_dynamic, single_or_twice_nat, source_zone, destination_zone, original_source, original_port, original_destination, translated_source, translated_destination, translated_port) -> None:
+        """
+        Initialize a new NATPolicy instance.
+
+        Args:
+            policy_container (object): The container object for the policy.
+            name (str): The name of the policy.
+            source_zones (list): Source zones for the NAT policy.
+            destination_zones (list): Destination zones for the NAT policy.
+            container_index (int): The index of the policy in its container.
+            status (str): The status of the policy (e.g., enabled, disabled).
+            description (str): A brief description of the policy.
+            comments (str): Comments related to the policy.
+            log_to_manager (bool): Whether to log to the manager.
+            log_to_syslog (bool): Whether to log to syslog.
+            category (str): The category of the policy.
+            section (str): The section in which the policy is categorized.
+            original_destination_interface (str): The original destination interface.
+            destination_translation_interface (str): The destination translation interface.
+            static_or_dynamic (str): Indicates whether the NAT is static or dynamic.
+            single_or_twice_nat (str): Specifies whether the NAT is single or twice NAT.
+            source_zone (str): The source zone for the policy.
+            destination_zone (str): The destination zone for the policy.
+            original_source (str): The original source for the NAT policy.
+            original_destination (str): The original destination for the NAT policy.
+            translated_source (str): The translated source for the NAT policy.
+            translated_destination (str): The translated destination for the NAT policy.
+        """
         super().__init__(policy_container, name, source_zones, destination_zones, container_index, status, description, comments, log_to_manager, log_to_syslog)
+        self._original_destination_interface = original_destination_interface
+        self._destination_translation_interface = destination_translation_interface
         self._static_or_dynamic = static_or_dynamic
-        self._object_or_manual_nat = object_or_manual_nat
+        self._single_or_twice_nat = single_or_twice_nat
         self._category = category
         self._section = section
+        self._source_zone = source_zone
+        self._destination_zone = destination_zone
+        self._original_source = original_source
+        self._original_port = original_port
+        self._original_destination = original_destination
+        self._translated_source = translated_source
+        self._translated_destination = translated_destination
+        self._translated_port = translated_port
+
+    @property
+    def original_destination_interface(self):
+        """
+        str: The original destination interface.
+        """
+        return self._original_destination_interface
+
+    @original_destination_interface.setter
+    def original_destination_interface(self, value):
+        self._original_destination_interface = value
+
+    @property
+    def destination_translation_interface(self):
+        """
+        str: The destination translation interface.
+        """
+        return self._destination_translation_interface
+
+    @destination_translation_interface.setter
+    def destination_translation_interface(self, value):
+        self._destination_translation_interface = value
 
     @property
     def static_or_dynamic(self):
         """
-        str: Indicates whether the configuration is static or dynamic.
+        str: Indicates whether the NAT configuration is static or dynamic.
         """
         return self._static_or_dynamic
 
@@ -609,20 +667,20 @@ class NATPolicy(Policy):
         self._static_or_dynamic = value
 
     @property
-    def object_or_manual_nat(self):
+    def single_or_twice_nat(self):
         """
-        str: Specifies whether the NAT configuration is object-based or manual.
+        str: Specifies whether the NAT configuration is single or twice NAT.
         """
-        return self._object_or_manual_nat
+        return self._single_or_twice_nat
 
-    @object_or_manual_nat.setter
-    def object_or_manual_nat(self, value):
-        self._object_or_manual_nat = value
+    @single_or_twice_nat.setter
+    def single_or_twice_nat(self, value):
+        self._single_or_twice_nat = value
 
     @property
     def category(self):
         """
-        str: The category of the item or configuration.
+        str: The category of the policy.
         """
         return self._category
 
@@ -633,7 +691,7 @@ class NATPolicy(Policy):
     @property
     def section(self):
         """
-        str: The section of the item or configuration.
+        str: The section of the policy.
         """
         return self._section
 
@@ -641,13 +699,100 @@ class NATPolicy(Policy):
     def section(self, value):
         self._section = value
 
+    @property
+    def source_zone(self):
+        """
+        str: The source zone for the policy.
+        """
+        return self._source_zone
+
+    @source_zone.setter
+    def source_zone(self, value):
+        self._source_zone = value
+
+    @property
+    def destination_zone(self):
+        """
+        str: The destination zone for the policy.
+        """
+        return self._destination_zone
+
+    @destination_zone.setter
+    def destination_zone(self, value):
+        self._destination_zone = value
+
+    @property
+    def original_source(self):
+        """
+        str: The original source for the NAT policy.
+        """
+        return self._original_source
+
+    @original_source.setter
+    def original_source(self, value):
+        self._original_source = value
+
+    @property
+    def original_destination(self):
+        """
+        str: The original destination for the NAT policy.
+        """
+        return self._original_destination
+
+    @property
+    def source_port(self):
+        """
+        str: The source port for the NAT policy.
+        """
+        return self._source_port
+
+    @source_port.setter
+    def source_port(self, value):
+        self._source_port = value
+
+    @original_destination.setter
+    def original_destination(self, value):
+        self._original_destination = value
+
+    @property
+    def translated_source(self):
+        """
+        str: The translated source for the NAT policy.
+        """
+        return self._translated_source
+
+    @translated_source.setter
+    def translated_source(self, value):
+        self._translated_source = value
+
+    @property
+    def translated_destination(self):
+        """
+        str: The translated destination for the NAT policy.
+        """
+        return self._translated_destination
+
+    @translated_destination.setter
+    def translated_destination(self, value):
+        self._translated_destination = value
+
+    @property
+    def translated_port(self):
+        """
+        str: The translated port for the NAT policy.
+        """
+        return self._translated_port
+
+    @translated_port.setter
+    def translated_port(self, value):
+        self._translated_port = value
 
     def save(self, db):
         """
-        Save the security policy to the db.
+        Save the NAT policy to the database.
 
         Args:
-            db (Database): The db instance to save the policy to.
+            db (Database): The database instance to save the policy to.
         """
         db.security_policies_table.insert(
             self.uid,
@@ -662,7 +807,7 @@ class NATPolicy(Policy):
             self.comments,
             self.description,
             self.static_or_dynamic,
-            self.object_or_manual_nat,
+            self.single_or_twice_nat,
             self.target_device_uid,
         )
 

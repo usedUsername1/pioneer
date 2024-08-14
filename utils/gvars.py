@@ -53,6 +53,7 @@ l7_app_group_object = 'l7_app_group_object'
 # also, only the security policies for a particular object container
 # specified by the user will be returned
 security_policy = 'security_policy_group'
+nat_policy = 'nat_policy_group'
 
 # DEVICE TYPES VARIABLES
 fmc_device_type = 'fmc_api'

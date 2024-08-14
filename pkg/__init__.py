@@ -683,6 +683,7 @@ class SecurityPoliciesTable(PioneerTable):
 
 #TODO: what should be done about target_device_uid? how do I retrieve it and map it properly?
 # given the fact that managed_devices_table stores the assigned security policies
+# how to track if interface is used for translation? maybe use a boolean and a new db col
 class NATPoliciesTable(PioneerTable):
     def __init__(self, db):
         """
@@ -701,6 +702,9 @@ class NATPoliciesTable(PioneerTable):
             ("uid", "TEXT PRIMARY KEY"),
             ("name", "TEXT NOT NULL"),
             ("security_policy_container_uid", "TEXT NOT NULL"),
+            # needed to track if interface is used for translation or not
+            ("original_destination_interface", "BOOLEAN NOT NULL"),
+            ("translated_destination_interface", "BOOLEAN NOT NULL"),
             ("index", "INT"),
             ("category", "TEXT"),
             ("status", "TEXT NOT NULL"),

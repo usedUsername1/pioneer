@@ -728,7 +728,7 @@ class SecurityDevice:
                 case gvars.object_containers:
                     containers_info = self.return_object_container_info()
                 case gvars.nat_policy_container:
-                    containers_info = self.return_nat_container_object()
+                    containers_info = self.return_nat_policy_container_info()
                 case _:
                     raise ValueError(f"Unknown container type: {container_type}")
         
@@ -810,6 +810,9 @@ class SecurityDevice:
                 objects_info = self.return_schedule_object_info()
             case gvars.security_policy:
                 objects_info = self.return_security_policy_info(object_container)
+            #TODO: continue here
+            case gvars.nat_policy:
+                objects_info = self.return_nat_policy_info(object_container)
             case _:
                 raise ValueError(f"Unknown object type: {object_type}")
 
@@ -847,7 +850,7 @@ class SecurityDevice:
     def return_security_policy_container_info(self):
         return ["container"]
 
-    def return_nat_container_object(self):
+    def return_nat_policy_container_info(self):
         return ["container"]
 
     def get_general_data(self, column, name_col=None, val=None, order_param=None):
