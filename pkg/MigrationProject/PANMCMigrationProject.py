@@ -428,8 +428,6 @@ PA treats ping as an application. The second rule will keep the exact same sourc
                                         destination_port_names, url_names, policy_action, log_end)
 
             # Attempt to create the policy object
-            # this is slightly faster than creating hte policy object directly
-            # bulk migrate?
             try:
                 rulebase.find(policy.name).create_similar()
             except Exception as e:
