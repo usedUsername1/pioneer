@@ -232,7 +232,7 @@ class FMCSecurityDevice(SecurityDevice):
             list: List of dictionaries containing information about NAT policies.
         """
         # Execute the request to retrieve information about the NAT policies
-        return self._nat_device_connection.policy.ftdnatpolicy.natrule.get(container_name=nat_policy_container.name)
+        return self._device_connection.policy.ftdnatpolicy.natrule.get(container_name=nat_policy_container.name)
 
     # returning objects methods
     def return_managed_device(self, managed_device_container, managed_device_entry):
@@ -381,7 +381,6 @@ class FMCSecurityDevice(SecurityDevice):
         """
         return FMCSecurityPolicy(security_policy_container, policy_entry)
 
-    #TODO: implement this
     def return_nat_policy_object(self, nat_policy_container, policy_entry):
         return FMCNATPolicy(nat_policy_container, policy_entry)
 

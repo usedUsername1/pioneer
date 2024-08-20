@@ -286,6 +286,15 @@ class PioneerDatabase():
                 gvars.l7_app_filter_object: db.l7_app_filters_table,
                 gvars.l7_app_group_object: db.l7_app_groups_table
             }
+        elif object_type == 'nat_policy_group':
+            tables_to_fetch = {
+                gvars.security_zone: db.security_zones_table,
+                gvars.network_object: db.network_address_objects_table,
+                gvars.network_group_object: db.network_group_objects_table,
+                gvars.port_object: db.port_objects_table,
+                gvars.port_group_object: db.port_group_objects_table,
+                gvars.icmp_object: db.icmp_objects_table,
+            }
             # Fetch data for each table and store it in members_dict_from_db with the table name as key
             for table_name, table in tables_to_fetch.items():
                 members_dict_from_db[table_name] = get_table_data(table, ['name', 'uid'])
@@ -703,8 +712,8 @@ class NATPoliciesTable(PioneerTable):
             ("name", "TEXT NOT NULL"),
             ("security_policy_container_uid", "TEXT NOT NULL"),
             # needed to track if interface is used for translation or not
-            ("original_destination_interface", "BOOLEAN NOT NULL"),
-            ("translated_destination_interface", "BOOLEAN NOT NULL"),
+            ("interface_in_original_destination", "BOOLEAN"),
+            ("interface_in_translated_source", "BOOLEAN"),
             ("index", "INT"),
             ("category", "TEXT"),
             ("status", "TEXT NOT NULL"),
@@ -716,21 +725,9 @@ class NATPoliciesTable(PioneerTable):
             ("static_or_dynamic", "TEXT"),
             ("single_or_twice", "TEXT"),
             ("target_device_uid", "TEXT"),
-            ("CONSTRAINT fk_security_policy_container FOREIGN KEY(security_policy_container_uid)", "REFERENCES security_policy_containers(uid)"),
+            ("CONSTRAINT fk_security_policy_container FOREIGN KEY(security_policy_container_uid)", "REFERENCES nat_policy_containers(uid)"),
             ("CONSTRAINT uc_security_policy_container_uid1", "UNIQUE (name, security_policy_container_uid)")
         ]
-
-        # needed for relationships tables
-        # 'source_interface',
-        # 'destination_interface',
-        # 'original_source',
-        # 'original_destination',
-        # 'translated_source',
-        # 'translated_destination',
-        # 'original_source_port',
-        # 'original_destination_port',
-        # 'translated_source_port',
-        # 'translated_destination_port',
 
 class SecurityZonesTable(PioneerTable):
     def __init__(self, db):
@@ -1426,6 +1423,123 @@ class SecurityPolicyContainersMapTable(PioneerTable):
             ("target_security_policy_container_uid", "TEXT"),
             ("CONSTRAINT fk_source_security_policy_container FOREIGN KEY (source_security_policy_container_uid)", "REFERENCES security_policy_containers (uid)"),
             ("CONSTRAINT fk_target_security_policy_container FOREIGN KEY (target_security_policy_container_uid)", "REFERENCES security_policy_containers (uid)")
+        ]
+
+class NATPolicyZonesTable(PioneerTable):
+    def __init__(self, db):
+        """
+        Initialize the NATPolicyZonesTable with the provided database connection.
+
+        Args:
+            db (PioneerDatabase): The database connection object used to interact with the database.
+
+        This constructor sets up the table name and schema specific to NAT policy zones, including constraints 
+        for foreign key relationships.
+        """
+        super().__init__(db)
+        self._name = "nat_policy_zones"
+        self._table_columns = [
+            ("nat_policy_uid", "TEXT NOT NULL"),
+            ("zone_uid", "TEXT"),
+            ("flow", "TEXT"),
+            ("CONSTRAINT fk_nat_policy_uid FOREIGN KEY (nat_policy_uid)", "REFERENCES nat_policies (uid)")
+        ]
+
+# TODO two more tables (nat_policy_original_networks) and nat_policy_translated_networks
+class NATPolicyOriginalNetworksTable(PioneerTable):
+    def __init__(self, db):
+        """
+        Initialize the NATPolicyOriginalNetworks with the provided database connection.
+
+        Args:
+            db (PioneerDatabase): The database connection object used to interact with the database.
+
+        This constructor sets up the table name and schema specific to security policy networks, including constraints 
+        for foreign key relationships to various network-related tables.
+        """
+        super().__init__(db)
+        self._name = "nat_policy_original_networks"
+        self._table_columns = [
+            ("nat_policy_uid", "TEXT NOT NULL"),
+            ("object_uid", "TEXT"),
+            ("group_object_uid", "TEXT"),
+            ("flow", "TEXT"),
+            ("CONSTRAINT fk_nat_policy_uid FOREIGN KEY (nat_policy_uid)", "REFERENCES nat_policies (uid)"),
+            ("CONSTRAINT fk_object_uid FOREIGN KEY (object_uid)", "REFERENCES network_address_objects (uid)"),
+            ("CONSTRAINT fk_group_object_uid FOREIGN KEY (group_object_uid)", "REFERENCES network_group_objects (uid)"),
+        ]
+
+class NATPolicyOriginalPortsTable(PioneerTable):
+    def __init__(self, db):
+        """
+        Initialize the NATPolicyOriginalPortsTable with the provided database connection.
+
+        Args:
+            db (PioneerDatabase): The database connection object used to interact with the database.
+
+        This constructor sets up the table name and schema specific to nat policy ports, including constraints 
+        for foreign key relationships to various port-related and ICMP-related tables.
+        """
+        super().__init__(db)
+        self._name = "nat_policy_original_ports"
+        self._table_columns = [
+            ("nat_policy_uid", "TEXT NOT NULL"),
+            ("object_uid", "TEXT"),
+            ("icmp_object_uid", "TEXT"),
+            ("group_object_uid", "TEXT"),
+            ("flow", "TEXT"),
+            ("CONSTRAINT fk_nat_policy_uid FOREIGN KEY (nat_policy_uid)", "REFERENCES nat_policies (uid)"),
+            ("CONSTRAINT fk_object_uid FOREIGN KEY (object_uid)", "REFERENCES port_objects (uid)"),
+            ("CONSTRAINT fk_icmp_object_uid FOREIGN KEY (icmp_object_uid)", "REFERENCES icmp_objects (uid)"),
+            ("CONSTRAINT fk_group_object_uid FOREIGN KEY (group_object_uid)", "REFERENCES port_group_objects (uid)")
+        ]
+
+class NATPolicyTranslatedNetworksTable(PioneerTable):
+    def __init__(self, db):
+        """
+        Initialize the NATPolicyTranslatedlNetworks with the provided database connection.
+
+        Args:
+            db (PioneerDatabase): The database connection object used to interact with the database.
+
+        This constructor sets up the table name and schema specific to security policy networks, including constraints 
+        for foreign key relationships to various network-related tables.
+        """
+        super().__init__(db)
+        self._name = "nat_policy_translated_networks"
+        self._table_columns = [
+            ("nat_policy_uid", "TEXT NOT NULL"),
+            ("object_uid", "TEXT"),
+            ("group_object_uid", "TEXT"),
+            ("flow", "TEXT"),
+            ("CONSTRAINT fk_nat_policy_uid FOREIGN KEY (nat_policy_uid)", "REFERENCES nat_policies (uid)"),
+            ("CONSTRAINT fk_object_uid FOREIGN KEY (object_uid)", "REFERENCES network_address_objects (uid)"),
+            ("CONSTRAINT fk_group_object_uid FOREIGN KEY (group_object_uid)", "REFERENCES network_group_objects (uid)"),
+        ]
+
+class NATPolicyTranslatedPortsTable(PioneerTable):
+    def __init__(self, db):
+        """
+        Initialize the NATPolicyTranslatedPortsTable with the provided database connection.
+
+        Args:
+            db (PioneerDatabase): The database connection object used to interact with the database.
+
+        This constructor sets up the table name and schema specific to nat policy ports, including constraints 
+        for foreign key relationships to various port-related and ICMP-related tables.
+        """
+        super().__init__(db)
+        self._name = "nat_policy_translated_ports"
+        self._table_columns = [
+            ("nat_policy_uid", "TEXT NOT NULL"),
+            ("object_uid", "TEXT"),
+            ("icmp_object_uid", "TEXT"),
+            ("group_object_uid", "TEXT"),
+            ("flow", "TEXT"),
+            ("CONSTRAINT fk_nat_policy_uid FOREIGN KEY (nat_policy_uid)", "REFERENCES nat_policies (uid)"),
+            ("CONSTRAINT fk_object_uid FOREIGN KEY (object_uid)", "REFERENCES port_objects (uid)"),
+            ("CONSTRAINT fk_icmp_object_uid FOREIGN KEY (icmp_object_uid)", "REFERENCES icmp_objects (uid)"),
+            ("CONSTRAINT fk_group_object_uid FOREIGN KEY (group_object_uid)", "REFERENCES port_group_objects (uid)")
         ]
 
 # the following tables are very simplistic and limited and will be rewritten

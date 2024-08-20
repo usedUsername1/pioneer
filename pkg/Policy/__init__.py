@@ -589,7 +589,31 @@ class SecurityPolicy(Policy):
         insert_schedule(self.schedule)
 
 class NATPolicy(Policy):
-    def __init__(self, policy_container, name, source_zones, destination_zones, container_index, status, description, comments, log_to_manager, log_to_syslog, category, section, original_destination_interface, destination_translation_interface, static_or_dynamic, single_or_twice_nat, source_zone, destination_zone, original_source, original_port, original_destination, translated_source, translated_destination, translated_port) -> None:
+    def __init__(self,
+                policy_container, 
+                name, 
+                source_zones, 
+                destination_zones, 
+                container_index, 
+                status, 
+                description, 
+                comments, 
+                log_to_manager, 
+                log_to_syslog, 
+                category, 
+                section, 
+                interface_in_original_destination, 
+                interface_in_translated_source, 
+                static_or_dynamic, 
+                single_or_twice_nat, 
+                original_source, 
+                original_source_port,
+                original_destination,
+                original_destination_port, 
+                translated_source,  
+                translated_source_port,
+                translated_destination,
+                translated_destination_port) -> None:
         """
         Initialize a new NATPolicy instance.
 
@@ -606,54 +630,58 @@ class NATPolicy(Policy):
             log_to_syslog (bool): Whether to log to syslog.
             category (str): The category of the policy.
             section (str): The section in which the policy is categorized.
-            original_destination_interface (str): The original destination interface.
-            destination_translation_interface (str): The destination translation interface.
+            interface_in_original_destination (bool): Whether the original destination is the device's interface or not.
+            interface_in_translated_source (bool): Whether the translated destination is the device's interface or not.
             static_or_dynamic (str): Indicates whether the NAT is static or dynamic.
             single_or_twice_nat (str): Specifies whether the NAT is single or twice NAT.
-            source_zone (str): The source zone for the policy.
-            destination_zone (str): The destination zone for the policy.
             original_source (str): The original source for the NAT policy.
+            original_source_port (str): The original source port for the NAT policy.
             original_destination (str): The original destination for the NAT policy.
+            original_destination_port (str): The original destination port for the NAT policy.
             translated_source (str): The translated source for the NAT policy.
+            translated_source_port (str): The translated source port for the NAT policy.
             translated_destination (str): The translated destination for the NAT policy.
+            translated_destination_port (str): The translated destination port for the NAT policy.
         """
         super().__init__(policy_container, name, source_zones, destination_zones, container_index, status, description, comments, log_to_manager, log_to_syslog)
-        self._original_destination_interface = original_destination_interface
-        self._destination_translation_interface = destination_translation_interface
+        self._interface_in_original_destination = interface_in_original_destination
+        self._interface_in_translated_source = interface_in_translated_source
         self._static_or_dynamic = static_or_dynamic
         self._single_or_twice_nat = single_or_twice_nat
         self._category = category
         self._section = section
-        self._source_zone = source_zone
-        self._destination_zone = destination_zone
+        self._source_zones = source_zones
+        self._destination_zones = destination_zones
         self._original_source = original_source
-        self._original_port = original_port
+        self._original_source_port = original_source_port
         self._original_destination = original_destination
+        self._original_destination_port = original_destination_port
         self._translated_source = translated_source
+        self._translated_source_port = translated_source_port
         self._translated_destination = translated_destination
-        self._translated_port = translated_port
+        self._translated_destination_port = translated_destination_port
 
     @property
-    def original_destination_interface(self):
+    def interface_in_original_destination(self):
         """
-        str: The original destination interface.
+        str: The interface in the original destination.
         """
-        return self._original_destination_interface
+        return self._interface_in_original_destination
 
-    @original_destination_interface.setter
-    def original_destination_interface(self, value):
-        self._original_destination_interface = value
+    @interface_in_original_destination.setter
+    def interface_in_original_destination(self, value):
+        self._interface_in_original_destination = value
 
     @property
-    def destination_translation_interface(self):
+    def interface_in_translated_source(self):
         """
-        str: The destination translation interface.
+        str: The interface in the translated source.
         """
-        return self._destination_translation_interface
+        return self._interface_in_translated_source
 
-    @destination_translation_interface.setter
-    def destination_translation_interface(self, value):
-        self._destination_translation_interface = value
+    @interface_in_translated_source.setter
+    def interface_in_translated_source(self, value):
+        self._interface_in_translated_source = value
 
     @property
     def static_or_dynamic(self):
@@ -700,26 +728,26 @@ class NATPolicy(Policy):
         self._section = value
 
     @property
-    def source_zone(self):
+    def source_zones(self):
         """
-        str: The source zone for the policy.
+        str: The source zones for the policy.
         """
-        return self._source_zone
+        return self._source_zones
 
-    @source_zone.setter
-    def source_zone(self, value):
-        self._source_zone = value
+    @source_zones.setter
+    def source_zones(self, value):
+        self._source_zones = value
 
     @property
-    def destination_zone(self):
+    def destination_zones(self):
         """
-        str: The destination zone for the policy.
+        str: The destination zones for the policy.
         """
-        return self._destination_zone
+        return self._destination_zones
 
-    @destination_zone.setter
-    def destination_zone(self, value):
-        self._destination_zone = value
+    @destination_zones.setter
+    def destination_zones(self, value):
+        self._destination_zones = value
 
     @property
     def original_source(self):
@@ -733,26 +761,37 @@ class NATPolicy(Policy):
         self._original_source = value
 
     @property
+    def original_source_port(self):
+        """
+        str: The original source port for the NAT policy.
+        """
+        return self._original_source_port
+
+    @original_source_port.setter
+    def original_source_port(self, value):
+        self._original_source_port = value
+
+    @property
     def original_destination(self):
         """
         str: The original destination for the NAT policy.
         """
         return self._original_destination
 
-    @property
-    def source_port(self):
-        """
-        str: The source port for the NAT policy.
-        """
-        return self._source_port
-
-    @source_port.setter
-    def source_port(self, value):
-        self._source_port = value
-
     @original_destination.setter
     def original_destination(self, value):
         self._original_destination = value
+
+    @property
+    def original_destination_port(self):
+        """
+        str: The original destination port for the NAT policy.
+        """
+        return self._original_destination_port
+
+    @original_destination_port.setter
+    def original_destination_port(self, value):
+        self._original_destination_port = value
 
     @property
     def translated_source(self):
@@ -766,6 +805,17 @@ class NATPolicy(Policy):
         self._translated_source = value
 
     @property
+    def translated_source_port(self):
+        """
+        str: The translated source port for the NAT policy.
+        """
+        return self._translated_source_port
+
+    @translated_source_port.setter
+    def translated_source_port(self, value):
+        self._translated_source_port = value
+
+    @property
     def translated_destination(self):
         """
         str: The translated destination for the NAT policy.
@@ -777,15 +827,22 @@ class NATPolicy(Policy):
         self._translated_destination = value
 
     @property
-    def translated_port(self):
+    def translated_destination_port(self):
         """
-        str: The translated port for the NAT policy.
+        str: The translated destination port for the NAT policy.
         """
-        return self._translated_port
+        return self._translated_destination_port
 
-    @translated_port.setter
-    def translated_port(self, value):
-        self._translated_port = value
+    @property
+    def translated_destination_port(self):
+        """
+        str: The translated destination port for the NAT policy.
+        """
+        return self._translated_destination_port
+
+    @translated_destination_port.setter
+    def translated_destination_port(self, value):
+        self._translated_destination_port = value
 
     def save(self, db):
         """
@@ -794,21 +851,110 @@ class NATPolicy(Policy):
         Args:
             db (Database): The database instance to save the policy to.
         """
-        db.security_policies_table.insert(
-            self.uid,
-            self.name,
-            self.container_uid,
-            self.container_index,
-            self.category,
-            self.status,
-            self.log_to_manager,
-            self.log_to_syslog,
-            self.section,
-            self.comments,
-            self.description,
-            self.static_or_dynamic,
-            self.single_or_twice_nat,
-            self.target_device_uid,
+        db.nat_policies_table.insert(
+            self._uid,
+            self._name,
+            self._container_uid,
+            self._interface_in_original_destination,
+            self._interface_in_translated_source,
+            self._container_index,
+            self._category,
+            self._status,
+            self._log_to_manager,
+            self._log_to_syslog,
+            self._section,
+            self._comments,
+            self._description,
+            self._static_or_dynamic,
+            self._single_or_twice_nat,
+            self._target_device_uid,
         )
 
-    #TODO: create relationships db table
+    def create_relationships_in_db(self, db, preloaded_data):
+        """
+        Create relationships in the db for the NAT policy.
+
+        Args:
+            db (Database): The db instance to create relationships in.
+            preloaded_data (dict): Preloaded data for creating relationships.
+        """
+        def insert_zones(zone_names, flow):
+            """
+            Insert zone data into the db.
+
+            Args:
+                zone_names (list): List of zone names.
+                flow (str): Flow direction ('source' or 'destination').
+            """
+            if not zone_names:
+                db.nat_policy_zones_table.insert(self.uid, None, flow)
+            else:
+                for zone_name in zone_names:
+                    zone_uid = preloaded_data[gvars.security_zone].get(zone_name)
+                    db.nat_policy_zones_table.insert(self.uid, zone_uid, flow)
+
+        def insert_networks(network_names, flow, table_type):
+            """
+            Insert network data into the specified db table.
+
+            Args:
+                network_names (list): List of network names.
+                flow (str): Flow direction ('source' or 'destination').
+                table_type (str): Type of table ('original' or 'translated').
+            """
+            table_map = {
+                'original': db.nat_policy_original_networks_table,
+                'translated': db.nat_policy_translated_networks_table
+            }
+            target_table = table_map.get(table_type)
+
+            if not network_names:
+                target_table.insert(self.uid, None, None, flow)
+            else:
+                for network_name in network_names:
+                    object_uid = preloaded_data[gvars.network_object].get(network_name)
+                    group_uid = preloaded_data[gvars.network_group_object].get(network_name)
+                    target_table.insert(self.uid, object_uid, group_uid, flow)
+
+        def insert_ports(port_names, flow, table_type):
+            """
+            Insert port data into the specified db table.
+
+            Args:
+                port_names (list): List of port names.
+                flow (str): Flow direction ('source' or 'destination').
+                table_type (str): Type of table ('original' or 'translated').
+            """
+            table_map = {
+                'original': db.nat_policy_original_ports_table,
+                'translated': db.nat_policy_translated_ports_table
+            }
+            target_table = table_map.get(table_type)
+
+            if not port_names:
+                target_table.insert(self.uid, None, None, None, flow)
+            else:
+                for port_name in port_names:
+                    object_uid = preloaded_data[gvars.port_object].get(port_name)
+                    icmp_uid = preloaded_data[gvars.icmp_object].get(port_name)
+                    group_uid = preloaded_data[gvars.port_group_object].get(port_name)
+                    target_table.insert(self.uid, object_uid, icmp_uid, group_uid, flow)
+        # Insert source and destination zones
+        insert_zones(self.source_zones, 'source')
+        insert_zones(self.destination_zones, 'destination')
+
+        # Insert original source and destination networks
+        insert_networks(self.original_source, 'source', 'original')
+        insert_networks(self.original_destination, 'destination', 'original')
+
+        # Insert original source and destination ports
+        insert_ports(self.original_source_port, 'source', 'original')
+        insert_ports(self.original_destination_port, 'destination', 'original')
+
+        # Insert translated source and destination networks
+        insert_networks(self.translated_source, 'source', 'translated')
+        insert_networks(self.translated_destination, 'destination', 'translated')
+
+        # Insert translated source and destination ports
+        insert_ports(self.translated_source_port, 'source', 'translated')
+        insert_ports(self.translated_destination_port, 'destination', 'translated')

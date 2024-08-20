@@ -443,7 +443,70 @@ class FMCSecurityPolicy(SecurityPolicy, FMCObjectWithLiterals):
 
         # Return the combined string of processed comments
         return processed_comments
-
+    
 class FMCNATPolicy(NATPolicy):
-    pass
+    def __init__(self, policy_container, policy_info) -> None:
+        # Be aware that FMC supports static NAT with group objects. That is a problem, as PA does not support
+        # this NAT implementation. Make sure you track these policies and inform the user about this.
+        
+        name = policy_container.name + '_policy_nr_' + str(policy_info.get('metadata', {}).get('index', ''))
+        source_zones = [policy_info.get('sourceInterface', {}).get('name', None)]
+        destination_zones = [policy_info.get('destinationInterface', {}).get('name', None)]
+        container_index = policy_info.get('metadata', {}).get('index', None)
+        # Auto-NAT policies (single NAT) are always enabled and the 'enabled' key will be missing from policy_info dict
+        # therefore, get() must return 'True' not None
+        status = policy_info.get('enabled', True)
+        description = policy_info.get('description', None)
+        comments = None
+        
+        # Log everything to the manager by default; there is no such option for FMC NAT policies.
+        log_to_manager = True
+        
+        # Don't send any logs to syslog by default.
+        log_to_syslog = False
+        
+        # There is no category for NAT policies in FMC.
+        category = None
+        section = policy_info.get('metadata', {}).get('section', None)
+        interface_in_original_destination = policy_info.get('interfaceInOriginalDestination', None)
+        interface_in_translated_source = policy_info.get('interfaceInTranslatedSource', None)
+        static_or_dynamic = policy_info.get('natType').lower()
+        single_or_twice_nat = 'single' if policy_info.get('type') == 'FTDAutoNatRule' else 'twice'
+        
+        # this data needs to be returned as a list, as create_relationships_in_db() NAT Policy object method
+        # uses lists.
+        original_source = [policy_info.get('originalSource', {}).get('name', None)]
+        original_source_port = [policy_info.get('originalSourcePort', {}).get('name', None)]
+        original_destination_port = [policy_info.get('originalDestinationPort', {}).get('name', None)]
+        original_destination = [policy_info.get('originalDestination', {}).get('name', None)]
+        
+        translated_source = [policy_info.get('translatedSource', {}).get('name', None)]
+        translated_source_port = [policy_info.get('translatedSourcePort', {}).get('name', None)]
+        translated_destination = [policy_info.get('translatedDestination', {}).get('name', None)]
+        translated_destination_port = [policy_info.get('translatedDestinationPort', {}).get('name', None)]
+
+        super().__init__(policy_container, 
+                name, 
+                source_zones, 
+                destination_zones, 
+                container_index, 
+                status, 
+                description, 
+                comments, 
+                log_to_manager, 
+                log_to_syslog, 
+                category, 
+                section, 
+                interface_in_original_destination, 
+                interface_in_translated_source, 
+                static_or_dynamic, 
+                single_or_twice_nat, 
+                original_source, 
+                original_source_port,
+                original_destination,
+                original_destination_port, 
+                translated_source,  
+                translated_source_port,
+                translated_destination,
+                translated_destination_port)
 

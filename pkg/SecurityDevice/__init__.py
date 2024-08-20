@@ -4,7 +4,8 @@ SecurityZonesTable, URLObjectsTable, NetworkAddressObjectsTable, \
 GeolocationObjectsTable, CountryObjectsTable, PortObjectsTable, ICMPObjectsTable, ScheduleObjectsTable, ManagedDevicesTable, ManagedDeviceContainersTable, SecurityZoneContainersTable, \
 NetworkGroupObjectsTable, PortGroupObjectsTable, URLGroupObjectsTable, NetworkGroupObjectsMembersTable, PortGroupObjectsMembersTable, URLGroupObjectsMembersTable, \
 PolicyUsersTable, L7AppsTable, L7AppFiltersTable, L7AppGroupsTable, L7AppGroupMembersTable, URLCategoriesTable, SecurityPolicyZonesTable, SecurityPolicyNetworksTable, \
-SecurityPolicyPortsTable, SecurityPolicyUsersTable, SecurityPolicyURLsTable, SecurityPolicyL7AppsTable, SecurityPolicyScheduleTable, NATPoliciesTable
+SecurityPolicyPortsTable, SecurityPolicyUsersTable, SecurityPolicyURLsTable, SecurityPolicyL7AppsTable, SecurityPolicyScheduleTable, NATPoliciesTable, NATPolicyZonesTable, \
+NATPolicyOriginalNetworksTable, NATPolicyOriginalPortsTable, NATPolicyTranslatedNetworksTable, NATPolicyTranslatedPortsTable
 import utils.helper as helper
 import sys
 import utils.gvars as gvars
@@ -61,13 +62,18 @@ class SecurityDeviceDatabase(PioneerDatabase):
         self._security_policy_urls_table = SecurityPolicyURLsTable(self)
         self._security_policy_l7_apps_table = SecurityPolicyL7AppsTable(self)
         self._security_policy_schedule_table = SecurityPolicyScheduleTable(self)
+        self._nat_policy_zones_table = NATPolicyZonesTable(self)
+        self._nat_policy_original_networks_table = NATPolicyOriginalNetworksTable(self)
+        self._nat_policy_original_ports_table = NATPolicyOriginalPortsTable(self)
+        self._nat_policy_translated_networks_table = NATPolicyTranslatedNetworksTable(self)
+        self._nat_policy_translated_ports_table = NATPolicyTranslatedPortsTable(self)
 
     def create_security_device_tables(self):
         """
         Create all security device tables in the db.
         """
         general_logger.info("Creating the PostgreSQL tables in device db.")
-        
+
         # Create tables
         self._general_data_table.create()
         self._security_policy_containers_table.create()
@@ -105,6 +111,11 @@ class SecurityDeviceDatabase(PioneerDatabase):
         self._security_policy_urls_table.create()
         self._security_policy_l7_apps_table.create()
         self._security_policy_schedule_table.create()
+        self._nat_policy_zones_table.create()
+        self._nat_policy_original_networks_table.create()
+        self._nat_policy_original_ports_table.create()
+        self._nat_policy_translated_networks_table.create()
+        self._nat_policy_translated_ports_table.create()
 
     @property
     def security_policy_zones_table(self):
@@ -466,6 +477,56 @@ class SecurityDeviceDatabase(PioneerDatabase):
         """
         return self._schedule_objects_table
 
+    @property
+    def nat_policy_zones_table(self):
+        """
+        Get the NATPolicyZonesTable instance.
+        
+        Returns:
+            NATPolicyZonesTable: The NAT policy zones table instance.
+        """
+        return self._nat_policy_zones_table
+
+    @property
+    def nat_policy_original_networks_table(self):
+        """
+        Get the NATPolicyOriginalNetworksTable instance.
+        
+        Returns:
+            NATPolicyOriginalNetworksTable: The NAT policy networks table instance.
+        """
+        return self._nat_policy_original_networks_table
+
+    @property
+    def nat_policy_original_ports_table(self):
+        """
+        Get the NATPolicyOriginalPortsTable instance.
+        
+        Returns:
+            NATPolicyOriginalPortsTable: The NAT policy ports table instance.
+        """
+        return self._nat_policy_original_ports_table
+
+    @property
+    def nat_policy_translated_networks_table(self):
+        """
+        Get the NATPolicyTranslatedNetworksTable instance.
+        
+        Returns:
+            NATPolicyTranslatedNetworksTable: The NAT policy networks table instance.
+        """
+        return self._nat_policy_translated_networks_table
+
+    @property
+    def nat_policy_translated_ports_table(self):
+        """
+        Get the NATPolicyTranslatedPortsTable instance.
+        
+        Returns:
+            NATPolicyTranslatedPortsTable: The NAT policy ports table instance.
+        """
+        return self._nat_policy_translated_ports_table
+
 class SecurityDevice:
     def __init__(self, uid, name, db, device_connection):
         """
@@ -691,6 +752,10 @@ class SecurityDevice:
             case gvars.security_policy:
                 # Return a security policy object
                 return self.return_security_policy_object(object_container, object_entry)
+
+            case gvars.nat_policy:
+                # Return a security policy object
+                return self.return_nat_policy_object(object_container, object_entry)
             
             case _:
                 # Raise an error if the object type does not match any known type
@@ -810,7 +875,6 @@ class SecurityDevice:
                 objects_info = self.return_schedule_object_info()
             case gvars.security_policy:
                 objects_info = self.return_security_policy_info(object_container)
-            #TODO: continue here
             case gvars.nat_policy:
                 objects_info = self.return_nat_policy_info(object_container)
             case _:

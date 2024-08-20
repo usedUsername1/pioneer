@@ -191,16 +191,16 @@ def main():
                 for managed_device_container in managed_devices_container_list:
                     security_device_object.get_object_info_from_device_conn(gvars.managed_device, managed_device_container)
             
-            # Log and import security policies
-            print("Importing security policies.")
-            for security_policy_container in security_policy_containers_list:
-                print(f"Processing policies of container {security_policy_container.name}")
-                security_device_object.get_object_info_from_device_conn(gvars.security_policy, security_policy_container)
+            # # Log and import security policies
+            # print("Importing security policies.")
+            # for security_policy_container in security_policy_containers_list:
+            #     print(f"Processing security policies of container {security_policy_container.name}")
+            #     security_device_object.get_object_info_from_device_conn(gvars.security_policy, security_policy_container)
 
             # Log and import NAT policies
             print("Importing NAT policies.")
             for nat_policy_container in nat_policy_containers_list:
-                print(f"Processing policies of container {nat_policy_container.name}")
+                print(f"Processing NAT policies of container {nat_policy_container.name}")
                 security_device_object.get_object_info_from_device_conn(gvars.nat_policy, nat_policy_container)
 
         else:
@@ -280,5 +280,6 @@ def main():
                 security_policy_container = PioneerSecurityPolicyContainer(migration_project, pioneer_args['security_policy_container [container_name]'], None)
                 security_policy_container.process_and_migrate()
 
+#TODO: test the import of NAT policies as it should work, then preload the data, create the relationships and start migrating stuff
 if __name__ == "__main__":
     main()
