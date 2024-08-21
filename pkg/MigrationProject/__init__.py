@@ -2,7 +2,7 @@ from abc import abstractmethod
 import utils.helper as helper
 import utils.gvars as gvars
 from pkg import SecurityPolicyContainersMapTable, MigrationProjectGeneralDataTable, MigrationProjectDevicesTable, SecurityDeviceInterfaceMap, \
-LogSettingsTable, SpecialSecurityPolicyParametersTable, NetworkObjectTypesMapTable, SecurityPolicyActionMapTable, SecurityPolicySectionMap
+LogSettingsTable, SpecialSecurityPolicyParametersTable, NetworkObjectTypesMapTable, SecurityPolicyActionMapTable, SecurityPolicySectionMap, NATPolicyContainersMapTable
 from pkg.SecurityDevice import SecurityDeviceDatabase
 
 special_policies_log = helper.logging.getLogger(gvars.special_policies_logger)
@@ -28,6 +28,7 @@ class MigrationProjectDatabase(SecurityDeviceDatabase):
         self._network_object_types_map_table = NetworkObjectTypesMapTable(self)
         self._security_policy_action_map_table = SecurityPolicyActionMapTable(self)
         self._security_policy_section_map_table = SecurityPolicySectionMap(self)
+        self._nat_policy_containers_map_table = NATPolicyContainersMapTable(self)
 
     def create_migration_project_tables(self):
         """
@@ -52,6 +53,8 @@ class MigrationProjectDatabase(SecurityDeviceDatabase):
         
         self._security_policy_section_map_table.create()
         self._security_policy_section_map_table.pre_insert_data()
+
+        self._nat_policy_containers_map_table.create()
 
     @property
     def migration_project_general_data_table(self):
@@ -142,6 +145,16 @@ class MigrationProjectDatabase(SecurityDeviceDatabase):
             SecurityPolicySectionMap: The map table for security policy sections.
         """
         return self._security_policy_section_map_table
+
+    @property
+    def nat_policy_containers_map_table(self):
+        """
+        Get the NAT policy containers map table.
+
+        Returns:
+            NATPolicyContainersMapTable: The map table for NAT policy containers.
+        """
+        return self._nat_policy_containers_map_table
 
 class MigrationProject:
     def __init__(self, name, db):
@@ -281,9 +294,19 @@ class MigrationProject:
             for row in target_data:
                 target_project_db_table.insert(*row)
     
-    def map_containers(self, source_container_name, target_container_name):
-        # Get source security device uid based on source container name
-        source_container_data = self.db.security_policy_containers_table.get(['uid', 'security_device_uid'], 'name', source_container_name)
+    def map_containers(self, source_container_name, target_container_name, container_type):
+        # Determine the correct tables based on the container type
+        if container_type == 'security_policy_containers':
+            containers_table = self.db.security_policy_containers_table
+            containers_map_table = self.db.security_policy_containers_map_table
+        elif container_type == 'nat_policy_containers':
+            containers_table = self.db.nat_policy_containers_table
+            containers_map_table = self.db.nat_policy_containers_map_table
+        else:
+            raise ValueError(f"Unsupported container type: '{container_type}'.")
+
+        # Get source container uid and security device uid based on source container name
+        source_container_data = containers_table.get(['uid', 'security_device_uid'], 'name', source_container_name)
         if not source_container_data:
             raise ValueError(f"Source container with name '{source_container_name}' not found.")
 
@@ -297,14 +320,14 @@ class MigrationProject:
         target_device_uid = target_device_data[0]
 
         # Get target container uid based on target container name and target device uid
-        target_container_data = self.db.security_policy_containers_table.get(['uid'], ['name', 'security_device_uid'], [target_container_name, target_device_uid], multiple_where=True)
+        target_container_data = containers_table.get(['uid'], ['name', 'security_device_uid'], [target_container_name, target_device_uid], multiple_where=True)
         if not target_container_data:
             raise ValueError(f"Target container with name '{target_container_name}' for device uid '{target_device_uid}' not found.")
 
         target_container_uid = target_container_data[0][0]
 
-        # Insert the data into the containers map table
-        self.db.security_policy_containers_map_table.insert(source_container_uid, target_container_uid)
+        # Insert the data into the appropriate containers map table
+        containers_map_table.insert(source_container_uid, target_container_uid)
     
     def map_zones(self, source_zone_name, target_zone_name):
         """

@@ -1,5 +1,5 @@
 from pkg.SecurityDevice import SecurityDevice
-from pkg.Container.PANMCContainer import PANMCSecurityPolicyContainer, PANMCObjectContainer, PANMCSecurityZoneContainer
+from pkg.Container.PANMCContainer import PANMCSecurityPolicyContainer, PANMCObjectContainer, PANMCSecurityZoneContainer, PANMCNATContainer
 from pkg.SecurityZone.PANMCSecurityZone import PANMCSecurityZone
 from panos.panorama import DeviceGroup, Template
 from panos.network import Zone
@@ -13,7 +13,8 @@ import random
 import re
 
 general_logger = helper.logging.getLogger('general')
-    
+
+#TODO: import NAT containers
 # for the temp migration, only the policy containers and the object containers are needed
 class PANMCSecurityDevice(SecurityDevice):
     def __init__(self, uid, name, SecurityDeviceDatabase, SecurityDeviceConnection):
@@ -52,10 +53,10 @@ class PANMCSecurityDevice(SecurityDevice):
     def return_device_group_info(self):
         device_group_info = []
         # Access the OPSTATES attribute to get the hierarchy class
-        HierarchyObject = self.device_connection.OPSTATES['dg_hierarchy']
+        hierarchy_object = self.device_connection.OPSTATES['dg_hierarchy']
 
         # Create an instance of PanoramaDeviceGroupHierarchy
-        HierarchyInstance = HierarchyObject(self.device_connection)
+        HierarchyInstance = hierarchy_object(self.device_connection)
 
         # Call the fetch method on the instance
         hierarchy_data = HierarchyInstance.fetch()
@@ -73,7 +74,10 @@ class PANMCSecurityDevice(SecurityDevice):
 
     def return_security_policy_container_object(self, container_entry):
         return PANMCSecurityPolicyContainer(self, container_entry)
-    
+
+    def return_nat_policy_container_object(self, container_entry):
+        return PANMCNATContainer(self, container_entry)
+
     def return_zone_container_object(self, container_entry):
         return PANMCSecurityZoneContainer(self, container_entry)
     
@@ -81,6 +85,9 @@ class PANMCSecurityDevice(SecurityDevice):
         return PANMCSecurityZone(ZoneContainer, zone_entry)
 
     def return_security_policy_container_info(self):
+        return self.return_device_group_info()
+
+    def return_nat_policy_container_info(self):
         return self.return_device_group_info()
 
     def return_template_info(self):
@@ -145,4 +152,7 @@ class PANMCSecurityDevice(SecurityDevice):
     def return_security_policy_info(self, ObjectContainer):
         print("Importing this object is not supported yet for PANMC.")
         return None
-    
+
+    def return_nat_policy_info(self, ObjectContainer):
+        print("Importing this object is not supported yet for PANMC.")
+        return None

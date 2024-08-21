@@ -690,9 +690,7 @@ class SecurityPoliciesTable(PioneerTable):
             ("CONSTRAINT uc_security_policy_container_uid123", "UNIQUE (name, security_policy_container_uid)")
         ]
 
-#TODO: what should be done about target_device_uid? how do I retrieve it and map it properly?
-# given the fact that managed_devices_table stores the assigned security policies
-# how to track if interface is used for translation? maybe use a boolean and a new db col
+#TODO: translation type column implemented properly
 class NATPoliciesTable(PioneerTable):
     def __init__(self, db):
         """
@@ -1423,6 +1421,27 @@ class SecurityPolicyContainersMapTable(PioneerTable):
             ("target_security_policy_container_uid", "TEXT"),
             ("CONSTRAINT fk_source_security_policy_container FOREIGN KEY (source_security_policy_container_uid)", "REFERENCES security_policy_containers (uid)"),
             ("CONSTRAINT fk_target_security_policy_container FOREIGN KEY (target_security_policy_container_uid)", "REFERENCES security_policy_containers (uid)")
+        ]
+
+class NATPolicyContainersMapTable(PioneerTable):
+    def __init__(self, db) -> None:
+        """
+        Initialize the NATPolicyContainersMapTable with the provided database connection.
+
+        Args:
+            db (PioneerDatabase): The database connection object used to interact with the database.
+
+        This constructor sets up the table name and schema for mapping NAT policy containers. 
+        The schema includes columns for the source and target NAT policy containers and establishes foreign key constraints 
+        to ensure that the values in these columns reference valid entries in the `nat_policy_containers` table.
+        """
+        super().__init__(db)
+        self._name = "nat_policy_containers_map"
+        self._table_columns = [
+            ("source_nat_policy_container_uid", "TEXT"),
+            ("target_nat_policy_container_uid", "TEXT"),
+            ("CONSTRAINT fk_source_nat_policy_container FOREIGN KEY (source_nat_policy_container_uid)", "REFERENCES nat_policy_containers (uid)"),
+            ("CONSTRAINT fk_target_nat_policy_container FOREIGN KEY (target_nat_policy_container_uid)", "REFERENCES nat_policy_containers (uid)")
         ]
 
 class NATPolicyZonesTable(PioneerTable):

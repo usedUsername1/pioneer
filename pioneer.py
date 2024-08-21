@@ -252,9 +252,13 @@ def main():
             migration_project.import_data(source_device, target_device)
 
         # Map containers if provided
-        if pioneer_args['map_containers']:
+        if pioneer_args['map_security_policy_containers']:
             if pioneer_args['source_container_name'] and pioneer_args['target_container_name']:
-                migration_project.map_containers(pioneer_args['source_container_name'], pioneer_args['target_container_name'])
+                migration_project.map_containers(pioneer_args['source_container_name'], pioneer_args['target_container_name'], 'security_policy_containers')
+
+        if pioneer_args['map_nat_policy_containers']:
+            if pioneer_args['source_container_name'] and pioneer_args['target_container_name']:
+                migration_project.map_containers(pioneer_args['source_container_name'], pioneer_args['target_container_name'], 'nat_policy_containers')
 
         # Map zones if provided
         if pioneer_args.get('map_zones'):
@@ -276,10 +280,10 @@ def main():
             migration_project = MigrationProjectFactory.build_migration_project(migration_project.name, migration_project.db)
 
             # Process and migrate security policy container if provided
+            #TODO: extend this option to migrate NAT container as well
             if pioneer_args['security_policy_container [container_name]']:
                 security_policy_container = PioneerSecurityPolicyContainer(migration_project, pioneer_args['security_policy_container [container_name]'], None)
                 security_policy_container.process_and_migrate()
 
-#TODO: test the import of NAT policies as it should work, then preload the data, create the relationships and start migrating stuff
 if __name__ == "__main__":
     main()

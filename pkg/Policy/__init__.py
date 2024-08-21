@@ -939,6 +939,7 @@ class NATPolicy(Policy):
                     icmp_uid = preloaded_data[gvars.icmp_object].get(port_name)
                     group_uid = preloaded_data[gvars.port_group_object].get(port_name)
                     target_table.insert(self.uid, object_uid, icmp_uid, group_uid, flow)
+                    
         # Insert source and destination zones
         insert_zones(self.source_zones, 'source')
         insert_zones(self.destination_zones, 'destination')

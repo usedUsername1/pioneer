@@ -53,7 +53,8 @@ def create_parser():
     parser.add_argument("--migrate", nargs='?', const=True, default=False, help="Flag to initiate the migration process.")
 
     # Container mapping arguments
-    parser.add_argument("--map-containers", action='store_true', help="Flag to indicate if you want to map containers.")
+    parser.add_argument("--map-security-policy-containers", action='store_true', help="Flag to indicate if you want to map containers.")
+    parser.add_argument("--map-nat-policy-containers", action='store_true', help="Flag to indicate if you want to map containers.")
     parser.add_argument("--source-container", dest='source_container_name', help="Specify the source container name.")
     parser.add_argument("--target-container", dest='target_container_name', help="Specify the target container name.")
 
@@ -63,10 +64,6 @@ def create_parser():
     parser.add_argument("--target-zone", dest='target_zone_name', help="Specify the target zone name.")
     
     parser.add_argument("--target-device", dest='target_device_name', help="Specify the target security device for changes.")
-
-    # Import configuration argument
-    parser.add_argument("--import-config", nargs='?', const=True, default=False, help="Flag to import configuration from the target device.")
-    parser.add_argument("--security-policy-container [container_name]", help="Import a security policy container.")
 
     # Temporary arguments related to migration projects
     parser.add_argument("--send-logs-to-manager", help="Specify the manager name to send logs to.")
