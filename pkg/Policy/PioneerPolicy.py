@@ -1,4 +1,4 @@
-from pkg.Policy import SecurityPolicy
+from pkg.Policy import SecurityPolicy, NATPolicy
 import utils.helper as helper
 import utils.gvars as gvars
 from pkg.DeviceObject.PioneerDeviceObject import ObjectCache, PioneerNetworkObject, PioneerNetworkGroupObject, PioneerPortObject, PioneerICMPObject, \
@@ -42,7 +42,7 @@ class PioneerSecurityPolicy(SecurityPolicy):
         Initialize class variables if they are not already initialized.
 
         Parameters:
-            policy_container (PolicyContainer): The container holding policy information.
+            policy_container (policy_container): The container holding policy information.
 
         """
         if not cls._initialized:
@@ -66,19 +66,19 @@ class PioneerSecurityPolicy(SecurityPolicy):
             cls._url_group_members_table = policy_container.security_device.db.url_group_objects_members_table
             cls._initialized = True
 
-    def __init__(self, PolicyContainer, policy_info) -> None:
+    def __init__(self, policy_container, policy_info) -> None:
         """
         Initialize a PioneerSecurityPolicy instance.
 
         Parameters:
-            PolicyContainer (PolicyContainer): The policy container for the security policy.
+            policy_container (policy_container): The policy container for the security policy.
             policy_info (tuple): A tuple containing policy information.
         """
         self._uid = policy_info[0]
         self._name = policy_info[1]
-        self._policy_container = PolicyContainer
+        self._policy_container = policy_container
 
-        PioneerSecurityPolicy.initialize_class_variables(PolicyContainer)
+        PioneerSecurityPolicy.initialize_class_variables(policy_container)
 
         # Initialize security policy attributes
         self._source_zones = self.extract_security_zone_object_info('source')
@@ -703,6 +703,7 @@ class PioneerSecurityPolicy(SecurityPolicy):
             join=join_condition
         )
         return l7_app_objects
+
     def log_special_parameters(self):
         """
         Logs special parameters associated with the security policy.
@@ -736,3 +737,528 @@ class PioneerSecurityPolicy(SecurityPolicy):
                     special_policies_log.info(f"{param_name}: {param_value}")
 
             special_policies_log.info("########################################################################################################")
+
+class PioneerNATPolicy(NATPolicy):
+    nat_policy_zones_table = None
+    nat_policy_original_networks_table = None
+    nat_policy_original_ports_table = None
+    nat_policy_translated_networks_table = None
+    nat_policy_translated_ports_table = None
+    _network_group_members_table = None
+    _port_group_members_table = None
+
+    _db = None
+    _initialized = False  # Initialization flag
+
+    # Class-level cache
+    _object_cache = ObjectCache()
+
+    @classmethod
+    def initialize_class_variables(cls, policy_container):
+        """
+        Initialize class variables if they are not already initialized.
+
+        Parameters:
+            policy_container (policy_container): The container holding policy information.
+
+        """
+        if not cls._initialized:
+            cls.nat_policy_zones_table = policy_container.security_device.db.nat_policy_zones_table
+            cls.nat_policy_original_networks_table = policy_container.security_device.db.nat_policy_original_networks_table
+            cls.nat_policy_original_ports_table = policy_container.security_device.db.nat_policy_original_ports_table
+            cls.nat_policy_translated_networks_table = policy_container.security_device.db.nat_policy_translated_networks_table
+            cls.nat_policy_translated_ports_table = policy_container.security_device.db.nat_policy_translated_ports_table
+            cls._initialized = True
+    
+    def __init__(self, policy_container, policy_info) -> None:
+        # Initialize basic attributes
+        self._policy_container = policy_container
+        self._source_zones = self.extract_security_zone_object_info('source')
+        self._destination_zones = self.extract_security_zone_object_info('destination')
+        
+        # Extract additional policy information from policy_info dictionary
+        self._container_index = policy_info[5]
+        self._status = policy_info[7]
+        self._description = policy_info[12]
+        self._comments = policy_info[11]
+        self._log_to_manager = policy_info[8]
+        self._log_to_syslog = policy_info[9]
+        self._category = policy_info[6]
+        self._section = policy_info[10]
+        self._interface_in_original_destination = policy_info[3]
+        self._interface_in_translated_source = policy_info[4]
+        self._static_or_dynamic = policy_info[13]
+        self._single_or_twice_nat = policy_info[14]
+        
+        self._original_source_network = self.extract_network_address_object_info('original', 'source', 'object_uid')
+        self._original_source_network_group_object = self.extract_network_address_object_info('original', 'source', 'group_object_uid')
+        self._original_source = self._original_source_network | self._original_source_network_group_object
+        self._original_source_port_object = self.extract_port_object_info('original', 'source', 'object_uid')
+        self._original_source_icmp_object = self.extract_port_object_info('original', 'source', 'icmp_object_uid')
+        self._original_source_port_group_object = self.extract_port_object_info('original', 'source', 'group_object_uid')
+        self._original_source_port = self._original_source_port_object | self._original_source_port_group_object | self._original_source_icmp_object
+        
+        # Extract original destination network and port information
+        self._original_destination_network = self.extract_network_address_object_info('original', 'destination', 'object_uid')
+        self._original_destination_network_group_object = self.extract_network_address_object_info('original', 'destination', 'group_object_uid')
+        self._original_destination = self._original_destination_network | self._original_destination_network_group_object
+        self._original_destination_port_object = self.extract_port_object_info('original', 'destination', 'object_uid')
+        self._original_destination_icmp_object = self.extract_port_object_info('original', 'destination', 'icmp_object_uid')
+        self._original_destination_port_group_object = self.extract_port_object_info('original', 'destination', 'group_object_uid')
+        self._original_destination_port = self._original_destination_port_object | self._original_destination_port_group_object | self._original_destination_icmp_object
+
+        # Extract translated source network and port information
+        self._translated_source_network = self.extract_network_address_object_info('translated', 'source', 'object_uid')
+        self._translated_source_network_group_object = self.extract_network_address_object_info('translated', 'source', 'group_object_uid')
+        self._translated_source = self._translated_source_network | self._translated_source_network_group_object
+        self._translated_source_port_object = self.extract_port_object_info('translated', 'source', 'object_uid')
+        self._translated_source_icmp_object = self.extract_port_object_info('translated', 'source', 'icmp_object_uid')
+        self._translated_source_port_group_object = self.extract_port_object_info('translated', 'source', 'group_object_uid')
+        self._translated_source_port = self._translated_source_port_object | self._translated_source_port_group_object | self._translated_source_icmp_object
+
+        # Extract translated destination network and port information
+        self._translated_destination_network = self.extract_network_address_object_info('translated', 'destination', 'object_uid')
+        self._translated_destination_network_group_object = self.extract_network_address_object_info('translated', 'destination', 'group_object_uid')
+        self._translated_destination = self._translated_destination_network | self._translated_destination_network_group_object
+        self._translated_destination_port_object = self.extract_port_object_info('translated', 'destination', 'object_uid')
+        self._translated_destination_icmp_object = self.extract_port_object_info('translated', 'destination', 'icmp_object_uid')
+        self._translated_destination_port_group_object = self.extract_port_object_info('translated', 'destination', 'group_object_uid')
+        self._translated_destination_port = self._translated_destination_port_object | self._translated_destination_port_group_object | self._translated_destination_icmp_object
+
+        # Call the super class constructor
+        super().__init__(
+            self._policy_container,
+            self._name, 
+            self._source_zones,
+            self._destination_zones, 
+            self._container_index, 
+            self._status, 
+            self._description, 
+            self._comments, 
+            self._log_to_manager, 
+            self._log_to_syslog, 
+            self._category, 
+            self._section, 
+            self._interface_in_original_destination, 
+            self._interface_in_translated_source, 
+            self._static_or_dynamic, 
+            self._single_or_twice_nat, 
+            self._original_source, 
+            self._original_source_port, 
+            self._original_destination, 
+            self._original_destination_port, 
+            self._translated_source, 
+            self._translated_source_port, 
+            self._translated_destination, 
+            self._translated_destination_port
+        )
+
+    # Properties and setters for original source network
+    @property
+    def original_source_network(self):
+        return self._original_source_network
+
+    @original_source_network.setter
+    def original_source_network(self, value):
+        self._original_source_network = value
+
+    @property
+    def original_source_network_group_object(self):
+        return self._original_source_network_group_object
+
+    @original_source_network_group_object.setter
+    def original_source_network_group_object(self, value):
+        self._original_source_network_group_object = value
+
+    # Properties and setters for original source port
+    @property
+    def original_source_port_object(self):
+        return self._original_source_port_object
+
+    @original_source_port_object.setter
+    def original_source_port_object(self, value):
+        self._original_source_port_object = value
+
+    @property
+    def original_source_icmp_object(self):
+        return self._original_source_icmp_object
+
+    @original_source_icmp_object.setter
+    def original_source_icmp_object(self, value):
+        self._original_source_icmp_object = value
+
+    @property
+    def original_source_port_group_object(self):
+        return self._original_source_port_group_object
+
+    @original_source_port_group_object.setter
+    def original_source_port_group_object(self, value):
+        self._original_source_port_group_object = value
+
+    # Properties and setters for original destination network
+    @property
+    def original_destination_network(self):
+        return self._original_destination_network
+
+    @original_destination_network.setter
+    def original_destination_network(self, value):
+        self._original_destination_network = value
+
+    @property
+    def original_destination_network_group_object(self):
+        return self._original_destination_network_group_object
+
+    @original_destination_network_group_object.setter
+    def original_destination_network_group_object(self, value):
+        self._original_destination_network_group_object = value
+
+    # Properties and setters for original destination port
+    @property
+    def original_destination_port_object(self):
+        return self._original_destination_port_object
+
+    @original_destination_port_object.setter
+    def original_destination_port_object(self, value):
+        self._original_destination_port_object = value
+
+    @property
+    def original_destination_icmp_object(self):
+        return self._original_destination_icmp_object
+
+    @original_destination_icmp_object.setter
+    def original_destination_icmp_object(self, value):
+        self._original_destination_icmp_object = value
+
+    @property
+    def original_destination_port_group_object(self):
+        return self._original_destination_port_group_object
+
+    @original_destination_port_group_object.setter
+    def original_destination_port_group_object(self, value):
+        self._original_destination_port_group_object = value
+
+    # Properties and setters for translated source network
+    @property
+    def translated_source_network(self):
+        return self._translated_source_network
+
+    @translated_source_network.setter
+    def translated_source_network(self, value):
+        self._translated_source_network = value
+
+    @property
+    def translated_source_network_group_object(self):
+        return self._translated_source_network_group_object
+
+    @translated_source_network_group_object.setter
+    def translated_source_network_group_object(self, value):
+        self._translated_source_network_group_object = value
+
+    # Properties and setters for translated source port
+    @property
+    def translated_source_port_object(self):
+        return self._translated_source_port_object
+
+    @translated_source_port_object.setter
+    def translated_source_port_object(self, value):
+        self._translated_source_port_object = value
+
+    @property
+    def translated_source_icmp_object(self):
+        return self._translated_source_icmp_object
+
+    @translated_source_icmp_object.setter
+    def translated_source_icmp_object(self, value):
+        self._translated_source_icmp_object = value
+
+    @property
+    def translated_source_port_group_object(self):
+        return self._translated_source_port_group_object
+
+    @translated_source_port_group_object.setter
+    def translated_source_port_group_object(self, value):
+        self._translated_source_port_group_object = value
+
+    # Properties and setters for translated destination network
+    @property
+    def translated_destination_network(self):
+        return self._translated_destination_network
+
+    @translated_destination_network.setter
+    def translated_destination_network(self, value):
+        self._translated_destination_network = value
+
+    @property
+    def translated_destination_network_group_object(self):
+        return self._translated_destination_network_group_object
+
+    @translated_destination_network_group_object.setter
+    def translated_destination_network_group_object(self, value):
+        self._translated_destination_network_group_object = value
+
+    # Properties and setters for translated destination port
+    @property
+    def translated_destination_port_object(self):
+        return self._translated_destination_port_object
+
+    @translated_destination_port_object.setter
+    def translated_destination_port_object(self, value):
+        self._translated_destination_port_object = value
+
+    @property
+    def translated_destination_icmp_object(self):
+        return self._translated_destination_icmp_object
+
+    @translated_destination_icmp_object.setter
+    def translated_destination_icmp_object(self, value):
+        self._translated_destination_icmp_object = value
+
+    @property
+    def translated_destination_port_group_object(self):
+        return self._translated_destination_port_group_object
+
+    @translated_destination_port_group_object.setter
+    def translated_destination_port_group_object(self, value):
+        self._translated_destination_port_group_object = value
+
+    def extract_security_zone_object_info(self, flow):
+        """
+        Extract security zone object information based on the flow type.
+
+        Parameters:
+            flow (str): The type of flow (e.g., 'source' or 'destination').
+
+        Returns:
+            list: A list of security zone UIDs.
+        """
+        nat_policy_zones = self.nat_policy_zones_table.get(
+            columns='zone_uid',
+            name_col=['nat_policy_uid', 'flow'],
+            val=[self._uid, flow],
+            not_null_condition=True,
+            multiple_where=True
+        )
+        return nat_policy_zones
+
+    #TODO: see if you can consolidate these functions and the ones in SecurityPolicy class
+    def extract_network_address_object_info(self, original_or_translated, object_type, flow):
+        """
+        Extract network address object information based on the object type, flow type, and whether it's original or translated.
+
+        Parameters:
+            original_or_translated (str): Indicates whether to extract from the original or translated network (e.g., 'original', 'translated').
+            object_type (str): The type of object to extract (e.g., 'object_uid', 'group_object_uid').
+            flow (str): The type of flow (e.g., 'source' or 'destination').
+
+        Returns:
+            set: A set of network address objects or names.
+        """
+        security_policy_networks = set()
+
+        # Determine the appropriate table based on the original_or_translated parameter
+        if original_or_translated == 'original':
+            policy_networks_table = self.nat_policy_original_networks
+        elif original_or_translated == 'translated':
+            policy_networks_table = self.nat_policy_translated_networks
+        else:
+            raise ValueError("Invalid value for original_or_translated: must be 'original' or 'translated'")
+
+        match object_type:
+            case 'object_uid':
+                join = {
+                    "table": "network_address_objects",
+                    "condition": f"{policy_networks_table}.object_uid = network_address_objects.uid"
+                }
+                columns = (
+                    "network_address_objects.uid, "
+                    "network_address_objects.name, "
+                    "network_address_objects.object_container_uid, "
+                    "network_address_objects.value, "
+                    "network_address_objects.description, "
+                    "network_address_objects.type, "
+                    "network_address_objects.overridable_object"
+                )
+                network_objects_info = policy_networks_table.get(
+                    columns=columns,
+                    name_col=['nat_policy_uid', 'flow'],
+                    val=[self._uid, flow],
+                    join=join,
+                    not_null_condition=False,
+                    multiple_where=True
+                )
+
+                for object_info in network_objects_info:
+                    uid = object_info[0]
+                    name = object_info[1]
+                    key = (uid, name)
+
+                    # Use cache to avoid creating duplicate objects
+                    network_object = self._object_cache.get_or_create(
+                        key, 
+                        lambda: PioneerNetworkObject(None, object_info)
+                    )
+                    security_policy_networks.add(network_object)
+
+            case 'group_object_uid':
+                columns = (
+                    "network_group_objects.uid, "
+                    "network_group_objects.name, "
+                    "network_group_objects.object_container_uid, "
+                    "network_group_objects.description, "
+                    "network_group_objects.overridable_object"
+                )
+                join = {
+                    "table": "network_group_objects",
+                    "condition": f"{policy_networks_table}.group_object_uid = network_group_objects.uid"
+                }
+                network_objects_info = policy_networks_table.get(
+                    columns=columns,
+                    name_col=['nat_policy_uid', 'flow'],
+                    val=[self._uid, flow],
+                    join=join,
+                    not_null_condition=False,
+                    multiple_where=True
+                )
+
+                for object_info in network_objects_info:
+                    uid = object_info[0]
+                    name = object_info[1]
+                    key = (uid, name)
+
+                    # Use cache to avoid creating duplicate objects
+                    network_object = self._object_cache.get_or_create(
+                        key, 
+                        lambda: PioneerNetworkGroupObject(None, object_info)
+                    )
+
+                    network_object.extract_members('object', self._object_cache, self._network_group_members_table)
+                    network_object.extract_members('group', self._object_cache, self._network_group_members_table)
+                    security_policy_networks.add(network_object)
+
+        return security_policy_networks
+
+    def extract_port_object_info(self, original_or_translated, object_type, flow):
+        """
+        Extract port-related object information based on the object type, flow type, and whether it's original or translated.
+
+        Parameters:
+            original_or_translated (str): Indicates whether to extract from the original or translated port data (e.g., 'original', 'translated').
+            object_type (str): The type of port-related object to extract (e.g., 'object_uid', 'icmp_object_uid', 'group_object_uid').
+            flow (str): The type of flow (e.g., 'source' or 'destination').
+
+        Returns:
+            set: A set of port-related objects.
+        """
+        security_policy_ports_info = set()
+
+        # Determine the appropriate table based on the original_or_translated parameter
+        if original_or_translated == 'original':
+            policy_ports_table = self.nat_policy_original_ports
+        elif original_or_translated == 'translated':
+            policy_ports_table = self.nat_policy_translated_ports
+        else:
+            raise ValueError("Invalid value for original_or_translated: must be 'original' or 'translated'")
+
+        match object_type:
+            case 'object_uid':
+                join = {
+                    "table": "port_objects",
+                    "condition": f"{policy_ports_table}.object_uid = port_objects.uid"
+                }
+                columns = (
+                    "port_objects.uid, "
+                    "port_objects.name, "
+                    "port_objects.object_container_uid, "
+                    "port_objects.protocol, "
+                    "port_objects.source_port_number, "
+                    "port_objects.destination_port_number, "
+                    "port_objects.description, "
+                    "port_objects.overridable_object"
+                )
+                data = policy_ports_table.get(
+                    columns=columns,
+                    name_col=['nat_policy_uid', 'flow'],
+                    val=[self._uid, flow],
+                    join=join,
+                    not_null_condition=False,
+                    multiple_where=True
+                )
+
+                for object_info in data:
+                    uid = object_info[0]
+                    name = object_info[1]
+                    key = (uid, name)
+                    port_object = self._object_cache.get_or_create(
+                        key,
+                        lambda: PioneerPortObject(None, object_info)
+                    )
+                    security_policy_ports_info.add(port_object)
+
+            case 'icmp_object_uid':
+                join = {
+                    "table": "icmp_objects",
+                    "condition": f"{policy_ports_table}.icmp_object_uid = icmp_objects.uid"
+                }
+                columns = (
+                    "icmp_objects.uid, "
+                    "icmp_objects.name, "
+                    "icmp_objects.object_container_uid, "
+                    "icmp_objects.type, "
+                    "icmp_objects.code, "
+                    "icmp_objects.description, "
+                    "icmp_objects.overridable_object"
+                )
+                data = policy_ports_table.get(
+                    columns=columns,
+                    name_col=['nat_policy_uid', 'flow'],
+                    val=[self._uid, flow],
+                    join=join,
+                    not_null_condition=False,
+                    multiple_where=True
+                )
+
+                for object_info in data:
+                    uid = object_info[0]
+                    name = object_info[1]
+                    key = (uid, name)
+                    icmp_object = self._object_cache.get_or_create(
+                        key,
+                        lambda: PioneerICMPObject(None, object_info)
+                    )
+                    security_policy_ports_info.add(icmp_object)
+
+            case 'group_object_uid':
+                join = {
+                    "table": "port_group_objects",
+                    "condition": f"{policy_ports_table}.group_object_uid = port_group_objects.uid"
+                }
+                columns = (
+                    "port_group_objects.uid, "
+                    "port_group_objects.name, "
+                    "port_group_objects.object_container_uid, "
+                    "port_group_objects.description, "
+                    "port_group_objects.overridable_object"
+                )
+                data = policy_ports_table.get(
+                    columns=columns,
+                    name_col=['nat_policy_uid', 'flow'],
+                    val=[self._uid, flow],
+                    join=join,
+                    not_null_condition=False,
+                    multiple_where=True
+                )
+
+                for object_info in data:
+                    uid = object_info[0]
+                    name = object_info[1]
+                    key = (uid, name)
+                    port_group_object = self._object_cache.get_or_create(
+                        key,
+                        lambda: PioneerPortGroupObject(None, object_info)
+                    )
+                    port_group_object.extract_members('object', self._object_cache, self._port_group_members_table)
+                    port_group_object.extract_members('group', self._object_cache, self._port_group_members_table)
+                    port_group_object.extract_members('icmp', self._object_cache, self._port_group_members_table)
+                    security_policy_ports_info.add(port_group_object)
+
+        return security_policy_ports_info

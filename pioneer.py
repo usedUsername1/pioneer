@@ -9,7 +9,7 @@ from pkg.MigrationProject import MigrationProjectFactory
 import sys
 from datetime import datetime, timezone
 import time
-from pkg.Container.PioneerContainer import PioneerSecurityPolicyContainer
+from pkg.Container.PioneerContainer import PioneerSecurityPolicyContainer, PioneerNATPolicyContainer
 
 # Disable logging for the 'fireREST' logger
 helper.logging.getLogger('fireREST').setLevel(helper.logging.CRITICAL)
@@ -284,6 +284,10 @@ def main():
             if pioneer_args['security_policy_container [container_name]']:
                 security_policy_container = PioneerSecurityPolicyContainer(migration_project, pioneer_args['security_policy_container [container_name]'], None)
                 security_policy_container.process_and_migrate()
+            
+            if pioneer_args['nat_policy_container [container_name]']:
+                nat_policy_container = PioneerNATPolicyContainer(migration_project, pioneer_args['nat_policy_container [container_name]'], None)
+                nat_policy_container.process_and_migrate()
 
 if __name__ == "__main__":
     main()

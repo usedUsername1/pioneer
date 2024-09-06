@@ -1,5 +1,5 @@
-from pkg.Container import Container, SecurityPolicyContainer
-from pkg.Policy.PioneerPolicy import PioneerSecurityPolicy
+from pkg.Container import Container, SecurityPolicyContainer, NATPolicyContainer
+from pkg.Policy.PioneerPolicy import PioneerSecurityPolicy, PioneerNATPolicy
 from pkg.DeviceObject import PioneerDeviceObject
 
 class PioneerSecurityPolicyContainer(SecurityPolicyContainer):
@@ -17,29 +17,9 @@ class PioneerSecurityPolicyContainer(SecurityPolicyContainer):
             parent_name (str): The name of the parent container.
         """
         super().__init__(security_device, name, parent_name)
-        self.uid = self.get_source_security_policy_container_uid()
+        self._uid = self.get_container_uid()
     
-    @property
-    def uid(self):
-        """
-        Gets the UID of the security policy container.
-
-        Returns:
-            str: The UID of the security policy container.
-        """
-        return self._uid
-
-    @uid.setter
-    def uid(self, value):
-        """
-        Sets the UID of the security policy container.
-
-        Args:
-            value (str): The UID to set.
-        """
-        self._uid = value
-    
-    def get_source_security_policy_container_uid(self) -> str:
+    def get_container_uid(self) -> str:
         """
         Retrieves the source UID of the security policy container from the database.
 
@@ -167,3 +147,123 @@ class PioneerSecurityPolicyContainer(SecurityPolicyContainer):
         else:
             print("migrating security policies")
             self._security_device.migrate_security_policies(policies_list)
+
+class PioneerNATPolicyContainer(NATPolicyContainer):
+    def __init__(self, security_device, name, parent_name) -> None:
+        super().__init__(security_device, name, parent_name)
+        self._uid = self.get_container_uid()
+    
+    def get_container_uid(self):
+        """
+        Retrieves the source UID of the NAT policy container from the database.
+
+        Returns:
+            str: The source UID of the NAT policy container.
+        """
+
+        join_conditions = {
+            "table": "migration_project_devices",
+            "condition": "nat_policy_containers.security_device_uid = migration_project_devices.source_device_uid"
+        }
+
+        result = self.security_device.db.nat_policy_containers_table.get(
+            columns=['*'],
+            name_col='nat_policy_containers.name',
+            val=self._name,
+            join=join_conditions
+        )
+        
+        return result[0][0] if result else None
+
+    def process_and_migrate(self):
+        """
+        Processes and migrates NAT policies, network objects, port objects associated with the to-be-migrated NAT policies.
+        """
+        policies_list = []
+        network_objects_set = set()
+        network_group_objects_set = set()
+        port_objects_set = set()
+        port_group_objects_set = set()
+
+        # Retrieve the security policy info from the database
+        policies = self.security_device.db.nat_policy_containers.get(
+            columns='*', 
+            name_col='nat_policy_container_uid', 
+            val=self.uid, 
+            order_param='index'
+        )
+
+        # Process each security policy entry
+        for entry in policies:
+            policy = PioneerNATPolicy(self, entry)
+            #TODO: this policy should log static NAT policies that use group objects
+            policy.log_special_parameters()
+
+            #TODO: update the objects list with the objects used to define the NAT policies
+            # Update network-related objects
+            network_objects_set.update(policy.original_source_network)
+            network_objects_set.update(policy.original_destination_network)
+            network_objects_set.update(policy.translated_source_network)
+            network_objects_set.update(policy.translated_destination_network)
+
+            network_group_objects_set.update(policy.original_source_network_group_object)
+            network_group_objects_set.update(policy.original_destination_network_group_object)
+            network_group_objects_set.update(policy.translated_source_network_group_object)
+            network_group_objects_set.update(policy.translated_destination_network_group_object)
+
+            # Update port-related objects
+            port_objects_set.update(policy.original_source_port_object)
+            port_objects_set.update(policy.original_destination_port_object)
+            port_objects_set.update(policy.translated_source_port_object)
+            port_objects_set.update(policy.translated_destination_port_object)
+
+            port_objects_set.update(policy.original_source_icmp_object)
+            port_objects_set.update(policy.original_destination_icmp_object)
+            port_objects_set.update(policy.translated_source_icmp_object)
+            port_objects_set.update(policy.translated_destination_icmp_object)
+
+            port_group_objects_set.update(policy.original_source_port_group_object)
+            port_group_objects_set.update(policy.original_destination_port_group_object)
+            port_group_objects_set.update(policy.translated_source_port_group_object)
+            port_group_objects_set.update(policy.translated_destination_port_group_object)
+
+            # Add the policy to the list of policies that will be migrated
+            policies_list.append(policy)
+            print(policy)
+            # TODO: print the policies and their info first to test that everything up to this point is alright
+
+        # # Migrate the network objects
+        # PioneerDeviceObject.recursive_update_objects_and_groups(network_objects_set, network_group_objects_set)
+        # if not network_objects_set:
+        #     pass
+        # else:
+        #     print("migrating network objects")
+        #     self._security_device.migrate_network_objects(network_objects_set)
+
+        # # Migrate the network group objects
+        # if not network_group_objects_set:
+        #     pass
+        # else:
+        #     print("migrating network group objects")
+        #     self._security_device.migrate_network_group_objects(network_group_objects_set)
+
+        # # Migrate the port objects
+        # PioneerDeviceObject.recursive_update_objects_and_groups(port_objects_set, port_group_objects_set)
+        # if not port_objects_set:
+        #     pass
+        # else:
+        #     print("migrating port objects")
+        #     self._security_device.migrate_port_objects(port_objects_set)
+
+        # # Migrate the port group objects
+        # if not port_group_objects_set:
+        #     pass
+        # else:
+        #     print("migrating port group objects")
+        #     self._security_device.migrate_port_group_objects(port_group_objects_set)
+
+        # if not policies_list:
+        #     pass
+        # else:
+        #     print("migrating NAT policies")
+        #     self._security_device.migrate_nat_policies(policies_list)
