@@ -197,7 +197,7 @@ class PioneerNATPolicyContainer(NATPolicyContainer):
         for entry in policies:
             policy = PioneerNATPolicy(self, entry)
             #TODO: this policy should log static NAT policies that use group objects
-            policy.log_special_parameters()
+            # policy.log_special_parameters()
 
             #TODO: update the objects list with the objects used to define the NAT policies
             # Update network-related objects
