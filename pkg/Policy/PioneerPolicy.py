@@ -768,6 +768,8 @@ class PioneerNATPolicy(NATPolicy):
             cls.nat_policy_original_ports_table = policy_container.security_device.db.nat_policy_original_ports_table
             cls.nat_policy_translated_networks_table = policy_container.security_device.db.nat_policy_translated_networks_table
             cls.nat_policy_translated_ports_table = policy_container.security_device.db.nat_policy_translated_ports_table
+            cls._network_group_members_table = policy_container.security_device.db.network_group_objects_members_table
+            cls._port_group_members_table = policy_container.security_device.db.port_group_objects_members_table
             cls._initialized = True
     
     def __init__(self, policy_container, policy_info) -> None:
@@ -1043,7 +1045,7 @@ class PioneerNATPolicy(NATPolicy):
         return nat_policy_zones
 
     #TODO: see if you can consolidate these functions and the ones in SecurityPolicy class
-    def extract_network_address_object_info(self, original_or_translated, object_type, flow):
+    def extract_network_address_object_info(self, original_or_translated, flow, object_type):
         """
         Extract network address object information based on the object type, flow type, and whether it's original or translated.
 
@@ -1069,7 +1071,7 @@ class PioneerNATPolicy(NATPolicy):
             case 'object_uid':
                 join = {
                     "table": "network_address_objects",
-                    "condition": f"{policy_networks_table}.object_uid = network_address_objects.uid"
+                    "condition": f"{policy_networks_table.name}.object_uid = network_address_objects.uid"
                 }
                 columns = (
                     "network_address_objects.uid, "
@@ -1111,7 +1113,7 @@ class PioneerNATPolicy(NATPolicy):
                 )
                 join = {
                     "table": "network_group_objects",
-                    "condition": f"{policy_networks_table}.group_object_uid = network_group_objects.uid"
+                    "condition": f"{policy_networks_table.name}.group_object_uid = network_group_objects.uid"
                 }
                 network_objects_info = policy_networks_table.get(
                     columns=columns,
@@ -1132,14 +1134,13 @@ class PioneerNATPolicy(NATPolicy):
                         key, 
                         lambda: PioneerNetworkGroupObject(None, object_info)
                     )
-
                     network_object.extract_members('object', self._object_cache, self._network_group_members_table)
                     network_object.extract_members('group', self._object_cache, self._network_group_members_table)
                     security_policy_networks.add(network_object)
 
         return security_policy_networks
 
-    def extract_port_object_info(self, original_or_translated, object_type, flow):
+    def extract_port_object_info(self, original_or_translated, flow, object_type):
         """
         Extract port-related object information based on the object type, flow type, and whether it's original or translated.
 
@@ -1165,7 +1166,7 @@ class PioneerNATPolicy(NATPolicy):
             case 'object_uid':
                 join = {
                     "table": "port_objects",
-                    "condition": f"{policy_ports_table}.object_uid = port_objects.uid"
+                    "condition": f"{policy_ports_table.name}.object_uid = port_objects.uid"
                 }
                 columns = (
                     "port_objects.uid, "
@@ -1199,7 +1200,7 @@ class PioneerNATPolicy(NATPolicy):
             case 'icmp_object_uid':
                 join = {
                     "table": "icmp_objects",
-                    "condition": f"{policy_ports_table}.icmp_object_uid = icmp_objects.uid"
+                    "condition": f"{policy_ports_table.name}.icmp_object_uid = icmp_objects.uid"
                 }
                 columns = (
                     "icmp_objects.uid, "
@@ -1232,7 +1233,7 @@ class PioneerNATPolicy(NATPolicy):
             case 'group_object_uid':
                 join = {
                     "table": "port_group_objects",
-                    "condition": f"{policy_ports_table}.group_object_uid = port_group_objects.uid"
+                    "condition": f"{policy_ports_table.name}.group_object_uid = port_group_objects.uid"
                 }
                 columns = (
                     "port_group_objects.uid, "
