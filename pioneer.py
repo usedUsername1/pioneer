@@ -280,14 +280,17 @@ def main():
             migration_project = MigrationProjectFactory.build_migration_project(migration_project.name, migration_project.db)
 
             # Process and migrate security policy container if provided
-            #TODO: extend this option to migrate NAT container as well
-            if pioneer_args['security_policy_container [container_name]']:
-                security_policy_container = PioneerSecurityPolicyContainer(migration_project, pioneer_args['security_policy_container [container_name]'], None)
+            if pioneer_args['security_policy_container']:
+                security_policy_container = PioneerSecurityPolicyContainer(migration_project, pioneer_args['security_policy_container'], None)
                 security_policy_container.process_and_migrate()
             
-            if pioneer_args['nat_policy_container [container_name]']:
-                nat_policy_container = PioneerNATPolicyContainer(migration_project, pioneer_args['nat_policy_container [container_name]'], None)
+            if pioneer_args['nat_policy_container']:
+                nat_policy_container = PioneerNATPolicyContainer(migration_project, pioneer_args['nat_policy_container'], None)
                 nat_policy_container.process_and_migrate()
 
 if __name__ == "__main__":
     main()
+
+#TODO: there is a problem with importing some NAT policies, fix it :(
+# rewrite the map-container like migrate argument
+# skip the preload of data if nothing is provided (logging settings and security profiles)

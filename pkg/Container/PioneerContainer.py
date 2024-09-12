@@ -186,7 +186,7 @@ class PioneerNATPolicyContainer(NATPolicyContainer):
         port_group_objects_set = set()
 
         # Retrieve the security policy info from the database
-        policies = self.security_device.db.nat_policy_containers.get(
+        policies = self.security_device.db.nat_policies_table.get(
             columns='*', 
             name_col='nat_policy_container_uid', 
             val=self.uid, 
@@ -197,7 +197,7 @@ class PioneerNATPolicyContainer(NATPolicyContainer):
         for entry in policies:
             policy = PioneerNATPolicy(self, entry)
             #TODO: this policy should log static NAT policies that use group objects
-            # policy.log_special_parameters()
+#            policy.log_special_parameters()
 
             #TODO: update the objects list with the objects used to define the NAT policies
             # Update network-related objects
@@ -229,7 +229,55 @@ class PioneerNATPolicyContainer(NATPolicyContainer):
 
             # Add the policy to the list of policies that will be migrated
             policies_list.append(policy)
-            print(policy)
+            # print(f"Policy Name: {policy.name}")
+            # print(f"Source Zones: {policy.source_zones}")
+            # print(f"Destination Zones: {policy.destination_zones}")
+            # print(f"Container Index: {policy.container_index}")
+            # print(f"Status: {policy.status}")
+            # print(f"Description: {policy.description}")
+            # print(f"Comments: {policy.comments}")
+            # print(f"Log to Manager: {policy.log_to_manager}")
+            # print(f"Log to Syslog: {policy.log_to_syslog}")
+            # print(f"Category: {policy.category}")
+            # print(f"Section: {policy.section}")
+            # print(f"Interface in Original Destination: {policy.interface_in_original_destination}")
+            # print(f"Interface in Translated Source: {policy.interface_in_translated_source}")
+            # print(f"Static or Dynamic: {policy.static_or_dynamic}")
+            # print(f"Single or Twice NAT: {policy.single_or_twice_nat}")
+            
+            # print(f"Original Source Network: {policy.original_source_network}")
+            # print(f"Original Source Network Group Object: {policy.original_source_network_group_object}")
+            # print(f"Original Source: {policy.original_source}")
+            # print(f"Original Source Port Object: {policy.original_source_port_object}")
+            # print(f"Original Source ICMP Object: {policy.original_source_icmp_object}")
+            # print(f"Original Source Port Group Object: {policy.original_source_port_group_object}")
+            # print(f"Original Source Port: {policy.original_source_port}")
+            
+            # print(f"Original Destination Network: {policy.original_destination_network}")
+            # print(f"Original Destination Network Group Object: {policy.original_destination_network_group_object}")
+            # print(f"Original Destination: {policy.original_destination}")
+            # print(f"Original Destination Port Object: {policy.original_destination_port_object}")
+            # print(f"Original Destination ICMP Object: {policy.original_destination_icmp_object}")
+            # print(f"Original Destination Port Group Object: {policy.original_destination_port_group_object}")
+            # print(f"Original Destination Port: {policy.original_destination_port}")
+            
+            # print(f"Translated Source Network: {policy.translated_source_network}")
+            # print(f"Translated Source Network Group Object: {policy.translated_source_network_group_object}")
+            # print(f"Translated Source: {policy.translated_source}")
+            # print(f"Translated Source Port Object: {policy.translated_source_port_object}")
+            # print(f"Translated Source ICMP Object: {policy.translated_source_icmp_object}")
+            # print(f"Translated Source Port Group Object: {policy.translated_source_port_group_object}")
+            # print(f"Translated Source Port: {policy.translated_source_port}")
+            
+            # print(f"Translated Destination Network: {policy.translated_destination_network}")
+            # print(f"Translated Destination Network Group Object: {policy.translated_destination_network_group_object}")
+            # print(f"Translated Destination: {policy.translated_destination}")
+            # print(f"Translated Destination Port Object: {policy.translated_destination_port_object}")
+            # print(f"Translated Destination ICMP Object: {policy.translated_destination_icmp_object}")
+            # print(f"Translated Destination Port Group Object: {policy.translated_destination_port_group_object}")
+            # print(f"Translated Destination Port: {policy.translated_destination_port}")
+            # print()
+            # print()
             # TODO: print the policies and their info first to test that everything up to this point is alright
 
         # # Migrate the network objects

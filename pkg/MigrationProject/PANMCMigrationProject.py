@@ -433,6 +433,9 @@ PA treats ping as an application. The second rule will keep the exact same sourc
             except Exception as e:
                 print("Error occurred when creating policy object. More details: ", e)
                 special_policies_log.warn(f"Failed to create policy {policy.name}. Reason: {e}.\n")
+            
+            #TODO: empty the rulebase after the policies have been created, to prevent
+            # the case where a policy that cannot be migrated prevents further policies from getting migrated
 
 #TODO: maybe move all the below functions in MigrationProject?
 # it looks like this code can be reused in other places as well

@@ -773,9 +773,11 @@ class PioneerNATPolicy(NATPolicy):
     def __init__(self, policy_container, policy_info) -> None:
         # Initialize basic attributes
         self._policy_container = policy_container
+        self._uid = policy_info[0]
+        self._name = policy_info[1]
+        PioneerNATPolicy.initialize_class_variables(self._policy_container)
         self._source_zones = self.extract_security_zone_object_info('source')
         self._destination_zones = self.extract_security_zone_object_info('destination')
-        
         # Extract additional policy information from policy_info dictionary
         self._container_index = policy_info[5]
         self._status = policy_info[7]
@@ -1057,9 +1059,9 @@ class PioneerNATPolicy(NATPolicy):
 
         # Determine the appropriate table based on the original_or_translated parameter
         if original_or_translated == 'original':
-            policy_networks_table = self.nat_policy_original_networks
+            policy_networks_table = self.nat_policy_original_networks_table
         elif original_or_translated == 'translated':
-            policy_networks_table = self.nat_policy_translated_networks
+            policy_networks_table = self.nat_policy_translated_networks_table
         else:
             raise ValueError("Invalid value for original_or_translated: must be 'original' or 'translated'")
 
@@ -1153,9 +1155,9 @@ class PioneerNATPolicy(NATPolicy):
 
         # Determine the appropriate table based on the original_or_translated parameter
         if original_or_translated == 'original':
-            policy_ports_table = self.nat_policy_original_ports
+            policy_ports_table = self.nat_policy_original_ports_table
         elif original_or_translated == 'translated':
-            policy_ports_table = self.nat_policy_translated_ports
+            policy_ports_table = self.nat_policy_translated_ports_table
         else:
             raise ValueError("Invalid value for original_or_translated: must be 'original' or 'translated'")
 

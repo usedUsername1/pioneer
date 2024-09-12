@@ -708,7 +708,7 @@ class NATPoliciesTable(PioneerTable):
         self._table_columns = [
             ("uid", "TEXT PRIMARY KEY"),
             ("name", "TEXT NOT NULL"),
-            ("security_policy_container_uid", "TEXT NOT NULL"),
+            ("nat_policy_container_uid", "TEXT NOT NULL"),
             # needed to track if interface is used for translation or not
             ("interface_in_original_destination", "BOOLEAN"),
             ("interface_in_translated_source", "BOOLEAN"),
@@ -723,8 +723,8 @@ class NATPoliciesTable(PioneerTable):
             ("static_or_dynamic", "TEXT"),
             ("single_or_twice", "TEXT"),
             ("target_device_uid", "TEXT"),
-            ("CONSTRAINT fk_security_policy_container FOREIGN KEY(security_policy_container_uid)", "REFERENCES nat_policy_containers(uid)"),
-            ("CONSTRAINT uc_security_policy_container_uid1", "UNIQUE (name, security_policy_container_uid)")
+            ("CONSTRAINT fk_nat_policy_container FOREIGN KEY(nat_policy_container_uid)", "REFERENCES nat_policy_containers(uid)"),
+            ("CONSTRAINT uc_nat_policy_container_uid1", "UNIQUE (name, nat_policy_container_uid)")
         ]
 
 class SecurityZonesTable(PioneerTable):

@@ -50,7 +50,10 @@ def create_parser():
     parser.add_argument("--domain [fmc_domain]", default='Global', help="For FMC devices, specify the administration domain.")
 
     parser.add_argument("--device-name [device_name]", help="Specify the security device where you make the changes.")
+    
     parser.add_argument("--migrate", nargs='?', const=True, default=False, help="Flag to initiate the migration process.")
+    parser.add_argument("--security-policy-container", help="Specify the security policy container name.")
+    parser.add_argument("--nat-policy-container", help="Specify the NAT policy container name.")
 
     # Container mapping arguments
     parser.add_argument("--map-security-policy-containers", action='store_true', help="Flag to indicate if you want to map containers.")

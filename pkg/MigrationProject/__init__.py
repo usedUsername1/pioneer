@@ -274,7 +274,17 @@ class MigrationProject:
             '_security_policy_users_table',
             '_security_policy_urls_table',
             '_security_policy_l7_apps_table',
-            '_security_policy_schedule_table'
+            '_security_policy_schedule_table',
+
+            # NAT Policy Details
+            'nat_policies_table',
+            'nat_policy_containers_table',
+            'nat_policy_original_networks_table',
+            'nat_policy_original_ports_table',
+            'nat_policy_translated_networks_table',
+            'nat_policy_translated_ports_table',
+            'nat_policy_zones_table'
+
         ]
 
         # Copy data for each table
