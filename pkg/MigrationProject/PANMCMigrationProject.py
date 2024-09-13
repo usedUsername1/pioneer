@@ -6,7 +6,7 @@ import re
 from panos.panorama import DeviceGroup, Template
 from panos.network import Zone
 from panos.objects import AddressObject, AddressGroup, ServiceObject, ServiceGroup, CustomUrlCategory, Tag
-from panos.policies import PreRulebase, PostRulebase, SecurityRule
+from panos.policies import PreRulebase, PostRulebase, SecurityRule, NatRule
 import utils.helper as helper
 import utils.gvars as gvars
 
@@ -354,6 +354,20 @@ PA treats ping as an application. The second rule will keep the exact same sourc
         except Exception as e:
             print("Error occurred when creating tag objects. More details: ", e)
 
+    def get_rulebase(self, device_group, section):
+        """
+        Get the appropriate rulebase based on the policy section.
+
+        :param device_group: Device group object.
+        :param section: Policy section ('pre' or 'post').
+        :return: Rulebase object.
+        """
+        section = self._section_map[section]
+        if section == 'pre':
+            return device_group.add(PreRulebase())
+        elif section == 'post':
+            return device_group.add(PostRulebase())
+
     #TODO: experiment with bulk creating
     # bulk creation should be possible as long as the rulebase object/device group object doesn't get instantiated each time for a new policy
     def migrate_security_policies(self, policies):
@@ -370,12 +384,12 @@ PA treats ping as an application. The second rule will keep the exact same sourc
             unresolved_dependency = False
 
             # Get source security zones and handle unresolved dependencies
-            source_zone_names = self._resolve_zone_names(policy.source_zones, 'source', policy.name)
+            source_zone_names = self.resolve_zone_names(policy.source_zones, 'source', policy.name)
             if source_zone_names is None:
                 unresolved_dependency = True
 
             # Get destination security zones and handle unresolved dependencies
-            destination_zone_names = self._resolve_zone_names(policy.destination_zones, 'destination', policy.name)
+            destination_zone_names = self.resolve_zone_names(policy.destination_zones, 'destination', policy.name)
             if destination_zone_names is None:
                 unresolved_dependency = True
 
@@ -383,14 +397,14 @@ PA treats ping as an application. The second rule will keep the exact same sourc
                 continue  # Skip to the next policy
 
             # Get source and destination network names
-            source_network_names = self._get_network_names(policy.source_networks)
-            destination_network_names = self._get_network_names(policy.destination_networks)
+            source_network_names = self.reslove_network_object_names(policy.source_networks)
+            destination_network_names = self.reslove_network_object_names(policy.destination_networks)
 
             # Get destination ports and check if ICMP is involved
-            destination_port_names, has_icmp = self._get_destination_ports(policy.destination_ports)
+            destination_port_names, has_icmp = self.resolve_port_object_names(policy.destination_ports)
 
             # Get URL names
-            url_names = self._get_url_names(policy.urls)
+            url_names = self.resolve_url_object_names(policy.urls)
 
             log_end = True
 
@@ -399,11 +413,11 @@ PA treats ping as an application. The second rule will keep the exact same sourc
 
             # Create and configure device group object
             # a new object gets created here for each rule, this is kind of stupid
-            device_group = DeviceGroup(self._security_policy_containers_map[policy._policy_container.uid])
+            device_group = DeviceGroup(self._security_policy_containers_map[policy.policy_container.uid])
             self._target_security_device.device_connection.add(device_group)
 
             # Determine the appropriate rulebase (pre or post)
-            rulebase = self._get_rulebase(device_group, policy.section)
+            rulebase = self.get_rulebase(device_group, policy.section)
 
             # Adjust policy applications based on ICMP presence
             if has_icmp:
@@ -423,7 +437,7 @@ PA treats ping as an application. The second rule will keep the exact same sourc
             policy.name = PANMCMigrationProject.apply_name_constraints(policy.name)
 
             # Create and add policy object to the rulebase
-            self._add_policy_to_rulebase(rulebase, policy, source_zone_names, destination_zone_names,
+            self._add_security_policy_to_rulebase(rulebase, policy, source_zone_names, destination_zone_names,
                                         source_network_names, destination_network_names,
                                         destination_port_names, url_names, policy_action, log_end)
 
@@ -437,94 +451,7 @@ PA treats ping as an application. The second rule will keep the exact same sourc
             #TODO: empty the rulebase after the policies have been created, to prevent
             # the case where a policy that cannot be migrated prevents further policies from getting migrated
 
-#TODO: maybe move all the below functions in MigrationProject?
-# it looks like this code can be reused in other places as well
-    def _resolve_zone_names(self, zone_uids, zone_type, policy_name):
-        """
-        Resolve security zone names from their UIDs and handle unresolved dependencies.
-
-        :param zone_uids: List of zone UIDs to resolve.
-        :param zone_type: Type of zone ('source' or 'destination').
-        :param policy_name: Name of the policy for logging.
-        :return: List of resolved zone names, or None if unresolved dependencies are found.
-        """
-        zone_names = []
-        if zone_uids:
-            for zone_uid in zone_uids:
-                try:
-                    zone_names.append(self._security_zones_map[zone_uid[0]])
-                except KeyError:
-                    special_policies_log.warn(f"Policy: {policy_name} was not migrated because it has unresolved {zone_type} zone dependencies.")
-                    return None
-        else:
-            zone_names = ['any']
-        return zone_names
-
-    def _get_network_names(self, network_objects):
-        """
-        Get network names from a list of network objects.
-
-        :param network_objects: List of network objects.
-        :return: List of network names.
-        """
-        if network_objects:
-            return [network.name for network in network_objects]
-        return ['any']
-
-    def _get_destination_ports(self, port_objects):
-        """
-        Get destination port names and check if any port is an ICMP object.
-
-        :param port_objects: List of destination port objects.
-        :return: Tuple (List of port names, Boolean indicating if ICMP is present).
-        """
-        port_names = []
-        has_icmp = False
-
-        if port_objects:
-            for port_obj in port_objects:
-                if isinstance(port_obj, PioneerICMPObject):
-                    has_icmp = True
-                elif isinstance(port_obj, PioneerPortGroupObject):
-                    has_icmp = port_obj.check_icmp_members_recursively(has_icmp)
-                    if port_obj._object_members or port_obj._group_object_members:
-                        port_names.append(port_obj.name)
-                else:
-                    port_names.append(port_obj.name)
-        else:
-            port_names = ['any']
-
-        if not port_names:
-            port_names = ['any']
-
-        return port_names, has_icmp
-
-    def _get_url_names(self, url_objects):
-        """
-        Get URL names from a list of URL objects.
-
-        :param url_objects: List of URL objects.
-        :return: List of URL names.
-        """
-        if url_objects:
-            return [url.name for url in url_objects]
-        return ['any']
-
-    def _get_rulebase(self, device_group, section):
-        """
-        Get the appropriate rulebase based on the policy section.
-
-        :param device_group: Device group object.
-        :param section: Policy section ('pre' or 'post').
-        :return: Rulebase object.
-        """
-        section = self._section_map[section]
-        if section == 'pre':
-            return device_group.add(PreRulebase())
-        elif section == 'post':
-            return device_group.add(PostRulebase())
-
-    def _add_policy_to_rulebase(self, rulebase, policy, from_zones, to_zones,
+    def _add_security_policy_to_rulebase(self, rulebase, policy, from_zones, to_zones,
                                source_networks, destination_networks,
                                destination_ports, url_names, policy_action, log_end):
         """
@@ -609,6 +536,90 @@ PA treats ping as an application. The second rule will keep the exact same sourc
                 group=self._special_security_policy_parameters
             )
             rulebase.add(policy_object)
+
+    def migrate_nat_policies(self, policies):
+        """
+        Migrate NAT policies from the source to the target system.
+
+        :param policies: List of NAT policy objects to be migrated.
+        """
+        for policy in policies:
+            print(f"Migrating policy: {policy.name}")
+            if policy.status != True:
+                continue
+
+            unresolved_dependency = False
+
+            # Get source NAT zones and handle unresolved dependencies
+            source_zone_names = self.resolve_zone_names(policy.source_zones, 'source', policy.name)
+            if source_zone_names is None:
+                unresolved_dependency = True
+
+            # Get destination NAT zones and handle unresolved dependencies
+            destination_zone_names = self.resolve_zone_names(policy.destination_zones, 'destination', policy.name)
+            if destination_zone_names is None:
+                unresolved_dependency = True
+
+            if unresolved_dependency:
+                continue  # Skip to the next policy
+
+            # Get source and destination network names
+            original_source_network_names = self.reslove_network_object_names(policy.original_source)
+            original_source_port_names = self.resolve_port_object_names(policy.original_source_port)
+            original_destination_network_names = self.reslove_network_object_names(policy.original_destination)
+            original_destination_port_names = self.resolve_port_object_names(policy.original_destination_port)
+
+            translated_source_network_names = self.reslove_network_object_names(policy.translated_source)
+            translated_source_port_names = self.resolve_port_object_names(policy.translated_source_port)
+            translated_destination_network_names = self.reslove_network_object_names(policy.translated_destination)
+            translated_destination_port_names = self.resolve_port_object_names(policy.translated_destination_port)
+
+            # create all policies in the PRE rulebase for now
+            device_group = DeviceGroup(self._security_policy_containers_map[policy.policy_container.uid])
+            self._target_security_device.device_connection.add(device_group)
+            rulebase = device_group.add(PreRulebase())
+
+            # now build the NAT policy. All migrated NAT policies will be: static/dynamic policies.
+            # dynamic policies will have the following parameters: dynamic-ip-and-port SNAT, dynamic ip with session distribution and ip hash as distribution method for DNAT
+            # Apply name constraints
+            policy.name = PANMCMigrationProject.apply_name_constraints(policy.name)
+
+            # Create and add policy object to the rulebase
+            self._add_nat_policy_to_rulebase(rulebase, policy, source_zone_names, destination_zone_names,
+                                        original_source_network_names, original_source_port_names, original_destination_network_names, original_destination_port_names,
+                                        translated_source_network_names, translated_source_port_names, translated_destination_network_names, translated_destination_port_names)
+            try:
+                rulebase.find(policy.name).create_similar()
+            except Exception as e:
+                print("Error occurred when creating policy object. More details: ", e)
+                special_policies_log.warn(f"Failed to create policy {policy.name}. Reason: {e}.\n")
+
+    def _add_nat_policy_to_rulebase(self, rulebase, policy, source_zone_names, destination_zone_names,
+                                        original_source_network_names, original_source_port_names, original_destination_network_names, original_destination_port_names,
+                                        translated_source_network_names, translated_source_port_names, translated_destination_network_names, translated_destination_port_names):
+        
+        # there are multiple cases here:
+        #   NAT policy is:
+            # a static policy
+                # using interface for SNAT (if interface_in_translated_source)
+                # using interface for DNAT (if interface_in_original_destination)
+            # a dynamic policy
+                # using interface for SNAT (if interface_in_translated_source)
+                # using interface for DNAT (if interface_in_original_destination)
+            if(policy.interface_in_translated_source):
+                source_translation_address_type = 'interface-address'
+            else:
+                source_translation_address_type = 'translated-address'
+
+            policy_object = NatRule(name=policy.name,
+                                    description=policy.description,
+                                    fromzone=source_zone_names,
+                                    tozone=destination_zone_names,
+                                    service=original_source_port_names,
+                                    source=original_source_network_names,
+                                    destination=original_destination_network_names,
+                                    source_translation_type=source_translation_address_type,
+                                    )
 
     @staticmethod
     def apply_name_constraints(name):

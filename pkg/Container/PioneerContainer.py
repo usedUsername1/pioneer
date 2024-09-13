@@ -230,38 +230,38 @@ class PioneerNATPolicyContainer(NATPolicyContainer):
             # Add the policy to the list of policies that will be migrated
             policies_list.append(policy)
 
-        # # Migrate the network objects
-        # PioneerDeviceObject.recursive_update_objects_and_groups(network_objects_set, network_group_objects_set)
-        # if not network_objects_set:
-        #     pass
-        # else:
-        #     print("migrating network objects")
-        #     self._security_device.migrate_network_objects(network_objects_set)
+        # Migrate the network objects
+        PioneerDeviceObject.recursive_update_objects_and_groups(network_objects_set, network_group_objects_set)
+        if not network_objects_set:
+            pass
+        else:
+            print("migrating network objects")
+            self._security_device.migrate_network_objects(network_objects_set)
 
-        # # Migrate the network group objects
-        # if not network_group_objects_set:
-        #     pass
-        # else:
-        #     print("migrating network group objects")
-        #     self._security_device.migrate_network_group_objects(network_group_objects_set)
+        # Migrate the network group objects
+        if not network_group_objects_set:
+            pass
+        else:
+            print("migrating network group objects")
+            self._security_device.migrate_network_group_objects(network_group_objects_set)
 
-        # # Migrate the port objects
-        # PioneerDeviceObject.recursive_update_objects_and_groups(port_objects_set, port_group_objects_set)
-        # if not port_objects_set:
-        #     pass
-        # else:
-        #     print("migrating port objects")
-        #     self._security_device.migrate_port_objects(port_objects_set)
+        # Migrate the port objects
+        PioneerDeviceObject.recursive_update_objects_and_groups(port_objects_set, port_group_objects_set)
+        if not port_objects_set:
+            pass
+        else:
+            print("migrating port objects")
+            self._security_device.migrate_port_objects(port_objects_set)
 
-        # # Migrate the port group objects
-        # if not port_group_objects_set:
-        #     pass
-        # else:
-        #     print("migrating port group objects")
-        #     self._security_device.migrate_port_group_objects(port_group_objects_set)
+        # Migrate the port group objects
+        if not port_group_objects_set:
+            pass
+        else:
+            print("migrating port group objects")
+            self._security_device.migrate_port_group_objects(port_group_objects_set)
 
-        # if not policies_list:
-        #     pass
-        # else:
-        #     print("migrating NAT policies")
-        #     self._security_device.migrate_nat_policies(policies_list)
+        if not policies_list:
+            pass
+        else:
+            print("migrating NAT policies")
+            self._security_device.migrate_nat_policies(policies_list)

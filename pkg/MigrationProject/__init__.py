@@ -4,6 +4,7 @@ import utils.gvars as gvars
 from pkg import SecurityPolicyContainersMapTable, MigrationProjectGeneralDataTable, MigrationProjectDevicesTable, SecurityDeviceInterfaceMap, \
 LogSettingsTable, SpecialSecurityPolicyParametersTable, NetworkObjectTypesMapTable, SecurityPolicyActionMapTable, SecurityPolicySectionMap, NATPolicyContainersMapTable
 from pkg.SecurityDevice import SecurityDeviceDatabase
+from pkg.DeviceObject.PioneerDeviceObject import PioneerICMPObject, PioneerPortGroupObject
 
 special_policies_log = helper.logging.getLogger(gvars.special_policies_logger)
 
@@ -611,3 +612,74 @@ class MigrationProject:
             section_map[source_section] = destination_section
         
         return section_map
+
+    def resolve_zone_names(self, zone_uids, zone_type, policy_name):
+        """
+        Resolve security zone names from their UIDs and handle unresolved dependencies.
+
+        :param zone_uids: List of zone UIDs to resolve.
+        :param zone_type: Type of zone ('source' or 'destination').
+        :param policy_name: Name of the policy for logging.
+        :return: List of resolved zone names, or None if unresolved dependencies are found.
+        """
+        zone_names = []
+        if zone_uids:
+            for zone_uid in zone_uids:
+                try:
+                    zone_names.append(self._security_zones_map[zone_uid[0]])
+                except KeyError:
+                    special_policies_log.warn(f"Policy: {policy_name} was not migrated because it has unresolved {zone_type} zone dependencies.")
+                    return None
+        else:
+            zone_names = ['any']
+        return zone_names
+
+    def reslove_network_object_names(self, network_objects):
+        """
+        Get network names from a list of network objects.
+
+        :param network_objects: List of network objects.
+        :return: List of network names.
+        """
+        if network_objects:
+            return [network.name for network in network_objects]
+        return ['any']
+
+    def resolve_port_object_names(self, port_objects):
+        """
+        Get destination port names and check if any port is an ICMP object.
+
+        :param port_objects: List of destination port objects.
+        :return: Tuple (List of port names, Boolean indicating if ICMP is present).
+        """
+        port_names = []
+        has_icmp = False
+
+        if port_objects:
+            for port_obj in port_objects:
+                if isinstance(port_obj, PioneerICMPObject):
+                    has_icmp = True
+                elif isinstance(port_obj, PioneerPortGroupObject):
+                    has_icmp = port_obj.check_icmp_members_recursively(has_icmp)
+                    if port_obj._object_members or port_obj._group_object_members:
+                        port_names.append(port_obj.name)
+                else:
+                    port_names.append(port_obj.name)
+        else:
+            port_names = ['any']
+
+        if not port_names:
+            port_names = ['any']
+
+        return port_names, has_icmp
+
+    def resolve_url_object_names(self, url_objects):
+        """
+        Get URL names from a list of URL objects.
+
+        :param url_objects: List of URL objects.
+        :return: List of URL names.
+        """
+        if url_objects:
+            return [url.name for url in url_objects]
+        return ['any']

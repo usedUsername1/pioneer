@@ -294,3 +294,4 @@ if __name__ == "__main__":
 #TODO: there is a problem with importing some NAT policies, fix it :(
 # rewrite the map-container like migrate argument
 # skip the preload of data if nothing is provided (logging settings and security profiles)
+# change the "status" column of policies to "enabled"
