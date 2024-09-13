@@ -191,11 +191,11 @@ def main():
                 for managed_device_container in managed_devices_container_list:
                     security_device_object.get_object_info_from_device_conn(gvars.managed_device, managed_device_container)
             
-            # # Log and import security policies
-            # print("Importing security policies.")
-            # for security_policy_container in security_policy_containers_list:
-            #     print(f"Processing security policies of container {security_policy_container.name}")
-            #     security_device_object.get_object_info_from_device_conn(gvars.security_policy, security_policy_container)
+            # Log and import security policies
+            print("Importing security policies.")
+            for security_policy_container in security_policy_containers_list:
+                print(f"Processing security policies of container {security_policy_container.name}")
+                security_device_object.get_object_info_from_device_conn(gvars.security_policy, security_policy_container)
 
             # Log and import NAT policies
             print("Importing NAT policies.")

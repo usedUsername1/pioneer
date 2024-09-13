@@ -558,12 +558,16 @@ class MigrationProject:
         which is then returned.
 
         Returns:
-            str: The log manager configuration setting.
+            str: The log manager configuration setting, or None if not found.
         """
         # Query the table to get the log manager setting
-        log_manager_setting = self.db.log_settings_table.get('log_manager')[0][0]
+        result = self.db.log_settings_table.get('log_manager')
         
-        return log_manager_setting
+        if result and len(result) > 0 and len(result[0]) > 0:
+            log_manager_setting = result[0][0]
+            return log_manager_setting
+
+        return None
         
     def load_special_security_policy_parameters(self):
         """
@@ -573,12 +577,16 @@ class MigrationProject:
         which is then returned.
 
         Returns:
-            str: The security profile setting from the special security policy parameters table.
+            str: The security profile setting from the special security policy parameters table, or None if not found.
         """        
         # Query the table to get the security profile setting
-        security_profile_setting = self.db.special_security_policy_parameters_table.get('security_profile')[0][0]
+        result = self.db.special_security_policy_parameters_table.get('security_profile')
         
-        return security_profile_setting
+        if result and len(result) > 0 and len(result[0]) > 0:
+            security_profile_setting = result[0][0]
+            return security_profile_setting
+
+        return None
 
     def load_section_map(self):
         """

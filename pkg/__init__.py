@@ -286,6 +286,10 @@ class PioneerDatabase():
                 gvars.l7_app_filter_object: db.l7_app_filters_table,
                 gvars.l7_app_group_object: db.l7_app_groups_table
             }
+            # Fetch data for each table and store it in members_dict_from_db with the table name as key
+            for table_name, table in tables_to_fetch.items():
+                members_dict_from_db[table_name] = get_table_data(table, ['name', 'uid'])
+            return members_dict_from_db
         elif object_type == 'nat_policy_group':
             tables_to_fetch = {
                 gvars.security_zone: db.security_zones_table,

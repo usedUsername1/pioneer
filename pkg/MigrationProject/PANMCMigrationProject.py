@@ -413,7 +413,7 @@ PA treats ping as an application. The second rule will keep the exact same sourc
 
             # Create and configure device group object
             # a new object gets created here for each rule, this is kind of stupid
-            device_group = DeviceGroup(self._security_policy_containers_map[policy.policy_container.uid])
+            device_group = DeviceGroup(self._security_policy_containers_map[policy._policy_container.uid])
             self._target_security_device.device_connection.add(device_group)
 
             # Determine the appropriate rulebase (pre or post)
