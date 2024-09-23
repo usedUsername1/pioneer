@@ -6,6 +6,7 @@ A vendor-agnostic CLI tool for migrating firewall configuration.
 <p>Migrates policies from Cisco's Firepower Management Center to Palo Alto's Panorama Management Center.
 <p>Works pretty well. 
 <p>Used in production at my job, migrated thousands of firewall policies with very little intervention needed after the migration process.
+<p>Video with demo below at section "Getting started with Pioneer".
 
 ## Introduction
 Pioneer is a coding project that I started in my spare time. During my experience as a network engineer
@@ -30,8 +31,9 @@ Not only was it helpful during the migration process, it was also really helpful
 migrations, we still had some problems since these are unavoidable when it comes about firewall migrations.
 However, very few of the problems were caused by the migrated firewall policies.
 
-<p>I made this code public since I don't want to work on it anymore, as I found more interesting things to do.
-If you think this code can help you or if you want to finish my idea, you're free to do whatever you want with it!
+<p>I made this code public since I don't want to work on it anymore, as I found more interesting things to do. Unfortunately, I didn't
+get to create any UML diagrams or to document every function of the code. However, the code is filled with many comments and docstrings making navigation through it pretty easy.
+<p>If you think this code can help you or if you want to finish my idea, you're free to do whatever you want with it!
 
 ## High level overview
 <p>Pioneer aims to be a tool that can perform full configuration migration between different firewall platforms.
@@ -78,13 +80,60 @@ The code uses three types of classes:
 This class is used in the migration process, as it contains data that can be easily transferred between different platforms.
 
 #### Import process
+When creating a security device, two things happen:
+<p>1. General info (such as the API user, platform and version) is retrieved and the security device's database is created. The retrieval of
+the platform version acts as a check mechanism in order to ensure that Pioneer can further interact with the device.
+<p>2. All the data of the device gets imported to the database. Pioneer starts to query the device and insert data such as container hierarchies, security device objects (groups are also processed and relationships between the groups and the objects are stored in the database), policies and so on.
 
 #### Migration process
+A migration project needs to be created. After that, source and target device must be set. Mappings between different types of config must be done the containers that need to be migrated must be done. Additional options, such as logging targets for the firewall policies can be set.
 
 ## Getting started with Pioneer
+<p>Clone the code from the git repo.
+<p>Start by installing the requirements in requirements.txt file.
+<p>Firepower Management Center version must be at least 6.4.X.
+<p>Panorama Management Center version must be at least 10.X.
+<p>PostgreSQL version must be at least 15.5.
+<p>Python version must be at least 3.12.
+<p>An empty (landing) database called "pioneer_projects" must be created along with a pioneer_admin user.
+<p>Video tutorial:
 
 ## Usage example and demo
+Below you find a list with the commands needed to perform a migration. You also find a video with a demo.
+<p>Be aware that when creating stuff, a name convention must be followed: no whitespaces, no hyphens or special characters as separators, name must start with an alphabetical character.
+
+<p>python3 pioneer.py --create-project 'example_project' -> creates the migration project
+<p>python3 pioneer.py --create-security-device 'dummy_device' --device-type 'allowed_device_type' --hostname 'example.com or IP address' --username 'user' --secret 'pass' -> I know storing passwords is bad, this needs to be changed. Hostname can be either a name or IP. The host were Pioneer is executed must be able to solve the name if name is used.
+<p>python3 pioneer.py --project 'example_project' --set-source-device 'dummy_device1' --set-target-device 'dummy_device2' -> set the devices of the project
+<p>python3 pioneer.py --project 'example_project' --map-security-policy-containers --source-container 'source_container' --target-container 'target_container' -> create a mapping between the source security policy container and target policy container
+<p>python3 pioneer.py --project 'example_project' --map-zones --source-zone 'zone1' --target-zone 'zone2' -> make sure you map all the interfaces/zones present in your policies
+<p>python3 pioneer.py --project 'example_project' --send-logs-to-manager 'manager' -> set the logging target
+<p>python3 pioneer.py --project 'example_project' --migrate --security-policy-container 'source_container' -> initiate the migration of the source container
 
 ## Known issues
+<p>Some NAT policies don't get imported properly. Didn't look into this one.
+<p>If the creation of a single policy fails on Panorama, all the other policies will fail after that one. This is very unlikely to happen, but if it does, there must be a problem with the import from the source device. Check that the import of the problematic policy was properly done.
+<p>Objects with very long names and with the same value get created every time they are migrated. This is due to the fact that when applying name constraints, a random number is appended to the name. This was done to avoid the issue where, after applying name constraints, you would have two objects with the same name but different value. However this issue was generated.
 
 ## Roadmap
+<p> Full-CLI functionality for managing projects and devices (adding, deleting, modifying, etc.)
+<p>All the info (managed devices, zones, interfaces, and so on) must be extracted from a security device.
+<p>Migration of any type of policy between Firepower Management Center and Panorama Management Center. Multiple options such as migrating based on last hit time should also be implemented.
+<p>Migration between an API device and a device that is not necessarily using an API, such as Cisco's ASA (I know it has an API, but it's crap)
+<p>Migration of firewall security policy users (such as these defined locally on the firewall, LDAP users and so on), schedules.
+<p>Migration of all types of policy parameters (including L7 parameters such as applications and URL categories).
+<p>A web-GUI.
+<p>Migrating any type of configuration between platforms - solving all incompatibilties issues.
+
+## Code issues that must be addressed
+<p>Stop generating object's UIDs upon init of the object
+<p>Ensure that all policies are tracked by their index.
+<p>Map everything before migration and execute the migration only on mapped elements.
+<p>Make preload_object_data a class method, not a static method.
+<p>Composite primary keys for all the mapping tables to avoid having the same mappings stored multiple times
+<p>For PA devices, create audit comments, don’t put comments in description
+<p>Track all Firepower Management Center port object that are not TCP or UDP.
+<p>Tracking of failed import objects, policies and basically everything else that fails
+<p>Logging must be redone.
+<p>Proper exceptions must be implemented.
+<p>Fix all known issues.
