@@ -2,8 +2,10 @@
 A vendor-agnostic CLI tool for migrating firewall configuration.
 
 # Too long, didn't read
-Spare time project. Migrates policies from Cisco's Firepower Management Center to Palo Alto's Panorama Management Center.
-Works pretty well. Used in production at my job, migrated thousands of firewall policies with very little intervention needed after the migration process.
+<p>Spare time project.
+<p>Migrates policies from Cisco's Firepower Management Center to Palo Alto's Panorama Management Center.
+<p>Works pretty well. 
+<p>Used in production at my job, migrated thousands of firewall policies with very little intervention needed after the migration process.
 
 ## Introduction
 Pioneer is a coding project that I started in my spare time. During my experience as a network engineer
@@ -60,7 +62,7 @@ It is a class where all the other objects are "stored". All the objects and poli
 In cases where the platform does not have an actual container, a virtual container is used. 
 
 #### Device object
-Represents an abstraction of an object. An object can be a network object (used for defining network IPs), a service/port object (used for defining network ports), a group object (group of network objects, port objects) and so on.
+Represents an abstraction of an object. An object can be a network object (used for defining network addresses, subnets, FQDNs), a service/port object (used for defining network ports), a group object (group of network objects, port objects) and so on.
 
 #### Policy
 
