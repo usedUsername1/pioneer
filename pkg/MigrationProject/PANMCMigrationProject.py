@@ -636,8 +636,8 @@ PA treats ping as an application. The second rule will keep the exact same sourc
             str: The constrained name.
         """
         # Check if the first character is non-alphanumeric and replace it with 'a'
-        if name and not name[0].isalnum():
-            name = 'a' + name[1:]
+        # if name and not name[0].isalnum():
+        #     name = 'a' + name[1:]
 
         # Replace all characters that are not space, '-', or '.' with '_'
         constrained_name = re.sub(r'[^a-zA-Z0-9\s_.-]', '_', name)
