@@ -454,9 +454,9 @@ PA treats ping as an application. The second rule will keep the exact same sourc
                 print("Error occurred when creating policy object. More details: ", e)
                 special_policies_log.warn(f"Failed to create policy {policy.name}. Reason: {e}.\n")
             
-            #TODO: empty the rulebase after the policies have been created, to prevent
-            device_group.remove(rulebase)
+            #TODO: empty the device group after the policies have been created, to prevent
             # the case where a policy that cannot be migrated prevents further policies from getting migrated
+            device_group.remove(rulebase)
 
     def _add_security_policy_to_rulebase(self, rulebase, policy, from_zones, to_zones,
                                source_networks, destination_networks,
@@ -641,8 +641,8 @@ PA treats ping as an application. The second rule will keep the exact same sourc
             str: The constrained name.
         """
         # Check if the first character is non-alphanumeric and replace it with 'a'
-        # if name and not name[0].isalnum():
-        #     name = 'a' + name[1:]
+        if name and not name[0].isalnum():
+            name = 'a' + name[1:]
 
         # Replace all characters that are not space, '-', or '.' with '_'
         constrained_name = re.sub(r'[^a-zA-Z0-9\s_.-]', '_', name)
