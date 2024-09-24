@@ -448,9 +448,8 @@ PA treats ping as an application. The second rule will keep the exact same sourc
                 print("Error occurred when creating policy object. More details: ", e)
                 special_policies_log.warn(f"Failed to create policy {policy.name}. Reason: {e}.\n")
             
-            device_group.removeall(rulebase)
-            
             #TODO: empty the rulebase after the policies have been created, to prevent
+            rulebase.clear()
             # the case where a policy that cannot be migrated prevents further policies from getting migrated
 
     def _add_security_policy_to_rulebase(self, rulebase, policy, from_zones, to_zones,
