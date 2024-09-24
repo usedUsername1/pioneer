@@ -111,7 +111,9 @@ A migration project needs to be created. After that, source and target device mu
 
 ## Getting started with Pioneer
 <p>I highly recommend using a test machine for deploying Pioneer. Don't use a production server, as Pioneer is far from being ready to be deployed on a production server.
-<p>I have made a small bash script for getting started. Execute this script on a freshly installed Ubuntu machine. Make sure that machine has proper network access to all the devices you want Pioneer to connect to.
+<p>I have made a small bash script for getting started. Execute this script on a freshly installed Ubuntu machine. The script checks if all the requirements are met. If the proper Python version is not found, the script will exit and you'll have to manually install the right Python version. The script doesn't automatically install Python in order to avoid breaking OS stuff. Skip restarting any process that uses outdated libraries when prompted to. Make sure that machine has proper network access to all the devices you want Pioneer to connect to.
+
+<p>Below you find a list with all the requirements.
 <p>An Ubuntu >=20.04 machine.
 <p>PostgreSQL version must be at least 15.5.
 <p>Python version must be 3.10.12.
