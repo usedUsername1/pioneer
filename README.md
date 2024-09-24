@@ -130,7 +130,7 @@ chmod +x getting_started.sh
 <p>Below you find a list with all the requirements.
 <p>An Ubuntu 20.04 machine. Preferably a fresh installation.
 <p>PostgreSQL version must be 15.X.
-<p>Python version must be 3.10.12.
+<p>Python version must be 3.10.6.
 <p>An empty (landing) database called "pioneer_projects" must be created along with a "pioneer_admin" user. Check the "utils/gvars.py" file to see/modify what credentials are needed.
 <p>Clone the code from the git repo.
 <p>Start by installing the requirements in requirements.txt file.
