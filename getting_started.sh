@@ -4,13 +4,14 @@
 check_python_version() {
     if command -v python3 &>/dev/null; then
         PYTHON_VERSION=$(python3 -V 2>&1 | awk '{print $2}')
-        REQUIRED_VERSION="3.10.6"
+        REQUIRED_VERSION="3.10"
 
-        if [[ "$PYTHON_VERSION" != "$REQUIRED_VERSION" ]]; then
+        # Check if the major.minor version matches 3.10.x
+        if [[ "$PYTHON_VERSION" == 3.10.* ]]; then
+            echo "Python version is $PYTHON_VERSION. No update needed."
+        else
             echo "Current Python version is $PYTHON_VERSION. Please update/downgrade to version $REQUIRED_VERSION manually."
             exit 1  # Stop execution of the script
-        else
-            echo "Python version is $PYTHON_VERSION. No update needed."
         fi
     else
         echo "Python is not installed. Please install Python version $REQUIRED_VERSION manually and run the script again."

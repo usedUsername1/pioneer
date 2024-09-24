@@ -28,7 +28,7 @@ A vendor-agnostic CLI tool for migrating firewall configuration.
 <p>Migrates policies from Cisco's Firepower Management Center to Palo Alto's Panorama Management Center.
 <p>Works pretty well. 
 <p>Used in production at my job, migrated thousands of firewall policies with very little intervention needed after the migration process.
-<p>Video with demo below at section "Getting started with Pioneer".
+<p>Video with demo below at section [Getting started with Pioneer](#getting-started-with-pioneer)
 
 ## Introduction
 Pioneer is a coding project that I started in my spare time. During my experience as a network engineer
@@ -183,7 +183,7 @@ python3 pioneer.py --project 'example_project' --migrate --security-policy-conta
 *Initiates the migration of the source container.*
 
 <p>NOTE: mapping should be done even in the containers/interfaces have the same name
-<p>After the migration is done, you can look into /pioneer/log/{migration_project_name}/special_policies.log to see what policies were not migrated and why. You can also see what special parameters (such as L7 apps) were not migrated. 
+<p>After the migration is done, you can look into "pioneer/log/{migration_project_name}/special_policies.log" to see what policies were not migrated and why. You can also see what special parameters (such as L7 apps) were not migrated. 
 <p>Demo video:
 
 ## Known issues

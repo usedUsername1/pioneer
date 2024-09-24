@@ -412,10 +412,12 @@ PA treats ping as an application. The second rule will keep the exact same sourc
             log_end = True
 
             # Map policy action
+            #TODO: there is still a small problem here, policy_action defaults to 'allow' even if the policy can't be mapped
             try:
                 policy_action = self._security_policy_actions_map[policy.action]
             except KeyError:
-                print(f"Action {policy_action} cannot be properly mapped.")
+                special_policies_log.warning(f"Policy <{policy.name}> cannot be migrated. Action from source device <{policy.action}> cannot be properly mapped.")
+                continue
 
             #Duct tape solution to avoid having multiple device groups created
             if policy._policy_container.uid not in created_device_groups:
