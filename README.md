@@ -1,6 +1,28 @@
 # Pioneer
 A vendor-agnostic CLI tool for migrating firewall configuration.
 
+# Table of Contents
+
+1. [Pioneer](#pioneer)
+2. [Too long, didn't read](#too-long-didnt-read)
+3. [Introduction](#introduction)
+4. [High level overview](#high-level-overview)
+5. [Pioneer concepts](#pioneer-concepts)
+    - [Security Device](#security-device)
+    - [Migration Project](#migration-project)
+    - [Container](#container)
+    - [Device object](#device-object)
+    - [Policy](#policy)
+    - [Managed device](#managed-device)
+    - [Class structure and types](#class-structure-and-types)
+    - [Import process](#import-process)
+    - [Migration process](#migration-process)
+6. [Getting started with Pioneer](#getting-started-with-pioneer)
+7. [Usage example and demo](#usage-example-and-demo)
+8. [Known issues](#known-issues)
+9. [Roadmap](#roadmap)
+10. [Code issues that must be addressed](#code-issues-that-must-be-addressed)
+
 # Too long, didn't read
 <p>Spare time project.
 <p>Migrates policies from Cisco's Firepower Management Center to Palo Alto's Panorama Management Center.
@@ -89,33 +111,65 @@ the platform version acts as a check mechanism in order to ensure that Pioneer c
 A migration project needs to be created. After that, source and target device must be set. Mappings between different types of config must be done the containers that need to be migrated must be done. Additional options, such as logging targets for the firewall policies can be set.
 
 ## Getting started with Pioneer
+<p>I have made a small bash script for getting started. Execute this script on a freshly installed Ubuntu machine. Make sure that machine has proper network access to all the devices you want Pioneer to connect to.
 <p>An Ubuntu >=20.04 machine.
-<p>Clone the code from the git repo.
-<p>Start by installing the requirements in requirements.txt file.
-<p>Firepower Management Center version must be at least 6.4.X.
-<p>Panorama Management Center version must be at least 10.X.
 <p>PostgreSQL version must be at least 15.5.
 <p>Python version must be at least 3.12.
-<p>An empty (landing) database called "pioneer_projects" must be created along with a pioneer_admin user.
-<p>Video tutorial:
+<p>An empty (landing) database called "pioneer_projects" must be created along with a "pioneer_admin" user. Check the "utils/gvars.py" file to see/modify what credentials are needed.
+<p>Clone the code from the git repo.
+<p>Start by installing the requirements in requirements.txt file.
+
+<p>Firepower Management Center version must be at least 6.4.X.
+<p>Panorama Management Center version must be at least 10.X.
+
 
 ## Usage example and demo
 Below you find a list with the commands needed to perform a migration. You also find a video with a demo.
 <p>Be aware that when creating stuff, a name convention must be followed: no whitespaces, no hyphens or special characters as separators, name must start with an alphabetical character.
 
-<p>python3 pioneer.py --create-project 'example_project' -> creates the migration project
-<p>python3 pioneer.py --create-security-device 'dummy_device' --device-type 'allowed_device_type' --hostname 'example.com or IP address' --username 'user' --secret 'pass' -> I know storing passwords is bad, this needs to be changed. Hostname can be either a name or IP. The host were Pioneer is executed must be able to solve the name if name is used.
-<p>python3 pioneer.py --project 'example_project' --set-source-device 'dummy_device1' --set-target-device 'dummy_device2' -> set the devices of the project
-<p>python3 pioneer.py --project 'example_project' --map-security-policy-containers --source-container 'source_container' --target-container 'target_container' -> create a mapping between the source security policy container and target policy container
-<p>python3 pioneer.py --project 'example_project' --map-zones --source-zone 'zone1' --target-zone 'zone2' -> make sure you map all the interfaces/zones present in your policies
-<p>python3 pioneer.py --project 'example_project' --send-logs-to-manager 'manager' -> set the logging target
-<p>python3 pioneer.py --project 'example_project' --migrate --security-policy-container 'source_container' -> initiate the migration of the source container
+```bash
+python3 pioneer.py --create-project 'example_project' 
+```
+*Creates the migration project.*
+
+```bash
+python3 pioneer.py --create-security-device 'dummy_device' --device-type 'allowed_device_type' --hostname 'example.com or IP address' --username 'user' --secret 'pass'
+```
+*Creates the security device. Hostname can be either a name or IP. (Note: Storing passwords this way needs to be changed.)*
+
+```bash
+python3 pioneer.py --project 'example_project' --set-source-device 'dummy_device1' --set-target-device 'dummy_device2'
+```
+*Sets the source and target devices for the project.*
+
+```bash
+python3 pioneer.py --project 'example_project' --map-security-policy-containers --source-container 'source_container' --target-container 'target_container'
+```
+*Creates a mapping between the source security policy container and the target policy container.*
+
+```bash
+python3 pioneer.py --project 'example_project' --map-zones --source-zone 'zone1' --target-zone 'zone2'
+```
+*Maps all the interfaces/zones present in the policies.*
+
+```bash
+python3 pioneer.py --project 'example_project' --send-logs-to-manager 'manager'
+```
+*Sets the logging target.*
+
+```bash
+python3 pioneer.py --project 'example_project' --migrate --security-policy-container 'source_container'
+```
+*Initiates the migration of the source container.*
+
+<p>NOTE: mapping should be done even in the containers/interfaces have the same name
 <p>Demo video:
 
 ## Known issues
 <p>Some NAT policies don't get imported properly. Didn't look into this one.
 <p>If the creation of a single policy fails on Panorama, all the other policies will fail after that one. This is very unlikely to happen, but if it does, there must be a problem with the import from the source device. Check that the import of the problematic policy was properly done.
 <p>Objects with very long names and with the same value get created every time they are migrated. This is due to the fact that when applying name constraints, a random number is appended to the name. This was done to avoid the issue where, after applying name constraints, you would have two objects with the same name but different value. However this issue was generated.
+<p>Only Firepower Management Center rules with the following actions: ALLOW, TRUST, BLOCK, BLOCK_RESET can be migrated. I didn't do the mappings for the other actions
 
 ## Roadmap
 <p> Full-CLI functionality for managing projects and devices (adding, deleting, modifying, etc.)
