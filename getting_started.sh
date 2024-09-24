@@ -4,7 +4,7 @@
 check_python_version() {
     if command -v python3 &>/dev/null; then
         PYTHON_VERSION=$(python3 -V 2>&1 | awk '{print $2}')
-        REQUIRED_VERSION="3.10.12"
+        REQUIRED_VERSION="3.10.6"
 
         if [[ "$PYTHON_VERSION" != "$REQUIRED_VERSION" ]]; then
             echo "Current Python version is $PYTHON_VERSION. Please update/downgrade to version $REQUIRED_VERSION manually."

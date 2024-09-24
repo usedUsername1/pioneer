@@ -126,6 +126,10 @@ chmod +x getting_started.sh
 ./getting_started.sh
 ```
 *Executes the script.*
+```bash
+cd pioneer/
+```
+*Changes the directory to Pioneer's directory.*
 
 <p>Below you find a list with all the requirements.
 <p>An Ubuntu 20.04 machine. Preferably a fresh installation.
@@ -179,6 +183,7 @@ python3 pioneer.py --project 'example_project' --migrate --security-policy-conta
 *Initiates the migration of the source container.*
 
 <p>NOTE: mapping should be done even in the containers/interfaces have the same name
+<p>After the migration is done, you can look into /pioneer/log/{migration_project_name}/special_policies.log to see what policies were not migrated and why. You can also see what special parameters (such as L7 apps) were not migrated. 
 <p>Demo video:
 
 ## Known issues

@@ -412,7 +412,10 @@ PA treats ping as an application. The second rule will keep the exact same sourc
             log_end = True
 
             # Map policy action
-            policy_action = self._security_policy_actions_map[policy.action]
+            try:
+                policy_action = self._security_policy_actions_map[policy.action]
+            except KeyError:
+                print(f"Action {policy_action} cannot be properly mapped.")
 
             #Duct tape solution to avoid having multiple device groups created
             if policy._policy_container.uid not in created_device_groups:
