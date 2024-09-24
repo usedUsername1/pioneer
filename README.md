@@ -89,6 +89,7 @@ the platform version acts as a check mechanism in order to ensure that Pioneer c
 A migration project needs to be created. After that, source and target device must be set. Mappings between different types of config must be done the containers that need to be migrated must be done. Additional options, such as logging targets for the firewall policies can be set.
 
 ## Getting started with Pioneer
+<p>An Ubuntu >=20.04 machine.
 <p>Clone the code from the git repo.
 <p>Start by installing the requirements in requirements.txt file.
 <p>Firepower Management Center version must be at least 6.4.X.
@@ -109,6 +110,7 @@ Below you find a list with the commands needed to perform a migration. You also 
 <p>python3 pioneer.py --project 'example_project' --map-zones --source-zone 'zone1' --target-zone 'zone2' -> make sure you map all the interfaces/zones present in your policies
 <p>python3 pioneer.py --project 'example_project' --send-logs-to-manager 'manager' -> set the logging target
 <p>python3 pioneer.py --project 'example_project' --migrate --security-policy-container 'source_container' -> initiate the migration of the source container
+<p>Demo video:
 
 ## Known issues
 <p>Some NAT policies don't get imported properly. Didn't look into this one.
@@ -137,3 +139,14 @@ Below you find a list with the commands needed to perform a migration. You also 
 <p>Logging must be redone.
 <p>Proper exceptions must be implemented.
 <p>Fix all known issues.
+
+# Test policies
+1. A normal policy with no special parameters
+2. A policy with normally defined objects. Make recursive objects and non-necursive objects.
+3. A policy with a weird name.
+4. A policy defined only with literals
+5. A policy defined with literals and objects.
+6. A policy with missing mapped zone.
+7. A policy with applications and url categories, url objects and literals.
+8. A policy with a ping object and normal ports.
+9. A policy only with ping.
