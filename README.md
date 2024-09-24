@@ -107,7 +107,9 @@ the platform version acts as a check mechanism in order to ensure that Pioneer c
 <p>2. All the data of the device gets imported to the database. Pioneer starts to query the device and insert data such as container hierarchies, security device objects (groups are also processed and relationships between the groups and the objects are stored in the database), policies and so on.
 
 #### Migration process
-A migration project needs to be created. After that, source and target device must be set. Mappings between different types of config must be done the containers that need to be migrated must be done. Additional options, such as logging targets for the firewall policies can be set.
+<p>A migration project needs to be created. After that, source and target device must be set. Mappings between different types of config must be done the containers that need to be migrated must be done. Additional options, such as logging targets for the firewall policies can be set.
+<p>The following apply for migrations from Firepower Management Center to Panorama: objects are created in bulk. Policies are created one by one. If creation of a single object fails, all the objects within the same category are going to fail. For example, if you have a service object whose protocol is not TCP or UDP, Pioneer will try to migrate it and it will fail, as Panorama can only have TCP or UDP services. Consequently, all the other port objects will fail. All the port groups will fail as well, because they reference port objects. Policies that reference the failed objects will fail as well.
+<p>Objects are bulk created in order to save time. Policies are created one by one to track exactly which policies are created and which are not.
 
 ## Getting started with Pioneer
 <p>I highly recommend using a test machine for deploying Pioneer. Don't use a production server, as Pioneer is far from being ready to be deployed on a production server.
@@ -134,7 +136,7 @@ cd pioneer/
 <p>Below you find a list with all the requirements.
 <p>An Ubuntu 20.04 machine. Preferably a fresh installation.
 <p>PostgreSQL version must be 15.X.
-<p>Python version must be 3.10.6.
+<p>Python version must be 3.10.X.
 <p>An empty (landing) database called "pioneer_projects" must be created along with a "pioneer_admin" user. Check the "utils/gvars.py" file to see/modify what credentials are needed.
 <p>Clone the code from the git repo.
 <p>Start by installing the requirements in requirements.txt file.
