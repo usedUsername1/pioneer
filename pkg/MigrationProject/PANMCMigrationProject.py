@@ -448,6 +448,8 @@ PA treats ping as an application. The second rule will keep the exact same sourc
                 print("Error occurred when creating policy object. More details: ", e)
                 special_policies_log.warn(f"Failed to create policy {policy.name}. Reason: {e}.\n")
             
+            device_group.removeall(rulebase)
+            
             #TODO: empty the rulebase after the policies have been created, to prevent
             # the case where a policy that cannot be migrated prevents further policies from getting migrated
 
@@ -624,7 +626,7 @@ PA treats ping as an application. The second rule will keep the exact same sourc
     @staticmethod
     def apply_name_constraints(name):
         """
-        Applies constraints to a given name by replacing invalid characters, 
+        Applies constraints to a given name by replacing invalid characters,
         removing trailing spaces, and truncating the name if necessary.
 
         Args:
@@ -633,6 +635,10 @@ PA treats ping as an application. The second rule will keep the exact same sourc
         Returns:
             str: The constrained name.
         """
+        # Check if the first character is non-alphanumeric and replace it with 'a'
+        if name and not name[0].isalnum():
+            name = 'a' + name[1:]
+
         # Replace all characters that are not space, '-', or '.' with '_'
         constrained_name = re.sub(r'[^a-zA-Z0-9\s_.-]', '_', name)
         
@@ -647,7 +653,7 @@ PA treats ping as an application. The second rule will keep the exact same sourc
             constrained_name = truncated_name + suffix
         
         return constrained_name
-
+    
     @staticmethod
     def apply_url_name_constraints(name):
         """

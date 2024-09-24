@@ -63,8 +63,7 @@ get to create any UML diagrams or to document every function of the code. Howeve
 I tried to write the code in a scalable manner. Pioneer tries to abstractize every piece of firewall configuration and tries to store it
 in a vendor-agnostic mode.
 <p>The main idea is to get a 1-to-1 replica of the config of the source security device in Pioneer. The info should be stored in a vendor-agnostic format as much as possible.
-<p>Pioneer uses the APIs of a Security Device (which can be either a firewall or a firewall manager), extracts it, processes it, and then
-it stores it in a PostgreSQL database.
+<p>Pioneer uses the APIs of a security device (which can be either a firewall or a firewall manager), extracts and processes all the info from the security device and then stores it in a PostgreSQL database.
 <p>So far, only the device objects firewall and NAT policies, security zones and the managed devices are imported.
 After the data is processed, the user can import the processed security devies into a migration project.
 Policies are then further processed and then they can be migrated to the target firewall.
@@ -111,10 +110,11 @@ the platform version acts as a check mechanism in order to ensure that Pioneer c
 A migration project needs to be created. After that, source and target device must be set. Mappings between different types of config must be done the containers that need to be migrated must be done. Additional options, such as logging targets for the firewall policies can be set.
 
 ## Getting started with Pioneer
+<p>I highly recommend using a test machine for deploying Pioneer. Don't use a production server, as Pioneer is far from being ready to be deployed on a production server.
 <p>I have made a small bash script for getting started. Execute this script on a freshly installed Ubuntu machine. Make sure that machine has proper network access to all the devices you want Pioneer to connect to.
 <p>An Ubuntu >=20.04 machine.
 <p>PostgreSQL version must be at least 15.5.
-<p>Python version must be at least 3.12.
+<p>Python version must be 3.10.12.
 <p>An empty (landing) database called "pioneer_projects" must be created along with a "pioneer_admin" user. Check the "utils/gvars.py" file to see/modify what credentials are needed.
 <p>Clone the code from the git repo.
 <p>Start by installing the requirements in requirements.txt file.
@@ -192,4 +192,7 @@ python3 pioneer.py --project 'example_project' --migrate --security-policy-conta
 <p>Tracking of failed import objects, policies and basically everything else that fails
 <p>Logging must be redone.
 <p>Proper exceptions must be implemented.
+<p>Multi-threading must be implemented for the import and for the migration processes.
+<p>Functions that are importing data from the database and processing it into Pioneer objects should be consolidated or entirely refactored.
+<p>A more user-friendly experience should be implemented: status messages, progress bar, etc...
 <p>Fix all known issues.
