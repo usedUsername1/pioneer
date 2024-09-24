@@ -82,7 +82,7 @@ setup_postgresql() {
 }
 
 # Main script execution
-# check_python_version
+check_python_version
 check_postgresql_version
 setup_postgresql
 clone_repo "https://github.com/usedUsername1/pioneer.git"
