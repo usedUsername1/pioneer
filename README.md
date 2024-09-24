@@ -122,7 +122,6 @@ A migration project needs to be created. After that, source and target device mu
 <p>Firepower Management Center version must be at least 6.4.X.
 <p>Panorama Management Center version must be at least 10.X.
 
-
 ## Usage example and demo
 Below you find a list with the commands needed to perform a migration. You also find a video with a demo.
 <p>Be aware that when creating stuff, a name convention must be followed: no whitespaces, no hyphens or special characters as separators, name must start with an alphabetical character.
@@ -167,7 +166,6 @@ python3 pioneer.py --project 'example_project' --migrate --security-policy-conta
 
 ## Known issues
 <p>Some NAT policies don't get imported properly. Didn't look into this one.
-<p>If the creation of a single policy fails on Panorama, all the other policies will fail after that one. This is very unlikely to happen, but if it does, there must be a problem with the import from the source device. Check that the import of the problematic policy was properly done.
 <p>Objects with very long names and with the same value get created every time they are migrated. This is due to the fact that when applying name constraints, a random number is appended to the name. This was done to avoid the issue where, after applying name constraints, you would have two objects with the same name but different value. However this issue was generated.
 <p>Only Firepower Management Center rules with the following actions: ALLOW, TRUST, BLOCK, BLOCK_RESET can be migrated. I didn't do the mappings for the other actions
 
