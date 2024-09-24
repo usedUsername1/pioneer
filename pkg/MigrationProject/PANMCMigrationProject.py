@@ -376,9 +376,9 @@ PA treats ping as an application. The second rule will keep the exact same sourc
 
         :param policies: List of security policy objects to be migrated.
         """
-        device_group = DeviceGroup(self._security_policy_containers_map[policy._policy_container.uid])
-        self._target_security_device.device_connection.add(device_group)
-        
+        # Dictionary to keep track of created DeviceGroups
+        created_device_groups = {}
+
         for policy in policies:
             print(f"Migrating policy: {policy.name}")
             if policy.status != True:
@@ -413,6 +413,14 @@ PA treats ping as an application. The second rule will keep the exact same sourc
 
             # Map policy action
             policy_action = self._security_policy_actions_map[policy.action]
+
+            #Duct tape solution to avoid having multiple device groups created
+            if policy._policy_container.uid not in created_device_groups:
+                device_group = DeviceGroup(self._security_policy_containers_map[policy._policy_container.uid])
+                self._target_security_device.device_connection.add(device_group)
+                created_device_groups[policy._policy_container.uid] = device_group
+            else:
+                device_group = created_device_groups[policy._policy_container.uid]
 
             # Determine the appropriate rulebase (pre or post)
             rulebase = self.get_rulebase(device_group, policy.section)
