@@ -18,7 +18,7 @@ A vendor-agnostic CLI tool for migrating firewall configuration.
     - [Import process](#import-process)
     - [Migration process](#migration-process)
 6. [Getting started with Pioneer](#getting-started-with-pioneer)
-7. [Usage example and demo](#usage-example-and-demo)
+7. [Usage example](#usage-example)
 8. [Known issues](#known-issues)
 9. [Roadmap](#roadmap)
 10. [Code issues that must be addressed](#code-issues-that-must-be-addressed)
@@ -28,7 +28,7 @@ A vendor-agnostic CLI tool for migrating firewall configuration.
 <p>Migrates policies from Cisco's Firepower Management Center to Palo Alto's Panorama Management Center.
 <p>Works pretty well. 
 <p>Used in production at my job, migrated thousands of firewall policies with very little intervention needed after the migration process.
-<p>Video with demo below at section [Getting started with Pioneer](#getting-started-with-pioneer)
+<p>Video with demo here:
 
 ## Introduction
 Pioneer is a coding project that I started in my spare time. During my experience as a network engineer
@@ -143,8 +143,8 @@ cd pioneer/
 <p>Panorama Management Center version must be at least 10.X.
 <p>You can try to use other Firepower Management Center or Panorama Management Center versions, however I cannot guarantee that they will work.
 
-## Usage example and demo
-Below you find a list with the commands needed to perform a migration. You also find a video with a demo.
+## Usage example
+Below you find a list with the commands needed to perform a migration.
 <p>Be aware that when creating stuff, a name convention must be followed: no whitespaces, no hyphens or special characters as separators, name must start with an alphabetical character.
 
 ```bash
@@ -184,7 +184,6 @@ python3 pioneer.py --project 'example_project' --migrate --security-policy-conta
 
 <p>NOTE: mapping should be done even in the containers/interfaces have the same name
 <p>After the migration is done, you can look into "pioneer/log/{migration_project_name}/special_policies.log" to see what policies were not migrated and why. You can also see what special parameters (such as L7 apps) were not migrated. 
-<p>Demo video:
 
 ## Known issues
 <p>Some NAT policies don't get imported properly. Didn't look into this one.
