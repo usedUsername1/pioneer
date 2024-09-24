@@ -139,14 +139,3 @@ Below you find a list with the commands needed to perform a migration. You also 
 <p>Logging must be redone.
 <p>Proper exceptions must be implemented.
 <p>Fix all known issues.
-
-# Test policies
-1. A normal policy with no special parameters
-2. A policy with normally defined objects. Make recursive objects and non-necursive objects.
-3. A policy with a weird name.
-4. A policy defined only with literals
-5. A policy defined with literals and objects.
-6. A policy with missing mapped zone.
-7. A policy with applications and url categories, url objects and literals.
-8. A policy with a ping object and normal ports.
-9. A policy only with ping.
