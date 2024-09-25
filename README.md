@@ -28,7 +28,7 @@ A vendor-agnostic CLI tool for migrating firewall configuration.
 <p>Migrates policies from Cisco's Firepower Management Center to Palo Alto's Panorama Management Center.
 <p>Works pretty well. 
 <p>Used in production at my job, migrated thousands of firewall policies with very little intervention needed after the migration process.
-[Video with demo here](https://anvilproject.org/guides/content/creating-links)
+<p>Video with demo here: https://odysee.com/pioneerdemo:3
 
 ## Introduction
 Pioneer is a coding project that I started in my spare time. During my experience as a network engineer
